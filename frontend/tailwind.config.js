@@ -1,3 +1,5 @@
+const { getJSDocReadonlyTag } = require('typescript');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -13,6 +15,9 @@ module.exports = {
         background: '#F9FAFB',
         green: {
           main: '#08605F',
+        },
+        gray: {
+          main: '#565656',
         },
       },
       fontFamily: {

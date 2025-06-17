@@ -1,13 +1,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import ColaboratorLayout from './layouts/ColaboratorLayout';
-import Dashboard from './pages/colaborator/Dashboard';
-import Evaluation from './pages/colaborator/Evaluation';
+import CollaboratorLayout from './layouts/CollaboratorLayout';
+import Dashboard from './pages/collaborator/Dashboard';
+import Evaluation from './pages/collaborator/Evaluation';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/colaborador" element={<ColaboratorLayout />}>
+        <Route path="/colaborador" element={<CollaboratorLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="avaliacao" element={<Evaluation />} />
         </Route>

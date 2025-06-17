@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 
-const ColaboratorLayout = () => {
+const CollaboratorLayout = () => {
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname === path;
@@ -45,4 +45,4 @@ const ColaboratorLayout = () => {
   );
 };
 
-export default ColaboratorLayout;
+export default CollaboratorLayout;
