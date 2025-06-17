@@ -1,41 +1,19 @@
-import ScoreBox from "./ScoreBox";
-import StarRating from "./StarRating";
+import ScoreBox from "../ScoreBox";
+import StarRating from "../StarRating";
 
-import { UserIcon } from "./UserIcon";
+import { UserIcon } from "../UserIcon";
 import { FaTrash } from "react-icons/fa";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const PeerEvaluationForm = () => {
-  const [score, setScore] = useState<number | undefined>(() => {
-    const saved = localStorage.getItem("peerEvalScore");
-    return saved ? Number(saved) : undefined;
-  });
-
-  const [strengths, setStrengths] = useState(() => {
-    return localStorage.getItem("peerEvalStrengths") || "";
-  });
-
-  const [improvements, setImprovements] = useState(() => {
-    return localStorage.getItem("peerEvalImprovements") || "";
-  });
-  
-  useEffect(() => {
-    if (score !== undefined)
-      localStorage.setItem("peerEvalScore", score.toString());
-  }, [score]);
-
-  useEffect(() => {
-    localStorage.setItem("peerEvalStrengths", strengths);
-  }, [strengths]);
-
-  useEffect(() => {
-    localStorage.setItem("peerEvalImprovements", improvements);
-  }, [improvements]);
+  const [score, setScore] = useState<number | undefined>(undefined);
+  const [strengths, setStrengths] = useState("");
+  const [improvements, setImprovements] = useState("");
 
   return (
     <div className="bg-white w-full flex flex-col px-6 py-9 rounded-xl">
-      <div className="flex justify-between mb-5">
+      <div className="flex justify-between items-center mb-5">
         <div className="flex justify-center items-center gap-3">
           <UserIcon initials="CN" size={40} />
           <div className="flex flex-col">
@@ -67,7 +45,8 @@ const PeerEvaluationForm = () => {
             className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
             name=""
             id=""
-            placeholder="Justifique sua nota..." value={strengths}
+            placeholder="Justifique sua nota..."
+            value={strengths}
             onChange={(e) => setStrengths(e.target.value)}
           ></textarea>
         </div>
@@ -79,7 +58,8 @@ const PeerEvaluationForm = () => {
             className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
             name=""
             id=""
-            placeholder="Justifique sua nota..." value={improvements}
+            placeholder="Justifique sua nota..."
+            value={improvements}
             onChange={(e) => setImprovements(e.target.value)}
           ></textarea>
         </div>

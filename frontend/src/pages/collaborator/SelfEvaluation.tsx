@@ -1,6 +1,6 @@
-import SelfEvaluationForm from "../../components/SelfEvaluation/SelfEvaluationForm";
+import SelfEvaluationForm from "../../components/SelfEvaluationForm/SelfEvaluationForm";
 
-export default function EvaluationPage() {
+export default function SelfEvaluationPage() {
   const postureCriteria = [
     { title: "Sentimento de Dono" },
     { title: "Resiliência nas adversidades" },
