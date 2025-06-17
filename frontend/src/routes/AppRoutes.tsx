@@ -1,15 +1,17 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import CollaboratorLayout from '../layouts/CollaboratorLayout';
+import Dashboard from '../pages/collaborator/Dashboard';
+import PeerEvaluation from '../pages/collaborator/PeerEvaluation';
 
-import PeerEvaluation from "../pages/PeerEvaluation";
-
-const AppRoutes = () => {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/peer-evaluation" element={<PeerEvaluation />} />
-      </Routes>
-    </BrowserRouter>
-  );
-};
+const AppRoutes = () => (
+  <BrowserRouter>
+    <Routes>
+      <Route path="/colaborador" element={<CollaboratorLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="avaliacao" element={<PeerEvaluation />} />
+      </Route>
+    </Routes>
+  </BrowserRouter>
+);
 
 export default AppRoutes;

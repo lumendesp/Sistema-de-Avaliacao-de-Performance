@@ -1,4 +1,4 @@
-import PeerEvaluationForm from "../components/PeerEvaluationForm"
+import PeerEvaluationForm from "../../components/PeerEvaluationForm"
 
 const PeerEvaluation = () => {
     return (
