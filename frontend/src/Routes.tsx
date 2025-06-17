@@ -5,6 +5,7 @@ import {
 } from "react-router-dom";
 
 import Committee from "./pages/Committee";
+import Equalization from "./pages/Equalization";
 
 export function AppRoutes(){
     return(
@@ -12,6 +13,7 @@ export function AppRoutes(){
             <Routes>
                 <Route path="/" element={<div>Hello World</div>} />
                 <Route path="/committee" element={<Committee />} />
+                <Route path="/committee/equalization" element={<Equalization />} />
             </Routes>
         </Router>
     )
