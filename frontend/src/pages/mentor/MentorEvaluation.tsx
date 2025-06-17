@@ -2,7 +2,7 @@ import MentorEvaluationForm from "../../components/MentorEvaluationForm/MentorEv
 
 const MentorEvaluation = () => {
   return (
-    <div className="bg-[#f1f1f1] h-screen w-full">
+    <div className="bg-[#f1f1f1] h-screen w-full p-3">
       <MentorEvaluationForm />
     </div>
   );
