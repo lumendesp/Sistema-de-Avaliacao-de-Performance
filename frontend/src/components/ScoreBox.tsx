@@ -1,13 +1,11 @@
-type ScoreBoxProps = {
-  score?: number; // número de 1 a 5 ou undefined/null
-};
+import type { ScoreBoxProps } from "../types/scoreBox";
 
 const ScoreBox = ({ score }: ScoreBoxProps) => {
   return (
     <div
       className="w-[37px] h-[25px] rounded-[4px] flex items-center justify-center text-sm bg-[#E6E6E6] text-[#1D1D1D] font-bold"
     >
-      {score ?? '-'}
+      {score ? score : '-'}
     </div>
   );
 };

@@ -2,13 +2,17 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import CollaboratorLayout from '../layouts/CollaboratorLayout';
 import Dashboard from '../pages/collaborator/Dashboard';
 import PeerEvaluation from '../pages/collaborator/PeerEvaluation';
+import MentorEvaluation from '../pages/mentor/MentorEvaluation';
+import ReferenceEvaluation from '../pages/reference/ReferenceEvaluation';
 
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
-      <Route path="/colaborador" element={<CollaboratorLayout />}>
+      <Route path="/collaborator" element={<CollaboratorLayout />}>
         <Route index element={<Dashboard />} />
-        <Route path="avaliacao" element={<PeerEvaluation />} />
+        <Route path="peer-evaluation" element={<PeerEvaluation />} />
+        <Route path="mentor-evaluation" element={<MentorEvaluation />} />
+        <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
       </Route>
     </Routes>
   </BrowserRouter>

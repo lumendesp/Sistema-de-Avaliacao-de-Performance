@@ -1,8 +1,8 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 
 const menuItems = [
-  { path: '/colaborador', label: 'Dashboard' },
-  { path: '/colaborador/avaliacao', label: 'Avaliação' },
+  { path: '/collaborator', label: 'Dashboard' },
+  { path: '/collaborator/peer-evaluation', label: 'Avaliação' },
 ];
 
 const CollaboratorLayout = () => {

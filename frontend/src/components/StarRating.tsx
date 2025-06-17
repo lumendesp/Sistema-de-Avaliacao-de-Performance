@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { FaStar, FaRegStar } from "react-icons/fa6";
-
-type StarRatingProps = {
-  score: number;
-  onChange: (newScore: number) => void;
-  size?: number;
-};
+import type { StarRatingProps } from "../types/starRating";
 
 const StarRating = ({ score, onChange, size = 24 }: StarRatingProps) => {
   const [hovered, setHovered] = useState<number | null>(null);
