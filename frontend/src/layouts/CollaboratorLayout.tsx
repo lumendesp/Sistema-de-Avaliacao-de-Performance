@@ -1,5 +1,10 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 
+const menuItems = [
+  { path: '/colaborador', label: 'Dashboard' },
+  { path: '/colaborador/avaliacao', label: 'Avaliação' },
+];
+
 const CollaboratorLayout = () => {
   const location = useLocation();
 
@@ -11,30 +16,20 @@ const CollaboratorLayout = () => {
         <h2>Colaborador</h2>
         <nav>
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            <li>
-              <Link
-                to="/colaborador"
-                style={{
-                  color: isActive('/colaborador') ? 'blue' : 'black',
-                  fontWeight: isActive('/colaborador') ? 'bold' : 'normal',
-                  textDecoration: 'none',
-                }}
-              >
-                Dashboard
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/colaborador/avaliacao"
-                style={{
-                  color: isActive('/colaborador/avaliacao') ? 'blue' : 'black',
-                  fontWeight: isActive('/colaborador/avaliacao') ? 'bold' : 'normal',
-                  textDecoration: 'none',
-                }}
-              >
-                Avaliação
-              </Link>
-            </li>
+            {menuItems.map(({ path, label }) => (
+              <li key={path}>
+                <Link
+                  to={path}
+                  style={{
+                    color: isActive(path) ? 'blue' : 'black',
+                    fontWeight: isActive(path) ? 'bold' : 'normal',
+                    textDecoration: 'none',
+                  }}
+                >
+                  {label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </nav>
       </aside>
