@@ -1,7 +1,4 @@
-type UserIconProps = {
-  initials: string
-  size?: number
-}
+import type { UserIconProps } from "../types/userIcon"
 
 export function UserIcon({ initials, size = 40 }: UserIconProps) {
   return (
