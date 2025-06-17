@@ -22,8 +22,16 @@ export default function CollaboratorCard({ collaborator }: Props) {
     .slice(0, 2)
     .join("");
 
+  const handleClick = () => {
+    // Coloque aqui o que deve acontecer ao clicar no card (ex: navegação)
+    console.log("Card clicado:", name);
+  };
+
   return (
-    <div className="bg-white rounded-xl p-4 flex items-center shadow justify-between">
+    <button
+      onClick={handleClick}
+      className="w-full text-left bg-white rounded-xl p-4 flex items-center shadow justify-between hover:bg-gray-100 transition cursor-pointer"
+    >
       <div className="flex items-center gap-4">
         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-700">
           {initials}
@@ -39,14 +47,14 @@ export default function CollaboratorCard({ collaborator }: Props) {
 
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2 text-sm">
-          <span className="#1D1D1DBF">Autoavaliação</span>
+          <span className="text-[#1D1D1DBF]">Autoavaliação</span>
           <span className="bg-gray-200 px-2 py-1 rounded text-sm font-semibold text-gray-800 w-12 text-center">
             {selfScore.toFixed(1)}
           </span>
         </div>
 
         <div className="flex items-center gap-2 text-sm">
-          <span className="#1D1D1DBF">Nota gestor</span>
+          <span className="text-[#1D1D1DBF]">Nota gestor</span>
           {managerScore !== null ? (
             <span className="bg-gray-200 px-2 py-1 rounded text-sm font-semibold text-gray-800 w-12 text-center">
               {managerScore.toFixed(1)}
@@ -58,10 +66,8 @@ export default function CollaboratorCard({ collaborator }: Props) {
           )}
         </div>
 
-        <button>
-          <img src={arrowIcon} alt="Buscar" className="w-5 h-5" />
-        </button>
+        <img src={arrowIcon} alt="Detalhes" className="w-5 h-5" />
       </div>
-    </div>
+    </button>
   );
 }
