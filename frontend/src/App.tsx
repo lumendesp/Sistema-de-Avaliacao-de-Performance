@@ -1,12 +1,12 @@
-import './index.css'
-import DashboardManagerPage from './pages/DashboardManagerPage'
+import "./index.css";
+import AppRoutes from "./routes/AppRoutes.tsx";
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100">
-      <DashboardManagerPage />
-    </div>
-  )
+    <>
+      <AppRoutes />
+    </>
+  );
 }
 
-export default App
+export default App;
