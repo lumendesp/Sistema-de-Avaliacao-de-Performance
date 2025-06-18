@@ -1,4 +1,7 @@
+import React from "react";
 import StarRating from "../StarRating";
+import html2canvas from 'html2canvas';
+import jsPDF from "jspdf";
 
 interface CriterionProps {
     name: string;
@@ -37,6 +40,8 @@ const Criterion = ({ name, score }: CriterionProps) => {
 };
 
 interface EvaluationSummaryProps {
+    name: string;
+    role: string;
     autoAvaliacao: number;
     avaliacao360: number;
     notaGestor: number;
@@ -46,57 +51,139 @@ interface EvaluationSummaryProps {
 }
 
 function EvaluationSummary({ 
+    name,
+    role,
     autoAvaliacao, 
     avaliacao360, 
     notaGestor, 
     notaFinal,
-    onEdit,
-    onDownload
+    onEdit
 }: EvaluationSummaryProps) {
     
-    console.log("🚀 Evaluation Props:", {
-        autoAvaliacao,
-        avaliacao360,
-        notaGestor,
-        notaFinal
-      });
-      
-      const hasAllGrades =
+    const hasAllGrades =
         typeof autoAvaliacao === 'number' &&
         typeof avaliacao360 === 'number' &&
         typeof notaGestor === 'number' &&
         typeof notaFinal === 'number';
       
-      console.log("✅ hasAllGrades:", hasAllGrades);
-      
-  
+    const printRef = React.useRef<HTMLDivElement>(null);
+
+    const handleDownloadPdf = async () => {
+        const element = printRef.current;
+        if(!element){
+            return
+        }
+
+        // Create a temporary div for PDF content
+        const tempDiv = document.createElement('div');
+        tempDiv.className = 'space-y-6';
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.top = '-9999px';
+        tempDiv.style.width = '800px';
+        tempDiv.style.padding = '40px';
+        tempDiv.style.backgroundColor = 'white';
+        tempDiv.innerHTML = `
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h1 style="font-size: 24px; color: #08605F; margin-bottom: 8px;">Avaliação de Performance</h1>
+                <div style="border-bottom: 2px solid #08605F; width: 100px; margin: 0 auto;"></div>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <h2 style="font-size: 20px; color: #333; margin-bottom: 4px;">${name}</h2>
+                <p style="color: #666; font-size: 16px;">${role}</p>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+                <div style="text-align: center; width: 23%;">
+                    <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Autoavaliação</h3>
+                    <div style="font-size: 24px; font-weight: bold; color: ${autoAvaliacao >= 4 ? '#16a34a' : autoAvaliacao >= 3 ? '#ca8a04' : '#dc2626'}">
+                        ${autoAvaliacao.toFixed(1)}
+                    </div>
+                </div>
+                <div style="text-align: center; width: 23%;">
+                    <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Nota Gestor</h3>
+                    <div style="font-size: 24px; font-weight: bold; color: ${notaGestor >= 4 ? '#16a34a' : notaGestor >= 3 ? '#ca8a04' : '#dc2626'}">
+                        ${notaGestor.toFixed(1)}
+                    </div>
+                </div>
+                <div style="text-align: center; width: 23%;">
+                    <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Avaliação 360</h3>
+                    <div style="font-size: 24px; font-weight: bold; color: ${avaliacao360 >= 4 ? '#16a34a' : avaliacao360 >= 3 ? '#ca8a04' : '#dc2626'}">
+                        ${avaliacao360.toFixed(1)}
+                    </div>
+                </div>
+                ${typeof notaFinal === 'number' ? `
+                    <div style="text-align: center; width: 23%;">
+                        <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Nota Final</h3>
+                        <div style="font-size: 24px; font-weight: bold; color: ${notaFinal >= 4 ? '#16a34a' : notaFinal >= 3 ? '#ca8a04' : '#dc2626'}">
+                            ${notaFinal.toFixed(1)}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+
+            <div style="margin-top: 40px;">
+                <h3 style="font-size: 16px; color: #08605F; margin-bottom: 16px;">Resumo da Avaliação</h3>
+                <div style="border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px; min-height: 100px;">
+                    ${element.querySelector('textarea')?.value || 'Resumo de IA indisponivel'}
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; text-align: center; color: #666; font-size: 12px;">
+                <p>Documento gerado em ${new Date().toLocaleDateString('pt-BR')}</p>
+            </div>
+        `;
+
+        // Temporarily add to document
+        document.body.appendChild(tempDiv);
+
+        const canvas = await html2canvas(tempDiv)
+        const data = canvas.toDataURL('image/png')
+        const pdf = new jsPDF({
+            orientation:"portrait",
+            unit:"px",
+            format:"a4"
+        });
+
+        const imgPropertis = pdf.getImageProperties(data);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgPropertis.height * pdfWidth) / imgPropertis.width;
+
+        pdf.addImage(data, 'PNG', 0, 0, pdfWidth, pdfHeight+20);
+        pdf.save(`Avaliacao-${name}.pdf`);
+
+        // Remove temporary div
+        document.body.removeChild(tempDiv);
+    }
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center gap-4">
-                <Criterion name="Autoavaliação" score={autoAvaliacao} />
-                <Criterion name="Nota Gestor" score={notaGestor} />
-                <Criterion name="Avaliação 360" score={avaliacao360} />
-            </div>
-
-            <div className="bg-white rounded-lg p-4 border border-gray-200">
-                <div className="flex items-center gap-2 mb-4">
-                    <div className="w-3 h-3 rounded-full bg-[#08605F]" />
-                    <span className="text-sm font-semibold text-gray-700">Resumo</span>
+            {/* Content for PDF */}
+            <div ref={printRef} className="space-y-6">
+                <div className="flex justify-between items-center gap-4">
+                    <Criterion name="Autoavaliação" score={autoAvaliacao} />
+                    <Criterion name="Nota Gestor" score={notaGestor} />
+                    <Criterion name="Avaliação 360" score={avaliacao360} />
+                    {typeof notaFinal === 'number' && (
+                        <Criterion name="Nota Final" score={notaFinal} />
+                    )}
                 </div>
-                <textarea 
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F] mb-4"
-                    rows={3}
-                    placeholder="Legal Summary"
-                />
-                <div className="h-2 bg-gray-200 rounded-full">
-                    <div 
-                        className="h-full rounded-full bg-[#08605F]"
-                        style={{ width: `${(notaFinal ? notaFinal : 0) / 5 * 100}%` }}
+
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center gap-2 mb-4">
+                        <div className="w-3 h-3 rounded-full bg-[#08605F]" />
+                        <span className="text-sm font-semibold text-gray-700">Resumo</span>
+                    </div>
+                    <textarea 
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F] mb-4"
+                        rows={3}
+                        placeholder="Legal Summary"
                     />
                 </div>
             </div>
 
+            {/* Buttons - Not included in PDF */}
             {!hasAllGrades ? (
                 <>
                     <div>
@@ -118,7 +205,7 @@ function EvaluationSummary({
 
                     <div className="flex justify-end">
                         <button
-                            className="px-4 py-2 bg-[#08605F] text-white rounded-md hover:bg-[#064a49] transition-colors"
+                            className="px-4 py-2 bg-[#08605F] text-blue rounded-md hover:bg-[#064a49] transition-colors"
                         >
                             Concluir
                         </button>
@@ -127,7 +214,7 @@ function EvaluationSummary({
             ) : (
                 <div className="flex justify-end gap-4">
                     <button 
-                        onClick={onDownload}
+                        onClick={handleDownloadPdf}
                         className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-[#08605F] hover:text-white transition-colors"
                     >
                         Baixar Avaliação

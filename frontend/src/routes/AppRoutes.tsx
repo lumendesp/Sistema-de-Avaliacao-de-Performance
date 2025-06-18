@@ -6,7 +6,6 @@ import MentorEvaluation from '../pages/mentor/MentorEvaluation';
 import ReferenceEvaluation from '../pages/reference/ReferenceEvaluation';
 import Committee from "../pages/committee/Committee";
 import Equalization from "../pages/committee/Equalization"
-import PdfView from '../pages/committee/preview/PdfView';
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -20,7 +19,6 @@ const AppRoutes = () => (
 
       <Route path="/committee" element={<Committee />} />
       <Route path="/committee/equalization" element={<Equalization />} />
-      <Route path="/committee/pdf-preview" element={<PdfView />} />
 
     </Routes>
   </BrowserRouter>
