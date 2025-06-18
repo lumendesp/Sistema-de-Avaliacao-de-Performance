@@ -1,10 +1,10 @@
 import './index.css'
-import GestorDashboard from './components/dashboard/GestorDashboard'
+import DashboardManagerPage from './pages/DashboardManagerPage'
 
 function App() {
   return (
     <div className="min-h-screen bg-gray-100">
-      <GestorDashboard />
+      <DashboardManagerPage />
     </div>
   )
 }
