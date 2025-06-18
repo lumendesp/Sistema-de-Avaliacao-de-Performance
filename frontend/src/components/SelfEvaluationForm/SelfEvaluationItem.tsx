@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FaChevronUp, FaChevronDown, FaCheckCircle } from "react-icons/fa";
 import type { SelfEvaluationItemProps } from "../../types/selfEvaluation";
 import StarRating from "../StarRating";
+import ScoreBox from "../ScoreBox";
 
 const SelfEvaluationItem = ({
   index,
@@ -22,7 +23,7 @@ const SelfEvaluationItem = ({
             <FaCheckCircle className="text-green-600 w-5 h-5" title="Critério respondido" />
           ) : (
             <div
-              className="w-5 h-5 flex items-center justify-center rounded-full border text-xs text-gray-700"
+              className="w-5 h-5 flex items-center justify-center rounded-full border border-black text-xs text-black"
               title={`Questão ${index}`}
             >
               {index}
@@ -31,9 +32,7 @@ const SelfEvaluationItem = ({
           <p className="font-semibold">{title}</p>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-700">
-            {score}
-          </span>
+          <ScoreBox score={score} />
           <button onClick={() => setIsOpen(!isOpen)}>
             {isOpen ? <FaChevronUp /> : <FaChevronDown />}
           </button>

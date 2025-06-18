@@ -1,6 +1,7 @@
 import { useState } from "react";
 import SelfEvaluationItem from "./SelfEvaluationItem";
-import type { SelfEvaluationFormProps } from "../../types/selfEvaluation";
+import type { SelfEvaluationFormProps } from "../../types/selfEvaluation"
+import ScoreBox from "../ScoreBox";
 
 const SelfEvaluationForm = ({ title, criteria }: SelfEvaluationFormProps) => {
   const [ratings, setRatings] = useState<number[]>(Array(criteria.length).fill(0));
@@ -26,23 +27,15 @@ const SelfEvaluationForm = ({ title, criteria }: SelfEvaluationFormProps) => {
 
   return (
     <div className="bg-white rounded-xl shadow p-6 w-full mb-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-bg font-semibold text-gray-700">{title}</h3>
-        <span className="bg-teal-100 text-teal-900 text-sm px-3 py-1 rounded-full">
-          {answeredCount}/{totalCount} preenchidos
-        </span>
+      <div className="flex justify-between items-center mb-4 pb-3">
+        <h3 className="text-bg font-semibold text-green-main">{title}</h3>
+        <div className="flex items-center gap-4">
+          <ScoreBox score={averageScore} />
+          <span className="bg-green-confirm bg-opacity-25 text-green-secondary font-bold text-sm px-3 py-1 rounded-md">
+            {answeredCount}/{totalCount} preenchidos
+          </span>
+        </div>
       </div>
-
-      {/* Média visual */}
-      <div className="w-full bg-gray-200 h-2 rounded mb-6 overflow-hidden">
-        <div
-          className="bg-teal-600 h-full transition-all"
-          style={{ width: `${(averageScore / 5) * 100}%` }}
-        />
-      </div>
-
-      {/* Lista de critérios */}
       <div className="space-y-6">
         {criteria.map((criterion, index) => (
           <SelfEvaluationItem
