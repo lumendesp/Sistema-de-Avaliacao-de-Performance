@@ -47,7 +47,7 @@ function AssessmentColaboratorsPreview({
             <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Nota Final</span>
                 <div className={`w-16 h-8 rounded flex items-center justify-center ${
-                    notaFinal ? 'bg-green-500' : 'bg-gray-100'
+                    notaFinal ? 'bg-[#08605F]' : 'bg-gray-100'
                 }`}>
                     <span className={`font-medium ${
                         notaFinal ? 'text-white' : 'text-gray-800'

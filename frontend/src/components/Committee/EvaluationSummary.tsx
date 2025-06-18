@@ -2,6 +2,10 @@ import React from "react";
 import StarRating from "../StarRating";
 import html2canvas from 'html2canvas';
 import jsPDF from "jspdf";
+import downloadIcon from '../../assets/committee/pdf-download.png';
+import GenAITextBox from "./GenAITextBox";
+
+
 
 interface CriterionProps {
     name: string;
@@ -10,14 +14,14 @@ interface CriterionProps {
 
 const Criterion = ({ name, score }: CriterionProps) => {
     const getColorClass = (score: number) => {
-        if (score >= 4) return 'text-green-600';
-        if (score >= 3) return 'text-yellow-600';
+        if (score >= 4) return 'text-[#419958]';
+        if (score >= 3) return 'text-[#F5AA30]';
         return 'text-red-600';
     };
 
     const getBarColorClass = (score: number) => {
-        if (score >= 4) return 'bg-green-600';
-        if (score >= 3) return 'bg-yellow-600';
+        if (score >= 4) return 'bg-[#08605F]';
+        if (score >= 3) return 'bg-[#F5C130]';
         return 'bg-red-600';
     };
 
@@ -135,7 +139,7 @@ function EvaluationSummary({
             </div>
         `;
 
-        // Temporarily add to document
+
         document.body.appendChild(tempDiv);
 
         const canvas = await html2canvas(tempDiv)
@@ -170,20 +174,11 @@ function EvaluationSummary({
                     )}
                 </div>
 
-                <div className="bg-white rounded-lg p-4 border border-gray-200">
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="w-3 h-3 rounded-full bg-[#08605F]" />
-                        <span className="text-sm font-semibold text-gray-700">Resumo</span>
-                    </div>
-                    <textarea 
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F] mb-4"
-                        rows={3}
-                        placeholder="Legal Summary"
-                    />
-                </div>
+                <GenAITextBox/>
+
+
             </div>
 
-            {/* Buttons - Not included in PDF */}
             {!hasAllGrades ? (
                 <>
                     <div>
@@ -205,7 +200,7 @@ function EvaluationSummary({
 
                     <div className="flex justify-end">
                         <button
-                            className="px-4 py-2 bg-[#08605F] text-blue rounded-md hover:bg-[#064a49] transition-colors"
+                            className="px-4 py-2 bg-[#08605F] text-white rounded-md hover:bg-[#064a49] transition-colors"
                         >
                             Concluir
                         </button>
@@ -215,13 +210,14 @@ function EvaluationSummary({
                 <div className="flex justify-end gap-4">
                     <button 
                         onClick={handleDownloadPdf}
-                        className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-[#08605F] hover:text-white transition-colors"
+                        className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-gray-100 hover:text-white transition-colors"
                     >
-                        Baixar Avaliação
+                        <img src={downloadIcon} alt="Download PDF" className="w-5 h-5" />
+
                     </button>
                     <button 
                         onClick={onEdit}
-                        className="px-4 py-2 bg-[#08605F] text-white rounded-md hover:bg-[#064a49] transition-colors"
+                        className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-[#08605F] hover:text-white transition-colors"
                     >
                         Editar Avaliação
                     </button>

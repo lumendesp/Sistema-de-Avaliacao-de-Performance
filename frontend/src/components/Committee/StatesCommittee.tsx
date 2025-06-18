@@ -7,18 +7,18 @@ interface StatesCommitteeProps {
 function StatesCommittee({ state }: StatesCommitteeProps) {
     const states = {
         finalizado: {
-            bgColor: 'bg-green-200',
-            textColor: 'text-green-700',
+            bgColor: 'bg-[#BEE7CF]',
+            textColor: 'text-[#419958]',
             text: 'Finalizado'
         },
         pendente: {
-            bgColor: 'bg-yellow-200',
-            textColor: 'text-yellow-700',
+            bgColor: 'bg-[#FEEC65]/50',
+            textColor: 'text-[#F5AA30]',
             text: 'Pendente'
         },
         expirado: {
-            bgColor: 'bg-red-200',
-            textColor: 'text-red-700',
+            bgColor: 'bg-[#F7C8C8]',
+            textColor: 'text-[#E14C4C]',
             text: 'Expirado'
         }
     };

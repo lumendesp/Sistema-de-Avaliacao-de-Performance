@@ -14,11 +14,13 @@ function Committee(){
                 <h1>Nav bar ao lado</h1>
             </div>
             <div className="w-[85%] bg-gray-300">
-                <div className="flex justify-between items-center p-5"> {/* // parte superior onde fica a msg de ola e botao de usuario */}
-                    <h1 className="text-2xl font-bold">Olá, comite</h1>
+                <div className="flex justify-between items-center p-5">
+                    <h1 className="text-2xl">
+                        <span className="font-bold">Olá,</span> comite
+                    </h1>
                     <UserIcon initials="CN" size={40} />
-
                 </div>
+
                 <div className="flex justify-between items-center gap-x-3 m-5"> {/* //parte de dashboard onde fica prazo preechimento e equalizações */}
                     <InfoCard name="Prazo de preechimento" description="Prazo de preechimento em 30 dias" image={calendar} number={10} subName="dias" />
                     <InfoCard name="Equalizações" description="Equalizações em 30 dias" image={persons} number={10} subName="dias" />
@@ -45,8 +47,8 @@ function Committee(){
                         </Link>
                     </div>
                     <div className="space-y-4">
-                        <Colaborators name = "Diogo" role = "PO" initials="DH" state="pendente"/>
-                        <Colaborators name = "Diogo" role = "PO" initials="DH" state="pendente"/>
+                        <Colaborators name = "Diogo" role = "PO" initials="DH" state="expirado"/>
+                        <Colaborators name = "Diogo" role = "PO" initials="DH" state="finalizado"/>
                         <Colaborators name = "Diogo" role = "PO" initials="DH" state="pendente"/>
                     </div>
                 </div>

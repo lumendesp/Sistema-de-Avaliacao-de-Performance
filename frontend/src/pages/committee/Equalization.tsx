@@ -4,6 +4,7 @@ import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import StarRating from "../../components/StarRating";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import EvaluationSummary from "../../components/Committee/EvaluationSummary";
+import FilterIcon from '../../assets/committee/filter-icon.png';
 
 function Equalization(){
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -109,7 +110,13 @@ function Equalization(){
                     {/* DIV GERAL*/}
                     <div className="flex items-center justify-between mb-6">
                         <SearchBar />
-                        <div className="w-12 h-12 bg-green-500 rounded-md ml-4" />
+                        <div className="w-12 h-12 bg-[#08605F] rounded-lg ml-4 flex items-center justify-center">
+                            <img 
+                                src={FilterIcon}
+                                alt="Ícone Filtro"
+                                className="w-5 h-5 hover:scale-105 transition-transform"
+                            />
+                        </div>
                     </div>
 
                     <div className="space-y-4">
