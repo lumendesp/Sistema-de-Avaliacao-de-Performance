@@ -1,33 +1,6 @@
 import State from "./StatesCommittee"
 import Assessment from "./AssessmentColaboratorsPreview"
-
-/*
-
-interface AssessmentColaboratorsPreviewProps {
-    autoAvaliacao?: number;
-    avaliacao360?: number;
-    notaGestor?: number;
-    notaFinal?: number;
-}
-
-
-interface InfoCardProps {
-    name: string;
-    description: string;
-    image?: string;
-    number?: number;
-    subName?: string;
-    warningColor?: 'green' | 'yellow' | 'red';
-}
-
-
-type StateType = 'finalizado' | 'pendente' | 'expirado';
-
-interface StatesCommitteeProps {
-    state: StateType;
-}
-
-*/
+import { UserIcon } from "../UserIcon";
 
 interface ColaboratorsCommitteeProps {
     // Profile info
@@ -56,9 +29,8 @@ function ColaboratorsCommitte({
     return(
         <div className="border border-gray-300 rounded-md bg-white p-4 flex justify-between items-center">
             <div className="flex items-center gap-x-4">
-                <button className="w-10 h-10 bg-gray-400 text-black-300 rounded-full flex items-center justify-center">
-                    {initials}
-                </button>
+                <UserIcon initials={initials} size={40} />
+
                 <div>
                     <h3>{name}</h3>
                     <h4 className="text-gray-500 text-sm">{role}</h4>

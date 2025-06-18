@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 
-import InfoCard from "../components/Committee/CommitteeHome/InfoCard";
-import Colaborators from "../components/Committee/ColaboratorsCommittee";
-import calendar from "../assets/committee/calendar.png";
-import persons from "../assets/committee/two-persons.png";  
+import InfoCard from "../../components/Committee/CommitteeHome/InfoCard";
+import Colaborators from "../../components/Committee/ColaboratorsCommittee";
+import calendar from "../../assets/committee/calendar.png";
+import persons from "../../assets/committee/two-persons.png";
+import { UserIcon } from '../../components/UserIcon';
+
 
 function Committee(){
     return(
@@ -14,9 +16,8 @@ function Committee(){
             <div className="w-[85%] bg-gray-300">
                 <div className="flex justify-between items-center p-5"> {/* // parte superior onde fica a msg de ola e botao de usuario */}
                     <h1 className="text-2xl font-bold">Olá, comite</h1>
-                    <button className="w-10 h-10 bg-gray-400 text-[#08605F] rounded-full flex items-center justify-center">
-                        CN
-                    </button>
+                    <UserIcon initials="CN" size={40} />
+
                 </div>
                 <div className="flex justify-between items-center gap-x-3 m-5"> {/* //parte de dashboard onde fica prazo preechimento e equalizações */}
                     <InfoCard name="Prazo de preechimento" description="Prazo de preechimento em 30 dias" image={calendar} number={10} subName="dias" />

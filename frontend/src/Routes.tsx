@@ -1,20 +1,31 @@
-import {
-    BrowserRouter as Router,
-    Routes,
-    Route
-} from "react-router-dom";
-
+import { createBrowserRouter } from "react-router-dom";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
 import Committee from "./pages/Committee";
-import Equalization from "./pages/Equalization";
+import Equalization from "./pages/committee/Equalization";
+import PdfPreview from "./pages/pdf-preview";
 
-export function AppRoutes(){
-    return(
-        <Router>
-            <Routes>
-                <Route path="/" element={<div>Hello World</div>} />
-                <Route path="/committee" element={<Committee />} />
-                <Route path="/committee/equalization" element={<Equalization />} />
-            </Routes>
-        </Router>
-    )
-}
+const router = createBrowserRouter([
+    {
+        path: "/",
+        element: <Home />
+    },
+    {
+        path: "/login",
+        element: <Login />
+    },
+    {
+        path: "/committee",
+        element: <Committee />
+    },
+    {
+        path: "/committee/equalization",
+        element: <Equalization />
+    },
+    {
+        path: "/pdf-preview",
+        element: <PdfPreview />
+    }
+]);
+
+export default router; 
