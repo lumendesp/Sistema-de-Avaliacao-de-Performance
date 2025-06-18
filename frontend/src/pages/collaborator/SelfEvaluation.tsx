@@ -9,7 +9,7 @@ export default function SelfEvaluationPage() {
   ];
 
   return (
-    <div className="p-6 mx-auto">
+    <div className="p-6 bg-green-50 mt-0">
       <SelfEvaluationForm title="Critérios de Postura" criteria={postureCriteria} />
     </div>
   );
