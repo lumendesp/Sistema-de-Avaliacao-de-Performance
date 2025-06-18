@@ -2,29 +2,30 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 
 const menuItems = [
   { path: '/collaborator', label: 'Dashboard' },
-  { path: '/collaborator/peer-evaluation', label: 'Avaliação' },
+  { path: '/collaborator/evaluation', label: 'Avaliações' },
 ];
 
 const CollaboratorLayout = () => {
   const location = useLocation();
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => location.pathname.startsWith(path);
 
   return (
-    <div style={{ display: 'flex', height: '100vh' }}>
-      <aside style={{ width: 220, background: '#eee', padding: 20 }}>
-        <h2>Colaborador</h2>
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <aside className="w-56 bg-gray-100 p-5">
+        <h2 className="text-lg font-bold mb-6">Colaborador</h2>
         <nav>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <ul className="space-y-4">
             {menuItems.map(({ path, label }) => (
               <li key={path}>
                 <Link
                   to={path}
-                  style={{
-                    color: isActive(path) ? 'blue' : 'black',
-                    fontWeight: isActive(path) ? 'bold' : 'normal',
-                    textDecoration: 'none',
-                  }}
+                  className={`block text-sm ${
+                    isActive(path)
+                      ? 'text-blue-600 font-semibold'
+                      : 'text-gray-800'
+                  } hover:underline`}
                 >
                   {label}
                 </Link>
@@ -33,7 +34,9 @@ const CollaboratorLayout = () => {
           </ul>
         </nav>
       </aside>
-      <main style={{ flex: 1, padding: 30 }}>
+
+      {/* Conteúdo principal */}
+      <main className="flex-1 bg-white overflow-y-auto">
         <Outlet />
       </main>
     </div>
