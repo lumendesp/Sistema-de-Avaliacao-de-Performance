@@ -1,4 +1,4 @@
-import SelfEvaluationForm from "../../components/SelfEvaluationForm/SelfEvaluationForm";
+import SelfEvaluationForm from "../../../components/SelfEvaluationForm/SelfEvaluationForm";
 
 export default function SelfEvaluationPage() {
   const postureCriteria = [

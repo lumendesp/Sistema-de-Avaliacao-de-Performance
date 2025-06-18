@@ -2,10 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import CollaboratorLayout from '../layouts/CollaboratorLayout';
 import Dashboard from '../pages/collaborator/Dashboard';
 import EvaluationLayout from '../layouts/EvaluationLayout';
-import SelfEvaluation from '../pages/collaborator/SelfEvaluation';
-import PeerEvaluation from '../pages/collaborator/PeerEvaluation';
-import MentorEvaluation from '../pages/mentor/MentorEvaluation';
-import ReferenceEvaluation from '../pages/reference/ReferenceEvaluation';
+import SelfEvaluation from '../pages/collaborator/evoluation/SelfEvaluation';
+import PeerEvaluation from '../pages/collaborator/evoluation/PeerEvaluation';
+import MentorEvaluation from '../pages/collaborator/evoluation/MentorEvaluation';
+import ReferenceEvaluation from '../pages/collaborator/evoluation/ReferenceEvaluation';
 
 const AppRoutes = () => (
   <BrowserRouter>
