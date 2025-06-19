@@ -42,10 +42,10 @@ const collaboratorHistory = {
   ],
 };
 
-const MyEvolutionCollaborator = () => {
+const EvolutionCollaborator = () => {
   return (
     <EvolutionLayout
-      title="Minha Evolução (Colaborador)"
+      title="Evolução (Colaborador)"
       currentScore={collaboratorHistory.currentScore}
       growth={collaboratorHistory.growth}
       totalEvaluations={collaboratorHistory.totalEvaluations}
@@ -55,4 +55,4 @@ const MyEvolutionCollaborator = () => {
   );
 };
 
-export default MyEvolutionCollaborator; 
+export default EvolutionCollaborator; 

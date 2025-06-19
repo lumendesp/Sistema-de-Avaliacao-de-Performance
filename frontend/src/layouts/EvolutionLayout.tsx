@@ -1,7 +1,7 @@
 import React from "react";
-import HistorySummaryCards from '../components/myEvolution/HistorySummaryCards';
-import PerformanceChart from '../components/myEvolution/PerformanceChart';
-import EvaluationCyclesList from '../components/myEvolution/EvaluationCyclesList';
+import HistorySummaryCards from '../components/Evolution/HistorySummaryCards';
+import PerformanceChart from '../components/Evolution/PerformanceChart';
+import EvaluationCyclesList from '../components/Evolution/EvaluationCyclesList';
 
 interface Performance {
   cycle: string;

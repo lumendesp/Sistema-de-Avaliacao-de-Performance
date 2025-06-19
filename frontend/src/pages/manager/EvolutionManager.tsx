@@ -1,4 +1,3 @@
-import React from 'react';
 import EvolutionLayout from '../../layouts/EvolutionLayout';
 
 const History = {
@@ -52,7 +51,7 @@ const History = {
   ],
 };
 
-const MyEvolution = () => {
+const EvolutionManager = () => {
   return (
     <EvolutionLayout
       title="Minha Evolução"
@@ -65,4 +64,4 @@ const MyEvolution = () => {
   );
 };
 
-export default MyEvolution; 
+export default EvolutionManager; 
