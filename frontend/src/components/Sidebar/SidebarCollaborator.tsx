@@ -1,8 +1,9 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
 import dashboardIcon from '../../assets/dashboard.svg';
 import evaluationIcon from '../../assets/evaluation.svg';
 import evolutionIcon from '../../assets/evolution.svg';
+import { useAuth } from '../../context/AuthContext';
 
 const menuItems = [
   {
@@ -24,6 +25,14 @@ const menuItems = [
 ];
 
 const SidebarCollaborator = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();            // Limpa o usuário do contexto e localStorage
+    navigate('/login');  // Redireciona para a tela de login
+  };
+
   return (
     <aside className="fixed top-0 left-0 w-64 h-screen bg-white border-r z-50 flex flex-col justify-between py-6 px-4">
       <div>
@@ -64,13 +73,13 @@ const SidebarCollaborator = () => {
           </div>
           <p className="text-sm text-gray-700 font-medium">Colaborador 1</p>
         </div>
-        <NavLink
-          to="/logout"
+        <button
+          onClick={handleLogout}
           className="flex items-center gap-2 text-sm text-green-main font-bold hover:underline pl-2"
         >
           <FiLogOut size={16} />
           Logout
-        </NavLink>
+        </button>
       </div>
     </aside>
   );

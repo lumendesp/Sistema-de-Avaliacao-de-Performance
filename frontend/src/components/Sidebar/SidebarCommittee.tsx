@@ -1,5 +1,6 @@
-import { NavLink } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
+import { useAuth } from '../../context/AuthContext';
 import dashboardIcon from '../../assets/dashboard.svg';
 import equalizationsIcon from '../../assets/equalization.svg';
 
@@ -18,6 +19,14 @@ const menuItems = [
 ];
 
 const SidebarCommittee = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <aside className="fixed top-0 left-0 w-64 h-screen bg-white border-r z-50 flex flex-col justify-between py-6 px-4">
       <div>
@@ -58,14 +67,13 @@ const SidebarCommittee = () => {
           </div>
           <p className="text-sm text-gray-700 font-medium">Comitê</p>
         </div>
-
-        <NavLink
-          to="/logout"
+        <button
+          onClick={handleLogout}
           className="flex items-center gap-2 text-sm text-green-main font-bold hover:underline pl-2"
         >
           <FiLogOut size={16} />
           Logout
-        </NavLink>
+        </button>
       </div>
     </aside>
   );

@@ -1,5 +1,6 @@
-import { NavLink } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
+import { useAuth } from '../../context/AuthContext';
 import dashboardIcon from '../../assets/dashboard.svg';
 import collaboratorsIcon from '../../assets/collaborators.svg';
 import configIcon from '../../assets/config.svg';
@@ -23,6 +24,14 @@ const menuItems = [
 ];
 
 const SidebarRH = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <aside className="fixed top-0 left-0 w-64 h-screen bg-white border-r z-50 flex flex-col justify-between py-6 px-4">
       <div>
@@ -61,13 +70,13 @@ const SidebarRH = () => {
           <p className="text-sm text-gray-700 font-medium">Recursos Humanos</p>
         </div>
 
-        <NavLink
-          to="/logout"
+        <button
+          onClick={handleLogout}
           className="flex items-center gap-2 text-sm text-green-main font-bold hover:underline pl-2"
         >
           <FiLogOut size={16} />
           Logout
-        </NavLink>
+        </button>
       </div>
     </aside>
   );
