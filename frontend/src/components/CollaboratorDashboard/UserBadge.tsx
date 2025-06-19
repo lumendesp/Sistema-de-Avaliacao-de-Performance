@@ -1,9 +1,6 @@
-interface Props {
-  name: string;
-  initials?: string;
-}
+import type { UserBadgeProps } from "../../types/DashboardCollaboratorTypes/userBadge";
 
-const UserBadge = ({ name, initials }: Props) => {
+const UserBadge = ({ name, initials }: UserBadgeProps) => {
   const defaultInitials = initials || name
     .split(' ')
     .map((n) => n[0])

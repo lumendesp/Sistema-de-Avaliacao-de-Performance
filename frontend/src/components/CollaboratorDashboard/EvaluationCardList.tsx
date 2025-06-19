@@ -1,15 +1,8 @@
 import EvaluationCardMini from './EvaluationCardMini';
-
-type Ciclo = {
-  ciclo: string;
-  status: 'Finalizado' | 'Em andamento';
-  resumo?: string;
-  nota?: number;
-  destaque?: string;
-};
+import type { CicloProps } from '../../types/DashboardCollaboratorTypes/evaluationCardList';
 
 const EvaluationCardList = () => {
-  const ciclos: Ciclo[] = [
+  const ciclos: CicloProps[] = [
     {
       ciclo: '2025.1',
       status: 'Em andamento',

@@ -1,16 +1,11 @@
-import {
-  Chart as ChartJS,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-} from 'chart.js';
+import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import type { BarChartData, BarChartOptions } from '../../types/DashboardCollaboratorTypes/performanceChart';
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
 
 const PerformanceChart = () => {
-  const data = {
+  const data: BarChartData = {
     labels: ['2023.1', '2023.2', '2024.1', '2024.2'],
     datasets: [
       {
@@ -23,7 +18,7 @@ const PerformanceChart = () => {
     ],
   };
 
-  const options = {
+  const options: BarChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
@@ -33,10 +28,10 @@ const PerformanceChart = () => {
         ticks: {
           stepSize: 1,
           font: { size: 12 },
-          color: '#6B7280', // Gray-500
+          color: '#6B7280',
         },
         grid: {
-          color: '#E5E7EB', // Gray-200
+          color: '#E5E7EB',
         },
       },
       x: {
