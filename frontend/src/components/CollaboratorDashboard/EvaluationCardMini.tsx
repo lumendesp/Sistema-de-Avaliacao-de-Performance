@@ -1,5 +1,6 @@
 import { PiSparkleBold } from 'react-icons/pi';
-import type {EvaluationCardMiniProps } from '../../types/DashboardCollaboratorTypes/evaluationCardMini';
+import type { EvaluationCardMiniProps } from '../../types/DashboardCollaboratorTypes/evaluationCardMini';
+import { getEvaluationColor } from '../../utils/getEvaluationColor';
 
 const EvaluationCardMini = ({ ciclo, nota, status, resumo, destaque }: EvaluationCardMiniProps) => {
   const statusClass =
@@ -7,14 +8,16 @@ const EvaluationCardMini = ({ ciclo, nota, status, resumo, destaque }: Evaluatio
       ? 'bg-green-100 text-green-700'
       : 'bg-yellow-100 text-yellow-700';
 
+  const notaColor = getEvaluationColor(nota);
+
   return (
     <div className="flex rounded-xl border border-gray-200 bg-white p-4 gap-4 items-start shadow-sm">
       <div className="flex flex-col items-center justify-center bg-gray-50 px-4 py-2 rounded-md min-w-[72px]">
-        <span className="text-2xl font-bold text-green-800">
+        <span className={`text-2xl font-bold ${notaColor}`}>
           {nota !== undefined ? nota.toFixed(1) : '-'}
         </span>
         {destaque && (
-          <span className="text-sm font-semibold text-green-700">{destaque}</span>
+          <span className={`text-sm font-semibold ${notaColor}`}>{destaque}</span>
         )}
       </div>
       <div className="flex-1 flex flex-col gap-2">
