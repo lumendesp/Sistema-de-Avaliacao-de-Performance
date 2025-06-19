@@ -1,13 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import SearchBar from "../../components/CollaboratorsSearchBar";
 import Colaborators from "../../components/Committee/ColaboratorsCommittee";
-import CommitteeStarRating from "../../components/Committee/CommitteeStarRating";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import EvaluationSummary from "../../components/Committee/EvaluationSummary";
 import FilterIcon from '../../assets/committee/filter-icon.png';
+import { getUsersWithEvaluations, createEvaluation, updateEvaluation } from "../../services/api";
+
+// Enums manually mirrored from backend
+const EvaluationStatus = {
+    PENDING: 'PENDING',
+    FINALIZED: 'FINALIZED',
+    EXPIRED: 'EXPIRED',
+} as const;
+
+const EvaluationType = {
+    SELF: 'SELF',
+    MANAGER: 'MANAGER',
+    PEER: 'PEER',
+    FINAL: 'FINAL',
+} as const;
 
 interface Collaborator {
-    id: string;
+    id: number;
     name: string;
     role: string;
     initials: string;
@@ -16,121 +30,165 @@ interface Collaborator {
     avaliacao360: number;
     notaGestor: number;
     notaFinal?: number;
+    finalEvaluationId?: number;
+    justification?: string;
+    justificativaAutoAvaliacao?: string;
+    justificativaGestor?: string;
+    justificativa360?: string;
 }
 
 function Equalization(){
-    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [expandedId, setExpandedId] = useState<number | null>(null);
     const [evaluationState, setEvaluationState] = useState<{
-        [key: string]: {
+        [key: number]: {
             notaFinal?: number;
             justification?: string;
             isEditing: boolean;
         }
     }>({});
 
-    const [collaborators, setCollaborators] = useState<Collaborator[]>([
-        { 
-            id: "1", 
-            name: "Diogo", 
-            role: "PO", 
-            initials: "DH", 
-            state: "pendente",
-            autoAvaliacao: 4.2,
-            avaliacao360: 3.8,
-            notaGestor: 4.5
-        },
-        { 
-            id: "2", 
-            name: "João", 
-            role: "Dev", 
-            initials: "JS", 
-            state: "finalizado",
-            autoAvaliacao: 4.5,
-            avaliacao360: 4.2,
-            notaGestor: 4.8,
-            notaFinal: 4.5
-        },
-        { 
-            id: "3", 
-            name: "Maria", 
-            role: "QA", 
-            initials: "MS", 
-            state: "pendente",
-            autoAvaliacao: 2.8,
-            avaliacao360: 3.2,
-            notaGestor: 3.0
-        },
-    ]);
+    const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+    const [searchTerm, setSearchTerm] = useState("");
 
-    const handleStarRating = (collabId: string, score: number) => {
-        setEvaluationState(prev => ({
-            ...prev,
-            [collabId]: {
-                ...prev[collabId],
-                notaFinal: score
-            }
-        }));
-    };
-
-    const handleJustification = (collabId: string, text: string) => {
-        setEvaluationState(prev => ({
-            ...prev,
-            [collabId]: {
-                ...prev[collabId],
-                justification: text
-            }
-        }));
-    };
-
-    const handleConcluir = (collabId: string) => {
-        const currentEvaluation = evaluationState[collabId];
-        if (currentEvaluation?.notaFinal !== undefined) {
-            // Update the collaborator's final grade only when Concluir is clicked
-            setCollaborators(prev => prev.map(collab => {
-                if (collab.id === collabId) {
-                    const updatedCollab = { ...collab, notaFinal: currentEvaluation.notaFinal };
-                    
-                    // Check if all grades are present to change status to "finalizado"
-                    const hasAllGrades = 
-                        typeof updatedCollab.autoAvaliacao === 'number' &&
-                        typeof updatedCollab.avaliacao360 === 'number' &&
-                        typeof updatedCollab.notaGestor === 'number' &&
-                        typeof updatedCollab.notaFinal === 'number';
-                    
-                    if (hasAllGrades && updatedCollab.state === 'pendente') {
-                        updatedCollab.state = 'finalizado';
-                    }
-                    
-                    return updatedCollab;
-                }
-                return collab;
-            }));
+    const filteredCollaborators = useMemo(() => {
+        if (!searchTerm) {
+            return collaborators;
         }
-        
-        // Close editing mode
+        return collaborators.filter(c => 
+            c.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [collaborators, searchTerm]);
+
+    const fetchCollaborators = async () => {
+        try {
+            const users = await getUsersWithEvaluations();
+            const formattedCollaborators = users.map((user: any) => {
+                const evaluations = user.evaluationsEvaluated || [];
+                
+                const getScore = (type: string): number => {
+                    const evalData = evaluations.find((e: any) => e.type === type);
+                    return evalData ? evalData.score : 0;
+                };
+
+                const getJustification = (type: string): string => {
+                    const evalData = evaluations.find((e: any) => e.type === type);
+                    return evalData ? evalData.justification || '' : '';
+                };
+
+                const finalEval = evaluations.find((e: any) => e.type === 'FINAL');
+
+                return {
+                    id: user.id,
+                    name: user.name,
+                    role: user.roles.map((r: any) => r.role.type).join(', ') || 'N/A',
+                    initials: user.name.split(' ').map((n: string) => n[0]).join(''),
+                    state: finalEval?.status === 'FINALIZED' ? 'finalizado' : 'pendente',
+                    autoAvaliacao: getScore('SELF'),
+                    avaliacao360: getScore('PEER'),
+                    notaGestor: getScore('MANAGER'),
+                    notaFinal: finalEval ? finalEval.score : undefined,
+                    finalEvaluationId: finalEval ? finalEval.id : undefined,
+                    justification: finalEval ? finalEval.justification : '',
+                    justificativaAutoAvaliacao: getJustification('SELF'),
+                    justificativaGestor: getJustification('MANAGER'),
+                    justificativa360: getJustification('PEER'),
+                };
+            });
+            setCollaborators(formattedCollaborators);
+        } catch (error) {
+            console.error("Failed to fetch collaborators:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchCollaborators();
+    }, []);
+
+    const handleStarRating = (collabId: number, score: number) => {
         setEvaluationState(prev => ({
             ...prev,
             [collabId]: {
                 ...prev[collabId],
-                isEditing: false
+                notaFinal: score,
+                isEditing: true,
             }
         }));
     };
 
-    const handleEdit = (collabId: string) => {
+    const handleJustification = (collabId: number, text: string) => {
+        setEvaluationState(prev => ({
+            ...prev,
+            [collabId]: {
+                ...prev[collabId],
+                justification: text,
+                isEditing: true,
+            }
+        }));
+    };
+
+    const handleConcluir = async (collabId: number) => {
+        const currentEvaluation = evaluationState[collabId];
+        const collaborator = collaborators.find(c => c.id === collabId);
+
+        if (!collaborator || currentEvaluation?.notaFinal === undefined) return;
+
+        const evaluationData = {
+            score: currentEvaluation.notaFinal,
+            justification: currentEvaluation.justification || '',
+            status: EvaluationStatus.FINALIZED
+        };
+
+        try {
+            let updatedEvaluation;
+            if (collaborator.finalEvaluationId) {
+                updatedEvaluation = await updateEvaluation(collaborator.finalEvaluationId, evaluationData);
+            } else {
+                updatedEvaluation = await createEvaluation({
+                    ...evaluationData,
+                    evaluatedId: collabId,
+                    evaluatorId: 1,
+                    type: EvaluationType.FINAL,
+                    deadline: new Date(new Date().setDate(new Date().getDate() + 7)),
+                });
+            }
+            
+            // Optimistic update
+            setCollaborators(prev => prev.map(c => {
+                if (c.id === collabId) {
+                    return {
+                        ...c,
+                        notaFinal: updatedEvaluation.score,
+                        justification: updatedEvaluation.justification,
+                        state: 'finalizado',
+                        finalEvaluationId: updatedEvaluation.id,
+                    };
+                }
+                return c;
+            }));
+            
+            setEvaluationState(prev => ({
+                ...prev,
+                [collabId]: { ...prev[collabId], isEditing: false }
+            }));
+
+        } catch (error) {
+            console.error("Failed to save evaluation:", error);
+        }
+    };
+
+    const handleEdit = (collabId: number) => {
         const collab = collaborators.find(c => c.id === collabId);
         setEvaluationState(prev => ({
             ...prev,
             [collabId]: {
                 notaFinal: collab?.notaFinal || 0,
-                justification: prev[collabId]?.justification || '',
+                justification: collab?.justification || '',
                 isEditing: true
             }
         }));
     };
 
-    const handleDownload = (collabId: string) => {
-        // Implement download logic here
+    const handleDownload = (collabId: number) => {
         console.log('Downloading evaluation for:', collabId);
     };
 
@@ -143,9 +201,8 @@ function Equalization(){
                     </h1>
                 </div>
                 <div className="p-6">
-                    {/* DIV GERAL*/}
                     <div className="flex items-center justify-between mb-6">
-                        <SearchBar />
+                        <SearchBar onSearch={setSearchTerm} />
                         <div className="w-12 h-12 bg-[#08605F] rounded-lg ml-4 flex items-center justify-center">
                             <img 
                                 src={FilterIcon}
@@ -155,9 +212,8 @@ function Equalization(){
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        {/* colaboradores */}
-                        {collaborators.map((collab) => (
+                    <div className="space-y-4 max-h-[68vh] overflow-y-auto pr-2">
+                        {filteredCollaborators.map((collab) => (
                             <div key={collab.id} className="bg-white rounded-lg shadow-md">
                                 <div className="p-4">
                                     <div className="flex items-center">
@@ -170,9 +226,7 @@ function Equalization(){
                                                 autoAvaliacao={collab.autoAvaliacao}
                                                 avaliacao360={collab.avaliacao360}
                                                 notaGestor={collab.notaGestor}
-                                                notaFinal={evaluationState[collab.id]?.isEditing 
-                                                    ? evaluationState[collab.id]?.notaFinal 
-                                                    : collab.notaFinal}
+                                                notaFinal={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal}
                                             />
                                         </div>
                                         <div className="w-[5%] flex justify-center">
@@ -187,59 +241,26 @@ function Equalization(){
                                     
                                     {expandedId === collab.id && (
                                         <div className="mt-4 p-4 border-t border-gray-200">
-                                            <div className="mb-6">
-                                                <EvaluationSummary 
-                                                    id={collab.id}
-                                                    name={collab.name}
-                                                    role={collab.role}                                                
-                                                    autoAvaliacao={collab.autoAvaliacao}
-                                                    avaliacao360={collab.avaliacao360}
-                                                    notaGestor={collab.notaGestor}
-                                                    notaFinal={evaluationState[collab.id]?.isEditing 
-                                                        ? evaluationState[collab.id]?.notaFinal 
-                                                        : collab.notaFinal}
-                                                    onEdit={() => handleEdit(collab.id)}
-                                                    onDownload={() => handleDownload(collab.id)}
-                                                    onStarRating={(score) => handleStarRating(collab.id, score)}
-                                                    onJustification={(text) => handleJustification(collab.id, text)}
-                                                    onConcluir={() => handleConcluir(collab.id)}
-                                                    currentScore={evaluationState[collab.id]?.notaFinal || 0}
-                                                    currentJustification={evaluationState[collab.id]?.justification || ''}
-                                                    isEditing={evaluationState[collab.id]?.isEditing || false}
-                                                />
-                                            </div>
-                                            
-                                            {evaluationState[collab.id]?.isEditing && (
-                                                <>
-                                                    <div className="mb-6">
-                                                        <h3 className="text-sm mb-2">Dê uma avaliação de 0 à 5</h3>
-                                                        <CommitteeStarRating 
-                                                            score={evaluationState[collab.id]?.notaFinal || 0} 
-                                                            onChange={(score) => handleStarRating(collab.id, score)} 
-                                                        />
-                                                    </div>
-                                                    
-                                                    <div className="mb-6">
-                                                        <h3 className="text-sm font-semibold mb-2">Justifique sua nota</h3>
-                                                        <textarea 
-                                                            className="text-sm w-full p-2 border border-gray-300 rounded-mb focus:outline-none focus:ring-2 focus:ring-[#08605F]"
-                                                            rows={4}
-                                                            placeholder="Justifique sua nota"
-                                                            value={evaluationState[collab.id]?.justification || ''}
-                                                            onChange={(e) => handleJustification(collab.id, e.target.value)}
-                                                        />
-                                                    </div>
-                                                    
-                                                    <div className="flex justify-end">
-                                                        <button 
-                                                            className="bg-[#08605F] text-white px-6 py-2 rounded-md hover:bg-[#064a49] transition-colors"
-                                                            onClick={() => handleConcluir(collab.id)}
-                                                        >
-                                                            Concluir
-                                                        </button>
-                                                    </div>
-                                                </>
-                                            )}
+                                            <EvaluationSummary 
+                                                id={String(collab.id)}
+                                                name={collab.name}
+                                                role={collab.role}                                                
+                                                autoAvaliacao={collab.autoAvaliacao}
+                                                avaliacao360={collab.avaliacao360}
+                                                notaGestor={collab.notaGestor}
+                                                notaFinal={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal}
+                                                onEdit={() => handleEdit(collab.id)}
+                                                onDownload={() => handleDownload(collab.id)}
+                                                onStarRating={(score) => handleStarRating(collab.id, score)}
+                                                onJustification={(text) => handleJustification(collab.id, text)}
+                                                onConcluir={() => handleConcluir(collab.id)}
+                                                currentScore={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal ?? 0}
+                                                currentJustification={evaluationState[collab.id]?.justification ?? collab.justification ?? ''}
+                                                isEditing={evaluationState[collab.id]?.isEditing || false}
+                                                justificativaAutoAvaliacao={collab.justificativaAutoAvaliacao}
+                                                justificativaGestor={collab.justificativaGestor}
+                                                justificativa360={collab.justificativa360}
+                                            />
                                         </div>
                                     )}
                                 </div>

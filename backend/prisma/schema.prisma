@@ -13,3 +13,61 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum RoleType {
+  EMPLOYEE
+  MANAGER
+  COMMITTEE
+  HR
+}
+
+enum EvaluationType {
+  SELF
+  MANAGER
+  PEER
+  FINAL
+}
+
+enum EvaluationStatus {
+  PENDING
+  FINALIZED
+  EXPIRED
+}
+
+model User {
+  id        Int         @id @default(autoincrement())
+  email     String      @unique
+  name      String
+  roles     UserRole[]
+  evaluationsEvaluated Evaluation[] @relation("Evaluated")
+  evaluationsEvaluator Evaluation[] @relation("Evaluator")
+}
+
+model Role {
+  id    Int      @id @default(autoincrement())
+  type  RoleType @unique
+  users UserRole[]
+}
+
+model UserRole {
+  userId Int
+  roleId Int
+  user   User @relation(fields: [userId], references: [id])
+  role   Role @relation(fields: [roleId], references: [id])
+  @@id([userId, roleId])
+}
+
+model Evaluation {
+  id            Int              @id @default(autoincrement())
+  evaluatedId   Int
+  evaluatorId   Int
+  type          EvaluationType
+  score         Float
+  justification String
+  status        EvaluationStatus
+  createdAt     DateTime         @default(now())
+  deadline      DateTime
+
+  evaluated     User             @relation("Evaluated", fields: [evaluatedId], references: [id])
+  evaluator     User             @relation("Evaluator", fields: [evaluatorId], references: [id])
+}

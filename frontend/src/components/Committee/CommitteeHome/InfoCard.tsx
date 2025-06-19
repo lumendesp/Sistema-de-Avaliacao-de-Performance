@@ -126,7 +126,7 @@ function InfoCard({
                             <span className={`text-4xl font-bold ${dynamicTextColors[finalTextColor]}`}>{number}</span>
                         )}
                         {subName && (
-                            <span className={`text-mb ${textColor === 'white' ? 'text-gray-300' : 'text-gray-600'}`}>{subName}</span>
+                            <span className={`text-mb ${dynamicTextColors[finalTextColor]}`}>{subName}</span>
                         )}
                     </div>
                 )}

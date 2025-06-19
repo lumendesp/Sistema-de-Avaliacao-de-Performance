@@ -14,7 +14,8 @@ function GenAITextBox() {
             <textarea 
                 className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F] mb-4"
                 rows={3}
-                placeholder="Resumo da GenAI"
+                placeholder="Aguardando implementação do Resumo GenAI"
+                disabled
             />
         </div>
     );

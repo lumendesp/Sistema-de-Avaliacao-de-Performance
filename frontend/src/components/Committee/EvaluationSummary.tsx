@@ -6,8 +6,6 @@ import downloadIcon from '../../assets/committee/pdf-download.png';
 import GenAITextBox from "./GenAITextBox";
 import * as XLSX from 'xlsx';
 
-
-
 interface CriterionProps {
     name: string;
     score: number;
@@ -60,6 +58,9 @@ interface EvaluationSummaryProps {
     currentJustification?: string;
     isEditing?: boolean;
     id?: string;
+    justificativaAutoAvaliacao?: string;
+    justificativaGestor?: string;
+    justificativa360?: string;
 }
 
 function EvaluationSummary({ 
@@ -76,7 +77,10 @@ function EvaluationSummary({
     currentScore = 0,
     currentJustification = '',
     isEditing = false,
-    id
+    id,
+    justificativaAutoAvaliacao = '',
+    justificativaGestor = '',
+    justificativa360 = ''
 }: EvaluationSummaryProps) {
     
     const hasAllGrades =
@@ -144,17 +148,39 @@ function EvaluationSummary({
             </div>
 
             <div style="margin-top: 40px;">
-                <h3 style="font-size: 16px; color: #08605F; margin-bottom: 16px;">Resumo da Avaliação</h3>
-                <div style="border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px; min-height: 100px;">
-                    ${element.querySelector('textarea')?.value || 'Resumo de IA indisponivel'}
+                <h3 style="font-size: 16px; color: #08605F; margin-bottom: 16px;">Justificativas das Avaliações</h3>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Autoavaliação (${autoAvaliacao.toFixed(1)})</h4>
+                    <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
+                        ${justificativaAutoAvaliacao || 'Justificativa não disponível'}
+                    </div>
                 </div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Gestor (${notaGestor.toFixed(1)})</h4>
+                    <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
+                        ${justificativaGestor || 'Justificativa não disponível'}
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação 360° (${avaliacao360.toFixed(1)})</h4>
+                    <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
+                        ${justificativa360 || 'Justificativa não disponível'}
+                    </div>
+                </div>
+                ${typeof notaFinal === 'number' ? `
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação Final do Comitê (${notaFinal.toFixed(1)})</h4>
+                        <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
+                            ${currentJustification || 'Justificativa não disponível'}
+                        </div>
+                    </div>
+                ` : ''}
             </div>
 
             <div style="margin-top: 40px; text-align: center; color: #666; font-size: 12px;">
                 <p>Documento gerado em ${new Date().toLocaleDateString('pt-BR')}</p>
             </div>
         `;
-
 
         document.body.appendChild(tempDiv);
 
@@ -175,28 +201,38 @@ function EvaluationSummary({
 
         // Remove temporary div
         document.body.removeChild(tempDiv);
+        
+        // Close modals
+        setShowSpreadsheetOptions(false);
+        setShowDownloadModal(false);
     }
 
     // CSV/Excel download logic
     const handleDownloadSpreadsheet = (type: 'csv' | 'xlsx') => {
         const data = [
             {
-                ID: id || '',
-                Name: name,
-                Position: role,
-                'Self-assessment': autoAvaliacao,
-                '360 assessment': avaliacao360,
-                'Manager grade': notaGestor,
-                'Final grade': notaFinal ?? ''
+                'ID': id || '',
+                'Nome': name,
+                'Cargo': role,
+                'Autoavaliação': autoAvaliacao,
+                'Justificativa Autoavaliação': justificativaAutoAvaliacao || 'Não disponível',
+                'Avaliação 360°': avaliacao360,
+                'Justificativa 360°': justificativa360 || 'Não disponível',
+                'Nota do Gestor': notaGestor,
+                'Justificativa do Gestor': justificativaGestor || 'Não disponível',
+                'Nota Final': notaFinal ?? '',
+                'Justificativa Final': currentJustification || 'Não disponível'
             }
         ];
         if (type === 'csv') {
             const csvRows = [
                 Object.keys(data[0]).join(','),
-                ...data.map(row => Object.values(row).join(','))
+                ...data.map(row => Object.values(row).map(value => 
+                    typeof value === 'string' && value.includes(',') ? `"${value}"` : value
+                ).join(','))
             ];
             const csvContent = csvRows.join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -209,8 +245,15 @@ function EvaluationSummary({
             XLSX.utils.book_append_sheet(wb, ws, 'Avaliacao');
             XLSX.writeFile(wb, `Avaliacao-${name}.xlsx`);
         }
-        setShowDownloadModal(false);
+        
+        // Close modals
         setShowSpreadsheetOptions(false);
+        setShowDownloadModal(false);
+    };
+
+    const handleCloseModals = () => {
+        setShowSpreadsheetOptions(false);
+        setShowDownloadModal(false);
     };
 
     return (
@@ -225,7 +268,6 @@ function EvaluationSummary({
                                 <button
                                     className="mb-3 px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
                                     onClick={() => {
-                                        setShowDownloadModal(false);
                                         handleDownloadPdf();
                                     }}
                                 >
@@ -239,7 +281,7 @@ function EvaluationSummary({
                                 </button>
                                 <button
                                     className="mt-4 text-sm text-gray-500 hover:underline"
-                                    onClick={() => setShowDownloadModal(false)}
+                                    onClick={handleCloseModals}
                                 >
                                     Cancelar
                                 </button>
@@ -261,12 +303,9 @@ function EvaluationSummary({
                                 </button>
                                 <button
                                     className="mt-4 text-sm text-gray-500 hover:underline"
-                                    onClick={() => {
-                                        setShowSpreadsheetOptions(false);
-                                        setShowDownloadModal(false);
-                                    }}
+                                    onClick={() => setShowSpreadsheetOptions(false)}
                                 >
-                                    Cancelar
+                                    Voltar
                                 </button>
                             </>
                         )}

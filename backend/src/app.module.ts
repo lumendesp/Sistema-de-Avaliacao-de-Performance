@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PdfService } from './pdf/pdf.service';
-import { PdfController } from './pdf/pdf.controller';
-import { PdfModule } from './pdf/pdf.module';
+import { PrismaService } from './prisma.service';
+import { UserModule } from './user/user.module';
+import { EvaluationModule } from './evaluation/evaluation.module';
+import { RoleModule } from './role/role.module';
 
 @Module({
-  imports: [PdfModule],
-  controllers: [AppController, PdfController],
-  providers: [AppService, PdfService],
+  imports: [UserModule, EvaluationModule, RoleModule],
+  controllers: [AppController],
+  providers: [AppService, PrismaService],
 })
 export class AppModule {}
