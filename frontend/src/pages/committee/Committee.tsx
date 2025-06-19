@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 
 import InfoCard from "../../components/Committee/CommitteeHome/InfoCard";
+import CircularProgress from "../../components/Committee/CirculaProgress";
 import Colaborators from "../../components/Committee/ColaboratorsCommittee";
-import calendar from "../../assets/committee/calendar.png";
 import persons from "../../assets/committee/two-persons.png";
 import { UserIcon } from '../../components/UserIcon';
 
@@ -22,20 +22,22 @@ function Committee(){
                 </div>
 
                 <div className="flex justify-between items-center gap-x-3 m-5"> {/* //parte de dashboard onde fica prazo preechimento e equalizações */}
-                    <InfoCard name="Prazo de preechimento" description="Prazo de preechimento em 30 dias" image={calendar} number={10} subName="dias" />
-                    <InfoCard name="Equalizações" description="Equalizações em 30 dias" image={persons} number={10} subName="dias" />
+                    <InfoCard name="Prazo" description="Faltam 30 dias para o fechamento das notas, no dia 30/08/2025" number={30} subName="dias" />
+                    <InfoCard name="Preechimento de avaliação" description="Quantidade de colaboradores que já fecharam as suas avaliações">
+                        <CircularProgress percentage={60} />
+                    </InfoCard>
                     <Link to="/committee/equalization">
                         <InfoCard 
-                            name="Prazo de equalizações" 
-                            description="Prazo de equalizações em 30 dias" 
+                            name="Equalizações pendentes" 
+                            description="Conclua suas revisoes de nota" 
                             image={persons} 
                             number={10} 
-                            subName="dias" 
                             bgColor="green" 
                             textColor="white"
                             warningColor="white"
                         />
                     </Link>
+
                 </div>
 
                 {/* all menbers */ }

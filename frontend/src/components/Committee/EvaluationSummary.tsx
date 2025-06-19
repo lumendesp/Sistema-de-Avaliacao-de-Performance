@@ -1,5 +1,5 @@
 import React from "react";
-import StarRating from "../StarRating";
+import CommitteeStarRating from "./CommitteeStarRating";
 import html2canvas from 'html2canvas';
 import jsPDF from "jspdf";
 import downloadIcon from '../../assets/committee/pdf-download.png';
@@ -52,6 +52,12 @@ interface EvaluationSummaryProps {
     notaFinal?: number;
     onEdit?: () => void;
     onDownload?: () => void;
+    onStarRating?: (score: number) => void;
+    onJustification?: (text: string) => void;
+    onConcluir?: () => void;
+    currentScore?: number;
+    currentJustification?: string;
+    isEditing?: boolean;
 }
 
 function EvaluationSummary({ 
@@ -61,7 +67,13 @@ function EvaluationSummary({
     avaliacao360, 
     notaGestor, 
     notaFinal,
-    onEdit
+    onEdit,
+    onStarRating,
+    onJustification,
+    onConcluir,
+    currentScore = 0,
+    currentJustification = '',
+    isEditing = false
 }: EvaluationSummaryProps) {
     
     const hasAllGrades =
@@ -179,13 +191,13 @@ function EvaluationSummary({
 
             </div>
 
-            {!hasAllGrades ? (
+            {(!hasAllGrades || isEditing) ? (
                 <>
                     <div>
-                        <h3 className="text-sm font-semibold mb-2">Dê uma avaliação de 1 à 5</h3>
-                        <StarRating 
-                            score={0} 
-                            onChange={() => {}} 
+                        <h3 className="text-sm font-semibold mb-2">Dê uma avaliação de 0 à 5</h3>
+                        <CommitteeStarRating 
+                            score={currentScore} 
+                            onChange={onStarRating || (() => {})} 
                         />
                     </div>
                     
@@ -195,12 +207,15 @@ function EvaluationSummary({
                             className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F]"
                             rows={4}
                             placeholder="Justifique sua nota"
+                            value={currentJustification}
+                            onChange={(e) => onJustification?.(e.target.value)}
                         />
                     </div>
 
                     <div className="flex justify-end">
                         <button
                             className="px-4 py-2 bg-[#08605F] text-white rounded-md hover:bg-[#064a49] transition-colors"
+                            onClick={onConcluir}
                         >
                             Concluir
                         </button>
