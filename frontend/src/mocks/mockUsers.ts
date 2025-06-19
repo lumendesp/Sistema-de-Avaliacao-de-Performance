@@ -13,7 +13,7 @@ export const mockUsers: UserAuthPassword[] = [
     name: "Ana Souza",
     email: "ana@rocketcorp.com",
     password: "gestor123",
-    roles: ["MANAGER"],
+    roles: ["MANAGER", "COLLABORATOR"],
   },
   {
     id: 3,
@@ -22,4 +22,18 @@ export const mockUsers: UserAuthPassword[] = [
     password: "admin123",
     roles: ["ADMIN"],
   },
+  {
+    id: 4,
+    name: "Bruno Castro",
+    email: "bruno@rocketcorp.com",
+    password: "rh123",
+    roles: ["HR", "COLLABORATOR"],
+  },
+  {
+    id: 5,
+    name: "Luciana Torres",
+    email: "luciana@rocketcorp.com",
+    password: "comite123",
+    roles: ["COMMITTEE", "COLLABORATOR"],
+  }
 ];

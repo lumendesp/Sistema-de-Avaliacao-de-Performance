@@ -1,15 +1,18 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-
 import { ProtectedRoute } from "../components/ProtectedRoute";
 
 import CollaboratorLayout from "../layouts/CollaboratorLayout";
+import ManagerLayout from "../layouts/ManagerLayout";
+import CommitteeLayout from "../layouts/CommitteeLayout";
+import RHLayout from "../layouts/RHLayout";
 
 import Dashboard from "../pages/collaborator/Dashboard";
 import EvaluationLayout from "../layouts/EvaluationLayout";
-import SelfEvaluation from "../pages/collaborator/evoluation/SelfEvaluation";
-import PeerEvaluation from "../pages/collaborator/evoluation/PeerEvaluation";
-import MentorEvaluation from "../pages/collaborator/evoluation/MentorEvaluation";
-import ReferenceEvaluation from "../pages/collaborator/evoluation/ReferenceEvaluation";
+import SelfEvaluation from "../pages/collaborator/evaluation/SelfEvaluation";
+import PeerEvaluation from "../pages/collaborator/evaluation/PeerEvaluation";
+import MentorEvaluation from "../pages/collaborator/evaluation/MentorEvaluation";
+import ReferenceEvaluation from "../pages/collaborator/evaluation/ReferenceEvaluation";
+
 import Login from "../pages/login/Login";
 import Unauthorized from "../pages/login/Unauthorized";
 
@@ -42,14 +45,7 @@ const AppRoutes = () => (
             </ProtectedRoute>
           }
         >
-          <Route
-            index
-            element={
-              <ProtectedRoute allowedRoles={["COLLABORATOR", "ADMIN"]}>
-                <Navigate to="self-evaluation" />
-              </ProtectedRoute>
-            }
-          />
+          <Route index element={<Navigate to="self-evaluation" />} />
           <Route
             path="self-evaluation"
             element={
@@ -84,8 +80,33 @@ const AppRoutes = () => (
           />
         </Route>
       </Route>
+      <Route
+        path="/manager"
+        element={
+          <ProtectedRoute allowedRoles={["MANAGER", "ADMIN"]}>
+            <ManagerLayout />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/committee"
+        element={
+          <ProtectedRoute allowedRoles={["COMMITTEE", "ADMIN"]}>
+            <CommitteeLayout />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/rh"
+        element={
+          <ProtectedRoute allowedRoles={["HR", "ADMIN"]}>
+            <RHLayout />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   </BrowserRouter>
 );
+
 
 export default AppRoutes;
