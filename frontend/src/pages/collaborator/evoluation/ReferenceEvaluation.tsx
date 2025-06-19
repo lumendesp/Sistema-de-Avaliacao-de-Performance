@@ -1,5 +1,5 @@
-import CollaboratorsSearchBar from "../../components/CollaboratorsSearchBar";
-import ReferenceEvaluationForm from "../../components/ReferenceEvaluationForm/ReferenceEvaluationForm";
+import CollaboratorsSearchBar from "../../../components/CollaboratorsSearchBar";
+import ReferenceEvaluationForm from "../../../components/ReferenceEvaluationForm/ReferenceEvaluationForm";
 
 const ReferenceEvaluation = () => {
   return (
