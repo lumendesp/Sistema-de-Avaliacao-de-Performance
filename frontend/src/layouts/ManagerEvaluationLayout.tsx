@@ -43,7 +43,8 @@ export default function ManagerEvaluationLayout() {
           <ul className="flex px-8 pt-4 gap-16 text-lg text-gray-600 font-semibold">
             <li>
               <NavLink
-                to="/gestor/avaliacao"
+                to=""
+                end
                 className={({ isActive }) =>
                   isActive
                     ? "border-b-2 border-teal-700 pb-3 text-teal-700 flex items-center gap-2"
@@ -54,10 +55,28 @@ export default function ManagerEvaluationLayout() {
               </NavLink>
             </li>
             <li>
-              <NavLink to="/gestor/360">Avaliação 360</NavLink>
+              <NavLink
+                to="360"
+                className={({ isActive }) =>
+                  isActive
+                    ? "border-b-2 border-teal-700 pb-3 text-teal-700 flex items-center gap-2"
+                    : "pb-3 flex items-center gap-2"
+                }
+              >
+                Avaliação 360
+              </NavLink>
             </li>
             <li>
-              <NavLink to="/gestor/historico">Histórico</NavLink>
+              <NavLink
+                to="historico"
+                className={({ isActive }) =>
+                  isActive
+                    ? "border-b-2 border-teal-700 pb-3 text-teal-700 flex items-center gap-2"
+                    : "pb-3 flex items-center gap-2"
+                }
+              >
+                Histórico
+              </NavLink>
             </li>
           </ul>
         </nav>
