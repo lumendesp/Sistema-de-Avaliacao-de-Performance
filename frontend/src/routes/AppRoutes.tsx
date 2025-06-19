@@ -1,11 +1,15 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
 import CollaboratorLayout from '../layouts/CollaboratorLayout';
-import Dashboard from '../pages/collaborator/Dashboard';
 import EvaluationLayout from '../layouts/EvaluationLayout';
-import SelfEvaluation from '../pages/collaborator/evoluation/SelfEvaluation';
-import PeerEvaluation from '../pages/collaborator/evoluation/PeerEvaluation';
-import MentorEvaluation from '../pages/collaborator/evoluation/MentorEvaluation';
-import ReferenceEvaluation from '../pages/collaborator/evoluation/ReferenceEvaluation';
+import ManagerLayout from '../layouts/ManagerLayout';
+
+import Dashboard from '../pages/collaborator/Dashboard';
+import SelfEvaluation from '../pages/collaborator/evaluation/SelfEvaluation';
+import PeerEvaluation from '../pages/collaborator/evaluation/PeerEvaluation';
+import MentorEvaluation from '../pages/collaborator/evaluation/MentorEvaluation';
+import ReferenceEvaluation from '../pages/collaborator/evaluation/ReferenceEvaluation';
+
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -19,6 +23,8 @@ const AppRoutes = () => (
           <Route path="mentor-evaluation" element={<MentorEvaluation />} />
           <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
         </Route>
+      </Route>
+      <Route path="/manager" element={<ManagerLayout />}>   
       </Route>
     </Routes>
   </BrowserRouter>
