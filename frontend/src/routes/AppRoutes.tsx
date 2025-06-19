@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import CollaboratorLayout from '../layouts/CollaboratorLayout';
+import CommitteeLayout from '../layouts/CommitteeLayout';
 import Dashboard from '../pages/collaborator/Dashboard';
 import PeerEvaluation from '../pages/collaborator/PeerEvaluation';
 import MentorEvaluation from '../pages/mentor/MentorEvaluation';
@@ -17,8 +18,10 @@ const AppRoutes = () => (
         <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
       </Route>
 
-      <Route path="/committee" element={<Committee />} />
-      <Route path="/committee/equalization" element={<Equalization />} />
+      <Route path="/committee" element={<CommitteeLayout />}>
+        <Route index element={<Committee />} />
+        <Route path="equalization" element={<Equalization />} />
+      </Route>
 
     </Routes>
   </BrowserRouter>

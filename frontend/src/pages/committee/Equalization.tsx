@@ -135,11 +135,8 @@ function Equalization(){
     };
 
     return(
-        <div className="flex w-full h-screen">
-            <div className="w-[15%] bg-white-200"> {/* //navbar ao lado */}
-                <h1>Nav bar ao lado</h1>
-            </div>
-            <div className="w-[85%] bg-gray-300">
+        <div className="w-full h-screen">
+            <div className="w-full bg-gray-300 h-full">
                 <div className="bg-white w-full h-[15%] p-4 box-border border border-gray-300">
                     <h1 className="text-left mb-4 mt-4 ml-4 text-2xl font-semibold text-gray-800">
                         Equalizações
