@@ -1,25 +1,30 @@
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Para deslogar automaticamente ao acessar /login
+  useEffect(() => {
+    logout();
+  }, []);
 
   const handleLogin = () => {
     const success = login(email, password);
     if (success) navigate("/collaborator");
-    else setError("Credenciais inválidas");
+    else setError("Invalid credentials");
   };
 
   return (
     <div className="bg-[#08605F1F] h-screen w-full flex items-center justify-center select-none">
       <div className="bg-white flex w-full max-w-4xl rounded-3xl shadow-xl">
-        {/* Lado esquerdo */}
+
         <div className="bg-white flex flex-col justify-center gap-6 w-1/2 rounded-3xl py-20 px-12">
           <div className="text-center flex flex-col gap-3">
             <p className="text-4xl font-bold text-[#1D1D1D]">Sign In</p>
@@ -36,8 +41,12 @@ const Login = () => {
                 id="email"
                 type="email"
                 placeholder="you@email.com"
+                required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError("");
+                }}
                 className="w-full border-none rounded-md p-3 text-sm focus:outline-none bg-gray-100"
               />
             </div>
@@ -52,8 +61,12 @@ const Login = () => {
                 id="password"
                 type="password"
                 placeholder="••••••••"
+                required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError("");
+                }}
                 className="w-full border-none rounded-md p-3 text-sm focus:outline-none bg-gray-100"
               />
             </div>
@@ -70,7 +83,6 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Lado direito */}
         <div className="w-1/2 bg-[#08605F] text-white flex flex-col justify-center items-center text-center py-20 px-12 rounded-r-3xl rounded-l-[100px] gap-8">
           <p className="text-2xl font-bold mb-2">Welcome to RPE</p>
           <p className="text-sm text-white/80">
