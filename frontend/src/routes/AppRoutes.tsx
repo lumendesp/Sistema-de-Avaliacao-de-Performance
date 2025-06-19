@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import CollaboratorLayout from '../layouts/CollaboratorLayout';
 import EvaluationLayout from '../layouts/EvaluationLayout';
 import ManagerLayout from '../layouts/ManagerLayout';
+import CommitteeLayout from '../layouts/CommitteeLayout';
 import RHLayout from '../layouts/RHLayout';
 
 import Dashboard from '../pages/collaborator/Dashboard';
@@ -26,6 +27,8 @@ const AppRoutes = () => (
         </Route>
       </Route>
       <Route path="/manager" element={<ManagerLayout />}>   
+      </Route>
+      <Route path="/committee" element={<CommitteeLayout />}>
       </Route>
       <Route path="/rh" element={<RHLayout />}>
       </Route>
