@@ -1,24 +1,25 @@
 import { NavLink } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
-import { LuLayoutDashboard } from 'react-icons/lu';
-import { PiPencilSimpleLineBold } from 'react-icons/pi';
+import dashboardIcon from '../../assets/dashboard.svg';
+import evaluationIcon from '../../assets/evaluation.svg';
+import evolutionIcon from '../../assets/evolution.svg';
 
 const menuItems = [
   {
     path: '/collaborator',
     label: 'Dashboard',
-    icon: <LuLayoutDashboard size={18} />,
+    icon: <img src={dashboardIcon} alt="Dashboard" className="w-5 h-5" />,
   },
   {
     path: '/collaborator/evaluation',
     label: 'Avaliação de ciclo',
-    icon: <PiPencilSimpleLineBold size={18} />,
+    icon: <img src={evaluationIcon} alt="Avaliação de ciclo" className="w-5 h-5" />,
     badge: true,
   },
   {
     path: '/collaborator/progress',
     label: 'Evolução',
-    icon: <LuLayoutDashboard size={18} />,
+    icon: <img src={evolutionIcon} alt="Evolução" className="w-5 h-5" />,
   },
 ];
 
@@ -30,7 +31,6 @@ const SidebarCollaborator = () => {
           <div className="w-5 h-5 bg-green-main rounded-sm mr-2" />
           <span className="font-bold text-lg text-green-main">RPE</span>
         </div>
-
         <nav>
           <ul className="flex flex-col gap-3">
             {menuItems.map(({ path, label, icon, badge }) => (
@@ -64,10 +64,9 @@ const SidebarCollaborator = () => {
           </div>
           <p className="text-sm text-gray-700 font-medium">Colaborador 1</p>
         </div>
-
         <NavLink
           to="/logout"
-          className="flex items-center gap-2 text-sm text-green-main font-medium hover:underline pl-2"
+          className="flex items-center gap-2 text-sm text-green-main font-bold hover:underline pl-2"
         >
           <FiLogOut size={16} />
           Logout

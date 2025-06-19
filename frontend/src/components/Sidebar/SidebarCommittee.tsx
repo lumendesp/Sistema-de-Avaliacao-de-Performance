@@ -1,18 +1,18 @@
 import { NavLink } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
-import { LuLayoutDashboard } from 'react-icons/lu';
-import { LuListChecks } from 'react-icons/lu';
+import dashboardIcon from '../../assets/dashboard.svg';
+import equalizationsIcon from '../../assets/equalization.svg';
 
 const menuItems = [
   {
     path: '/committee',
     label: 'Dashboard',
-    icon: <LuLayoutDashboard size={18} />,
+    icon: <img src={dashboardIcon} alt="Dashboard" className="w-5 h-5" />,
   },
   {
     path: '/committee/equalizations',
     label: 'Equalizações',
-    icon: <LuListChecks size={18} />,
+    icon: <img src={equalizationsIcon} alt="Equalizações" className="w-5 h-5" />,
     badge: true,
   },
 ];
@@ -20,13 +20,11 @@ const menuItems = [
 const SidebarCommittee = () => {
   return (
     <aside className="fixed top-0 left-0 w-64 h-screen bg-white border-r z-50 flex flex-col justify-between py-6 px-4">
-      {/* Topo */}
       <div>
         <div className="flex items-center mb-10 pl-2">
           <div className="w-5 h-5 bg-green-main rounded-sm mr-2" />
           <span className="font-bold text-lg text-green-main">RPE</span>
         </div>
-
         <nav>
           <ul className="flex flex-col gap-3">
             {menuItems.map(({ path, label, icon, badge }) => (
@@ -53,8 +51,6 @@ const SidebarCommittee = () => {
           </ul>
         </nav>
       </div>
-
-      {/* Rodapé */}
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-2 pl-2">
           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-700 font-bold">
@@ -65,7 +61,7 @@ const SidebarCommittee = () => {
 
         <NavLink
           to="/logout"
-          className="flex items-center gap-2 text-sm text-green-main font-medium hover:underline pl-2"
+          className="flex items-center gap-2 text-sm text-green-main font-bold hover:underline pl-2"
         >
           <FiLogOut size={16} />
           Logout
