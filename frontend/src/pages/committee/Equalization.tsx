@@ -189,6 +189,7 @@ function Equalization(){
                                         <div className="mt-4 p-4 border-t border-gray-200">
                                             <div className="mb-6">
                                                 <EvaluationSummary 
+                                                    id={collab.id}
                                                     name={collab.name}
                                                     role={collab.role}                                                
                                                     autoAvaliacao={collab.autoAvaliacao}

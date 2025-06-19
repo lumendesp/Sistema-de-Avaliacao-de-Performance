@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import CommitteeStarRating from "./CommitteeStarRating";
 import html2canvas from 'html2canvas';
 import jsPDF from "jspdf";
 import downloadIcon from '../../assets/committee/pdf-download.png';
 import GenAITextBox from "./GenAITextBox";
+import * as XLSX from 'xlsx';
 
 
 
@@ -58,6 +59,7 @@ interface EvaluationSummaryProps {
     currentScore?: number;
     currentJustification?: string;
     isEditing?: boolean;
+    id?: string;
 }
 
 function EvaluationSummary({ 
@@ -73,7 +75,8 @@ function EvaluationSummary({
     onConcluir,
     currentScore = 0,
     currentJustification = '',
-    isEditing = false
+    isEditing = false,
+    id
 }: EvaluationSummaryProps) {
     
     const hasAllGrades =
@@ -83,6 +86,8 @@ function EvaluationSummary({
         typeof notaFinal === 'number';
       
     const printRef = React.useRef<HTMLDivElement>(null);
+    const [showDownloadModal, setShowDownloadModal] = useState(false);
+    const [showSpreadsheetOptions, setShowSpreadsheetOptions] = useState(false);
 
     const handleDownloadPdf = async () => {
         const element = printRef.current;
@@ -101,8 +106,7 @@ function EvaluationSummary({
         tempDiv.style.backgroundColor = 'white';
         tempDiv.innerHTML = `
             <div style="text-align: center; margin-bottom: 40px;">
-                <h1 style="font-size: 24px; color: #08605F; margin-bottom: 8px;">Avaliação de Performance</h1>
-                <div style="border-bottom: 2px solid #08605F; width: 100px; margin: 0 auto;"></div>
+                <h1 style="font-size: 28px; color: #08605F; margin-bottom: 8px;">Avaliação de Performance</h1>
             </div>
 
             <div style="margin-bottom: 30px;">
@@ -173,8 +177,103 @@ function EvaluationSummary({
         document.body.removeChild(tempDiv);
     }
 
+    // CSV/Excel download logic
+    const handleDownloadSpreadsheet = (type: 'csv' | 'xlsx') => {
+        const data = [
+            {
+                ID: id || '',
+                Name: name,
+                Position: role,
+                'Self-assessment': autoAvaliacao,
+                '360 assessment': avaliacao360,
+                'Manager grade': notaGestor,
+                'Final grade': notaFinal ?? ''
+            }
+        ];
+        if (type === 'csv') {
+            const csvRows = [
+                Object.keys(data[0]).join(','),
+                ...data.map(row => Object.values(row).join(','))
+            ];
+            const csvContent = csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Avaliacao-${name}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } else {
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Avaliacao');
+            XLSX.writeFile(wb, `Avaliacao-${name}.xlsx`);
+        }
+        setShowDownloadModal(false);
+        setShowSpreadsheetOptions(false);
+    };
+
     return (
         <div className="space-y-6">
+            {/* Download Modal */}
+            {showDownloadModal && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                    <div className="bg-white rounded-lg shadow-lg p-8 min-w-[300px] flex flex-col items-center">
+                        {!showSpreadsheetOptions ? (
+                            <>
+                                <h2 className="text-lg font-semibold mb-4">Escolha o formato de download</h2>
+                                <button
+                                    className="mb-3 px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
+                                    onClick={() => {
+                                        setShowDownloadModal(false);
+                                        handleDownloadPdf();
+                                    }}
+                                >
+                                    PDF
+                                </button>
+                                <button
+                                    className="px-6 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 w-full"
+                                    onClick={() => setShowSpreadsheetOptions(true)}
+                                >
+                                    Planilha
+                                </button>
+                                <button
+                                    className="mt-4 text-sm text-gray-500 hover:underline"
+                                    onClick={() => setShowDownloadModal(false)}
+                                >
+                                    Cancelar
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <h2 className="text-lg font-semibold mb-4">Escolha o formato da planilha</h2>
+                                <button
+                                    className="mb-3 px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
+                                    onClick={() => handleDownloadSpreadsheet('csv')}
+                                >
+                                    CSV
+                                </button>
+                                <button
+                                    className="px-6 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 w-full"
+                                    onClick={() => handleDownloadSpreadsheet('xlsx')}
+                                >
+                                    Excel
+                                </button>
+                                <button
+                                    className="mt-4 text-sm text-gray-500 hover:underline"
+                                    onClick={() => {
+                                        setShowSpreadsheetOptions(false);
+                                        setShowDownloadModal(false);
+                                    }}
+                                >
+                                    Cancelar
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* Content for PDF */}
             <div ref={printRef} className="space-y-6">
                 <div className="flex justify-between items-center gap-4">
@@ -187,7 +286,6 @@ function EvaluationSummary({
                 </div>
 
                 <GenAITextBox/>
-
 
             </div>
 
@@ -224,11 +322,10 @@ function EvaluationSummary({
             ) : (
                 <div className="flex justify-end gap-4">
                     <button 
-                        onClick={handleDownloadPdf}
-                        className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-gray-100 hover:text-white transition-colors"
+                        onClick={() => setShowDownloadModal(true)}
+                        className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-gray-100 hover:text-white transition-colors flex items-center gap-2"
                     >
                         <img src={downloadIcon} alt="Download PDF" className="w-5 h-5" />
-
                     </button>
                     <button 
                         onClick={onEdit}
