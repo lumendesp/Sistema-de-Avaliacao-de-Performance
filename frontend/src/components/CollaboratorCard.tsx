@@ -1,9 +1,11 @@
 import React from "react";
 import arrowIcon from "../assets/arrowRight.png";
 import type { Props } from "../types/collaboratorStatus.tsx";
+import { useNavigate } from "react-router-dom";
 
 export default function CollaboratorCard({ collaborator }: Props) {
-  const { name, role, status, selfScore, managerScore } = collaborator;
+  const { id, name, role, status, selfScore, managerScore } = collaborator;
+  const navigate = useNavigate();
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -23,8 +25,7 @@ export default function CollaboratorCard({ collaborator }: Props) {
     .join("");
 
   const handleClick = () => {
-    // Coloque aqui o que deve acontecer ao clicar no card (ex: navegação)
-    console.log("Card clicado:", name);
+    navigate(`/gestor/avaliacao/${id}`);
   };
 
   return (

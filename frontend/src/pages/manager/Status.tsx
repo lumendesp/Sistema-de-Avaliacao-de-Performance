@@ -4,7 +4,7 @@ import CollaboratorCard from "../../components/CollaboratorCard.tsx";
 import type { Collaborator } from "../../types/collaboratorStatus.tsx";
 import { useState } from "react";
 
-const collaborators: Collaborator[] = [
+export const collaborators: Collaborator[] = [
   {
     id: 1,
     name: "Colaborador 1",
@@ -56,6 +56,10 @@ export default function Collaborators() {
 
   return (
     <div className="flex flex-col gap-4 w-full relative">
+      <div className="fixed top-0 left-0 right-0 h-[88px] bg-white flex items-center px-6 shadow-sm z-20">
+        <h1 className="text-2xl font-bold text-gray-800">Colaboradores</h1>
+      </div>
+      <div className="h-[88px]" />
       {/* Barra de busca */}
       <div className="flex items-center gap-2 rounded-xl py-4 px-7 w-full bg-white/50">
         <input
@@ -71,26 +75,33 @@ export default function Collaborators() {
       </div>
 
       {/* Lista dos colaboradores */}
-      {search.trim() !== "" && (
-        <div className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-md px-2 py-3 flex flex-col gap-2 z-10">
+      <div
+        className={
+          search.trim() !== ""
+            ? "absolute top-full mt-2 w-full bg-white rounded-xl shadow-md px-2 py-3 flex flex-col gap-2 z-10"
+            : "flex flex-col gap-2 w-full"
+        }
+      >
+        {search.trim() !== "" && (
           <p className="ml-2 text-sm font-semibold text-[#334155]">
             Resultados
           </p>
-
-          {filtered.length > 0 ? (
-            filtered.map((collaborator) => (
+        )}
+        {(search.trim() !== "" ? filtered : collaborators).length > 0 ? (
+          (search.trim() !== "" ? filtered : collaborators).map(
+            (collaborator) => (
               <CollaboratorCard
                 key={collaborator.id}
                 collaborator={collaborator}
               />
-            ))
-          ) : (
-            <p className="text-sm text-[#1D1D1D]/50 p-2">
-              Nenhum colaborador encontrado.
-            </p>
-          )}
-        </div>
-      )}
+            )
+          )
+        ) : (
+          <p className="text-sm text-[#1D1D1D]/50 p-2">
+            Nenhum colaborador encontrado.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
