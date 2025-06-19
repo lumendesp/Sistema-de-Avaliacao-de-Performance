@@ -1,8 +1,8 @@
-import RHMetricsCard from '../../components/RHMetricsCard/RHMetricsCard';
-import RHCircularProgressCard from '../../components/RHCircularProgressCard/RHCircularProgressCard';
-import CollaboratorRow from '../../components/CollaboratorRow/CollaboratorRow';
-import BarChartPlaceholder from '../../components/BarChartPlaceholder/BarChartPlaceholder';
-import { mockCollaborators } from '../../data/rh_data';
+import RHMetricsCard from '../../../components/RH/RHMetricsCard/RHMetricsCard';
+import RHCircularProgressCard from '../../../components/RH/RHCircularProgressCard/RHCircularProgressCard';
+import CollaboratorRow from '../../../components/RH/CollaboratorRow/CollaboratorRow';
+import BarChartPlaceholder from '../../../components/RH/BarChartPlaceholder/BarChartPlaceholder';
+import { mockCollaborators } from '../../../data/rh_data';
 import { DocumentMinusIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
 
 function RHDashboard() {

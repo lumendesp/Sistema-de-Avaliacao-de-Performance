@@ -1,4 +1,4 @@
-import { type EvaluationStatus } from '../../types/evaluations';
+import { type EvaluationStatus } from '../../../types/evaluations';
 
 interface StatusBadgeProps {
     status: EvaluationStatus;

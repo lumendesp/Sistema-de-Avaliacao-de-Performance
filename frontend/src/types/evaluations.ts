@@ -1,6 +1,11 @@
-// src/types/evaluations.ts
-
 export type EvaluationStatus = 'finalizado' | 'pendente';
+
+export interface AssessmentScores {
+    autoAvaliacao?: number;
+    avaliacao360?: number;
+    notaGestor?: number;
+    notaFinal?: number;
+}
 
 export interface Collaborator {
     id: number;
@@ -9,4 +14,8 @@ export interface Collaborator {
     avatarInitials: string;
     status: EvaluationStatus;
     unit: string;
+    autoAvaliacao?: number;
+    avaliacao360?: number;
+    notaGestor?: number;
+    notaFinal?: number;
 }
