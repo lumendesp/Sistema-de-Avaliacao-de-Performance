@@ -1,3 +1,0 @@
-ignoredBuiltDependencies:
-  - '@prisma/engines'
-  - prisma
