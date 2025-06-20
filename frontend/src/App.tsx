@@ -1,15 +1,12 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import RHDashboard from './pages/RH/RHDashboard/RHDashboard';
-import RHCollaboratorsPage from './pages/RH/RHCollaborators/RHCollaborators';
+import "./index.css";
+import AppRoutes from "./routes/AppRoutes";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/rh" element={<RHDashboard />} />
-        <Route path="/rhcollaborators" element={<RHCollaboratorsPage />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   );
 }
 
