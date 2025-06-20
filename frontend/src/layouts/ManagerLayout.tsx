@@ -1,11 +1,15 @@
-import { Outlet } from "react-router-dom";
+import { Outlet } from 'react-router-dom';
+import SidebarManager from '../components/Sidebar/SidebarManager';
 
-export default function ManagerLayout() {
+const ManagerLayout = () => {
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="p-6">
+    <div className="min-h-screen">
+      <SidebarManager />
+      <main className="ml-64 bg-gray-50">
         <Outlet />
-      </div>
+      </main>
     </div>
   );
-}
+};
+
+export default ManagerLayout;
