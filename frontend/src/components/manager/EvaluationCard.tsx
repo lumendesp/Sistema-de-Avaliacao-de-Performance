@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import RatingStars from "./RatingStars.tsx";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import type { EvaluationCriterion } from "../types/EvaluationManager.tsx";
+import type { EvaluationCriterion } from "../../types/EvaluationManager.tsx";
 
 interface Props {
   criterion: EvaluationCriterion;

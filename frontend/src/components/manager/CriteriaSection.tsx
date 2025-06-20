@@ -1,6 +1,6 @@
 import React from "react";
-import EvaluationCard from "../components/EvaluationCard.tsx";
-import type { EvaluationCriterion } from "../types/EvaluationManager.tsx";
+import EvaluationCard from "./EvaluationCard.tsx";
+import type { EvaluationCriterion } from "../../types/EvaluationManager.tsx";
 
 interface CriteriaSectionProps {
   title: string;
