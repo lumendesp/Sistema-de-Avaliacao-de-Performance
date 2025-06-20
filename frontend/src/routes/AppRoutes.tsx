@@ -15,6 +15,8 @@ import ReferenceEvaluation from "../pages/collaborator/evaluation/ReferenceEvalu
 
 import Login from "../pages/login/Login";
 import Unauthorized from "../pages/login/Unauthorized";
+import Profile from "../pages/profile/Profile";
+
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -104,9 +106,10 @@ const AppRoutes = () => (
           </ProtectedRoute>
         }
       />
+
+      <Route path="/perfil" element={<Profile />} />
     </Routes>
   </BrowserRouter>
 );
-
-
+  
 export default AppRoutes;
