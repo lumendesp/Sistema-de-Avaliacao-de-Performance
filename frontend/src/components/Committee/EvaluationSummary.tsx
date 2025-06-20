@@ -25,10 +25,10 @@ const Criterion = ({ name, score }: CriterionProps) => {
     };
 
     return (
-        <div className="flex flex-col items-center gap-2 w-1/3">
+        <div className="flex flex-col items-center gap-2 w-full sm:w-1/3">
             <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">{name}</span>
-                <span className={`text-sm font-bold ${getColorClass(score)}`}>
+                <span className="text-xs sm:text-sm font-medium text-gray-700">{name}</span>
+                <span className={`text-xs sm:text-sm font-bold ${getColorClass(score)}`}>
                     {score.toFixed(1)}
                 </span>
             </div>
@@ -260,11 +260,11 @@ function EvaluationSummary({
         <div className="space-y-6">
             {/* Download Modal */}
             {showDownloadModal && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-                    <div className="bg-white rounded-lg shadow-lg p-8 min-w-[300px] flex flex-col items-center">
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 w-full max-w-sm flex flex-col items-center">
                         {!showSpreadsheetOptions ? (
                             <>
-                                <h2 className="text-lg font-semibold mb-4">Escolha o formato de download</h2>
+                                <h2 className="text-lg font-semibold mb-4 text-center">Escolha o formato de download</h2>
                                 <button
                                     className="mb-3 px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
                                     onClick={() => {
@@ -288,7 +288,7 @@ function EvaluationSummary({
                             </>
                         ) : (
                             <>
-                                <h2 className="text-lg font-semibold mb-4">Escolha o formato da planilha</h2>
+                                <h2 className="text-lg font-semibold mb-4 text-center">Escolha o formato da planilha</h2>
                                 <button
                                     className="mb-3 px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
                                     onClick={() => handleDownloadSpreadsheet('csv')}
@@ -315,7 +315,7 @@ function EvaluationSummary({
 
             {/* Content for PDF */}
             <div ref={printRef} className="space-y-6">
-                <div className="flex justify-between items-center gap-4">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                     <Criterion name="Autoavaliação" score={autoAvaliacao} />
                     <Criterion name="Nota Gestor" score={notaGestor} />
                     <Criterion name="Avaliação 360" score={avaliacao360} />
@@ -359,12 +359,13 @@ function EvaluationSummary({
                     </div>
                 </>
             ) : (
-                <div className="flex justify-end gap-4">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4">
                     <button 
                         onClick={() => setShowDownloadModal(true)}
-                        className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-gray-100 hover:text-white transition-colors flex items-center gap-2"
+                        className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-gray-100 hover:text-white transition-colors flex items-center justify-center gap-2"
                     >
                         <img src={downloadIcon} alt="Download PDF" className="w-5 h-5" />
+                        <span className="hidden sm:inline">Download</span>
                     </button>
                     <button 
                         onClick={onEdit}

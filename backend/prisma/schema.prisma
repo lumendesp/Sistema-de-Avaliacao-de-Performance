@@ -48,6 +48,10 @@ model User {
   // Referências
   referencesProvided         Reference[]         @relation("ReferenceProvider")
   referencesReceived         Reference[]         @relation("ReferenceReceiver")
+
+  // Avaliações Finais
+  finalEvaluationsGiven      FinalEvaluation[]   @relation("FinalEvaluator")
+  finalEvaluationsReceived   FinalEvaluation[]   @relation("FinalEvaluatee")
 }
 
 model PeerEvaluation {
@@ -73,6 +77,19 @@ model MentorEvaluation {
 
   evaluator     User     @relation("MentorEvaluator", fields: [evaluatorId], references: [id])
   evaluatee     User     @relation("MentorEvaluatee", fields: [evaluateeId], references: [id])
+}
+
+model FinalEvaluation {
+  id            Int      @id @default(autoincrement())
+  evaluatorId   Int
+  evaluateeId   Int
+  createdAt     DateTime @default(now())
+  editedAt      DateTime
+  score         Float
+  justification String
+
+  evaluator     User     @relation("FinalEvaluator", fields: [evaluatorId], references: [id])
+  evaluatee     User     @relation("FinalEvaluatee", fields: [evaluateeId], references: [id])
 }
 
 model Reference {
