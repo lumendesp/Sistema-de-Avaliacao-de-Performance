@@ -5,23 +5,24 @@ import CollaboratorLayout from "../layouts/CollaboratorLayout";
 import ManagerLayout from "../layouts/ManagerLayout";
 import CommitteeLayout from "../layouts/CommitteeLayout";
 import RHLayout from "../layouts/RHLayout";
+import EvaluationLayout from "../layouts/EvaluationLayout";
+import ComparisonLayout from "../layouts/ComparisonLayout"; // novo
 
 import Dashboard from "../pages/collaborator/Dashboard";
-import EvaluationLayout from "../layouts/EvaluationLayout";
 import SelfEvaluation from "../pages/collaborator/evaluation/SelfEvaluation";
 import PeerEvaluation from "../pages/collaborator/evaluation/PeerEvaluation";
 import MentorEvaluation from "../pages/collaborator/evaluation/MentorEvaluation";
 import ReferenceEvaluation from "../pages/collaborator/evaluation/ReferenceEvaluation";
+import ComparisonEvaluation from "../pages/collaborator/evaluation/ComparisonEvaluation"; // novo
 
 import Login from "../pages/login/Login";
 import Unauthorized from "../pages/login/Unauthorized";
 import Profile from "../pages/profile/Profile";
 
-
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
-      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<Login />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route
         path="/collaborator"
@@ -48,38 +49,23 @@ const AppRoutes = () => (
           }
         >
           <Route index element={<Navigate to="self-evaluation" />} />
-          <Route
-            path="self-evaluation"
-            element={
-              <ProtectedRoute allowedRoles={["COLLABORATOR", "ADMIN"]}>
-                <SelfEvaluation />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="peer-evaluation"
-            element={
-              <ProtectedRoute allowedRoles={["COLLABORATOR", "ADMIN"]}>
-                <PeerEvaluation />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="mentor-evaluation"
-            element={
-              <ProtectedRoute allowedRoles={["COLLABORATOR", "ADMIN"]}>
-                <MentorEvaluation />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="reference-evaluation"
-            element={
-              <ProtectedRoute allowedRoles={["COLLABORATOR", "ADMIN"]}>
-                <ReferenceEvaluation />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="self-evaluation" element={<SelfEvaluation />} />
+          <Route path="peer-evaluation" element={<PeerEvaluation />} />
+          <Route path="mentor-evaluation" element={<MentorEvaluation />} />
+          <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
+        </Route>
+        <Route
+          path="evaluation-comparison"
+          element={
+            <ProtectedRoute allowedRoles={["COLLABORATOR", "ADMIN"]}>
+              <ComparisonLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<ComparisonEvaluation />} />
+          <Route path="peer-evaluation" element={<PeerEvaluation />} />
+          <Route path="mentor-evaluation" element={<MentorEvaluation />} />
+          <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
         </Route>
       </Route>
       <Route
@@ -106,10 +92,9 @@ const AppRoutes = () => (
           </ProtectedRoute>
         }
       />
-
       <Route path="/perfil" element={<Profile />} />
     </Routes>
   </BrowserRouter>
 );
-  
+
 export default AppRoutes;
