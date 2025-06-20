@@ -3,7 +3,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaService } from './prisma.service';
 
+import { CollaboratorModule } from './collaborator/collaborator.module';
+
 @Module({
+  imports: [CollaboratorModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })
