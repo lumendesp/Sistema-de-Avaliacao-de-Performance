@@ -18,7 +18,7 @@ const menuItems = [
 ];
 
 const SidebarManager = () => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -63,10 +63,10 @@ const SidebarManager = () => {
           tabIndex={0}
         >
           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-700 font-bold group-hover:ring-2 group-hover:ring-green-main transition">
-            GS
+            {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'GS'}
           </div>
           <p className="text-sm text-gray-700 font-medium group-hover:underline">
-            Gestor(a)
+            {user?.name || 'Gestor(a)'}
           </p>
         </button>
         <button
