@@ -4,7 +4,7 @@ import RHCollaboratorInfoCard from '../../../components/RH/RHCollaboratorInfoCar
 
 const RHCollaboratorsPage: React.FC = () => {
     return (
-        <div className="w-full min-h-screen bg-gray-100 p-8 font-sans">
+        <>
             <h1 className="text-3xl font-bold text-gray-800 mb-6">Colaboradores</h1>
 
             {/* Lista de Colaboradores */}
@@ -13,7 +13,7 @@ const RHCollaboratorsPage: React.FC = () => {
                     <RHCollaboratorInfoCard key={collaborator.id} collaborator={collaborator} />
                 ))}
             </div>
-        </div>
+        </>
     );
 };
 

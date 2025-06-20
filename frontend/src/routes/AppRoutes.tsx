@@ -16,6 +16,9 @@ import ReferenceEvaluation from "../pages/collaborator/evaluation/ReferenceEvalu
 import Login from "../pages/login/Login";
 import Unauthorized from "../pages/login/Unauthorized";
 
+import RHDashboard from "../pages/RH/RHDashboard/RHDashboard";
+import RHCollaboratorsPage from "../pages/RH/RHCollaborators/RHCollaborators";
+
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
@@ -103,7 +106,16 @@ const AppRoutes = () => (
             <RHLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        {/* Rota Padrão para /rh -> Renderiza o Dashboard */}
+        <Route index element={<RHDashboard />} />
+
+        {/* Rota para /rh/collaborators -> Renderiza a Página de Colaboradores */}
+        <Route path="collaborators" element={<RHCollaboratorsPage />} />
+
+        {/* No futuro, a rota para /rh/criteria viria aqui */}
+        {/* <Route path="criteria" element={<PaginaDeCriterios />} /> */}
+      </Route>
     </Routes>
   </BrowserRouter>
 );

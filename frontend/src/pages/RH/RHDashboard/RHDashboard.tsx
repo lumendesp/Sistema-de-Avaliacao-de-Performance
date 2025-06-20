@@ -13,7 +13,7 @@ function RHDashboard() {
     const completionPercentage = Math.round((completed / total) * 100);
 
     return (
-        <div className="w-full min-h-screen bg-gray-100 p-8 font-sans">
+        <>
             <header className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl font-bold text-gray-800">Olá, RH</h1>
                 <div className="w-12 h-12 bg-gray-300 text-gray-700 rounded-full flex items-center justify-center font-bold text-lg">
@@ -70,7 +70,7 @@ function RHDashboard() {
                     </div>
                 </div>
             </section>
-        </div>
+        </>
     );
 }
 

@@ -8,12 +8,12 @@ importers:
 
   .:
     dependencies:
-      '@heroicons/react':
-        specifier: ^2.2.0
-        version: 2.2.0(react@19.1.0)
       '@fontsource/inter':
         specifier: ^5.2.6
         version: 5.2.6
+      '@heroicons/react':
+        specifier: ^2.2.0
+        version: 2.2.0(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -357,15 +357,13 @@ packages:
     resolution: {integrity: sha512-4SaFZCNfJqvk/kenHpI8xvN42DMaoycy4PzKc5otHxRswww1kAt82OlBuwRVLofCACCTZEcla2Ydxv8scMXaTg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-<<<<<<< HEAD
+  '@fontsource/inter@5.2.6':
+    resolution: {integrity: sha512-CZs9S1CrjD0jPwsNy9W6j0BhsmRSQrgwlTNkgQXTsAeDRM42LBRLo3eo9gCzfH4GvV7zpyf78Ozfl773826csw==}
+
   '@heroicons/react@2.2.0':
     resolution: {integrity: sha512-LMcepvRaS9LYHJGsF0zzmgKCUim/X3N/DQKc4jepAXJ7l8QxJ1PmxJzqplF2Z3FE4PqBAIGyJAQ/w4B5dsqbtQ==}
     peerDependencies:
       react: '>= 16 || ^19.0.0-rc'
-=======
-  '@fontsource/inter@5.2.6':
-    resolution: {integrity: sha512-CZs9S1CrjD0jPwsNy9W6j0BhsmRSQrgwlTNkgQXTsAeDRM42LBRLo3eo9gCzfH4GvV7zpyf78Ozfl773826csw==}
->>>>>>> feature/sidebar
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -1900,13 +1898,11 @@ snapshots:
       '@eslint/core': 0.15.0
       levn: 0.4.1
 
-<<<<<<< HEAD
+  '@fontsource/inter@5.2.6': {}
+
   '@heroicons/react@2.2.0(react@19.1.0)':
     dependencies:
       react: 19.1.0
-=======
-  '@fontsource/inter@5.2.6': {}
->>>>>>> feature/sidebar
 
   '@humanfs/core@0.19.1': {}
 
