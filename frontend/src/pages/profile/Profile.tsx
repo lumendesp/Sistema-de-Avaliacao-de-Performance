@@ -7,7 +7,7 @@ const userData = {
   role: "Gestor de Projetos",
   department: "Tecnologia da Informação",
   email: "colaborador1@rocketcorp.com",
-  accounts: ["Gestor", "Colaborador", "RH", "Comitê"],
+  accounts: ["Colaborador", "Gestor", "RH", "Comitê"],
 };
 
 const Profile: React.FC = () => {
