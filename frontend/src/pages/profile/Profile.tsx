@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import ProfileCard from "../../components/ProfileCard";
+import ProfileCard from "../../components/UserPofile/ProfileCard";
 
 const userData = {
   name: "Colaborador 1",
