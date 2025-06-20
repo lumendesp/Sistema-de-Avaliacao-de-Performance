@@ -10,64 +10,79 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-enum RoleType {
-  EMPLOYEE
+enum Role {
+  COLLABORATOR
   MANAGER
-  COMMITTEE
   HR
-}
-
-enum EvaluationType {
-  SELF
-  MANAGER
-  PEER
-  FINAL
-}
-
-enum EvaluationStatus {
-  PENDING
-  FINALIZED
-  EXPIRED
-}
-
-model User {
-  id        Int         @id @default(autoincrement())
-  email     String      @unique
-  name      String
-  roles     UserRole[]
-  evaluationsEvaluated Evaluation[] @relation("Evaluated")
-  evaluationsEvaluator Evaluation[] @relation("Evaluator")
-}
-
-model Role {
-  id    Int      @id @default(autoincrement())
-  type  RoleType @unique
-  users UserRole[]
+  COMMITTEE
+  ADMIN
 }
 
 model UserRole {
   userId Int
-  roleId Int
+  role   Role
+
   user   User @relation(fields: [userId], references: [id])
-  role   Role @relation(fields: [roleId], references: [id])
-  @@id([userId, roleId])
+
+  @@id([userId, role])
 }
 
-model Evaluation {
-  id            Int              @id @default(autoincrement())
-  evaluatedId   Int
-  evaluatorId   Int
-  type          EvaluationType
-  score         Float
-  justification String
-  status        EvaluationStatus
-  createdAt     DateTime         @default(now())
-  deadline      DateTime
+model User {
+  id                         Int                 @id @default(autoincrement())
+  name                       String
+  email                      String              @unique
+  password                   String
+  roles                      UserRole[]              // Array de papéis
 
-  evaluated     User             @relation("Evaluated", fields: [evaluatedId], references: [id])
-  evaluator     User             @relation("Evaluator", fields: [evaluatorId], references: [id])
+  // Avaliações de Pares
+  peerEvaluationsGiven       PeerEvaluation[]    @relation("PeerEvaluator")
+  peerEvaluationsReceived    PeerEvaluation[]    @relation("PeerEvaluatee")
+
+  // Avaliações de Mentor
+  mentorEvaluationsGiven     MentorEvaluation[]  @relation("MentorEvaluator")
+  mentorEvaluationsReceived  MentorEvaluation[]  @relation("MentorEvaluatee")
+
+  // Referências
+  referencesProvided         Reference[]         @relation("ReferenceProvider")
+  referencesReceived         Reference[]         @relation("ReferenceReceiver")
+}
+
+model PeerEvaluation {
+  id           Int      @id @default(autoincrement())
+  evaluatorId  Int
+  evaluateeId  Int
+  createdAt    DateTime @default(now())
+  score        Int
+  strengths    String
+  improvements String
+
+  evaluator    User     @relation("PeerEvaluator", fields: [evaluatorId], references: [id])
+  evaluatee    User     @relation("PeerEvaluatee", fields: [evaluateeId], references: [id])
+}
+
+model MentorEvaluation {
+  id            Int      @id @default(autoincrement())
+  evaluatorId   Int
+  evaluateeId   Int
+  createdAt     DateTime @default(now())
+  score         Int
+  justification String
+
+  evaluator     User     @relation("MentorEvaluator", fields: [evaluatorId], references: [id])
+  evaluatee     User     @relation("MentorEvaluatee", fields: [evaluateeId], references: [id])
+}
+
+model Reference {
+  id              Int      @id @default(autoincrement())
+  providerId      Int
+  receiverId      Int
+  createdAt       DateTime @default(now())
+  justification   String
+
+  provider        User     @relation("ReferenceProvider", fields: [providerId], references: [id])
+  receiver        User     @relation("ReferenceReceiver", fields: [receiverId], references: [id])
 }
