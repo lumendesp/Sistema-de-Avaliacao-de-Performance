@@ -29,8 +29,8 @@ const SidebarCollaborator = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();            // Limpa o usuário do contexto e localStorage
-    navigate('/login');  // Redireciona para a tela de login
+    logout();
+    navigate('/login');
   };
 
   return (
@@ -67,12 +67,13 @@ const SidebarCollaborator = () => {
         </nav>
       </div>
       <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-2 pl-2">
+        <NavLink to="/perfil" className="flex items-center gap-2 pl-2 hover:underline">
           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-700 font-bold">
             CN
           </div>
           <p className="text-sm text-gray-700 font-medium">Colaborador 1</p>
-        </div>
+        </NavLink>
+
         <button
           onClick={handleLogout}
           className="flex items-center gap-2 text-sm text-green-main font-bold hover:underline pl-2"

@@ -33,6 +33,7 @@ const SidebarManager = () => {
           <div className="w-5 h-5 bg-green-main rounded-sm mr-2" />
           <span className="font-bold text-lg text-green-main">RPE</span>
         </div>
+
         <nav>
           <ul className="flex flex-col gap-3">
             {menuItems.map(({ path, label, icon }) => (
@@ -56,13 +57,16 @@ const SidebarManager = () => {
           </ul>
         </nav>
       </div>
+
+      {/* avatar + nome agora levam a /perfil */}
       <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-2 pl-2">
+        <NavLink to="/perfil" className="flex items-center gap-2 pl-2 hover:underline">
           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-700 font-bold">
             GS
           </div>
           <p className="text-sm text-gray-700 font-medium">Gestor(a)</p>
-        </div>
+        </NavLink>
+
         <button
           onClick={handleLogout}
           className="flex items-center gap-2 text-sm text-green-main font-bold hover:underline pl-2"
