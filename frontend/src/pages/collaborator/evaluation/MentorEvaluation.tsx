@@ -1,4 +1,4 @@
-import MentorEvaluationForm from "../../components/MentorEvaluationForm/MentorEvaluationForm";
+import MentorEvaluationForm from "../../../components/MentorEvaluationForm/MentorEvaluationForm";
 
 const MentorEvaluation = () => {
   return (

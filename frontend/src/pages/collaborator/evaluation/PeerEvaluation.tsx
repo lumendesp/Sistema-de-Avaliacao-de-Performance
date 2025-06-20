@@ -1,5 +1,5 @@
-import CollaboratorsSearchBar from "../../components/CollaboratorsSearchBar";
-import PeerEvaluationForm from "../../components/PeerEvaluationForm/PeerEvaluationForm";
+import CollaboratorsSearchBar from "../../../components/CollaboratorsSearchBar";
+import PeerEvaluationForm from "../../../components/PeerEvaluationForm/PeerEvaluationForm";
 
 const PeerEvaluation = () => {
   return (
