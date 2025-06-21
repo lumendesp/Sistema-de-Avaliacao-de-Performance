@@ -18,6 +18,7 @@ import Unauthorized from "../pages/login/Unauthorized";
 
 import RHDashboard from "../pages/RH/RHDashboard/RHDashboard";
 import RHCollaboratorsPage from "../pages/RH/RHCollaborators/RHCollaborators";
+import RHCriteriaSettingsPage from "../pages/RH/RHCriteriaSettings/RHCriteriaSettings";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -114,7 +115,7 @@ const AppRoutes = () => (
         <Route path="collaborators" element={<RHCollaboratorsPage />} />
 
         {/* No futuro, a rota para /rh/criteria viria aqui */}
-        {/* <Route path="criteria" element={<PaginaDeCriterios />} /> */}
+        <Route path="criteria" element={<RHCriteriaSettingsPage />} />
       </Route>
     </Routes>
   </BrowserRouter>
