@@ -1,5 +1,5 @@
 import React from "react";
-import arrowIcon from "../assets/arrowRight.png";
+import arrowIcon from "../../assets/arrowRight.png";
 import type { Props } from "../../types/collaboratorStatus.tsx";
 import { useNavigate } from "react-router-dom";
 

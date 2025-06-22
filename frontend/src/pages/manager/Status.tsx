@@ -1,6 +1,6 @@
 import React from "react";
 import searchIcon from "../../assets/search.png";
-import CollaboratorCard from "../../components/CollaboratorCard.tsx";
+import CollaboratorCard from "../../components/manager/CollaboratorCard";
 import type { Collaborator } from "../../types/collaboratorStatus.tsx";
 import { useState } from "react";
 

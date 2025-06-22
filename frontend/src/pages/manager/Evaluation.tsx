@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import CriteriaSection from "../../components/CriteriaSection";
+import CriteriaSection from "../../components/manager/CriteriaSection";
 import type { EvaluationCriterion } from "../../types/EvaluationManager.tsx";
 
 const initialCriteria: EvaluationCriterion[] = [
