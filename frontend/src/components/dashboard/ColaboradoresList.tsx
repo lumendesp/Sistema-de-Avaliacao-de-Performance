@@ -54,7 +54,7 @@ const ColaboradoresList: React.FC = () => {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Colaboradores</h2>
         <a
-          href="/gestor"
+          href="/manager/collaborators"
           className="text-sm text-teal-700 font-medium hover:underline"
         >
           Ver mais

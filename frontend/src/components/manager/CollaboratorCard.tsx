@@ -25,7 +25,7 @@ export default function CollaboratorCard({ collaborator }: Props) {
     .join("");
 
   const handleClick = () => {
-    navigate(`/gestor/avaliacao/${id}`);
+    navigate(`/manager/avaliacao/${id}`); // Corrigido para rota correta
   };
 
   return (

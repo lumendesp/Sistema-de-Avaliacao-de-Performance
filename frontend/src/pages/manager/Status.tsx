@@ -55,13 +55,14 @@ export default function Collaborators() {
   );
 
   return (
-    <div className="flex flex-col gap-4 w-full relative">
-      <div className="fixed top-0 left-0 right-0 h-[88px] bg-white flex items-center px-6 shadow-sm z-20">
-        <h1 className="text-2xl font-bold text-gray-800">Colaboradores</h1>
-      </div>
-      <div className="h-[88px]" />
-      {/* Barra de busca */}
-      <div className="flex items-center gap-2 rounded-xl py-4 px-7 w-full bg-white/50">
+    <div className="flex flex-col w-full min-h-screen bg-[#F5F6FA]">
+      <div className="h-[20px] w-full" />
+      <h1 className="text-3xl font-bold text-gray-900 tracking-tight ml-0 pl-8">
+        Colaboradores
+      </h1>
+      <div className="h-[60px] w-full" />
+      {/* Barra de busca com espaçamento maior do topo */}
+      <div className="flex items-center gap-2 rounded-xl py-4 px-7 w-full bg-white/50 mt-0 mb-4">
         <input
           type="text"
           placeholder="Buscar por colaboradores"
@@ -74,12 +75,12 @@ export default function Collaborators() {
         </button>
       </div>
 
-      {/* Lista dos colaboradores */}
+      {/* Lista dos colaboradores com mais espaçamento */}
       <div
         className={
           search.trim() !== ""
-            ? "absolute top-full mt-2 w-full bg-white rounded-xl shadow-md px-2 py-3 flex flex-col gap-2 z-10"
-            : "flex flex-col gap-2 w-full"
+            ? "absolute top-full mt-2 w-full bg-white rounded-xl shadow-md px-2 py-3 flex flex-col gap-4 z-10"
+            : "flex flex-col gap-4 w-full"
         }
       >
         {search.trim() !== "" && (

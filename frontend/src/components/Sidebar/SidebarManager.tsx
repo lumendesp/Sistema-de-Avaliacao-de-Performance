@@ -1,19 +1,21 @@
-import { useNavigate, NavLink } from 'react-router-dom';
-import { FiLogOut } from 'react-icons/fi';
-import dashboardIcon from '../../assets/dashboard.svg';
-import colaboratorsIcon from '../../assets/collaborators.svg';
-import { useAuth } from '../../context/AuthContext';
+import { useNavigate, NavLink } from "react-router-dom";
+import { FiLogOut } from "react-icons/fi";
+import dashboardIcon from "../../assets/dashboard.svg";
+import colaboratorsIcon from "../../assets/collaborators.svg";
+import { useAuth } from "../../context/AuthContext";
 
 const menuItems = [
   {
-    path: '/manager',
-    label: 'Dashboard',
+    path: "/manager", // Dashboard principal
+    label: "Dashboard",
     icon: <img src={dashboardIcon} alt="Dashboard" className="w-5 h-5" />,
   },
   {
-    path: '/manager/collaborators',
-    label: 'Colaboradores',
-    icon: <img src={colaboratorsIcon} alt="Colaboradores" className="w-5 h-5" />,
+    path: "/manager/collaborators",
+    label: "Colaboradores",
+    icon: (
+      <img src={colaboratorsIcon} alt="Colaboradores" className="w-5 h-5" />
+    ),
   },
 ];
 
@@ -23,7 +25,7 @@ const SidebarManager = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   return (
@@ -39,12 +41,12 @@ const SidebarManager = () => {
               <li key={path}>
                 <NavLink
                   to={path}
-                  end={path === '/manager'}
+                  end={path === "/manager"}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition ${
                       isActive
-                        ? 'bg-green-100 text-green-main font-semibold'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? "bg-green-100 text-green-main font-semibold"
+                        : "text-gray-700 hover:bg-gray-100"
                     }`
                   }
                 >
@@ -58,15 +60,21 @@ const SidebarManager = () => {
       </div>
       <div className="flex flex-col gap-6">
         <button
-          onClick={() => navigate('/perfil')}
+          onClick={() => navigate("/perfil")}
           className="flex items-center gap-2 pl-2 group focus:outline-none"
           tabIndex={0}
         >
           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-700 font-bold group-hover:ring-2 group-hover:ring-green-main transition">
-            {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'GS'}
+            {user?.name
+              ? user.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+              : "GS"}
           </div>
           <p className="text-sm text-gray-700 font-medium group-hover:underline">
-            {user?.name || 'Gestor(a)'}
+            {user?.name || "Manager"}
           </p>
         </button>
         <button
