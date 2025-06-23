@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import CommitteeStarRating from "./CommitteeStarRating";
+import CommitteeStarRating from "../CommitteeStarRating";
 import html2canvas from 'html2canvas';
 import jsPDF from "jspdf";
-import downloadIcon from '../../assets/committee/pdf-download.png';
+import downloadIcon from '../../../assets/committee/pdf-download.png';
 import GenAITextBox from "./GenAITextBox";
 import * as XLSX from 'xlsx';
 
