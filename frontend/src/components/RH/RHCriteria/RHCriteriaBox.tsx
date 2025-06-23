@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaChevronDown, FaChevronUp, FaTrash } from 'react-icons/fa';
 import ToggleSwitch from '../ToggleSwitch/ToggleSwitch';
 
 interface Evaluation {
@@ -17,10 +17,14 @@ interface Criterion {
 interface RHCriteriaBoxProps {
     trackName: string;
     criteria: Criterion[];
+    isExpanded: boolean;
+    onToggle: () => void;
+    onAddEvaluation?: (criterionIdx: number) => void;
+    onDeleteCriterio?: (criterionIdx: number) => void;
+    onDeleteEvaluation?: (criterionIdx: number, evalIdx: number) => void;
 }
 
-function RHCriteriaBox({ trackName, criteria: initialCriteria }: RHCriteriaBoxProps) {
-    const [isExpanded, setIsExpanded] = useState(true);
+function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onToggle, onAddEvaluation, onDeleteCriterio, onDeleteEvaluation }: RHCriteriaBoxProps) {
     const [expandedEvaluation, setExpandedEvaluation] = useState<string | null>(null);
     const [criteria, setCriteria] = useState(initialCriteria);
 
@@ -36,7 +40,7 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria }: RHCriteriaBoxPr
 
     return (
         <div className="border border-gray-300 rounded-lg bg-white">
-            <div className="p-4 flex justify-between items-center cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+            <div className="p-4 flex justify-between items-center cursor-pointer" onClick={onToggle}>
                 <h2 className="text-lg font-semibold">{trackName}</h2>
                 {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
             </div>
@@ -44,12 +48,52 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria }: RHCriteriaBoxPr
             {isExpanded && (
                 <div className="p-4 border-t border-gray-200">
                     {criteria.map((criterion, criterionIndex) => (
-                        <div key={criterionIndex} className="mb-6">
-                            <h3 className="font-semibold text-gray-700 mb-3">{criterion.name}</h3>
+                        <div key={criterionIndex} className="mb-6 relative">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="font-semibold text-gray-700">{criterion.name}</h3>
+                                    {onDeleteCriterio && isExpanded && (
+                                        <button
+                                            className="text-xs text-red-600 hover:text-red-700 p-1"
+                                            title="Remover critério"
+                                            onClick={() => {
+                                                if (window.confirm('Tem certeza que deseja remover este critério?')) {
+                                                    onDeleteCriterio(criterionIndex);
+                                                }
+                                            }}
+                                        >
+                                            <FaTrash size={12} />
+                                        </button>
+                                    )}
+                                </div>
+                                {onAddEvaluation && (
+                                    <button
+                                        className="px-2 py-1 text-xs bg-gray-100 text-[#08605F] rounded hover:bg-gray-200 transition-colors"
+                                        onClick={() => onAddEvaluation(criterionIndex)}
+                                    >
+                                        Adicionar Critério
+                                    </button>
+                                )}
+                            </div>
                             {criterion.evaluations.map((evaluation, evalIndex) => (
                                 <div key={evalIndex} className="border-b border-gray-200 last:border-b-0">
                                     <div className="flex items-center justify-between py-3">
-                                        <p className="text-sm">{evaluation.name}</p>
+                                        <p className="text-sm flex items-center gap-2">
+                                            {evaluation.name}
+                                            {onDeleteEvaluation && expandedEvaluation === evaluation.name && (
+                                                <button
+                                                    className="text-xs text-red-600 hover:text-red-700 p-1"
+                                                    title="Remover avaliação"
+                                                    onClick={() => {
+                                                        if (window.confirm('Tem certeza que deseja remover esta avaliação?')) {
+                                                            onDeleteEvaluation(criterionIndex, evalIndex);
+                                                        }
+                                                    }}
+                                                >
+                                                    <FaTrash size={12} />
+                                                </button>
+                                            )}
+                                        </p>
                                         <div className="flex items-center gap-4">
                                             <span className="text-sm text-gray-500">Campo Obrigatório</span>
                                             <ToggleSwitch
