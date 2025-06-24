@@ -46,6 +46,7 @@ const AppRoutes = () => (
             </ProtectedRoute>
           }
         />
+        <Route path ="/collaborator/progress" element={<EvolutionCollaborator />} />
         <Route
           path="evaluation"
           element={
@@ -106,6 +107,31 @@ const AppRoutes = () => (
             path="360"
             element={
               <ProtectedRoute allowedRoles={["MANAGER", "ADMIN"]}>
+                <PeerEvaluationManager />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+        <Route path="historico" element={<EvolutionManager />} />
+      </Route>
+
+      <Route
+        path="/mentor"
+        element={
+          <ProtectedRoute allowedRoles={["MENTOR", "ADMIN"]}>
+            <ManagerLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<DashboardManagerPage />} />
+        <Route path="collaborators" element={<Collaborators />} />
+        <Route path="avaliacao/:id" element={<ManagerEvaluationLayout />}>
+          <Route index element={<CollaboratorEvaluation />} />
+          <Route path="historico" element={<EvolutionCollaborator />} />
+          <Route
+            path="360"
+            element={
+              <ProtectedRoute allowedRoles={["MENTOR", "ADMIN"]}>
                 <PeerEvaluationManager />
               </ProtectedRoute>
             }

@@ -5,8 +5,11 @@ import {
   ClockIcon,
   ArrowTrendingUpIcon,
 } from "@heroicons/react/24/outline";
+import { useAuth } from "../../context/AuthContext";
 
 const Metricas: React.FC = () => {
+  const { user } = useAuth();
+
   const metrics = [
     {
       title: "Total de Avaliações",
@@ -54,7 +57,7 @@ const Metricas: React.FC = () => {
   return (
     <div className="w-full max-w-7xl mx-auto mb-8">
       <h1 className="text-2xl mb-6">
-        <span className="font-bold">Olá,</span> Gestor
+        <span className="font-bold">Olá,</span> {user?.name || "Gestor"}
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {metrics.map((metric, index) => (
