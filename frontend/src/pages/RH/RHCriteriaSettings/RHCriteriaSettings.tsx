@@ -2,7 +2,6 @@ import { useState } from 'react';
 import CollaboratorsSearchBar from '../../../components/CollaboratorsSearchBar';
 import RHCriteriaBox from '../../../components/RH/RHCriteria/RHCriteriaBox';
 import { IoFunnel } from "react-icons/io5";
-import { FaTrash } from 'react-icons/fa';
 
 function RhCriteriaSettings() {
     const [activeTab, setActiveTab] = useState<'track' | 'unit'>('track');
@@ -88,16 +87,6 @@ function RhCriteriaSettings() {
     const [editingTrackIdx, setEditingTrackIdx] = useState<number | null>(null);
     const [editingTrackName, setEditingTrackName] = useState('');
 
-    // Handle double click to edit track name
-    const handleTrackNameDoubleClick = (idx: number) => {
-        setEditingTrackIdx(idx);
-        setEditingTrackName(criteriaData[idx].trackName);
-    };
-
-    // Handle track name change
-    const handleTrackNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setEditingTrackName(e.target.value);
-    };
 
     // Save track name on blur or Enter
     const handleTrackNameSave = (idx: number) => {
@@ -118,22 +107,15 @@ function RhCriteriaSettings() {
         setCriteriaData([
             {
                 trackName: 'Nova Trilha',
-                criteria: [
-                    {
-                        name: 'Novo Critério',
-                        evaluations: [
-                            { name: 'Nova Avaliação', mandatory: false, weight: 0, description: '' }
-                        ]
-                    }
-                ]
+                criteria: []
             },
             ...criteriaData
         ]);
         setOpenBoxIndex(0);
     };
 
-    // Add a new evaluation to a criteria group (now adds a new criterion at the top)
-    const handleAddEvaluation = (groupIdx: number, _criterionIdx: number) => {
+    // Add a new criterion to a trilha (group)
+    const handleAddCriterion = (groupIdx: number) => {
         setCriteriaData(prev => prev.map((group, gIdx) =>
             gIdx === groupIdx
                 ? {
@@ -141,9 +123,7 @@ function RhCriteriaSettings() {
                     criteria: [
                         {
                             name: 'Novo Critério',
-                            evaluations: [
-                                { name: 'Nova Avaliação', mandatory: false, weight: 0, description: '' }
-                            ]
+                            evaluations: []
                         },
                         ...group.criteria
                     ]
@@ -153,7 +133,7 @@ function RhCriteriaSettings() {
     };
 
     // Handler to delete a trilha (track)
-    const handleDeleteTrilha = (idx: number) => {
+    const handleDeleteTrack = (idx: number) => {
         setCriteriaData(prev => prev.filter((_, gIdx) => gIdx !== idx));
         if (openBoxIndex === idx) setOpenBoxIndex(null);
     };
@@ -183,12 +163,82 @@ function RhCriteriaSettings() {
         ));
     };
 
+    // Handler to edit a criterion name
+    const handleEditCriterion = (groupIdx: number, criterionIdx: number, newName: string) => {
+        setCriteriaData(prev => prev.map((group, gIdx) =>
+            gIdx === groupIdx
+                ? {
+                    ...group,
+                    criteria: group.criteria.map((criterion, cIdx) =>
+                        cIdx === criterionIdx ? { ...criterion, name: newName } : criterion
+                    )
+                }
+                : group
+        ));
+    };
+
+    // Handler to edit an evaluation field
+    const handleEditEvaluation = (groupIdx: number, criterionIdx: number, evalIdx: number, field: 'name' | 'weight' | 'description' | 'mandatory', value: string | number | boolean) => {
+        setCriteriaData(prev => prev.map((group, gIdx) =>
+            gIdx === groupIdx
+                ? {
+                    ...group,
+                    criteria: group.criteria.map((criterion, cIdx) =>
+                        cIdx === criterionIdx
+                            ? {
+                                ...criterion,
+                                evaluations: criterion.evaluations.map((evaluation, eIdx) =>
+                                    eIdx === evalIdx ? { ...evaluation, [field]: value } : evaluation
+                                )
+                            }
+                            : criterion
+                    )
+                }
+                : group
+        ));
+    };
+
+    // Handler to add a new evaluation to a criterion
+    const handleAddEvaluation = (groupIdx: number, criterionIdx: number) => {
+        setCriteriaData(prev => prev.map((group, gIdx) =>
+            gIdx === groupIdx
+                ? {
+                    ...group,
+                    criteria: group.criteria.map((criterion, cIdx) =>
+                        cIdx === criterionIdx
+                            ? {
+                                ...criterion,
+                                evaluations: [
+                                    {
+                                        name: 'Nova Avaliação',
+                                        mandatory: false,
+                                        weight: 0,
+                                        description: ''
+                                    },
+                                    ...criterion.evaluations
+                                ]
+                            }
+                            : criterion
+                    )
+                }
+                : group
+        ));
+    };
+
+    // Handler for save button
+    const handleSave = () => {
+        // Simulate save by logging to console
+        console.log('Salvando critérios:', criteriaData);
+        alert('Critérios salvos com sucesso!');
+        // Here you could send criteriaData to an API
+    };
+
     return (
         <div className="w-full">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Critérios de Avaliação</h1>
-                <button className="bg-[#08605F] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors">
+                <button className="bg-[#08605F] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors" onClick={handleSave}>
                     Salvar alterações
                 </button>
             </div>
@@ -214,7 +264,7 @@ function RhCriteriaSettings() {
                 <div>
                     <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
                         <div className="flex-grow w-full md:w-auto">
-                            <CollaboratorsSearchBar />
+                            <CollaboratorsSearchBar placeholder = "Buscar por Trilha"onSearch={term => console.log('Search term:', term)} />
                         </div>
                         <div className="bg-[#08605F] p-3 rounded-md text-white">
                             <IoFunnel size={24} />
@@ -233,48 +283,25 @@ function RhCriteriaSettings() {
                     <div className="flex flex-col gap-6">
                         {criteriaData.map((group, idx) => (
                             <div key={idx}>
-                                <div className="mb-2 flex items-center gap-2">
-                                    {editingTrackIdx === idx ? (
-                                        <input
-                                            className="text-lg font-semibold text-[#08605F] border-b border-[#08605F] outline-none bg-transparent px-1"
-                                            value={editingTrackName}
-                                            onChange={handleTrackNameChange}
-                                            onBlur={() => handleTrackNameSave(idx)}
-                                            onKeyDown={e => handleTrackNameKeyDown(e, idx)}
-                                            autoFocus
-                                        />
-                                    ) : (
-                                        <>
-                                            <span
-                                                className="text-lg font-semibold text-[#08605F] cursor-pointer select-none"
-                                                onDoubleClick={() => handleTrackNameDoubleClick(idx)}
-                                            >
-                                                {group.trackName || `Trilha ${idx + 1}`}
-                                            </span>
-                                            {openBoxIndex === idx && (
-                                                <button
-                                                    className="ml-1 text-xs text-red-500 hover:text-red-700 p-1"
-                                                    title="Remover trilha"
-                                                    onClick={() => {
-                                                        if (window.confirm('Tem certeza que deseja remover esta trilha?')) {
-                                                            handleDeleteTrilha(idx);
-                                                        }
-                                                    }}
-                                                >
-                                                    <FaTrash size={12} />
-                                                </button>
-                                            )}
-                                        </>
-                                    )}
-                                </div>
                                 <RHCriteriaBox
                                     trackName={group.trackName || `Trilha ${idx + 1}`}
                                     criteria={group.criteria}
                                     isExpanded={openBoxIndex === idx}
                                     onToggle={() => setOpenBoxIndex(openBoxIndex === idx ? null : idx)}
-                                    onAddEvaluation={criterionIdx => handleAddEvaluation(idx, criterionIdx)}
+                                    onAddCriterion={() => handleAddCriterion(idx)}
+                                    onDeleteTrack={() => handleDeleteTrack(idx)}
                                     onDeleteCriterio={criterionIdx => handleDeleteCriterio(idx, criterionIdx)}
                                     onDeleteEvaluation={(criterionIdx, evalIdx) => handleDeleteEvaluation(idx, criterionIdx, evalIdx)}
+                                    editingTrackIdx={editingTrackIdx}
+                                    setEditingTrackIdx={setEditingTrackIdx}
+                                    editingTrackName={editingTrackName}
+                                    setEditingTrackName={setEditingTrackName}
+                                    handleTrackNameSave={handleTrackNameSave}
+                                    handleTrackNameKeyDown={(e, idx) => handleTrackNameKeyDown(e, idx)}
+                                    trilhaIdx={idx}
+                                    onEditCriterion={(criterionIdx, newName) => handleEditCriterion(idx, criterionIdx, newName)}
+                                    onEditEvaluation={(criterionIdx, evalIdx, field, value) => handleEditEvaluation(idx, criterionIdx, evalIdx, field, value)}
+                                    onAddEvaluation={criterionIdx => handleAddEvaluation(idx, criterionIdx)}
                                 />
                             </div>
                         ))}
