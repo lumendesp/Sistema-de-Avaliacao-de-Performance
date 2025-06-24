@@ -23,6 +23,9 @@ export const ProtectedRoute = ({
     return <Navigate to="/login" replace />;
   }
 
+  // console.log('allowedRoles:', allowedRoles);
+  // console.log('user.roles:', user.roles);
+
   const hasAccess = user.roles.some((role) => allowedRoles.includes(role));
 
   if (!hasAccess) {
