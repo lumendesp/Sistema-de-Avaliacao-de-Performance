@@ -15,16 +15,21 @@ import ReferenceEvaluation from "../pages/collaborator/evaluation/ReferenceEvalu
 
 import Login from "../pages/login/Login";
 import Unauthorized from "../pages/login/Unauthorized";
+import Profile from "../pages/profile/Profile";
 
-import Committee from "../pages/committee/Committee";
-import Equalization from "../pages/committee/Equalization";
+import Collaborators from "../pages/manager/Status.tsx";
+import EvolutionCollaborator from "../pages/collaborator/EvolutionCollaborator.tsx";
+import ManagerEvaluationLayout from "../layouts/ManagerEvaluationLayout.tsx";
+import DashboardManagerPage from "../pages/DashboardManagerPage";
+import CollaboratorEvaluation from "../pages/manager/Evaluation.tsx";
+import EvolutionManager from "../pages/manager/EvolutionManager.tsx";
+import PeerEvaluationManager from "../pages/manager/Evaluation360.tsx";
 
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
-
       <Route
         path="/collaborator"
         element={
@@ -50,13 +55,40 @@ const AppRoutes = () => (
           }
         >
           <Route index element={<Navigate to="self-evaluation" />} />
-          <Route path="self-evaluation" element={<SelfEvaluation />} />
-          <Route path="peer-evaluation" element={<PeerEvaluation />} />
-          <Route path="mentor-evaluation" element={<MentorEvaluation />} />
-          <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
+          <Route
+            path="self-evaluation"
+            element={
+              <ProtectedRoute allowedRoles={["COLLABORATOR", "ADMIN"]}>
+                <SelfEvaluation />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="peer-evaluation"
+            element={
+              <ProtectedRoute allowedRoles={["COLLABORATOR", "ADMIN"]}>
+                <PeerEvaluation />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="mentor-evaluation"
+            element={
+              <ProtectedRoute allowedRoles={["COLLABORATOR", "ADMIN"]}>
+                <MentorEvaluation />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="reference-evaluation"
+            element={
+              <ProtectedRoute allowedRoles={["COLLABORATOR", "ADMIN"]}>
+                <ReferenceEvaluation />
+              </ProtectedRoute>
+            }
+          />
         </Route>
       </Route>
-
       <Route
         path="/manager"
         element={
@@ -64,7 +96,23 @@ const AppRoutes = () => (
             <ManagerLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<DashboardManagerPage />} />
+        <Route path="collaborators" element={<Collaborators />} />
+        <Route path="avaliacao/:id" element={<ManagerEvaluationLayout />}>
+          <Route index element={<CollaboratorEvaluation />} />
+          <Route path="historico" element={<EvolutionCollaborator />} />
+          <Route
+            path="360"
+            element={
+              <ProtectedRoute allowedRoles={["MANAGER", "ADMIN"]}>
+                <PeerEvaluationManager />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+        <Route path="historico" element={<EvolutionManager />} />
+      </Route>
 
       <Route
         path="/committee"
@@ -73,11 +121,7 @@ const AppRoutes = () => (
             <CommitteeLayout />
           </ProtectedRoute>
         }
-      >
-        <Route index element={<Committee />} />
-        <Route path="equalizations" element={<Equalization />} />
-      </Route>
-
+      />
       <Route
         path="/rh"
         element={
@@ -86,6 +130,7 @@ const AppRoutes = () => (
           </ProtectedRoute>
         }
       />
+      <Route path="/perfil" element={<Profile />} />
     </Routes>
   </BrowserRouter>
 );

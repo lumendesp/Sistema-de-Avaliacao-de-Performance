@@ -25,7 +25,7 @@ const menuItems = [
 ];
 
 const SidebarCollaborator = () => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -67,12 +67,18 @@ const SidebarCollaborator = () => {
         </nav>
       </div>
       <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-2 pl-2">
-          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-700 font-bold">
-            CN
+        <button
+          onClick={() => navigate('/perfil')}
+          className="flex items-center gap-2 pl-2 group focus:outline-none"
+          tabIndex={0}
+        >
+          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-700 font-bold group-hover:ring-2 group-hover:ring-green-main transition">
+            {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'CN'}
           </div>
-          <p className="text-sm text-gray-700 font-medium">Colaborador 1</p>
-        </div>
+          <p className="text-sm text-gray-700 font-medium group-hover:underline">
+            {user?.name || 'Colaborador 1'}
+          </p>
+        </button>
         <button
           onClick={handleLogout}
           className="flex items-center gap-2 text-sm text-green-main font-bold hover:underline pl-2"
