@@ -26,11 +26,15 @@ import CollaboratorEvaluation from "../pages/manager/Evaluation.tsx";
 import EvolutionManager from "../pages/manager/EvolutionManager.tsx";
 import PeerEvaluationManager from "../pages/manager/Evaluation360.tsx";
 
+import Committee from "../pages/committee/Committee";
+import Equalization from "../pages/committee/Equalization";
+
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
+
       <Route
         path="/collaborator"
         element={
@@ -76,6 +80,7 @@ const AppRoutes = () => (
           <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
         </Route>
       </Route>
+
       <Route
         path="/manager"
         element={
@@ -133,7 +138,11 @@ const AppRoutes = () => (
             <CommitteeLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<Committee />} />
+        <Route path="equalizations" element={<Equalization />} />
+      </Route>
+
       <Route
         path="/rh"
         element={
