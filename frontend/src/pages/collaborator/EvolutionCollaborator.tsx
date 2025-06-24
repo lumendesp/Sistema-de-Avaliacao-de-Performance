@@ -1,56 +1,58 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import EvolutionLayout from '../../layouts/EvolutionLayout';
 
-const collaboratorHistory = {
-  currentScore: 3.9,
-  growth: 0.1,
-  totalEvaluations: 4,
-  performance: [
-    { cycle: '2023.1', score: 3.5 },
-    { cycle: '2023.2', score: 3.7 },
-    { cycle: '2024.1', score: 4.0 },
-    { cycle: '2024.2', score: 3.9 },
-  ],
-  cycles: [
-    {
-      cycle: '2024.2',
-      status: 'Em andamento',
-      self: '-',
-      exec: '-',
-      posture: '-',
-      final: '-',
-      summary: '-',
-    },
-    {
-      cycle: '2024.1',
-      status: 'Finalizado',
-      self: 4.0,
-      exec: 3.8,
-      posture: 4.1,
-      final: 4.0,
-      summary: 'Bom desempenho, continue assim!',
-    },
-    {
-      cycle: '2023.2',
-      status: 'Finalizado',
-      self: 3.5,
-      exec: 3.7,
-      posture: 3.8,
-      final: 3.7,
-      summary: 'Pode melhorar a comunicação.',
-    },
-  ],
-};
+const USER_ID = 1;
 
 const EvolutionCollaborator = () => {
+  const [loading, setLoading] = useState(true);
+  const [cycles, setCycles] = useState<any[]>([]);
+  const [performance, setPerformance] = useState<any[]>([]);
+  const [currentScore, setCurrentScore] = useState<number>(0);
+  const [growth, setGrowth] = useState<number>(0);
+  const [totalEvaluations, setTotalEvaluations] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`http://localhost:3000/ciclos/historico/${USER_ID}`);
+        const data = await res.json();
+        setCycles(data);
+        setTotalEvaluations(data.length);
+        if (data.length > 0) {
+          // performance: array de { cycle, score }
+          const perf = data
+            .filter((c: any) => typeof c.final === 'number')
+            .map((c: any) => ({ cycle: c.cycle, score: c.final }));
+          setPerformance(perf);
+          setCurrentScore(perf.length > 0 ? perf[0].score : 0);
+          setGrowth(perf.length > 1 ? Number((perf[0].score - perf[1].score).toFixed(2)) : 0);
+        } else {
+          setPerformance([]);
+          setCurrentScore(0);
+          setGrowth(0);
+        }
+      } catch (e) {
+        setCycles([]);
+        setPerformance([]);
+        setCurrentScore(0);
+        setGrowth(0);
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  if (loading) return <div className="p-6">Carregando evolução...</div>;
+
   return (
     <EvolutionLayout
       title="Evolução (Colaborador)"
-      currentScore={collaboratorHistory.currentScore}
-      growth={collaboratorHistory.growth}
-      totalEvaluations={collaboratorHistory.totalEvaluations}
-      performance={collaboratorHistory.performance}
-      cycles={collaboratorHistory.cycles}
+      currentScore={currentScore}
+      growth={growth}
+      totalEvaluations={totalEvaluations}
+      performance={performance}
+      cycles={cycles}
     />
   );
 };
