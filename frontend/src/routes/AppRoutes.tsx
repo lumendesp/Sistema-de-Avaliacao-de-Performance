@@ -18,6 +18,13 @@ import ComparisonEvaluation from "../pages/collaborator/evaluation/ComparisonEva
 import Login from "../pages/login/Login";
 import Unauthorized from "../pages/login/Unauthorized";
 import Profile from "../pages/profile/Profile";
+import Collaborators from "../pages/manager/Status.tsx";
+import EvolutionCollaborator from "../pages/collaborator/EvolutionCollaborator.tsx";
+import ManagerEvaluationLayout from "../layouts/ManagerEvaluationLayout.tsx";
+import DashboardManagerPage from "../pages/DashboardManagerPage";
+import CollaboratorEvaluation from "../pages/manager/Evaluation.tsx";
+import EvolutionManager from "../pages/manager/EvolutionManager.tsx";
+import PeerEvaluationManager from "../pages/manager/Evaluation360.tsx";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -40,6 +47,7 @@ const AppRoutes = () => (
             </ProtectedRoute>
           }
         />
+        <Route path ="/collaborator/progress" element={<EvolutionCollaborator />} />
         <Route
           path="evaluation"
           element={
@@ -75,7 +83,49 @@ const AppRoutes = () => (
             <ManagerLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<DashboardManagerPage />} />
+        <Route path="collaborators" element={<Collaborators />} />
+        <Route path="avaliacao/:id" element={<ManagerEvaluationLayout />}>
+          <Route index element={<CollaboratorEvaluation />} />
+          <Route path="historico" element={<EvolutionCollaborator />} />
+          <Route
+            path="360"
+            element={
+              <ProtectedRoute allowedRoles={["MANAGER", "ADMIN"]}>
+                <PeerEvaluationManager />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+        <Route path="historico" element={<EvolutionManager />} />
+      </Route>
+
+      <Route
+        path="/mentor"
+        element={
+          <ProtectedRoute allowedRoles={["MENTOR", "ADMIN"]}>
+            <ManagerLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<DashboardManagerPage />} />
+        <Route path="collaborators" element={<Collaborators />} />
+        <Route path="avaliacao/:id" element={<ManagerEvaluationLayout />}>
+          <Route index element={<CollaboratorEvaluation />} />
+          <Route path="historico" element={<EvolutionCollaborator />} />
+          <Route
+            path="360"
+            element={
+              <ProtectedRoute allowedRoles={["MENTOR", "ADMIN"]}>
+                <PeerEvaluationManager />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+        <Route path="historico" element={<EvolutionManager />} />
+      </Route>
+
       <Route
         path="/committee"
         element={
