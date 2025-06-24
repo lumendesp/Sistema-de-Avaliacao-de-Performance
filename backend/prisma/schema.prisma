@@ -6,10 +6,82 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
+}
+
+enum Role {
+  COLLABORATOR
+  MANAGER
+  HR
+  COMMITTEE
+  ADMIN
+}
+
+model UserRole {
+  userId Int
+  role   Role
+
+  user   User @relation(fields: [userId], references: [id])
+
+  @@id([userId, role])
+}
+
+model User {
+  id                         Int                 @id @default(autoincrement())
+  name                       String
+  email                      String              @unique
+  password                   String
+  roles                      UserRole[]              // Array de papéis
+
+  // Avaliações de Pares
+  peerEvaluationsGiven       PeerEvaluation[]    @relation("PeerEvaluator")
+  peerEvaluationsReceived    PeerEvaluation[]    @relation("PeerEvaluatee")
+
+  // Avaliações de Mentor
+  mentorEvaluationsGiven     MentorEvaluation[]  @relation("MentorEvaluator")
+  mentorEvaluationsReceived  MentorEvaluation[]  @relation("MentorEvaluatee")
+
+  // Referências
+  referencesProvided         Reference[]         @relation("ReferenceProvider")
+  referencesReceived         Reference[]         @relation("ReferenceReceiver")
+}
+
+model PeerEvaluation {
+  id           Int      @id @default(autoincrement())
+  evaluatorId  Int
+  evaluateeId  Int
+  createdAt    DateTime @default(now())
+  score        Int
+  strengths    String
+  improvements String
+
+  evaluator    User     @relation("PeerEvaluator", fields: [evaluatorId], references: [id])
+  evaluatee    User     @relation("PeerEvaluatee", fields: [evaluateeId], references: [id])
+}
+
+model MentorEvaluation {
+  id            Int      @id @default(autoincrement())
+  evaluatorId   Int
+  evaluateeId   Int
+  createdAt     DateTime @default(now())
+  score         Int
+  justification String
+
+  evaluator     User     @relation("MentorEvaluator", fields: [evaluatorId], references: [id])
+  evaluatee     User     @relation("MentorEvaluatee", fields: [evaluateeId], references: [id])
+}
+
+model Reference {
+  id              Int      @id @default(autoincrement())
+  providerId      Int
+  receiverId      Int
+  createdAt       DateTime @default(now())
+  justification   String
+
+  provider        User     @relation("ReferenceProvider", fields: [providerId], references: [id])
+  receiver        User     @relation("ReferenceReceiver", fields: [receiverId], references: [id])
 }
