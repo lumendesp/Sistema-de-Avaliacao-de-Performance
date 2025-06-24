@@ -29,6 +29,10 @@ import PeerEvaluationManager from "../pages/manager/Evaluation360.tsx";
 import Committee from "../pages/committee/Committee";
 import Equalization from "../pages/committee/Equalization";
 
+import RHDashboard from "../pages/RH/RHDashboard/RHDashboard";
+import RHCollaboratorsPage from "../pages/RH/RHCollaborators/RHCollaborators";
+import RHCriteriaSettingsPage from "../pages/RH/RHCriteriaSettings/RHCriteriaSettings";
+
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
@@ -150,7 +154,16 @@ const AppRoutes = () => (
             <RHLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        {/* Rota Padrão para /rh -> Renderiza o Dashboard */}
+        <Route index element={<RHDashboard />} />
+
+        {/* Rota para /rh/collaborators -> Renderiza a Página de Colaboradores */}
+        <Route path="collaborators" element={<RHCollaboratorsPage />} />
+
+        {/* No futuro, a rota para /rh/criteria viria aqui */}
+        <Route path="criteria" element={<RHCriteriaSettingsPage />} />
+      </Route>
       <Route path="/perfil" element={<Profile />} />
     </Routes>
   </BrowserRouter>

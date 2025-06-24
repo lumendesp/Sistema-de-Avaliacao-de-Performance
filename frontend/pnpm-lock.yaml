@@ -11,21 +11,21 @@ importers:
       '@heroicons/react':
         specifier: ^2.2.0
         version: 2.2.0(react@19.1.0)
-      chart.js:
-        specifier: ^4.5.0
-        version: 4.5.0
-      lucide-react:
-        specifier: ^0.517.0
-        version: 0.517.0(react@19.1.0)
       axios:
         specifier: ^1.10.0
         version: 1.10.0
+      chart.js:
+        specifier: ^4.5.0
+        version: 4.5.0
       html2canvas:
         specifier: ^1.4.1
         version: 1.4.1
       jspdf:
         specifier: ^3.0.1
         version: 3.0.1
+      lucide-react:
+        specifier: ^0.517.0
+        version: 0.517.0(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -3256,15 +3256,15 @@ snapshots:
 
   queue-microtask@1.2.3: {}
 
-  react-chartjs-2@5.3.0(chart.js@4.5.0)(react@19.1.0):
-    dependencies:
-      chart.js: 4.5.0
-      react: 19.1.0
-
   raf@3.4.1:
     dependencies:
       performance-now: 2.1.0
     optional: true
+
+  react-chartjs-2@5.3.0(chart.js@4.5.0)(react@19.1.0):
+    dependencies:
+      chart.js: 4.5.0
+      react: 19.1.0
 
   react-dom@19.1.0(react@19.1.0):
     dependencies:
