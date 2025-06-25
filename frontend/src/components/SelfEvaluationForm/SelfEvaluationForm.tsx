@@ -74,6 +74,7 @@ const SelfEvaluationForm = ({ title, criteria, readOnly = false }: SelfEvaluatio
             key={criterion.id}
             index={index + 1}
             title={criterion.title}
+            description={criterion.description}
             score={ratings[index]}
             justification={justifications[index]}
             setScore={(value) => handleRatingChange(index, value)}

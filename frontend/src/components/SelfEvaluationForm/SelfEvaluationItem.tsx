@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { FaChevronUp, FaChevronDown, FaCheckCircle } from "react-icons/fa";
+import { FaChevronUp, FaChevronDown, FaCheckCircle, FaInfoCircle } from "react-icons/fa";
 import type { SelfEvaluationItemProps } from "../../types/selfEvaluation";
 import StarRating from "../StarRating";
 import ScoreBox from "../ScoreBox";
+import { Tooltip } from "react-tooltip";
+import 'react-tooltip/dist/react-tooltip.css';
 
 const SelfEvaluationItem = ({
   index,
   title,
+  description,
   score,
   setScore,
   justification,
@@ -30,7 +33,24 @@ const SelfEvaluationItem = ({
               {index}
             </div>
           )}
-          <p className="font-semibold">{title}</p>
+
+          <div className="flex items-center gap-3 font-semibold">
+            <span>{title}</span>
+            {description && (
+              <>
+                <FaInfoCircle
+                  data-tooltip-id={`tooltip-${index}`}
+                  data-tooltip-content={description}
+                  className="text-green-main hover:text-gray-600 cursor-pointer w-4.5 h-4.5"
+                />
+                <Tooltip
+                  id={`tooltip-${index}`}
+                  place="top"
+                  className="bg-gray-800 text-white px-2 py-1 rounded text-sm"
+                />
+              </>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <ScoreBox score={score} />

@@ -1,6 +1,7 @@
 export interface Criterion {
   id: number;
-  title: string; 
+  title: string;
+  description?: string;
   score?: number;
   justification?: string;
 }
@@ -19,6 +20,7 @@ export interface SelfEvaluationFormProps {
 export interface SelfEvaluationItemProps {
   index: number;
   title: string;
+  description?: string;
   score: number;
   setScore: (value: number) => void;
   justification: string;

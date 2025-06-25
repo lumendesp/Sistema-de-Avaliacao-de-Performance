@@ -105,6 +105,7 @@ export class SelfEvaluationService {
     return configuredCriteria.map((cc) => ({
       id: cc.criterion.id,
       title: cc.criterion.name,
+      description: cc.criterion.generalDescription,
     }));
   }
 

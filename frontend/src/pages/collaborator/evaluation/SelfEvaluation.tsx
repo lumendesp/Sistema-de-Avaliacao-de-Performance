@@ -8,7 +8,7 @@ export default function SelfEvaluationPage() {
   const { token } = useAuth();
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [readOnly, setReadOnly] = useState(false);
-  const [loading, setLoading] = useState(true); // novo
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,8 +25,8 @@ export default function SelfEvaluationPage() {
         const available = availableRes.data.map((c: any) => ({
           id: c.id,
           title: c.title,
+          description: c.description,
         }));
-
 
         const answered = answeredRes.data.items ?? [];
 
