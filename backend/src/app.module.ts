@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 
 // import { CollaboratorModule } from './collaborator/collaborator.module';
 import { AuthModule } from './auth/auth.module';
+import { SelfEvaluationModule } from './collaborator/self-evaluation/self-evaluation.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { AuthModule } from './auth/auth.module';
       isGlobal: true,
     }),
     AuthModule,
+    SelfEvaluationModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
