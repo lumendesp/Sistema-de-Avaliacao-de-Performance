@@ -9,7 +9,7 @@ export class ProfileController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getProfile(@Req() req: any) {
-    const userId = req.user?.sub;
+    const userId = req.user?.userId;
     if (!userId) {
       return { error: 'Usuário não autenticado' };
     }
