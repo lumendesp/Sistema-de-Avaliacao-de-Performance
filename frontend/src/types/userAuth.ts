@@ -1,5 +1,5 @@
 // Define o tipo Role, que são os papéis que cada usuário pode ter dentro da plataforma
-export type Role = "COLLABORATOR" | "MANAGER" | "HR" | "COMMITTEE" | "ADMIN";
+export type Role = "COLLABORATOR" | "MANAGER" | "HR" | "COMMITTEE" | "MENTOR" | "ADMIN";
 
 // Interface que representa um usuário autenticado (sem a senha), é o tipo usado no contexto da aplicação após o login
 export interface UserAuth {

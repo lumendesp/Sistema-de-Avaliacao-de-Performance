@@ -9,7 +9,7 @@ const Unauthorized = () => {
 
   const handleLogout = () => {
     logout(); // Chama o logout
-    navigate("/login"); // Redireciona para a página de login
+    navigate("/"); // Redireciona para a página de login
   };
 
   return (

@@ -7,7 +7,7 @@ const userData = {
   role: "Gestor de Projetos",
   department: "Tecnologia da Informação",
   email: "colaborador1@rocketcorp.com",
-  accounts: ["Colaborador", "Gestor", "RH", "Comitê"],
+  accounts: ["Colaborador", "Gestor", "RH", "Comitê", "Mentor"],
 };
 
 const Profile: React.FC = () => {
@@ -39,6 +39,7 @@ const Profile: React.FC = () => {
     const acc = account.toLowerCase();
     if (acc.includes("colaborador")) return "/collaborator";
     if (acc.includes("gestor")) return "/manager";
+    if (acc.includes("mentor")) return "/mentor";
     if (acc.includes("rh")) return "/rh";
     if (acc.includes("comit")) return "/committee";
     return "/";
