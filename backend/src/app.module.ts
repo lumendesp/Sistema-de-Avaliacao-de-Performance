@@ -2,14 +2,19 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaService } from './prisma.service';
-import { CommitteeController } from './committee.controller';
-import { CommitteeService } from './committee.service';
+import { ConfigModule } from '@nestjs/config';
 
-import { CollaboratorModule } from './collaborator/collaborator.module';
+// import { CollaboratorModule } from './collaborator/collaborator.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [CollaboratorModule],
-  controllers: [AppController, CommitteeController],
-  providers: [AppService, PrismaService, CommitteeService],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    AuthModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService, PrismaService],
 })
 export class AppModule {}

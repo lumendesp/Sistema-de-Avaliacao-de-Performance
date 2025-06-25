@@ -1,114 +1,61 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Apaga avaliações relacionadas antes de apagar usuários
-  await prisma.reference.deleteMany();
-  await prisma.peerEvaluation.deleteMany();
-  await prisma.mentorEvaluation.deleteMany();
-  await prisma.$executeRawUnsafe(`DELETE FROM FinalEvaluation`);
-  await prisma.userRole.deleteMany();
-  await prisma.user.deleteMany();
+  // Cria posições
+  const position1 = await prisma.position.create({
+    data: { name: 'Developer' },
+  });
+  const position2 = await prisma.position.create({ data: { name: 'Manager' } });
 
-  // Criar usuários
-  const users = await Promise.all([
-    prisma.user.create({
-      data: {
-        name: 'Alice',
-        email: 'alice@example.com',
-        password: 'password1',
-        roles: {
-          create: [{ role: Role.COLLABORATOR }],
-        },
-      },
-    }),
-    prisma.user.create({
-      data: {
-        name: 'Bob',
-        email: 'bob@example.com',
-        password: 'password2',
-        roles: {
-          create: [{ role: Role.COLLABORATOR }],
-        },
-      },
-    }),
-    prisma.user.create({
-      data: {
-        name: 'Carol',
-        email: 'carol@example.com',
-        password: 'password3',
-        roles: {
-          create: [{ role: Role.MANAGER }],
-        },
-      },
-    }),
-    prisma.user.create({
-      data: {
-        name: 'Dave',
-        email: 'dave@example.com',
-        password: 'password4',
-        roles: {
-          create: [{ role: Role.COLLABORATOR }],
-        },
-      },
-    }),
-    prisma.user.create({
-      data: {
-        name: 'Eve',
-        email: 'eve@example.com',
-        password: 'password5',
-        roles: {
-          create: [{ role: Role.COMMITTEE }],
-        },
-      },
-    }),
-  ]);
+  // Cria unidades
+  const unit1 = await prisma.unit.create({ data: { name: 'Engineering' } });
+  const unit2 = await prisma.unit.create({ data: { name: 'HR' } });
 
-  // Criar avaliações
-  for (const evaluated of users) {
-    const evaluator = users.find(u => u.id !== evaluated.id) || users[0];
+  // Cria trilhas
+  const track1 = await prisma.track.create({ data: { name: 'Backend' } });
+  const track2 = await prisma.track.create({ data: { name: 'Frontend' } });
 
-    // Peer Evaluation
-    await prisma.peerEvaluation.create({
-      data: {
-        evaluatorId: evaluator.id,
-        evaluateeId: evaluated.id,
-        score: 4,
-        strengths: 'Colabora bem com a equipe.',
-        improvements: 'Precisa melhorar prazos.',
+  // Hash simples para senha (exemplo)
+  const passwordHash1 = await bcrypt.hash('password123', 10);
+  const passwordHash2 = await bcrypt.hash('adminpass', 10);
+
+  // Cria usuários
+  const user1 = await prisma.user.create({
+    data: {
+      name: 'Alice Johnson',
+      username: 'alice.j',
+      email: 'alice@example.com',
+      password: passwordHash1,
+      active: true,
+      positionId: position1.id,
+      unitId: unit1.id,
+      trackId: track1.id,
+      roles: {
+        create: [{ role: 'COLLABORATOR' }],
       },
-    });
+    },
+  });
 
-    // Mentor Evaluation
-    await prisma.mentorEvaluation.create({
-      data: {
-        evaluatorId: evaluator.id,
-        evaluateeId: evaluated.id,
-        score: 5,
-        justification: 'Ótimo desempenho e liderança.',
+  const user2 = await prisma.user.create({
+    data: {
+      name: 'Bob Manager',
+      username: 'bob.m',
+      email: 'bob@example.com',
+      password: passwordHash2,
+      active: true,
+      positionId: position2.id,
+      unitId: unit2.id,
+      trackId: track2.id,
+      roles: {
+        create: [{ role: 'MANAGER' }, { role: 'ADMIN' }],
       },
-    });
+    },
+  });
 
-    // Reference
-    await prisma.reference.create({
-      data: {
-        providerId: evaluator.id,
-        receiverId: evaluated.id,
-        justification: 'Trabalhamos juntos no último projeto.',
-      },
-    });
-  }
-
-  // Final Evaluation SOMENTE para 2 usuários (Alice e Bob)
-  await prisma.$executeRawUnsafe(`
-    INSERT INTO FinalEvaluation (evaluatorId, evaluateeId, createdAt, editedAt, score, justification)
-    VALUES
-      (${users[2].id}, ${users[0].id}, datetime('now'), datetime('now'), 4.5, 'Muito boa entrega final.'),
-      (${users[2].id}, ${users[1].id}, datetime('now'), datetime('now'), 3.8, 'Bom, mas pode melhorar.');
-  `);
-
-  console.log('Seed criado com sucesso!');
+  console.log('Seed completed!');
 }
 
 main()

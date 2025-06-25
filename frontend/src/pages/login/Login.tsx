@@ -15,8 +15,8 @@ const Login = () => {
     logout();
   }, []);
 
-  const handleLogin = () => {
-    const success = login(email, password);
+  const handleLogin = async () => {
+    const success = await login(email, password);
     if (success) navigate("/collaborator");
     else setError("Invalid credentials");
   };
@@ -24,7 +24,6 @@ const Login = () => {
   return (
     <div className="bg-[#08605F1F] h-screen w-full flex items-center justify-center select-none">
       <div className="bg-white flex w-full max-w-4xl rounded-3xl shadow-xl">
-
         <div className="bg-white flex flex-col justify-center gap-6 w-1/2 rounded-3xl py-20 px-12">
           <div className="text-center flex flex-col gap-3">
             <p className="text-4xl font-bold text-[#1D1D1D]">Sign In</p>
