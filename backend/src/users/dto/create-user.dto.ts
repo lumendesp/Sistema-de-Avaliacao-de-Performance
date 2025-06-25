@@ -2,6 +2,10 @@ import {
   IsEmail,
   IsNotEmpty,
   IsString,
+  IsOptional,
+  IsUrl,
+  IsNumber,
+  IsBoolean,
   MinLength,
   ValidateNested,
   ArrayNotEmpty,
@@ -36,18 +40,28 @@ export class CreateUserDto {
   @Type(() => UserRoleDto)
   roles: UserRoleDto[];
 
-  @ApiProperty({ example: true })
+  @ApiProperty({ example: true, required: false })
+  @IsOptional()
+  @IsBoolean()
   active?: boolean;
 
-  @ApiProperty({ example: 'https://example.com/photo.jpg' })
+  @ApiProperty({ example: 'https://example.com/photo.jpg', required: false })
+  @IsOptional()
+  @IsUrl()
   photo?: string;
 
-  @ApiProperty({ example: 1 })
+  @ApiProperty({ example: 1, required: false })
+  @IsOptional()
+  @IsNumber()
   positionId?: number;
 
-  @ApiProperty({ example: 1 })
+  @ApiProperty({ example: 1, required: false })
+  @IsOptional()
+  @IsNumber()
   unitId?: number;
 
-  @ApiProperty({ example: 1 })
+  @ApiProperty({ example: 1, required: false })
+  @IsOptional()
+  @IsNumber()
   trackId?: number;
 }
