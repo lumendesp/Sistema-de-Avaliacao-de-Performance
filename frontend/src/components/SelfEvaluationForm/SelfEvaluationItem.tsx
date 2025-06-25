@@ -11,6 +11,7 @@ const SelfEvaluationItem = ({
   setScore,
   justification,
   setJustification,
+  readOnly = false,
 }: SelfEvaluationItemProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const isComplete = score > 0 && justification.trim().length > 0;
@@ -42,10 +43,12 @@ const SelfEvaluationItem = ({
       {isOpen && (
         <div className="space-y-4">
           <p className="text-sm text-gray-500">
-            Dê uma avaliação de 1 a 5 com base no critério
+            {readOnly
+              ? "Nota atribuída ao critério:"
+              : "Dê uma avaliação de 1 a 5 com base no critério"}
           </p>
 
-          <StarRating score={score} onChange={setScore} />
+          <StarRating score={score} onChange={readOnly ? () => {} : setScore} />
 
           <div>
             <label
@@ -60,7 +63,10 @@ const SelfEvaluationItem = ({
               rows={3}
               placeholder="Justifique sua nota"
               value={justification}
-              onChange={(e) => setJustification(e.target.value)}
+              onChange={(e) => {
+                if (!readOnly) setJustification(e.target.value);
+              }}
+              disabled={readOnly}
             />
           </div>
         </div>

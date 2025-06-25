@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma.service';
 import { CreateSelfEvaluationDto } from './dto/create-self-evaluation.dto';
 import { UpdateSelfEvaluationDto } from './dto/update-self-evaluation.dto';
 
+
 @Injectable()
 export class SelfEvaluationService {
   constructor(private prisma: PrismaService) {}
@@ -75,6 +76,38 @@ export class SelfEvaluationService {
       where: { id },
     });
   }
+  
+  async getAvailableCriteria(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (
+      !user ||
+      user.positionId === null ||
+      user.unitId === null ||
+      user.trackId === null
+    ) {
+      throw new Error('Usuário incompleto: faltam positionId, unitId ou trackId');
+    }
+
+    const configuredCriteria = await this.prisma.configuredCriterion.findMany({
+      where: {
+        positionId: user.positionId,
+        unitId: user.unitId,
+        trackId: user.trackId,
+      },
+      include: {
+        criterion: true,
+      },
+    });
+
+    return configuredCriteria.map((cc) => ({
+      id: cc.criterion.id,
+      title: cc.criterion.name,
+    }));
+  }
+
 
 
 }

@@ -1,29 +1,61 @@
 import { useState } from "react";
 import SelfEvaluationItem from "./SelfEvaluationItem";
-import type { SelfEvaluationFormProps } from "../../types/selfEvaluation"
+import type { SelfEvaluationFormProps } from "../../types/selfEvaluation";
 import ScoreBox from "../ScoreBox";
+import axios from "axios";
+import { useAuth } from "../../context/AuthContext";
 
-const SelfEvaluationForm = ({ title, criteria }: SelfEvaluationFormProps) => {
-  const [ratings, setRatings] = useState<number[]>(Array(criteria.length).fill(0));
-  const [justifications, setJustifications] = useState<string[]>(Array(criteria.length).fill(""));
+const SelfEvaluationForm = ({ title, criteria, readOnly = false }: SelfEvaluationFormProps) => {
+  const [ratings, setRatings] = useState<number[]>(
+    criteria.map((c) => c.score ?? 0)
+  );
+  const [justifications, setJustifications] = useState<string[]>(
+    criteria.map((c) => c.justification ?? "")
+  );
+  const { token } = useAuth();
 
   const handleRatingChange = (index: number, value: number) => {
+    if (readOnly) return;
     const newRatings = [...ratings];
     newRatings[index] = value;
     setRatings(newRatings);
   };
 
   const handleJustificationChange = (index: number, value: string) => {
+    if (readOnly) return;
     const newJustifications = [...justifications];
     newJustifications[index] = value;
     setJustifications(newJustifications);
   };
 
+  const handleSubmit = async () => {
+    try {
+      await axios.post(
+        "http://localhost:3000/self-evaluation",
+        {
+          cycleId: 1,
+          items: criteria.map((criterion, i) => ({
+            criterionId: criterion.id,
+            score: ratings[i],
+            justification: justifications[i],
+          })),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      alert("Autoavaliação enviada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao enviar autoavaliação:", error);
+      alert("Erro ao enviar autoavaliação");
+    }
+  };
+
   const answeredCount = ratings.filter((r, i) => r > 0 && justifications[i].trim().length > 0).length;
   const totalCount = criteria.length;
-
-  const averageScore =
-    ratings.reduce((sum, score) => sum + score, 0) / totalCount;
+  const averageScore = ratings.reduce((sum, score) => sum + score, 0) / totalCount;
 
   return (
     <div className="bg-white rounded-xl shadow p-6 w-full mb-6">
@@ -39,16 +71,28 @@ const SelfEvaluationForm = ({ title, criteria }: SelfEvaluationFormProps) => {
       <div className="space-y-6">
         {criteria.map((criterion, index) => (
           <SelfEvaluationItem
-            key={index}
+            key={criterion.id}
             index={index + 1}
             title={criterion.title}
             score={ratings[index]}
             justification={justifications[index]}
             setScore={(value) => handleRatingChange(index, value)}
             setJustification={(value) => handleJustificationChange(index, value)}
+            readOnly={readOnly}
           />
         ))}
       </div>
+
+      {!readOnly && (
+        <div className="flex justify-end mt-6">
+          <button
+            onClick={handleSubmit}
+            className="bg-green-main text-white px-4 py-2 rounded-md hover:bg-green-700 transition"
+          >
+            Enviar
+          </button>
+        </div>
+      )}
     </div>
   );
 };
