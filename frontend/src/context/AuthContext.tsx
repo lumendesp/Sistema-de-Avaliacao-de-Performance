@@ -1,13 +1,15 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import { mockUsers } from "../mocks/mockUsers";
+// import { mockUsers } from "../mocks/mockUsers";
 import type { UserAuth, UserAuthPassword } from "../types/userAuth";
+import { loginRequest } from "../services/api";
 
 // Define o formato do contexto de autenticação
 interface AuthContextProps {
   user: UserAuth | null;
+  token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -17,44 +19,68 @@ const AuthContext = createContext<AuthContextProps>({} as AuthContextProps);
 // Esse é o componente em si, que fornece o contexto para o resto da aplicação
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserAuth | null>(null);
-  const [isLoading, setIsLoading] = useState(true); 
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem("token") || null
+  );
+
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+
+      // corrigir roles aqui, caso estejam no formato [{userId, role}]
+      const userRoles = Array.isArray(parsedUser.roles)
+        ? parsedUser.roles.map((r: any) => (typeof r === "string" ? r : r.role))
+        : [];
+
+      setUser({
+        ...parsedUser,
+        roles: userRoles,
+      });
     }
     setIsLoading(false);
   }, []);
 
-  const login = (email: string, password: string): boolean => {
-    // Procura no mockUsers um usuário que tenha o mesmo email e senha
-    const found = mockUsers.find(
-      (user: UserAuthPassword) =>
-        user.email === email && user.password === password
-    );
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const data = await loginRequest(email, password);
 
-    // Se encontrou, remove o campo password antes de salvar no useState
-    if (found) {
-      const { password: _, ...userWithoutPassword } = found;
-      // Salva no estado
-      setUser(userWithoutPassword);
+      // transforma os roles
+      const userRoles = data.user?.roles?.map((r: any) => r.role) || [];
 
-      // Salva no localStorage
+      // salva o token JWT
+      localStorage.setItem("token", data.access_token);
+
+      // remove a senha antes de salvar
+      const { password: _, ...userWithoutPassword } = data.user || { email };
+
+      // salva o usuário
       localStorage.setItem("user", JSON.stringify(userWithoutPassword));
+
+      setUser({
+        ...userWithoutPassword,
+        roles: userRoles,
+      });
+      setToken(data.access_token);
+
       return true;
+    } catch {
+      return false;
     }
-    return false;
   };
 
   // Limpa o useState do usuário
   const logout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
     setUser(null);
+    setToken(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
