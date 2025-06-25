@@ -3,7 +3,7 @@ import React from "react";
 interface ProfileCardProps {
   name: string;
   role: string;
-  department: string;
+  unity: string;
   email: string;
   accounts: string[];
   onSwitchAccount: (account: string) => void;
@@ -13,7 +13,7 @@ interface ProfileCardProps {
 const ProfileCard: React.FC<ProfileCardProps> = ({
   name,
   role,
-  department,
+  unity,
   email,
   accounts,
   onSwitchAccount,
@@ -75,15 +75,17 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         </h2>
         <p className="text-[#08605F] font-semibold text-base mb-2">{role}</p>
         <div className="flex flex-col md:flex-row gap-5 w-full justify-center mt-3 mb-5">
-          <div className="flex flex-col items-center bg-[#E6F4F4] rounded-xl px-6 py-3 shadow">
-            <span className="text-gray-500 text-xs">Departamento</span>
+          <div className="flex flex-col flex-1 items-center bg-[#E6F4F4] rounded-xl px-6 py-3 shadow">
+            <span className="text-gray-500 text-xs">Unidade</span>
             <span className="text-[#08605F] font-medium text-base">
-              {department}
+              {unity}
             </span>
           </div>
-          <div className="flex flex-col items-center bg-[#E6F4F4] rounded-xl px-6 py-3 shadow">
+          <div className="flex flex-col flex-1 items-center bg-[#E6F4F4] rounded-xl px-6 py-3 shadow">
             <span className="text-gray-500 text-xs">E-mail</span>
-            <span className="text-[#08605F] font-medium text-base">{email}</span>
+            <span className="text-[#08605F] font-medium text-base">
+              {email}
+            </span>
           </div>
         </div>
         {accounts.length > 1 && (

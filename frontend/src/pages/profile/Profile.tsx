@@ -5,7 +5,7 @@ import ProfileCard from "../../components/UserPofile/ProfileCard";
 const userData = {
   name: "Colaborador 1",
   role: "Gestor de Projetos",
-  department: "Tecnologia da Informação",
+  unity: "Rio de Janeiro",
   email: "colaborador1@rocketcorp.com",
   accounts: ["Colaborador", "Gestor", "RH", "Comitê"],
 };
@@ -15,16 +15,34 @@ const Profile: React.FC = () => {
 
   function getInitialAccount() {
     // Tenta pegar do sessionStorage a última conta usada
-    const lastAccount = sessionStorage.getItem('lastProfileAccount');
+    const lastAccount = sessionStorage.getItem("lastProfileAccount");
     if (lastAccount && userData.accounts.includes(lastAccount)) {
       return lastAccount;
     }
     // Detecta de onde veio (rota anterior)
-    const previousPath = window.history.state?.usr?.pathname || document.referrer;
-    if (previousPath.includes("manager")) return userData.accounts.find(a => a.toLowerCase().includes("gestor")) || userData.accounts[0];
-    if (previousPath.includes("collaborator")) return userData.accounts.find(a => a.toLowerCase().includes("colaborador")) || userData.accounts[0];
-    if (previousPath.includes("rh")) return userData.accounts.find(a => a.toLowerCase().includes("rh")) || userData.accounts[0];
-    if (previousPath.includes("committee")) return userData.accounts.find(a => a.toLowerCase().includes("comit")) || userData.accounts[0];
+    const previousPath =
+      window.history.state?.usr?.pathname || document.referrer;
+    if (previousPath.includes("manager"))
+      return (
+        userData.accounts.find((a) => a.toLowerCase().includes("gestor")) ||
+        userData.accounts[0]
+      );
+    if (previousPath.includes("collaborator"))
+      return (
+        userData.accounts.find((a) =>
+          a.toLowerCase().includes("colaborador")
+        ) || userData.accounts[0]
+      );
+    if (previousPath.includes("rh"))
+      return (
+        userData.accounts.find((a) => a.toLowerCase().includes("rh")) ||
+        userData.accounts[0]
+      );
+    if (previousPath.includes("committee"))
+      return (
+        userData.accounts.find((a) => a.toLowerCase().includes("comit")) ||
+        userData.accounts[0]
+      );
     return userData.accounts[0];
   }
 
@@ -32,7 +50,7 @@ const Profile: React.FC = () => {
 
   const handleSwitchAccount = (account: string) => {
     setCurrentAccount(account);
-    sessionStorage.setItem('lastProfileAccount', account);
+    sessionStorage.setItem("lastProfileAccount", account);
   };
 
   function getAccountRoute(account: string) {
@@ -73,7 +91,7 @@ const Profile: React.FC = () => {
       <ProfileCard
         name={userData.name}
         role={currentAccount}
-        department={userData.department}
+        unity={userData.unity}
         email={userData.email}
         accounts={userData.accounts}
         onSwitchAccount={handleSwitchAccount}
