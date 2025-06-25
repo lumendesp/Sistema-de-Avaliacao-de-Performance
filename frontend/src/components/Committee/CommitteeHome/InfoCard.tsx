@@ -83,14 +83,14 @@ function InfoCard({
     };
 
     return (
-        <div className={`w-[400px] h-[120px] ${backgroundColors[bgColor]} rounded-xl shadow-md p-4 flex justify-between`}>        
+        <div className={`w-full lg:w-[400px] h-auto min-h-[120px] ${backgroundColors[bgColor]} rounded-xl shadow-md p-4 flex flex-col sm:flex-row justify-between gap-4`}>        
             <div className="flex-1">
-                <div className="ml-3">
-                    <h2 className={`text-lg font-semibold ${textColors[textColor]} truncate`}>{name}</h2>
-                    <div className="relative h-12 flex items-center"> {/* <- Altura fixa aqui */}
+                <div className="ml-0 sm:ml-3">
+                    <h2 className={`text-base sm:text-lg font-semibold ${textColors[textColor]} truncate`}>{name}</h2>
+                    <div className="relative min-h-[48px] flex items-center"> {/* <- Altura mínima aqui */}
                         <div className={`absolute left-0 top-0 bottom-0 w-1 ${warningColors[finalWarningColor]} rounded`} />
                             <p 
-                                className={`ml-2 text-sm ${textColor === 'white' ? 'text-gray-300' : 'text-gray-600'} leading-tight`}
+                                className={`ml-2 text-xs sm:text-sm ${textColor === 'white' ? 'text-gray-300' : 'text-gray-600'} leading-tight`}
                                 style={{
                                     display: '-webkit-box',
                                     WebkitLineClamp: 2,
@@ -106,27 +106,27 @@ function InfoCard({
             </div>
 
             {children && (
-                <div className="flex items-center justify-center mx-2 flex-shrink-0">
+                <div className="flex items-center justify-center mx-0 sm:mx-2 flex-shrink-0">
                     {children}
                 </div>
             )}
 
  
-            <div className="flex items-center ml-2 flex-shrink-0">
+            <div className="flex items-center justify-center sm:justify-end ml-0 sm:ml-2 flex-shrink-0">
                 {finalImage && (
                     <img 
                         src={finalImage} 
                         alt={name} 
-                        className="w-10 h-10 object-contain mb-2"
+                        className="w-8 h-8 sm:w-10 sm:h-10 object-contain mb-0 sm:mb-2"
                     />
                 )}
                 {(number !== undefined || subName) && (
-                    <div className="flex flex-col ml-4 items-center">
+                    <div className="flex flex-col ml-2 sm:ml-4 items-center">
                         {number !== undefined && (
-                            <span className={`text-4xl font-bold ${dynamicTextColors[finalTextColor]}`}>{number}</span>
+                            <span className={`text-2xl sm:text-4xl font-bold ${dynamicTextColors[finalTextColor]}`}>{number}</span>
                         )}
                         {subName && (
-                            <span className={`text-mb ${dynamicTextColors[finalTextColor]}`}>{subName}</span>
+                            <span className={`text-xs sm:text-sm ${dynamicTextColors[finalTextColor]}`}>{subName}</span>
                         )}
                     </div>
                 )}

@@ -6,7 +6,7 @@ export const mockUsers: UserAuthPassword[] = [
     name: "Carlos Nogueira",
     email: "carlos@rocketcorp.com",
     password: "colaborador123",
-    roles: ["COLLABORATOR"],
+    roles: ["COLLABORATOR", "MENTOR"],
   },
   {
     id: 2,

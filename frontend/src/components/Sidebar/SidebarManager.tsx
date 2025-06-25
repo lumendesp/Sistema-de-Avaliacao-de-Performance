@@ -35,6 +35,7 @@ const SidebarManager = () => {
           <div className="w-5 h-5 bg-green-main rounded-sm mr-2" />
           <span className="font-bold text-lg text-green-main">RPE</span>
         </div>
+
         <nav>
           <ul className="flex flex-col gap-3">
             {menuItems.map(({ path, label, icon }) => (
@@ -58,6 +59,8 @@ const SidebarManager = () => {
           </ul>
         </nav>
       </div>
+
+      {/* avatar + nome agora levam a /perfil */}
       <div className="flex flex-col gap-6">
         <button
           onClick={() => navigate("/perfil")}
