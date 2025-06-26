@@ -7,6 +7,7 @@ export interface UserAuth {
   name: string;
   email: string;
   roles: Role[]; // Uma lista de papéis pq o usuário pode ter mais de um, exemplo: gestor também é colaborador
+  mentorId?: number;
 }
 
 // Interface que estende de UserAuth e adiciona a senha, é usada apenas para verificar login

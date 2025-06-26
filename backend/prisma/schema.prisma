@@ -77,6 +77,11 @@ model User {
   roles         UserRole[]
   trackHistory  UserTrack[]
 
+  // Relacionamento mentor <-> colaboradores (mentees)
+  mentorId   Int? 
+  mentor     User?  @relation("UserMentor", fields: [mentorId], references: [id])
+  mentees    User[] @relation("UserMentor")
+
   // Avaliações & Referências
   peerEvaluationsGiven       PeerEvaluation[]    @relation("PeerEvaluator")
   peerEvaluationsReceived    PeerEvaluation[]    @relation("PeerEvaluatee")
