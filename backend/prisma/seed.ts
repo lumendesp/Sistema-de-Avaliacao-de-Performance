@@ -50,7 +50,11 @@ async function main() {
       unitId: unit2.id,
       trackId: track2.id,
       roles: {
-        create: [{ role: 'MANAGER' }, { role: 'ADMIN' }],
+        create: [
+          { role: 'MANAGER' },
+          { role: 'COLLABORATOR' },
+          { role: 'ADMIN' },
+        ],
       },
     },
   });

@@ -83,13 +83,15 @@ const Profile: React.FC = () => {
   };
 
   function getAccountRoute(account: string) {
-    const acc = account.toLowerCase();
-    if (acc.includes("colaborador")) return "/collaborator";
-    if (acc.includes("gestor")) return "/manager";
+    const acc = account?.toLowerCase?.() || "";
+    if (acc.includes("manager") || acc.includes("gestor")) return "/manager";
     if (acc.includes("mentor")) return "/mentor";
     if (acc.includes("rh")) return "/rh";
     if (acc.includes("comit")) return "/committee";
-    return "/";
+    if (acc.includes("colaborador") || acc.includes("collaborator"))
+      return "/collaborator";
+    // fallback: volta para dashboard do colaborador se não identificar
+    return "/collaborator";
   }
 
   function handleBack() {
@@ -134,8 +136,7 @@ const Profile: React.FC = () => {
       </button>
       <ProfileCard
         name={profile.name}
-        role={roles.join(", ")}
-        department={profile.unit?.name || "-"}
+        unity={profile.unit?.name || "-"}
         email={profile.email}
         accounts={roles}
         onSwitchAccount={handleSwitchAccount}

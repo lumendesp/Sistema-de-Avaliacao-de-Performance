@@ -12,7 +12,6 @@ interface ProfileCardProps {
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
   name,
-  role,
   unity,
   email,
   accounts,
@@ -73,12 +72,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         <h2 className="text-2xl font-extrabold text-gray-800 mb-1 tracking-tight">
           {name}
         </h2>
-        <p className="text-[#08605F] font-semibold text-base mb-2">{role}</p>
+        {/* Exibe apenas o cargo/role atual selecionado */}
+        <p className="text-[#08605F] font-semibold text-base mb-2">
+          {currentAccount}
+        </p>
         <div className="flex flex-col md:flex-row gap-5 w-full justify-center mt-3 mb-5">
           <div className="flex flex-col flex-1 items-center bg-[#E6F4F4] rounded-xl px-6 py-3 shadow">
             <span className="text-gray-500 text-xs">Unidade</span>
             <span className="text-[#08605F] font-medium text-base">
-              {unity}
+              {unity || "-"}
             </span>
           </div>
           <div className="flex flex-col flex-1 items-center bg-[#E6F4F4] rounded-xl px-6 py-3 shadow">
