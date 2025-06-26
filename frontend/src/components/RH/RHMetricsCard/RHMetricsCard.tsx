@@ -19,7 +19,7 @@ const RHMetricsCard: React.FC<RHMetricsCardProps> = ({ title, description, value
             </div>
             <div className="flex items-center gap-x-3 ml-4">
                 <div className={`p-3 rounded-full ${iconBgColor}`}>
-                    <Icon className={`h-7 w-7 ${iconColor}`} />
+                    <Icon className={`h-19 w-19 ${iconColor}`} />
                 </div>
                 <div className="flex items-baseline text-right">
                     <span className="text-4xl font-bold text-gray-800">{value}</span>

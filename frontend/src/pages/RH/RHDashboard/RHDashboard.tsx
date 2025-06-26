@@ -3,7 +3,9 @@ import RHCircularProgressCard from '../../../components/RH/RHCircularProgressCar
 import CollaboratorRow from '../../../components/RH/CollaboratorRow/CollaboratorRow';
 import BarChartPlaceholder from '../../../components/RH/BarChartPlaceholder/BarChartPlaceholder';
 import { mockCollaborators } from '../../../data/rh_data';
-import { DocumentMinusIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
+import { DocumentMinusIcon } from '@heroicons/react/24/outline';
+import CustomCalendarIcon from '../../../components/RH/icons/CalendarIcons';
+import CustomDocumentIcon from '../../../components/RH/icons/DocumentIcon';
 
 function RHDashboard() {
     // Lógica para calcular os totais
@@ -31,8 +33,8 @@ function RHDashboard() {
                     title="Avaliações pendentes"
                     description={`${pending} colaboradores ainda não fecharam`}
                     value={pending}
-                    icon={DocumentMinusIcon}
-                    iconBgColor="bg-red-100"
+                    icon={CustomDocumentIcon}
+                    iconBgColor="bg-white"
                     iconColor="text-red-600"
                 />
                 <RHMetricsCard
@@ -40,8 +42,8 @@ function RHDashboard() {
                     description="Faltam 30 dias para o fechamento"
                     value={30}
                     unit="dias"
-                    icon={CalendarDaysIcon}
-                    iconBgColor="bg-green-100"
+                    icon={CustomCalendarIcon}
+                    iconBgColor="bg-white"
                     iconColor="text-green-600"
                 />
             </section>
