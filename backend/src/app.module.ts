@@ -10,6 +10,7 @@ import { UsersModule } from './users/users.module';
 import { MentorEvaluationModule } from './mentor-evaluation/mentor-evaluation.module';
 import { EvaluationCycleModule } from './evaluation-cycle/evaluation-cycle.module';
 import { MentorModule } from './mentor/mentor.module';
+import { CollaboratorsSearchBarModule } from './collaborator/collaborators-search-bar/collaborators-search-bar.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { MentorModule } from './mentor/mentor.module';
     MentorEvaluationModule,
     EvaluationCycleModule,
     MentorModule,
+    CollaboratorsSearchBarModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

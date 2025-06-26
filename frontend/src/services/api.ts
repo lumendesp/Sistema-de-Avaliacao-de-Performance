@@ -77,6 +77,24 @@ export const fetchMentorEvaluation = async (evaluateeId: number) => {
   return res.json();
 };
 
+export const fetchCollaboratorsBySearch = async (searchTerm: string) => {
+  const res = await fetch(
+    `${API_URL}/collaborators-search-bar?search=${encodeURIComponent(searchTerm)}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar colaboradores");
+  }
+
+  return res.json(); // array de usuários com role COLLABORATOR
+};
+
+
 
 // Fetches all users with their associated evaluations
 export const getUsersWithEvaluations = async () => {
