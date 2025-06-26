@@ -1,4 +1,4 @@
-import AIIcon from '../../assets/committee/AI-icon.png';
+import AIIcon from '../../../assets/committee/AI-icon.png';
 
 function GenAITextBox() {
     return (

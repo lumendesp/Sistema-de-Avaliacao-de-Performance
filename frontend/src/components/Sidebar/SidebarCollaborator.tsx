@@ -29,8 +29,8 @@ const SidebarCollaborator = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();            // Limpa o usuário do contexto e localStorage
-    navigate('/login');  // Redireciona para a tela de login
+    logout();
+    navigate('/login');
   };
 
   return (
