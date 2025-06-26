@@ -1,17 +1,42 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Outlet, NavLink, useParams } from "react-router-dom";
-import { collaborators } from "../pages/manager/Status";
 import type { Collaborator } from "../types/collaboratorStatus";
+import { API_URL } from '../services/api';
 
 export default function ManagerEvaluationLayout() {
   const { id } = useParams();
-  const collaborator = collaborators.find(
-    (c: Collaborator) => c.id === Number(id)
-  );
+  const [collaborator, setCollaborator] = useState<Collaborator | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!collaborator) {
-    return <div>Colaborador não encontrado</div>;
-  }
+  useEffect(() => {
+    const fetchCollaborator = async () => {
+      try {
+        const res = await fetch(`${API_URL}/user/${id}`);
+        if (!res.ok) throw new Error('Erro ao buscar colaborador');
+        const user = await res.json();
+        // Verifica se é colaborador
+        const isCollaborator = user.roles?.some((role: any) => role.role === 'COLLABORATOR');
+        if (!isCollaborator) throw new Error('Usuário não é colaborador');
+        setCollaborator({
+          id: user.id,
+          name: user.name,
+          role: user.position?.name || 'Colaborador',
+          status: 'Em andamento',
+          selfScore: null,
+          managerScore: null,
+        });
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCollaborator();
+  }, [id]);
+
+  if (loading) return <div>Carregando colaborador...</div>;
+  if (error || !collaborator) return <div>Colaborador não encontrado</div>;
 
   const { name, role } = collaborator;
   const initials = name
