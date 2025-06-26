@@ -39,6 +39,8 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
     const [expandedEvaluation, setExpandedEvaluation] = useState<string | null>(null);
     const [editingCriterionIdx, setEditingCriterionIdx] = useState<number | null>(null);
     const [editingCriterionName, setEditingCriterionName] = useState('');
+    const [localEditingName, setLocalEditingName] = useState('');
+    const [editingEvaluation, setEditingEvaluation] = useState<{criterionIdx: number|null, evalIdx: number|null, value: string}>({criterionIdx: null, evalIdx: null, value: ''});
 
     const handleToggleEvaluation = (criterionIndex: number, evalIndex: number) => {
         if (onEditEvaluation) {
@@ -54,19 +56,43 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
     const handleCriterionDoubleClick = (criterionIdx: number, name: string) => {
         setEditingCriterionIdx(criterionIdx);
         setEditingCriterionName(name);
+        setLocalEditingName(name);
     };
 
     const handleCriterionNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setEditingCriterionName(e.target.value);
+        setLocalEditingName(e.target.value);
     };
 
     const handleCriterionNameSave = (criterionIdx: number) => {
-        if (onEditCriterion) onEditCriterion(criterionIdx, editingCriterionName);
+        if (onEditCriterion && localEditingName.trim() && localEditingName !== editingCriterionName) {
+            onEditCriterion(criterionIdx, localEditingName.trim());
+        }
         setEditingCriterionIdx(null);
     };
 
     const handleCriterionNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, criterionIdx: number) => {
         if (e.key === 'Enter') handleCriterionNameSave(criterionIdx);
+        if (e.key === 'Escape') setEditingCriterionIdx(null);
+    };
+
+    const handleEvaluationDoubleClick = (criterionIdx: number, evalIdx: number, value: string) => {
+        setEditingEvaluation({ criterionIdx, evalIdx, value });
+    };
+
+    const handleEvaluationNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setEditingEvaluation(prev => ({ ...prev, value: e.target.value }));
+    };
+
+    const handleEvaluationNameSave = (criterionIdx: number, evalIdx: number) => {
+        if (onEditEvaluation && editingEvaluation.value.trim() !== '' && editingEvaluation.value !== initialCriteria[criterionIdx].evaluations[evalIdx].name) {
+            onEditEvaluation(criterionIdx, evalIdx, 'name', editingEvaluation.value.trim());
+        }
+        setEditingEvaluation({ criterionIdx: null, evalIdx: null, value: '' });
+    };
+
+    const handleEvaluationNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, criterionIdx: number, evalIdx: number) => {
+        if (e.key === 'Enter') handleEvaluationNameSave(criterionIdx, evalIdx);
+        if (e.key === 'Escape') setEditingEvaluation({ criterionIdx: null, evalIdx: null, value: '' });
     };
 
     return (
@@ -99,7 +125,6 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
                             title="Remover trilha"
                             onClick={e => {
                                 e.stopPropagation();
-                                console.log('Delete track button clicked');
                                 if (window.confirm('Tem certeza que deseja remover esta trilha?')) {
                                     onDeleteTrack();
                                 }
@@ -120,7 +145,6 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
                                 className="px-2 py-1 text-xs bg-gray-100 text-[#08605F] rounded hover:bg-gray-200 transition-colors"
                                 onClick={e => {
                                     e.stopPropagation();
-                                    console.log('Add criterion button clicked');
                                     onAddCriterion();
                                 }}
                             >
@@ -135,7 +159,7 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
                                     {editingCriterionIdx === criterionIndex ? (
                                         <input
                                             className="font-semibold text-gray-700 border-b border-[#08605F] outline-none bg-transparent px-1"
-                                            value={editingCriterionName}
+                                            value={localEditingName}
                                             onChange={handleCriterionNameChange}
                                             onBlur={() => handleCriterionNameSave(criterionIndex)}
                                             onKeyDown={e => handleCriterionNameKeyDown(e, criterionIndex)}
@@ -144,10 +168,7 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
                                     ) : (
                                         <h3
                                             className="font-semibold text-gray-700 cursor-pointer select-none"
-                                            onDoubleClick={() => {
-                                                setEditingCriterionIdx(criterionIndex);
-                                                setEditingCriterionName(criterion.name);
-                                            }}
+                                            onDoubleClick={() => handleCriterionDoubleClick(criterionIndex, criterion.name)}
                                         >
                                             {criterion.name}
                                         </h3>
@@ -156,10 +177,7 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
                                         <button
                                             className="ml-1 text-xs text-green-600 hover:text-green-800 p-1 border border-green-200 rounded-md bg-green-50 font-bold w-6 h-6 flex items-center justify-center"
                                             title="Adicionar avaliação"
-                                            onClick={() => {
-                                                console.log('Add evaluation button clicked', criterionIndex);
-                                                onAddEvaluation(criterionIndex);
-                                            }}
+                                            onClick={() => onAddEvaluation(criterionIndex)}
                                         >
                                             +
                                         </button>
@@ -170,7 +188,6 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
                                         className="text-xs text-red-600 hover:text-red-700 p-1 ml-2 border border-red-200 rounded-md bg-red-50 flex items-center justify-center"
                                         title="Remover critério"
                                         onClick={() => {
-                                            console.log('Delete criterion button clicked', criterionIndex);
                                             if (window.confirm('Tem certeza que deseja remover este critério?')) {
                                                 onDeleteCriterio(criterionIndex);
                                             }
@@ -184,14 +201,22 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
                                 <div key={evalIndex} className="border-b border-gray-200 last:border-b-0">
                                     <div className="flex items-center justify-between py-3">
                                         <div className="flex items-center gap-2">
-                                            {expandedEvaluation === evaluation.name ? (
+                                            {editingEvaluation.criterionIdx === criterionIndex && editingEvaluation.evalIdx === evalIndex ? (
                                                 <input
                                                     className="text-sm border-b border-[#08605F] outline-none bg-transparent px-1"
-                                                    value={evaluation.name}
-                                                    onChange={e => onEditEvaluation && onEditEvaluation(criterionIndex, evalIndex, 'name', e.target.value)}
+                                                    value={editingEvaluation.value}
+                                                    onChange={handleEvaluationNameChange}
+                                                    onBlur={() => handleEvaluationNameSave(criterionIndex, evalIndex)}
+                                                    onKeyDown={e => handleEvaluationNameKeyDown(e, criterionIndex, evalIndex)}
+                                                    autoFocus
                                                 />
                                             ) : (
-                                                <p className="text-sm">{evaluation.name}</p>
+                                                <p
+                                                    className="text-sm cursor-pointer"
+                                                    onDoubleClick={() => handleEvaluationDoubleClick(criterionIndex, evalIndex, evaluation.name)}
+                                                >
+                                                    {evaluation.name}
+                                                </p>
                                             )}
                                             {onDeleteEvaluation && expandedEvaluation === evaluation.name && (
                                                 <button

@@ -38,7 +38,6 @@ const AppRoutes = () => (
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
-
       <Route
         path="/collaborator"
         element={
@@ -84,7 +83,6 @@ const AppRoutes = () => (
           <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
         </Route>
       </Route>
-
       <Route
         path="/manager"
         element={
@@ -142,11 +140,7 @@ const AppRoutes = () => (
             <CommitteeLayout />
           </ProtectedRoute>
         }
-      >
-        <Route index element={<Committee />} />
-        <Route path="equalizations" element={<Equalization />} />
-      </Route>
-
+      />
       <Route
         path="/rh"
         element={

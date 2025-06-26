@@ -1,99 +1,89 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CollaboratorsSearchBar from '../../../components/CollaboratorsSearchBar';
 import RHCriteriaBox from '../../../components/RH/RHCriteria/RHCriteriaBox';
 import { IoFunnel } from "react-icons/io5";
+import { getAllTracks, createTrack, updateTrack, deleteTrack, getAllRhCriteria, createRhCriterion, updateRhCriterion, deleteRhCriterion, getCriteriaByTrack, addCriterionToTrack, removeCriterionFromTrack } from '../../../services/api';
+import type { Track } from '../../../types/track';
+
+interface Criterion {
+    id: number;
+    name: string;
+    generalDescription: string;
+    active: boolean;
+    evaluations?: Evaluation[];
+}
+
+interface Evaluation {
+    name: string;
+    mandatory: boolean;
+    weight: number;
+    description: string;
+}
+
+interface CriteriaGroup {
+    trackName: string;
+    trackId?: number;
+    criteria: Criterion[];
+}
 
 function RhCriteriaSettings() {
     const [activeTab, setActiveTab] = useState<'track' | 'unit'>('track');
     const [openBoxIndex, setOpenBoxIndex] = useState<number | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
 
-    // Editable criteria data
-    const [criteriaData, setCriteriaData] = useState([
-        {
-            trackName: 'Product Design',
-            criteria: [
-                {
-                    name: 'Critérios de Postura',
-                    evaluations: [
-                        { name: 'Sentimento de Dono', mandatory: true, weight: 10, description: 'Descrição detalhada do critério Sentimento de Dono...' },
-                        { name: 'Comunicação', mandatory: false, weight: 5, description: 'Descrição detalhada do critério Comunicação...' }
-                    ]
-                },
-                {
-                    name: 'Critérios Técnicos',
-                    evaluations: [
-                        { name: 'Qualidade do Design', mandatory: true, weight: 15, description: 'Descrição detalhada do critério Qualidade do Design...' },
-                    ]
-                }
-            ]
-        },
-        {
-            trackName: 'Product Design',
-            criteria: [
-                {
-                    name: 'Critérios de Postura',
-                    evaluations: [
-                        { name: 'Sentimento de Dono', mandatory: true, weight: 10, description: 'Descrição detalhada do critério Sentimento de Dono...' },
-                        { name: 'Comunicação', mandatory: false, weight: 5, description: 'Descrição detalhada do critério Comunicação...' }
-                    ]
-                },
-                {
-                    name: 'Critérios Técnicos',
-                    evaluations: [
-                        { name: 'Qualidade do Design', mandatory: true, weight: 15, description: 'Descrição detalhada do critério Qualidade do Design...' },
-                    ]
-                }
-            ]
-        },
-        {
-            trackName: 'Product Design',
-            criteria: [
-                {
-                    name: 'Critérios de Postura',
-                    evaluations: [
-                        { name: 'Sentimento de Dono', mandatory: true, weight: 10, description: 'Descrição detalhada do critério Sentimento de Dono...' },
-                        { name: 'Comunicação', mandatory: false, weight: 5, description: 'Descrição detalhada do critério Comunicação...' }
-                    ]
-                },
-                {
-                    name: 'Critérios Técnicos',
-                    evaluations: [
-                        { name: 'Qualidade do Design', mandatory: true, weight: 15, description: 'Descrição detalhada do critério Qualidade do Design...' },
-                    ]
-                }
-            ]
-        },
-        {
-            trackName: 'Product Design',
-            criteria: [
-                {
-                    name: 'Critérios de Postura',
-                    evaluations: [
-                        { name: 'Sentimento de Dono', mandatory: true, weight: 10, description: 'Descrição detalhada do critério Sentimento de Dono...' },
-                        { name: 'Comunicação', mandatory: false, weight: 5, description: 'Descrição detalhada do critério Comunicação...' }
-                    ]
-                },
-                {
-                    name: 'Critérios Técnicos',
-                    evaluations: [
-                        { name: 'Qualidade do Design', mandatory: true, weight: 15, description: 'Descrição detalhada do critério Qualidade do Design...' },
-                    ]
-                }
-            ]
-        }
-    ]);
-
-    // State for editing track (trilha) names
+    // Data from backend
+    const [tracks, setTracks] = useState<Track[]>([]);
+    const [criteria, setCriteria] = useState<Criterion[]>([]);
+    
+    // Local state for UI
+    const [criteriaData, setCriteriaData] = useState<CriteriaGroup[]>([]);
     const [editingTrackIdx, setEditingTrackIdx] = useState<number | null>(null);
     const [editingTrackName, setEditingTrackName] = useState('');
 
+    // Load data from backend
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                setLoading(true);
+                const tracksData = await getAllTracks();
+                // For each track, fetch its criteria
+                const criteriaGroups = await Promise.all(
+                    tracksData.map(async (track: Track) => {
+                        const configured = await getCriteriaByTrack(track.id);
+                        return {
+                            trackName: track.name,
+                            trackId: track.id,
+                            criteria: configured.map((cfg: any) => cfg.criterion)
+                        };
+                    })
+                );
+                setCriteriaData(criteriaGroups);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                alert('Erro ao carregar dados');
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadData();
+    }, []);
 
     // Save track name on blur or Enter
-    const handleTrackNameSave = (idx: number) => {
-        setCriteriaData(prev => prev.map((group, gIdx) =>
-            gIdx === idx ? { ...group, trackName: editingTrackName } : group
-        ));
-        setEditingTrackIdx(null);
+    const handleTrackNameSave = async (idx: number) => {
+        const group = criteriaData[idx];
+        if (!group.trackId) return;
+
+        try {
+            await updateTrack(group.trackId, { name: editingTrackName });
+            setCriteriaData(prev => prev.map((group, gIdx) =>
+                gIdx === idx ? { ...group, trackName: editingTrackName } : group
+            ));
+            setEditingTrackIdx(null);
+        } catch (error) {
+            console.error('Error updating track:', error);
+            alert('Erro ao atualizar trilha');
+        }
     };
 
     const handleTrackNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
@@ -102,60 +92,94 @@ function RhCriteriaSettings() {
         }
     };
 
-    // Add a new criteria group (box)
-    const handleAddCriteriaGroup = () => {
-        setCriteriaData([
-            {
-                trackName: 'Nova Trilha',
+    // Add a new track
+    const handleAddCriteriaGroup = async () => {
+        try {
+            const newTrack = await createTrack({ name: 'Nova Trilha' });
+            const newGroup = {
+                trackName: newTrack.name,
+                trackId: newTrack.id,
                 criteria: []
-            },
-            ...criteriaData
-        ]);
-        setOpenBoxIndex(0);
+            };
+            
+            setCriteriaData(prev => [newGroup, ...prev]);
+            setOpenBoxIndex(0);
+        } catch (error) {
+            console.error('Error creating track:', error);
+            alert('Erro ao criar trilha');
+        }
     };
 
-    // Add a new criterion to a trilha (group)
-    const handleAddCriterion = (groupIdx: number) => {
-        setCriteriaData(prev => prev.map((group, gIdx) =>
-            gIdx === groupIdx
-                ? {
-                    ...group,
-                    criteria: [
-                        {
-                            name: 'Novo Critério',
-                            evaluations: []
-                        },
-                        ...group.criteria
-                    ]
-                }
-                : group
-        ));
+    // Add a new criterion to a track
+    const handleAddCriterion = async (groupIdx: number) => {
+        try {
+            // 1. Create the criterion itself
+            const newCriterion = await createRhCriterion({
+                name: 'Novo Critério',
+                generalDescription: 'Descrição do critério',
+                active: true
+            });
+            // 2. Associate it with the track (use default unitId/positionId)
+            const group = criteriaData[groupIdx];
+            const trackId = group.trackId;
+            const unitId = 1; // Default
+            const positionId = 1; // Default
+            await addCriterionToTrack(trackId, newCriterion.id, unitId, positionId, false);
+            // 3. Fetch updated criteria for this track
+            const updatedConfigured = await getCriteriaByTrack(trackId);
+            setCriteriaData(prev => prev.map((g, idx) =>
+                idx === groupIdx
+                    ? { ...g, criteria: updatedConfigured.map((cfg: any) => cfg.criterion) }
+                    : g
+            ));
+        } catch (error) {
+            alert('Erro ao adicionar critério à trilha');
+        }
     };
 
-    // Handler to delete a trilha (track)
-    const handleDeleteTrack = (idx: number) => {
-        setCriteriaData(prev => prev.filter((_, gIdx) => gIdx !== idx));
-        if (openBoxIndex === idx) setOpenBoxIndex(null);
+    // Delete a track
+    const handleDeleteTrack = async (idx: number) => {
+        const group = criteriaData[idx];
+        if (!group.trackId) return;
+
+        try {
+            await deleteTrack(group.trackId);
+            setCriteriaData(prev => prev.filter((_, gIdx) => gIdx !== idx));
+            if (openBoxIndex === idx) setOpenBoxIndex(null);
+        } catch (error) {
+            console.error('Error deleting track:', error);
+            alert('Erro ao deletar trilha');
+        }
     };
 
-    // Handler to delete a criterio (criterion)
-    const handleDeleteCriterio = (groupIdx: number, criterionIdx: number) => {
-        setCriteriaData(prev => prev.map((group, gIdx) =>
-            gIdx === groupIdx
-                ? { ...group, criteria: group.criteria.filter((_, cIdx) => cIdx !== criterionIdx) }
-                : group
-        ));
+    // Remove a criterion from a track
+    const handleDeleteCriterio = async (groupIdx: number, criterionIdx: number) => {
+        const group = criteriaData[groupIdx];
+        const criterion = group.criteria[criterionIdx];
+        try {
+            await removeCriterionFromTrack(group.trackId, criterion.id);
+            // Fetch updated criteria for this track
+            const updatedConfigured = await getCriteriaByTrack(group.trackId);
+            setCriteriaData(prev => prev.map((g, idx) =>
+                idx === groupIdx
+                    ? { ...g, criteria: updatedConfigured.map((cfg: any) => cfg.criterion) }
+                    : g
+            ));
+        } catch (error) {
+            alert('Erro ao remover critério da trilha');
+        }
     };
 
-    // Handler to delete an evaluation from a criterion
+    // Delete an evaluation (this would need backend implementation)
     const handleDeleteEvaluation = (groupIdx: number, criterionIdx: number, evalIdx: number) => {
+        // This would need backend implementation for evaluations
         setCriteriaData(prev => prev.map((group, gIdx) =>
             gIdx === groupIdx
                 ? {
                     ...group,
                     criteria: group.criteria.map((criterion, cIdx) =>
                         cIdx === criterionIdx
-                            ? { ...criterion, evaluations: criterion.evaluations.filter((_, eIdx) => eIdx !== evalIdx) }
+                            ? { ...criterion, evaluations: criterion.evaluations?.filter((_, eIdx) => eIdx !== evalIdx) || [] }
                             : criterion
                     )
                 }
@@ -163,22 +187,32 @@ function RhCriteriaSettings() {
         ));
     };
 
-    // Handler to edit a criterion name
-    const handleEditCriterion = (groupIdx: number, criterionIdx: number, newName: string) => {
-        setCriteriaData(prev => prev.map((group, gIdx) =>
-            gIdx === groupIdx
-                ? {
-                    ...group,
-                    criteria: group.criteria.map((criterion, cIdx) =>
-                        cIdx === criterionIdx ? { ...criterion, name: newName } : criterion
-                    )
-                }
-                : group
-        ));
+    // Edit a criterion name
+    const handleEditCriterion = async (groupIdx: number, criterionIdx: number, newName: string) => {
+        const group = criteriaData[groupIdx];
+        const criterion = group.criteria[criterionIdx];
+        
+        try {
+            await updateRhCriterion(criterion.id, { name: newName });
+            setCriteriaData(prev => prev.map((group, gIdx) =>
+                gIdx === groupIdx
+                    ? {
+                        ...group,
+                        criteria: group.criteria.map((criterion, cIdx) =>
+                            cIdx === criterionIdx ? { ...criterion, name: newName } : criterion
+                        )
+                    }
+                    : group
+            ));
+        } catch (error) {
+            console.error('Error updating criterion:', error);
+            alert('Erro ao atualizar critério');
+        }
     };
 
-    // Handler to edit an evaluation field
+    // Edit an evaluation field (this would need backend implementation)
     const handleEditEvaluation = (groupIdx: number, criterionIdx: number, evalIdx: number, field: 'name' | 'weight' | 'description' | 'mandatory', value: string | number | boolean) => {
+        // This would need backend implementation for evaluations
         setCriteriaData(prev => prev.map((group, gIdx) =>
             gIdx === groupIdx
                 ? {
@@ -187,9 +221,9 @@ function RhCriteriaSettings() {
                         cIdx === criterionIdx
                             ? {
                                 ...criterion,
-                                evaluations: criterion.evaluations.map((evaluation, eIdx) =>
+                                evaluations: criterion.evaluations?.map((evaluation, eIdx) =>
                                     eIdx === evalIdx ? { ...evaluation, [field]: value } : evaluation
-                                )
+                                ) || []
                             }
                             : criterion
                     )
@@ -198,8 +232,9 @@ function RhCriteriaSettings() {
         ));
     };
 
-    // Handler to add a new evaluation to a criterion
+    // Add a new evaluation to a criterion (this would need backend implementation)
     const handleAddEvaluation = (groupIdx: number, criterionIdx: number) => {
+        // This would need backend implementation for evaluations
         setCriteriaData(prev => prev.map((group, gIdx) =>
             gIdx === groupIdx
                 ? {
@@ -215,7 +250,7 @@ function RhCriteriaSettings() {
                                         weight: 0,
                                         description: ''
                                     },
-                                    ...criterion.evaluations
+                                    ...(criterion.evaluations || [])
                                 ]
                             }
                             : criterion
@@ -225,21 +260,40 @@ function RhCriteriaSettings() {
         ));
     };
 
-    // Handler for save button
-    const handleSave = () => {
-        // Simulate save by logging to console
-        console.log('Salvando critérios:', criteriaData);
-        alert('Critérios salvos com sucesso!');
-        // Here you could send criteriaData to an API
+    // Save all changes
+    const handleSave = async () => {
+        try {
+            setSaving(true);
+            // Here you could implement bulk save if needed
+            console.log('Salvando critérios:', criteriaData);
+            alert('Critérios salvos com sucesso!');
+        } catch (error) {
+            console.error('Error saving:', error);
+            alert('Erro ao salvar alterações');
+        } finally {
+            setSaving(false);
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="w-full flex justify-center items-center h-64">
+                <div className="text-lg text-gray-600">Carregando...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Critérios de Avaliação</h1>
-                <button className="bg-[#08605F] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors" onClick={handleSave}>
-                    Salvar alterações
+                <button 
+                    className="bg-[#08605F] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-50"
+                    onClick={handleSave}
+                    disabled={saving}
+                >
+                    {saving ? 'Salvando...' : 'Salvar alterações'}
                 </button>
             </div>
 
@@ -264,7 +318,7 @@ function RhCriteriaSettings() {
                 <div>
                     <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
                         <div className="flex-grow w-full md:w-auto">
-                            <CollaboratorsSearchBar placeholder = "Buscar por Trilha"onSearch={term => console.log('Search term:', term)} />
+                            <CollaboratorsSearchBar placeholder="Buscar por Trilha" onSearch={term => console.log('Search term:', term)} />
                         </div>
                         <div className="bg-[#08605F] p-3 rounded-md text-white">
                             <IoFunnel size={24} />
@@ -285,7 +339,10 @@ function RhCriteriaSettings() {
                             <div key={idx}>
                                 <RHCriteriaBox
                                     trackName={group.trackName || `Trilha ${idx + 1}`}
-                                    criteria={group.criteria}
+                                    criteria={group.criteria.map(criterion => ({
+                                        name: criterion.name,
+                                        evaluations: criterion.evaluations || []
+                                    }))}
                                     isExpanded={openBoxIndex === idx}
                                     onToggle={() => setOpenBoxIndex(openBoxIndex === idx ? null : idx)}
                                     onAddCriterion={() => handleAddCriterion(idx)}
