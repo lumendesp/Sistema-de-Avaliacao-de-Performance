@@ -1,11 +1,11 @@
-const API_URL = 'http://localhost:3000';
+const API_URL = "http://localhost:3000";
 
 // Função auxiliar para obter o token do localStorage
-const getAuthToken = () => localStorage.getItem('token');
+const getAuthToken = () => localStorage.getItem("token");
 
 // Headers padrão para chamadas autenticadas
 const getAuthHeaders = () => ({
-  'Content-Type': 'application/json',
+  "Content-Type": "application/json",
   Authorization: `Bearer ${getAuthToken()}`,
 });
 
@@ -17,7 +17,7 @@ export const loginRequest = async (email: string, password: string) => {
   });
 
   if (!res.ok) {
-    throw new Error('Invalid credentials');
+    throw new Error("Invalid credentials");
   }
 
   return res.json();
@@ -27,16 +27,21 @@ export const loginRequest = async (email: string, password: string) => {
 export const getUsersWithEvaluations = async () => {
   const response = await fetch(`${API_URL}/committee/users`);
   if (!response.ok) {
-    throw new Error('Failed to fetch users');
+    throw new Error("Failed to fetch users");
   }
   return response.json();
 };
 
 // Creates a new final evaluation
-export const createFinalEvaluation = async (data: { score: number; justification: string; evaluateeId: number; evaluatorId: number }) => {
+export const createFinalEvaluation = async (data: {
+  score: number;
+  justification: string;
+  evaluateeId: number;
+  evaluatorId: number;
+}) => {
   const response = await fetch(`${API_URL}/committee/evaluations`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   if (!response.ok) {
@@ -44,7 +49,7 @@ export const createFinalEvaluation = async (data: { score: number; justification
     console.log(data.justification);
     console.log(data.evaluateeId);
     console.log(data.evaluatorId);
-    throw new Error('Failed to create final evaluation');
+    throw new Error("Failed to create final evaluation");
   }
   return response.json();
 };
@@ -53,12 +58,23 @@ export const createFinalEvaluation = async (data: { score: number; justification
 // To use it, you would need a corresponding backend endpoint.
 export const updateEvaluation = async (id: number, data: any) => {
   const response = await fetch(`${API_URL}/users/evaluations/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   if (!response.ok) {
-    throw new Error('Failed to update evaluation');
+    throw new Error("Failed to update evaluation");
   }
   return response.json();
-}; 
+};
+
+// Busca os dados do usuário pelo id
+export const getUserById = async (id: number) => {
+  const response = await fetch(`${API_URL}/users/${id}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error("Não foi possível obter o usuário");
+  }
+  return response.json();
+};

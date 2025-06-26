@@ -1,38 +1,85 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ProfileCard from "../../components/UserPofile/ProfileCard";
+import { getUserById } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+import type { Role } from "../../types/userAuth";
 
-const userData = {
-  name: "Colaborador 1",
-  role: "Gestor de Projetos",
-  department: "Tecnologia da Informação",
-  email: "colaborador1@rocketcorp.com",
-  accounts: ["Colaborador", "Gestor", "RH", "Comitê", "Mentor"],
-};
+interface ProfileData {
+  id: number;
+  name: string;
+  email: string;
+  unit?: { name: string } | null;
+  roles: { role: Role }[];
+}
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setError("Usuário não autenticado");
+      setLoading(false);
+      return;
+    }
+    getUserById(user.id)
+      .then((data) => {
+        setProfile(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Erro ao carregar perfil");
+        setLoading(false);
+      });
+  }, [user]);
 
   function getInitialAccount() {
-    // Tenta pegar do sessionStorage a última conta usada
-    const lastAccount = sessionStorage.getItem('lastProfileAccount');
-    if (lastAccount && userData.accounts.includes(lastAccount)) {
+    if (!profile) return "";
+    const lastAccount = sessionStorage.getItem("lastProfileAccount");
+    const roleNames = profile.roles.map((r) => r.role);
+    if (lastAccount && roleNames.includes(lastAccount as Role)) {
       return lastAccount;
     }
-    // Detecta de onde veio (rota anterior)
-    const previousPath = window.history.state?.usr?.pathname || document.referrer;
-    if (previousPath.includes("manager")) return userData.accounts.find(a => a.toLowerCase().includes("gestor")) || userData.accounts[0];
-    if (previousPath.includes("collaborator")) return userData.accounts.find(a => a.toLowerCase().includes("colaborador")) || userData.accounts[0];
-    if (previousPath.includes("rh")) return userData.accounts.find(a => a.toLowerCase().includes("rh")) || userData.accounts[0];
-    if (previousPath.includes("committee")) return userData.accounts.find(a => a.toLowerCase().includes("comit")) || userData.accounts[0];
-    return userData.accounts[0];
+    const previousPath =
+      window.history.state?.usr?.pathname || document.referrer;
+    if (previousPath.includes("manager"))
+      return (
+        profile.roles.find((a) => a.role.toLowerCase().includes("gestor"))
+          ?.role || roleNames[0]
+      );
+    if (previousPath.includes("collaborator"))
+      return (
+        profile.roles.find((a) => a.role.toLowerCase().includes("colaborador"))
+          ?.role || roleNames[0]
+      );
+    if (previousPath.includes("rh"))
+      return (
+        profile.roles.find((a) => a.role.toLowerCase().includes("rh"))?.role ||
+        roleNames[0]
+      );
+    if (previousPath.includes("committee"))
+      return (
+        profile.roles.find((a) => a.role.toLowerCase().includes("comit"))
+          ?.role || roleNames[0]
+      );
+    return roleNames[0];
   }
 
-  const [currentAccount, setCurrentAccount] = useState(getInitialAccount());
+  const [currentAccount, setCurrentAccount] = useState("");
+  useEffect(() => {
+    if (profile) {
+      setCurrentAccount(getInitialAccount());
+    }
+    // eslint-disable-next-line
+  }, [profile]);
 
   const handleSwitchAccount = (account: string) => {
     setCurrentAccount(account);
-    sessionStorage.setItem('lastProfileAccount', account);
+    sessionStorage.setItem("lastProfileAccount", account);
   };
 
   function getAccountRoute(account: string) {
@@ -48,6 +95,20 @@ const Profile: React.FC = () => {
   function handleBack() {
     navigate(getAccountRoute(currentAccount));
   }
+
+  if (loading)
+    return <div className="text-center mt-10">Carregando perfil...</div>;
+  if (error)
+    return <div className="text-center mt-10 text-red-600">{error}</div>;
+  if (!profile || !profile.roles)
+    return (
+      <div className="text-center mt-10 text-red-600">
+        Perfil não encontrado ou sem dados.
+      </div>
+    );
+
+  // Extrai cargos (roles) como string
+  const roles = profile.roles.map((r) => r.role);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-100 to-white py-10 relative">
@@ -72,11 +133,11 @@ const Profile: React.FC = () => {
         Voltar
       </button>
       <ProfileCard
-        name={userData.name}
-        role={currentAccount}
-        department={userData.department}
-        email={userData.email}
-        accounts={userData.accounts}
+        name={profile.name}
+        role={roles.join(", ")}
+        department={profile.unit?.name || "-"}
+        email={profile.email}
+        accounts={roles}
         onSwitchAccount={handleSwitchAccount}
         currentAccount={currentAccount}
       />

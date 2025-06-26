@@ -11,8 +11,8 @@ async function main() {
   const position2 = await prisma.position.create({ data: { name: 'Manager' } });
 
   // Cria unidades
-  const unit1 = await prisma.unit.create({ data: { name: 'Engineering' } });
-  const unit2 = await prisma.unit.create({ data: { name: 'HR' } });
+  const unit1 = await prisma.unit.create({ data: { name: 'Rio de Janeiro' } });
+  const unit2 = await prisma.unit.create({ data: { name: 'Recife' } });
 
   // Cria trilhas
   const track1 = await prisma.track.create({ data: { name: 'Backend' } });
