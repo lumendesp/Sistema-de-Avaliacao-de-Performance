@@ -4,7 +4,6 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-
   await prisma.selfEvaluationItem.deleteMany();
   await prisma.selfEvaluation.deleteMany();
   await prisma.userRole.deleteMany();
@@ -73,12 +72,21 @@ async function main() {
     }),
   ]);
 
+  // Relacionar Alice como colaboradora gerenciada por Bob
+  await prisma.managerCollaborator.create({
+    data: {
+      managerId: user2.id, // Bob
+      collaboratorId: user1.id, // Alice
+    },
+  });
+
   // Criar critérios
   const [criterion1, criterion2] = await Promise.all([
     prisma.criterion.create({
       data: {
         name: 'Resiliência nas adversidades',
-        generalDescription: 'Capacidade de manter desempenho diante de desafios',
+        generalDescription:
+          'Capacidade de manter desempenho diante de desafios',
         active: true,
       },
     }),
@@ -114,11 +122,11 @@ async function main() {
   ]);
 
   // Criar ciclo de avaliação
-  await prisma.evaluationCycle.create({
+  const cycle = await prisma.evaluationCycle.create({
     data: {
-      name: 'Ciclo 2025.1',
-      startDate: new Date('2025-01-01'),
-      endDate: new Date('2025-06-30'),
+      name: 'Ciclo Teste',
+      startDate: new Date('2025-07-01'),
+      endDate: new Date('2025-12-31'),
       status: 'IN_PROGRESS',
     },
   });

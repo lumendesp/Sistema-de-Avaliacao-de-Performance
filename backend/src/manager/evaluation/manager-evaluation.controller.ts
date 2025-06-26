@@ -1,13 +1,13 @@
 import {
   Controller,
-  Post,
-  Body,
   Get,
   Req,
   UseGuards,
   Param,
   Patch,
   ParseIntPipe,
+  Body,
+  Post,
 } from '@nestjs/common';
 import { ManagerEvaluationService } from './manager-evaluation.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
@@ -19,15 +19,9 @@ export class ManagerEvaluationController {
     private readonly managerEvaluationService: ManagerEvaluationService,
   ) {}
 
-  @Post()
-  async create(@Req() req, @Body() dto: any) {
-    const evaluatorId = req.user.sub;
-    return this.managerEvaluationService.create(evaluatorId, dto);
-  }
-
   @Get('by-manager')
   async findByManager(@Req() req) {
-    const evaluatorId = req.user.sub;
+    const evaluatorId = req.user.userId;
     return this.managerEvaluationService.findByManager(evaluatorId);
   }
 
@@ -39,5 +33,15 @@ export class ManagerEvaluationController {
   @Patch(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() dto: any) {
     return this.managerEvaluationService.update(id, dto);
+  }
+
+  @Post('generate-all/:cycleId')
+  async generateAll(@Param('cycleId', ParseIntPipe) cycleId: number) {
+    return this.managerEvaluationService.generateAllForCycle(cycleId);
+  }
+
+  @Patch('submit/:id')
+  async submit(@Param('id', ParseIntPipe) id: number) {
+    return this.managerEvaluationService.submit(id);
   }
 }

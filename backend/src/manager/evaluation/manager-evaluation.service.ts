@@ -65,7 +65,42 @@ export class ManagerEvaluationService {
     });
   }
 
+  // Cria avaliações para todos os colaboradores de todos os gestores no início do ciclo
+  async generateAllForCycle(cycleId: number) {
+    // Busca todos os relacionamentos gestor-colaborador
+    const relations = await this.prisma.managerCollaborator.findMany();
+    // Para cada relação, cria avaliação se não existir
+    for (const rel of relations) {
+      const exists = await this.prisma.managerEvaluation.findFirst({
+        where: {
+          evaluatorId: rel.managerId,
+          evaluateeId: rel.collaboratorId,
+          cycleId,
+        },
+      });
+      if (!exists) {
+        await this.prisma.managerEvaluation.create({
+          data: {
+            evaluatorId: rel.managerId,
+            evaluateeId: rel.collaboratorId,
+            cycleId,
+            status: 'draft',
+            items: { create: [] },
+          },
+        });
+      }
+    }
+    return { message: 'Avaliações de gestores geradas.' };
+  }
+
+  // Update só se status for draft
   async update(id: number, dto: UpdateManagerEvaluationDto) {
+    const evaluation = await this.prisma.managerEvaluation.findUnique({
+      where: { id },
+    });
+    if (!evaluation) throw new Error('Avaliação não encontrada');
+    if (evaluation.status !== 'draft')
+      throw new Error('Avaliação já enviada, não pode mais editar');
     const { cycleId, items } = dto;
     return this.prisma.managerEvaluation.update({
       where: { id },
@@ -84,6 +119,19 @@ export class ManagerEvaluationService {
         }),
       },
       include: { items: true },
+    });
+  }
+
+  // Envia avaliação (muda status para submitted)
+  async submit(id: number) {
+    const evaluation = await this.prisma.managerEvaluation.findUnique({
+      where: { id },
+    });
+    if (!evaluation) throw new Error('Avaliação não encontrada');
+    if (evaluation.status !== 'draft') throw new Error('Avaliação já enviada');
+    return this.prisma.managerEvaluation.update({
+      where: { id },
+      data: { status: 'submitted' },
     });
   }
 }

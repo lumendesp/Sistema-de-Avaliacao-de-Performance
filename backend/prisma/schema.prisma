@@ -94,6 +94,9 @@ model User {
   discrepancies    Discrepancy[]
   aiSummaries      AISummary[]
   finalScores      FinalScore[]
+
+  manages         ManagerCollaborator[] @relation("ManagerToCollaborator")
+  managedBy       ManagerCollaborator[] @relation("CollaboratorToManager")
 }
 
 // ---------------- HISTÓRICO DE TRILHAS -----------------
@@ -250,6 +253,7 @@ model ManagerEvaluation {
   evaluateeId Int
   cycleId     Int
   createdAt   DateTime @default(now())
+  status       String   @default("draft") // draft | submitted
 
   evaluator User             @relation("ManagerEvaluator", fields: [evaluatorId], references: [id])
   evaluatee User             @relation("ManagerEvaluatee", fields: [evaluateeId], references: [id])
@@ -329,4 +333,14 @@ model CommitteeNote {
 
   user  User             @relation(fields: [userId], references: [id])
   cycle EvaluationCycle  @relation(fields: [cycleId], references: [id])
+}
+
+model ManagerCollaborator {
+  managerId      Int
+  collaboratorId Int
+
+  manager        User @relation("ManagerToCollaborator", fields: [managerId], references: [id])
+  collaborator   User @relation("CollaboratorToManager", fields: [collaboratorId], references: [id])
+
+  @@id([managerId, collaboratorId])
 }
