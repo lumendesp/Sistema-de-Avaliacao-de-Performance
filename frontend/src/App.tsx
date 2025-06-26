@@ -1,11 +1,14 @@
 import "./index.css";
 import AppRoutes from "./routes/AppRoutes";
 import { AuthProvider } from "./context/AuthContext";
+import { EvaluationProvider } from "./context/EvaluationsContext";
 
 function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <EvaluationProvider>
+        <AppRoutes />
+      </EvaluationProvider>
     </AuthProvider>
   );
 }

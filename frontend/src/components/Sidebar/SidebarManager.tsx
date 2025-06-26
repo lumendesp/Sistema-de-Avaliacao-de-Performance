@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 const menuItems = [
   {
-    path: "/manager", // Dashboard principal
+    path: "/manager",
     label: "Dashboard",
     icon: <img src={dashboardIcon} alt="Dashboard" className="w-5 h-5" />,
   },
@@ -25,7 +25,7 @@ const SidebarManager = () => {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/");
   };
 
   return (
