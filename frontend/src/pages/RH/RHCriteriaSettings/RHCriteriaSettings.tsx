@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import CollaboratorsSearchBar from '../../../components/CollaboratorsSearchBar';
 import RHCriteriaBox from '../../../components/RH/RHCriteria/RHCriteriaBox';
 import { IoFunnel } from "react-icons/io5";
 import { FaTrash } from 'react-icons/fa';
-
-import { fetchCollaboratorsBySearch } from '../../../services/api';
 
 function RhCriteriaSettings() {
     const [activeTab, setActiveTab] = useState<'track' | 'unit'>('track');
@@ -185,20 +183,6 @@ function RhCriteriaSettings() {
         ));
     };
 
-
-    const [searchTerm, setSearchTerm] = useState("");
-    // const [collaborators, setCollaborators] = useState([]);
-
-    useEffect(() => {
-        const delayDebounce = setTimeout(() => {
-        fetchCollaboratorsBySearch(searchTerm)
-            // .then((data) => setCollaborators(data))
-            .catch((err) => console.error(err));
-        }, 300);
-
-        return () => clearTimeout(delayDebounce);
-    }, [searchTerm]);
-
     return (
         <div className="w-full">
             {/* Header */}
@@ -230,7 +214,7 @@ function RhCriteriaSettings() {
                 <div>
                     <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
                         <div className="flex-grow w-full md:w-auto">
-                            <CollaboratorsSearchBar onSearch={setSearchTerm}/>
+                            <CollaboratorsSearchBar/>
                         </div>
                         <div className="bg-[#08605F] p-3 rounded-md text-white">
                             <IoFunnel size={24} />

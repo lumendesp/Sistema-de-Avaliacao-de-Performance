@@ -9,7 +9,7 @@ export class CollaboratorsSearchBarController {
 
   @Get()
   findCollaborators(@Query('search') search: string) {
-    console.log('Busca:', search);
+    // console.log('Busca:', search);
     return this.collaboratorsSearchBarService.findCollaborators(search);
   }
 }
