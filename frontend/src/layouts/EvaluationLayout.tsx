@@ -1,8 +1,8 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import SubmitButton from "../components/SubmitButton/SubmitButton";
 import { useEvaluation } from "../context/EvaluationsContext";
 
-// Tabs que representam os diferentes formulários de avaliação
+// Lista de abas disponíveis na avaliação
 const tabs = [
   { label: "Autoavaliação", path: "self-evaluation" },
   { label: "Avaliação 360", path: "peer-evaluation" },
@@ -11,8 +11,10 @@ const tabs = [
 ];
 
 const EvaluationLayout = () => {
-  // Pegando do contexto: se está completo, se é atualização e a função de submitAll
   const { isComplete, submitAll, isUpdate } = useEvaluation();
+  const location = useLocation();
+
+  const isSelfEvaluation = location.pathname.endsWith("/self-evaluation");
 
   return (
     <div className="pt-6">
@@ -20,15 +22,15 @@ const EvaluationLayout = () => {
         <header className="flex justify-between items-center">
           <h1 className="text-xl font-semibold">Ciclo 2025.1</h1>
 
-          {/* Botão para submeter todos os formulários cadastrados (autoavaliação, 360, etc) */}
+          {/* Mesmo botão em todas as telas, mas apenas funcional na autoavaliação */}
           <SubmitButton
             isComplete={isComplete}
             isUpdate={isUpdate}
             onClick={submitAll}
+            disabled={!isSelfEvaluation}
           />
         </header>
 
-        {/* Menu de navegação entre os formulários */}
         <nav className="flex gap-20 pt-16 m-0 pl-10">
           {tabs.map(({ label, path }) => (
             <NavLink
@@ -46,7 +48,6 @@ const EvaluationLayout = () => {
         </nav>
       </div>
 
-      {/* Onde cada formulário vai ser carregado conforme a aba selecionada */}
       <Outlet />
     </div>
   );
