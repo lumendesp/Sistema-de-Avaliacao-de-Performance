@@ -4,10 +4,26 @@ import { CreateSelfEvaluationDto } from './dto/create-self-evaluation.dto';
 import { UpdateSelfEvaluationDto } from './dto/update-self-evaluation.dto';
 import { ConflictException } from '@nestjs/common/exceptions/conflict.exception';
 
-
 @Injectable()
 export class SelfEvaluationService {
   constructor(private prisma: PrismaService) {}
+
+  private getScoreDescription(score: number): string {
+    switch (score) {
+      case 1:
+        return 'Fica muito abaixo das expectativas';
+      case 2:
+        return 'Fica abaixo das expectativas';
+      case 3:
+        return 'Atinge as expectativas';
+      case 4:
+        return 'Fica acima das expectativas';
+      case 5:
+        return 'Supera as expectativas';
+      default:
+        return 'Nota inválida';
+    }
+  }
 
   async create(userId: number, dto: CreateSelfEvaluationDto) {
     const existing = await this.prisma.selfEvaluation.findFirst({
@@ -31,6 +47,7 @@ export class SelfEvaluationService {
               criterionId: item.criterionId,
               score: item.score,
               justification: item.justification,
+              scoreDescription: this.getScoreDescription(item.score),
             })),
           },
         },
@@ -40,7 +57,6 @@ export class SelfEvaluationService {
       },
     });
   }
-
 
   async findByUser(where: { userId: number; cycleId?: number }) {
     return this.prisma.selfEvaluation.findMany({
@@ -61,12 +77,12 @@ export class SelfEvaluationService {
         ...(cycleId && { cycleId }),
         ...(items && {
           items: {
-            deleteMany: {}, 
+            deleteMany: {},
             create: items.map((item) => ({
               criterionId: item.criterionId,
               score: item.score,
               justification: item.justification,
-              scoreDescription: item.scoreDescription || '',
+              scoreDescription: this.getScoreDescription(item.score),
             })),
           },
         }),
@@ -94,7 +110,6 @@ export class SelfEvaluationService {
     }
   }
 
-  
   async getAvailableCriteria(userId: number) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -126,7 +141,4 @@ export class SelfEvaluationService {
       description: cc.criterion.generalDescription,
     }));
   }
-
-
-
 }
