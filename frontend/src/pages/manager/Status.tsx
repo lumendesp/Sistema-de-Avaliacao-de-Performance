@@ -13,7 +13,7 @@ export default function Collaborators() {
   useEffect(() => {
     const fetchColaboradores = async () => {
       try {
-        const res = await fetch(`${API_URL}/user`);
+        const res = await fetch(`${API_URL}/users`);
         if (!res.ok) throw new Error('Erro ao buscar colaboradores');
         const users = await res.json();
         // Filtra apenas usuários com role COLLABORATOR
@@ -66,13 +66,7 @@ export default function Collaborators() {
       </div>
 
       {/* Lista dos colaboradores com mais espaçamento */}
-      <div
-        className={
-          search.trim() !== ""
-            ? "absolute top-full mt-2 w-full bg-white rounded-xl shadow-md px-2 py-3 flex flex-col gap-4 z-10"
-            : "flex flex-col gap-4 w-full"
-        }
-      >
+      <div className="flex flex-col gap-4 w-full">
         {search.trim() !== "" && (
           <p className="ml-2 text-sm font-semibold text-[#334155]">
             Resultados

@@ -12,7 +12,7 @@ export default function ManagerEvaluationLayout() {
   useEffect(() => {
     const fetchCollaborator = async () => {
       try {
-        const res = await fetch(`${API_URL}/user/${id}`);
+        const res = await fetch(`${API_URL}/users/${id}`);
         if (!res.ok) throw new Error('Erro ao buscar colaborador');
         const user = await res.json();
         // Verifica se é colaborador

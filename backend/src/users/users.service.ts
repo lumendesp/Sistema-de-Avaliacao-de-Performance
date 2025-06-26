@@ -32,7 +32,7 @@ export class UsersService {
   // função que retorna todos os usuários
   async findAll() {
     return this.prisma.user.findMany({
-      include: { roles: true },
+      include: { roles: true, unit: true, position: true, track: true },
     });
   }
 

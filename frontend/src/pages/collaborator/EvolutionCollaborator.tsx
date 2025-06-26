@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import EvolutionLayout from '../../layouts/EvolutionLayout';
-
-const USER_ID = 1;
+import { useParams } from 'react-router-dom';
 
 const EvolutionCollaborator = () => {
+  const { id } = useParams();
+  const userId = id ? Number(id) : 1;
   const [loading, setLoading] = useState(true);
   const [cycles, setCycles] = useState<any[]>([]);
   const [performance, setPerformance] = useState<any[]>([]);
@@ -15,7 +16,7 @@ const EvolutionCollaborator = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:3000/ciclos/historico/${USER_ID}`);
+        const res = await fetch(`http://localhost:3000/ciclos/historico/${userId}`);
         const data = await res.json();
         setCycles(data);
         setTotalEvaluations(data.length);
@@ -41,9 +42,13 @@ const EvolutionCollaborator = () => {
       setLoading(false);
     };
     fetchData();
-  }, []);
+  }, [userId]);
 
   if (loading) return <div className="p-6">Carregando evolução...</div>;
+
+  if (cycles.length === 0) {
+    return <div className="p-6 text-gray-500">Este usuário não possui ciclos avaliados.</div>;
+  }
 
   return (
     <EvolutionLayout

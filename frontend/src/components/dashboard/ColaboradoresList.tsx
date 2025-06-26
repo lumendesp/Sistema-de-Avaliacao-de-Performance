@@ -16,7 +16,7 @@ const ColaboradoresList: React.FC = () => {
   useEffect(() => {
     const fetchColaboradores = async () => {
       try {
-        const res = await fetch(`${API_URL}/user`);
+        const res = await fetch(`${API_URL}/users`);
         if (!res.ok) throw new Error('Erro ao buscar colaboradores');
         const users = await res.json();
         // Filtra apenas usuários com role COLLABORATOR
