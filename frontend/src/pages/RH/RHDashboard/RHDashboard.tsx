@@ -1,9 +1,8 @@
 import RHMetricsCard from '../../../components/RH/RHMetricsCard/RHMetricsCard';
 import RHCircularProgressCard from '../../../components/RH/RHCircularProgressCard/RHCircularProgressCard';
 import CollaboratorRow from '../../../components/RH/CollaboratorRow/CollaboratorRow';
-import BarChartPlaceholder from '../../../components/RH/BarChartPlaceholder/BarChartPlaceholder';
+import RHBarChart from '../../../components/RH/RHBarChart/RHBarChart';
 import { mockCollaborators } from '../../../data/rh_data';
-import { DocumentMinusIcon } from '@heroicons/react/24/outline';
 import CustomCalendarIcon from '../../../components/RH/icons/CalendarIcons';
 import CustomDocumentIcon from '../../../components/RH/icons/DocumentIcon';
 
@@ -13,6 +12,35 @@ function RHDashboard() {
     const completed = mockCollaborators.filter(c => c.status === 'finalizado').length;
     const pending = total - completed;
     const completionPercentage = Math.round((completed / total) * 100);
+
+    const processChartData = () => {
+        // Encontra todos os setores únicos nos dados
+        const units = [...new Set(mockCollaborators.map(c => c.unit))];
+        // Conta quantos finalizaram em cada setor
+        const completedData = units.map(unit =>
+            mockCollaborators.filter(c => c.unit === unit && c.status === 'finalizado').length
+        );
+
+        return {
+            labels: units,
+            datasets: [
+                {
+                    label: 'Avaliações Concluídas',
+                    data: completedData,
+                    backgroundColor: [
+                        '#043c3c',
+                        '#ffc857',
+                        '#345c64',
+                        '#3c7c7c',
+                    ],
+                    borderRadius: 5,
+                    maxBarThickness: 50,
+                },
+            ],
+        };
+    };
+
+    const chartData = processChartData();
 
     return (
         <>
@@ -67,8 +95,8 @@ function RHDashboard() {
                             <option>Todos os setores</option>
                         </select>
                     </div>
-                    <div className="h-[320px]">
-                        <BarChartPlaceholder />
+                    <div className="h-[320px] relative">
+                        <RHBarChart chartData={chartData} />
                     </div>
                 </div>
             </section>
