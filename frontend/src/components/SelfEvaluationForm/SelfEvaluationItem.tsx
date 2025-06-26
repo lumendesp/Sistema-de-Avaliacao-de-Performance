@@ -11,8 +11,8 @@ const SelfEvaluationItem = ({
   title,
   description,
   score,
-  setScore,
   justification,
+  setScore,
   setJustification,
   readOnly = false,
 }: SelfEvaluationItemProps) => {
@@ -68,7 +68,12 @@ const SelfEvaluationItem = ({
               : "Dê uma avaliação de 1 a 5 com base no critério"}
           </p>
 
-          <StarRating score={score} onChange={readOnly ? () => {} : setScore} />
+          <StarRating
+            score={score}
+            onChange={(newScore) => {
+              if (!readOnly) setScore(newScore);
+            }}
+          />
 
           <div>
             <label
@@ -96,3 +101,4 @@ const SelfEvaluationItem = ({
 };
 
 export default SelfEvaluationItem;
+  

@@ -10,6 +10,8 @@ export default function SelfEvaluationPage() {
   const [readOnly, setReadOnly] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const currentCycleId = 1;
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -28,10 +30,17 @@ export default function SelfEvaluationPage() {
           description: c.description,
         }));
 
-        const answered = answeredRes.data.items ?? [];
+        const evaluations = answeredRes.data;
+
+        // Filtra avaliação do ciclo atual
+        const currentEvaluation = evaluations.find(
+          (evaluation: any) => evaluation.cycle.id === currentCycleId
+        );
+
+        const answeredItems = currentEvaluation?.items ?? [];
 
         const combined = available.map((c: any) => {
-          const response = answered.find((a: any) => a.criterionId === c.id);
+          const response = answeredItems.find((a: any) => a.criterionId === c.id);
           return {
             ...c,
             score: response?.score ?? 0,
@@ -40,7 +49,7 @@ export default function SelfEvaluationPage() {
         });
 
         setCriteria(combined);
-        setReadOnly(answered.length > 0);
+        setReadOnly(!!currentEvaluation); // se já respondeu, readOnly true
       } catch (err) {
         console.error("Erro ao carregar critérios:", err);
       } finally {
@@ -59,7 +68,8 @@ export default function SelfEvaluationPage() {
         <SelfEvaluationForm
           title="Critérios de Postura"
           criteria={criteria}
-          readOnly={readOnly}
+          readOnly={false}
+          cycleId={currentCycleId}
         />
       )}
     </div>

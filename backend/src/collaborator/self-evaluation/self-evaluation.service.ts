@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { CreateSelfEvaluationDto } from './dto/create-self-evaluation.dto';
 import { UpdateSelfEvaluationDto } from './dto/update-self-evaluation.dto';
+import { ConflictException } from '@nestjs/common/exceptions/conflict.exception';
 
 
 @Injectable()
@@ -9,37 +10,44 @@ export class SelfEvaluationService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: number, dto: CreateSelfEvaluationDto) {
-    const { cycleId, items } = dto;
-
-    const selfEvaluation = await this.prisma.selfEvaluation.create({
-      data: {
+    const existing = await this.prisma.selfEvaluation.findFirst({
+      where: {
         userId,
-        cycleId,
-        items: {
-          create: items.map((item) => ({
-            criterionId: item.criterionId,
-            score: item.score,
-            justification: item.justification,
-            scoreDescription: item.scoreDescription || '',
-          })),
-        },
+        cycleId: dto.cycleId,
       },
-      include: { items: true },
     });
 
-    return selfEvaluation;
-  }
+    if (existing) {
+      throw new ConflictException('Autoavaliação já existe para este ciclo');
+    }
 
-  async findByUser(userId: number) {
-    return this.prisma.selfEvaluation.findMany({
-      where: { userId },
-      include: {
-        cycle: true,
+    return this.prisma.selfEvaluation.create({
+      data: {
+        userId,
+        cycleId: dto.cycleId,
         items: {
-          include: {
-            criterion: true,
+          createMany: {
+            data: dto.items.map((item) => ({
+              criterionId: item.criterionId,
+              score: item.score,
+              justification: item.justification,
+            })),
           },
         },
+      },
+      include: {
+        items: true,
+      },
+    });
+  }
+
+
+  async findByUser(where: { userId: number; cycleId?: number }) {
+    return this.prisma.selfEvaluation.findMany({
+      where,
+      include: {
+        items: true,
+        cycle: true,
       },
     });
   }
@@ -68,14 +76,24 @@ export class SelfEvaluationService {
   }
 
   async delete(id: number) {
-    await this.prisma.selfEvaluationItem.deleteMany({
-      where: { evaluationId: id },
-    });
+    try {
+      const deletedItems = await this.prisma.selfEvaluationItem.deleteMany({
+        where: { evaluationId: id },
+      });
 
-    return this.prisma.selfEvaluation.delete({
-      where: { id },
-    });
+      const deletedEvaluation = await this.prisma.selfEvaluation.delete({
+        where: { id },
+      });
+
+      return {
+        message: `Autoavaliação ID ${id} e ${deletedItems.count} itens deletados com sucesso.`,
+        deletedEvaluation,
+      };
+    } catch (error) {
+      throw new Error(`Erro ao deletar avaliação ID ${id}: ${error.message}`);
+    }
   }
+
   
   async getAvailableCriteria(userId: number) {
     const user = await this.prisma.user.findUnique({

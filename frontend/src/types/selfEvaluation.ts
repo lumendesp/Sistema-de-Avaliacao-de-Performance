@@ -10,10 +10,12 @@ export interface SelfEvaluationFormProps {
   title: string;
   criteria: Criterion[];
   readOnly?: boolean;
+  cycleId: number;  
   previousAnswers?: {
     criterionId: number;
     score: number;
     justification: string;
+    cycleId: number;  
   }[];
 }
 

@@ -9,6 +9,7 @@ import {
   Patch,
   ParseIntPipe,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { SelfEvaluationService } from './self-evaluation.service';
 import { CreateSelfEvaluationDto } from './dto/create-self-evaluation.dto';
@@ -30,9 +31,13 @@ export class SelfEvaluationController {
   }
 
   @Get()
-  async findByUser(@Req() req) {
+  async findByUser(@Req() req, @Query('cycleId') cycleId?: number) {
     const userId = req.user.userId;
-    return this.selfEvaluationService.findByUser(userId);
+
+    const where: any = { userId };
+    if (cycleId) where.cycleId = cycleId;
+
+    return this.selfEvaluationService.findByUser(where);
   }
 
   @Patch(':id')
@@ -44,9 +49,10 @@ export class SelfEvaluationController {
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    return this.selfEvaluationService.delete(+id);
+  async delete(@Param('id', ParseIntPipe) id: number) {
+    return this.selfEvaluationService.delete(id);
   }
+
 
   @Get('available')
   @ApiOperation({ summary: 'Listar critérios de autoavaliação disponíveis' })
