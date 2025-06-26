@@ -7,6 +7,9 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { SelfEvaluationModule } from './collaborator/self-evaluation/self-evaluation.module';
 import { UsersModule } from './users/users.module';
+import { MentorEvaluationModule } from './mentor-evaluation/mentor-evaluation.module';
+import { EvaluationCycleModule } from './evaluation-cycle/evaluation-cycle.module';
+import { MentorModule } from './mentor/mentor.module';
 
 @Module({
   imports: [
@@ -16,6 +19,9 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     SelfEvaluationModule,
     UsersModule,
+    MentorEvaluationModule,
+    EvaluationCycleModule,
+    MentorModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
