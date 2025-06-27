@@ -10,7 +10,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { ManagerEvaluationService } from './manager-evaluation.service';
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)
 @Controller('manager/evaluation')

@@ -11,7 +11,8 @@ import { MentorEvaluationModule } from './mentor-evaluation/mentor-evaluation.mo
 import { EvaluationCycleModule } from './evaluation-cycle/evaluation-cycle.module';
 import { MentorModule } from './mentor/mentor.module';
 import { SelfEvaluationModule } from './collaborator/self-evaluation/self-evaluation.module';
-import { ManagerEvaluationModule } from './manager/evaluation/manager-evaluation.module';
+import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
+import { ManagerModule } from './manager/manager.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ManagerEvaluationModule } from './manager/evaluation/manager-evaluation
     MentorEvaluationModule,
     EvaluationCycleModule,
     MentorModule,
+    ManagerModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

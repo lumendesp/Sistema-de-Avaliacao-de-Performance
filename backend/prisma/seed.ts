@@ -122,11 +122,11 @@ async function main() {
   ]);
 
   // Criar ciclo de avaliação
-  const cycle = await prisma.evaluationCycle.create({
+  await prisma.evaluationCycle.create({
     data: {
-      name: 'Ciclo Teste',
-      startDate: new Date('2025-07-01'),
-      endDate: new Date('2025-12-31'),
+      name: '2025 Mid-Year Cycle',
+      startDate: new Date('2025-06-01T00:00:00Z'),
+      endDate: new Date('2025-07-31T23:59:59Z'),
       status: 'IN_PROGRESS',
     },
   });
