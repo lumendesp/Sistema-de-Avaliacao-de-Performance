@@ -275,19 +275,6 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, availableCriteria
                                                     {evaluation.name}
                                                 </p>
                                             )}
-                                            {onDeleteEvaluation && expandedEvaluation === evaluation.name && (
-                                                <button
-                                                    className="text-xs text-red-600 hover:text-red-700 p-1"
-                                                    title="Remover avaliação"
-                                                    onClick={() => {
-                                                        if (window.confirm('Tem certeza que deseja remover esta avaliação?')) {
-                                                            onDeleteEvaluation(criterionIndex, evalIndex);
-                                                        }
-                                                    }}
-                                                >
-                                                    <FaTrash size={12} />
-                                                </button>
-                                            )}
                                             {onDeleteCriterioFromGroup && expandedEvaluation === evaluation.name && (
                                                 <button
                                                     className="text-xs text-red-600 hover:text-red-700 p-1 ml-2"
