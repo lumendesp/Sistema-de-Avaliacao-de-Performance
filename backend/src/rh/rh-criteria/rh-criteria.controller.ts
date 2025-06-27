@@ -162,4 +162,24 @@ export class RhCriteriaController {
     ) {
         return this.service.updateCriterionInTrack(Number(trackId), Number(criterionId), data);
     }
+
+    @Post('track/:trackId/default-group')
+    @ApiOperation({ summary: 'Criar grupo padrão para uma trilha' })
+    @ApiParam({ name: 'trackId', description: 'ID da trilha' })
+    @ApiBody({ 
+        schema: { 
+            properties: { 
+                unitId: { type: 'number' }, 
+                positionId: { type: 'number' } 
+            },
+            required: ['unitId', 'positionId']
+        } 
+    })
+    @ApiResponse({ status: 201, description: 'Grupo padrão criado' })
+    createDefaultGroup(
+        @Param('trackId') trackId: string,
+        @Body() data: { unitId: number; positionId: number }
+    ) {
+        return this.service.createDefaultGroup(Number(trackId), data.unitId, data.positionId);
+    }
 }

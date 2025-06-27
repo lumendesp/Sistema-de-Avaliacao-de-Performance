@@ -112,6 +112,10 @@ export const deleteTrack = async (id: number) => {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Erro ao deletar track');
+  // Don't try to parse JSON for 204 No Content responses
+  if (res.status === 204) {
+    return { success: true };
+  }
   return res.json();
 };
 
@@ -130,6 +134,10 @@ export const removeUserFromTrack = async (trackId: number, userId: number) => {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Erro ao remover usuário da track');
+  // Don't try to parse JSON for 204 No Content responses
+  if (res.status === 204) {
+    return { success: true };
+  }
   return res.json();
 };
 
@@ -209,5 +217,114 @@ export const removeCriterionFromTrack = async (trackId: number, criterionId: num
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Erro ao remover critério da trilha');
+  // Don't try to parse JSON for 204 No Content responses
+  if (res.status === 204) {
+    return { success: true };
+  }
+  return res.json();
+};
+
+// Update a criterion in a track
+export const updateCriterionInTrack = async (
+  trackId: number,
+  criterionId: number,
+  data: { mandatory?: boolean; unitId?: number; positionId?: number }
+) => {
+  const res = await fetch(`${API_URL}/rh-criteria/track/${trackId}/criterion/${criterionId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Erro ao atualizar critério na trilha');
+  return res.json();
+};
+
+// Get all units
+export const getUnits = async () => {
+  const res = await fetch(`${API_URL}/units`);
+  if (!res.ok) throw new Error('Erro ao buscar unidades');
+  return res.json();
+};
+
+// Get all positions
+export const getPositions = async () => {
+  const res = await fetch(`${API_URL}/positions`);
+  if (!res.ok) throw new Error('Erro ao buscar posições');
+  return res.json();
+};
+
+// Create default group for a track
+export const createDefaultGroup = async (trackId: number, unitId: number, positionId: number) => {
+  const res = await fetch(`${API_URL}/rh-criteria/track/${trackId}/default-group`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ unitId, positionId }),
+  });
+  if (!res.ok) throw new Error('Erro ao criar grupo padrão');
+  return res.json();
+};
+
+// Create a new criterion group
+export const createCriterionGroup = async (data: {
+  name: string;
+  trackId: number;
+  unitId: number;
+  positionId: number;
+}) => {
+  const res = await fetch(`${API_URL}/criterion-groups`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Erro ao criar grupo de critérios');
+  return res.json();
+};
+
+// Add a criterion to a specific group
+export const addCriterionToGroup = async (
+  groupId: number,
+  criterionId: number,
+  trackId: number,
+  unitId: number,
+  positionId: number,
+  mandatory: boolean = false
+) => {
+  const res = await fetch(`${API_URL}/rh-criteria/configured`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      criterionId,
+      groupId,
+      trackId,
+      unitId,
+      positionId,
+      mandatory,
+    }),
+  });
+  if (!res.ok) throw new Error('Erro ao adicionar critério ao grupo');
+  return res.json();
+};
+
+// Update a criterion group
+export const updateCriterionGroup = async (id: number, data: { name: string }) => {
+  const res = await fetch(`${API_URL}/criterion-groups/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Erro ao atualizar grupo de critérios');
+  return res.json();
+};
+
+// Delete a criterion group
+export const deleteCriterionGroup = async (id: number) => {
+  const res = await fetch(`${API_URL}/criterion-groups/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Erro ao deletar grupo de critérios');
+  // Don't try to parse JSON for 204 No Content responses
+  if (res.status === 204) {
+    return { success: true };
+  }
   return res.json();
 };

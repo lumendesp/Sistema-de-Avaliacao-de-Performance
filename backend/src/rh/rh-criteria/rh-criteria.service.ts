@@ -250,4 +250,42 @@ export class RhCriteriaService {
       }))
     }));
   }
+
+  // Create default criterion group for a track
+  async createDefaultGroup(trackId: number, unitId: number, positionId: number) {
+    const defaultGroup = await this.prisma.criterionGroup.create({
+      data: {
+        name: 'Critérios Padrão',
+        trackId,
+        unitId,
+        positionId,
+      },
+      include: {
+        track: true,
+        unit: true,
+        position: true,
+        configuredCriteria: {
+          include: {
+            criterion: true,
+          },
+        },
+      },
+    });
+
+    return defaultGroup;
+  }
+
+  // Get all units
+  async getUnits() {
+    return this.prisma.unit.findMany({
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  // Get all positions
+  async getPositions() {
+    return this.prisma.position.findMany({
+      orderBy: { name: 'asc' },
+    });
+  }
 }

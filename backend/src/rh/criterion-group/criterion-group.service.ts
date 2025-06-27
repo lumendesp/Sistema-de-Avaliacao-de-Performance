@@ -23,7 +23,15 @@ export class CriterionGroupService {
     return this.prisma.criterionGroup.update({ where: { id }, data });
   }
 
-  remove(id: number) {
-    return this.prisma.criterionGroup.delete({ where: { id } });
+  async remove(id: number) {
+    return this.prisma.$transaction(async (prisma) => {
+      // First delete all configured criteria associated with this group
+      await prisma.configuredCriterion.deleteMany({
+        where: { groupId: id }
+      });
+      
+      // Then delete the criterion group
+      return prisma.criterionGroup.delete({ where: { id } });
+    });
   }
 } 

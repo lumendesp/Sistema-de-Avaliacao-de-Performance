@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { FaChevronDown, FaChevronUp, FaTrash } from 'react-icons/fa';
+import { FaChevronDown, FaChevronUp, FaTrash, FaEdit } from 'react-icons/fa';
 import ToggleSwitch from '../ToggleSwitch/ToggleSwitch';
+import EvaluationDropdown from './EvaluationDropdown';
 
 interface Evaluation {
     name: string;
@@ -14,14 +15,26 @@ interface Criterion {
     evaluations: Evaluation[];
 }
 
+interface AvailableCriterion {
+    id: number;
+    name: string;
+    displayName: string;
+    generalDescription: string;
+    weight: number;
+}
+
 interface RHCriteriaBoxProps {
     trackName: string;
     criteria: Criterion[];
+    availableCriteria: AvailableCriterion[];
     isExpanded: boolean;
     onToggle: () => void;
     onAddCriterion?: () => void;
+    onAddPilar?: () => void;
     onDeleteTrack?: () => void;
     onDeleteCriterio?: (criterionIdx: number) => void;
+    onDeleteCriterioFromGroup?: (groupIdx: number, criterionIdx: number) => void;
+    onDeleteCriterionGroup?: (groupIdx: number) => void;
     onDeleteEvaluation?: (criterionIdx: number, evalIdx: number) => void;
     editingTrackIdx?: number | null;
     setEditingTrackIdx?: (idx: number | null) => void;
@@ -33,14 +46,19 @@ interface RHCriteriaBoxProps {
     onEditCriterion?: (criterionIdx: number, newName: string) => void;
     onEditEvaluation?: (criterionIdx: number, evalIdx: number, field: 'name' | 'weight' | 'description' | 'mandatory', value: string | number | boolean) => void;
     onAddEvaluation?: (criterionIdx: number) => void;
+    onEditCriterionGroup?: (criterionIdx: number, newName: string) => void;
+    onAddCriterionToGroup?: (groupIdx: number, criterion: AvailableCriterion) => void;
 }
 
-function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onToggle, onAddCriterion, onDeleteTrack, onDeleteCriterio, onDeleteEvaluation, editingTrackIdx, setEditingTrackIdx, editingTrackName, setEditingTrackName, handleTrackNameSave, handleTrackNameKeyDown, trilhaIdx, onEditCriterion, onEditEvaluation, onAddEvaluation }: RHCriteriaBoxProps) {
+function RHCriteriaBox({ trackName, criteria: initialCriteria, availableCriteria, isExpanded, onToggle, onAddCriterion, onAddPilar, onDeleteTrack, onDeleteCriterio, onDeleteCriterioFromGroup, onDeleteCriterionGroup, onDeleteEvaluation, editingTrackIdx, setEditingTrackIdx, editingTrackName, setEditingTrackName, handleTrackNameSave, handleTrackNameKeyDown, trilhaIdx, onEditCriterion, onEditEvaluation, onAddEvaluation, onEditCriterionGroup, onAddCriterionToGroup }: RHCriteriaBoxProps) {
     const [expandedEvaluation, setExpandedEvaluation] = useState<string | null>(null);
     const [editingCriterionIdx, setEditingCriterionIdx] = useState<number | null>(null);
     const [editingCriterionName, setEditingCriterionName] = useState('');
     const [localEditingName, setLocalEditingName] = useState('');
     const [editingEvaluation, setEditingEvaluation] = useState<{criterionIdx: number|null, evalIdx: number|null, value: string}>({criterionIdx: null, evalIdx: null, value: ''});
+    const [editingGroupIdx, setEditingGroupIdx] = useState<number | null>(null);
+    const [editingGroupName, setEditingGroupName] = useState('');
+    const [localEditingGroupName, setLocalEditingGroupName] = useState('');
 
     const handleToggleEvaluation = (criterionIndex: number, evalIndex: number) => {
         if (onEditEvaluation) {
@@ -75,6 +93,28 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
         if (e.key === 'Escape') setEditingCriterionIdx(null);
     };
 
+    const handleGroupDoubleClick = (groupIdx: number, name: string) => {
+        setEditingGroupIdx(groupIdx);
+        setEditingGroupName(name);
+        setLocalEditingGroupName(name);
+    };
+
+    const handleGroupNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setLocalEditingGroupName(e.target.value);
+    };
+
+    const handleGroupNameSave = (groupIdx: number) => {
+        if (onEditCriterionGroup && localEditingGroupName.trim() && localEditingGroupName !== editingGroupName) {
+            onEditCriterionGroup(groupIdx, localEditingGroupName.trim());
+        }
+        setEditingGroupIdx(null);
+    };
+
+    const handleGroupNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, groupIdx: number) => {
+        if (e.key === 'Enter') handleGroupNameSave(groupIdx);
+        if (e.key === 'Escape') setEditingGroupIdx(null);
+    };
+
     const handleEvaluationDoubleClick = (criterionIdx: number, evalIdx: number, value: string) => {
         setEditingEvaluation({ criterionIdx, evalIdx, value });
     };
@@ -93,6 +133,12 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
     const handleEvaluationNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, criterionIdx: number, evalIdx: number) => {
         if (e.key === 'Enter') handleEvaluationNameSave(criterionIdx, evalIdx);
         if (e.key === 'Escape') setEditingEvaluation({ criterionIdx: null, evalIdx: null, value: '' });
+    };
+
+    const handleCriterionSelect = (groupIdx: number, criterion: AvailableCriterion) => {
+        if (onAddCriterionToGroup) {
+            onAddCriterionToGroup(groupIdx, criterion);
+        }
     };
 
     return (
@@ -140,15 +186,15 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
             {isExpanded && (
                 <div className="p-4 border-t border-gray-200">
                     <div className="flex justify-end mb-4">
-                        {onAddCriterion && (
+                        {onAddPilar && (
                             <button
                                 className="px-2 py-1 text-xs bg-gray-100 text-[#08605F] rounded hover:bg-gray-200 transition-colors"
                                 onClick={e => {
                                     e.stopPropagation();
-                                    onAddCriterion();
+                                    onAddPilar();
                                 }}
                             >
-                                Adicionar Critério
+                                Adicionar Pilar
                             </button>
                         )}
                     </div>
@@ -156,40 +202,51 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
                         <div key={criterionIndex} className="mb-6 relative">
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
-                                    {editingCriterionIdx === criterionIndex ? (
+                                    {editingGroupIdx === criterionIndex ? (
                                         <input
                                             className="font-semibold text-gray-700 border-b border-[#08605F] outline-none bg-transparent px-1"
-                                            value={localEditingName}
-                                            onChange={handleCriterionNameChange}
-                                            onBlur={() => handleCriterionNameSave(criterionIndex)}
-                                            onKeyDown={e => handleCriterionNameKeyDown(e, criterionIndex)}
+                                            value={localEditingGroupName}
+                                            onChange={handleGroupNameChange}
+                                            onBlur={() => handleGroupNameSave(criterionIndex)}
+                                            onKeyDown={e => handleGroupNameKeyDown(e, criterionIndex)}
                                             autoFocus
                                         />
                                     ) : (
                                         <h3
                                             className="font-semibold text-gray-700 cursor-pointer select-none"
-                                            onDoubleClick={() => handleCriterionDoubleClick(criterionIndex, criterion.name)}
+                                            onDoubleClick={() => handleGroupDoubleClick(criterionIndex, criterion.name)}
                                         >
                                             {criterion.name}
                                         </h3>
                                     )}
-                                    {onAddEvaluation && (
+                                    {onEditCriterionGroup && (
                                         <button
-                                            className="ml-1 text-xs text-green-600 hover:text-green-800 p-1 border border-green-200 rounded-md bg-green-50 font-bold w-6 h-6 flex items-center justify-center"
-                                            title="Adicionar avaliação"
-                                            onClick={() => onAddEvaluation(criterionIndex)}
+                                            className="ml-1 text-xs text-blue-600 hover:text-blue-800 p-1"
+                                            title="Editar nome do pilar"
+                                            onClick={() => handleGroupDoubleClick(criterionIndex, criterion.name)}
                                         >
-                                            +
+                                            <FaEdit size={12} />
                                         </button>
                                     )}
+                                    {onAddCriterionToGroup && (
+                                        <div className="ml-2 w-48">
+                                            <EvaluationDropdown
+                                                availableCriteria={availableCriteria.filter(c => 
+                                                    !criterion.evaluations.some(evaluation => evaluation.name === c.displayName)
+                                                )}
+                                                onSelect={(selectedCriterion) => handleCriterionSelect(criterionIndex, selectedCriterion)}
+                                                placeholder="Adicionar critério"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-                                {onDeleteCriterio && isExpanded && (
+                                {onDeleteCriterionGroup && isExpanded && (
                                     <button
                                         className="text-xs text-red-600 hover:text-red-700 p-1 ml-2 border border-red-200 rounded-md bg-red-50 flex items-center justify-center"
-                                            title="Remover critério"
+                                            title="Remover pilar"
                                             onClick={() => {
-                                                if (window.confirm('Tem certeza que deseja remover este critério?')) {
-                                                    onDeleteCriterio(criterionIndex);
+                                                if (window.confirm('Tem certeza que deseja remover este pilar?')) {
+                                                    onDeleteCriterionGroup(criterionIndex);
                                                 }
                                             }}
                                         >
@@ -225,6 +282,19 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
                                                     onClick={() => {
                                                         if (window.confirm('Tem certeza que deseja remover esta avaliação?')) {
                                                             onDeleteEvaluation(criterionIndex, evalIndex);
+                                                        }
+                                                    }}
+                                                >
+                                                    <FaTrash size={12} />
+                                                </button>
+                                            )}
+                                            {onDeleteCriterioFromGroup && expandedEvaluation === evaluation.name && (
+                                                <button
+                                                    className="text-xs text-red-600 hover:text-red-700 p-1 ml-2"
+                                                    title="Remover critério do pilar"
+                                                    onClick={() => {
+                                                        if (window.confirm('Tem certeza que deseja remover este critério do pilar?')) {
+                                                            onDeleteCriterioFromGroup(criterionIndex, evalIndex);
                                                         }
                                                     }}
                                                 >

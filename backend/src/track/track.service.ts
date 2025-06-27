@@ -98,25 +98,26 @@ export class TrackService {
     // Verificar se a track existe
     await this.findOne(id);
 
-    // Verificar se há usuários associados
-    const trackWithUsers = await this.prisma.track.findUnique({
-      where: { id },
-      include: {
-        users: true,
-        configuredCriteria: true,
-      },
-    });
-
-    // if (trackWithUsers.users.length > 0) {
-    //   throw new Error('Cannot delete track with associated users');
-    // }
-
-    // if (trackWithUsers.configuredCriteria.length > 0) {
-    //   throw new Error('Cannot delete track with configured criteria');
-    // }
-
-    return this.prisma.track.delete({
-      where: { id },
+    return this.prisma.$transaction(async (prisma) => {
+      // First delete all configured criteria associated with this track
+      await prisma.configuredCriterion.deleteMany({
+        where: { trackId: id }
+      });
+      
+      // Delete all criterion groups associated with this track
+      await prisma.criterionGroup.deleteMany({
+        where: { trackId: id }
+      });
+      
+      // Delete all user track history associated with this track
+      await prisma.userTrack.deleteMany({
+        where: { trackId: id }
+      });
+      
+      // Finally delete the track
+      return prisma.track.delete({
+        where: { id },
+      });
     });
   }
 
