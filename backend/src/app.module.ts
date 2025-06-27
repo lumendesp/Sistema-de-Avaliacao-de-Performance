@@ -11,6 +11,7 @@ import { MentorEvaluationModule } from './mentor-evaluation/mentor-evaluation.mo
 import { EvaluationCycleModule } from './evaluation-cycle/evaluation-cycle.module';
 import { MentorModule } from './mentor/mentor.module';
 import { CollaboratorsSearchBarModule } from './collaborator/collaborators-search-bar/collaborators-search-bar.module';
+import { ReferenceModule } from './reference/reference.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { CollaboratorsSearchBarModule } from './collaborator/collaborators-searc
     EvaluationCycleModule,
     MentorModule,
     CollaboratorsSearchBarModule,
+    ReferenceModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

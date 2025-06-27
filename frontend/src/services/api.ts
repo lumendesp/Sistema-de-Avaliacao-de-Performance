@@ -25,18 +25,17 @@ export const loginRequest = async (email: string, password: string) => {
 
 export const fetchMentors = async () => {
   const res = await fetch(`${API_URL}/mentors`, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.message || 'Erro ao buscar mentores');
+    throw new Error(error.message || "Erro ao buscar mentores");
   }
 
   return res.json(); // aqui retorna o array de mentores (ou o que sua API devolver)
 };
-
 
 export const submitMentorEvaluation = async (
   evaluateeId: number,
@@ -66,7 +65,7 @@ export const submitMentorEvaluation = async (
 
 export const fetchMentorEvaluation = async (evaluateeId: number) => {
   const res = await fetch(`${API_URL}/mentor-evaluations/me/${evaluateeId}`, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
 
@@ -79,7 +78,9 @@ export const fetchMentorEvaluation = async (evaluateeId: number) => {
 
 export const fetchCollaboratorsBySearch = async (searchTerm: string) => {
   const res = await fetch(
-    `${API_URL}/collaborators-search-bar?search=${encodeURIComponent(searchTerm)}`,
+    `${API_URL}/collaborators-search-bar?search=${encodeURIComponent(
+      searchTerm
+    )}`,
     {
       method: "GET",
       headers: getAuthHeaders(),
@@ -94,7 +95,36 @@ export const fetchCollaboratorsBySearch = async (searchTerm: string) => {
   return res.json(); // array de usuários com role COLLABORATOR
 };
 
+// Cria uma nova referência
+export const createReference = async (
+  receiverId: number,
+  cycleId: number,
+  justification: string
+) => {
+  const res = await fetch(`${API_URL}/references`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ receiverId, cycleId, justification }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao criar referência");
+  }
+  return res.json();
+};
 
+// Busca todas as referências enviadas pelo usuário logado em um ciclo
+export const fetchMyReferences = async (cycleId: number) => {
+  const res = await fetch(`${API_URL}/references/me?cycleId=${cycleId}`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar minhas referências");
+  }
+  return res.json();
+};
 
 // Fetches all users with their associated evaluations
 export const getUsersWithEvaluations = async () => {
