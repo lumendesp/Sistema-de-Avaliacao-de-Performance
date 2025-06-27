@@ -4,8 +4,8 @@ import { AppService } from './app.service';
 import { PrismaService } from './prisma.service';
 import { ConfigModule } from '@nestjs/config';
 
-// import { CollaboratorModule } from './collaborator/collaborator.module';
 import { AuthModule } from './auth/auth.module';
+import { SelfEvaluationModule } from './collaborator/self-evaluation/self-evaluation.module';
 import { UsersModule } from './users/users.module';
 import { MentorEvaluationModule } from './mentor-evaluation/mentor-evaluation.module';
 import { EvaluationCycleModule } from './evaluation-cycle/evaluation-cycle.module';
@@ -18,6 +18,7 @@ import { CollaboratorsSearchBarModule } from './collaborator/collaborators-searc
       isGlobal: true,
     }),
     AuthModule,
+    SelfEvaluationModule,
     UsersModule,
     MentorEvaluationModule,
     EvaluationCycleModule,
