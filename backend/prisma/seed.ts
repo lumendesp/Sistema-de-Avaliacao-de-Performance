@@ -17,6 +17,7 @@ async function main() {
   // Cria trilhas
   const track1 = await prisma.track.create({ data: { name: 'Backend' } });
   const track2 = await prisma.track.create({ data: { name: 'Frontend' } });
+  const track3 = await prisma.track.create({ data: { name: 'Trilha de Liderança' } });
 
   // Adicionando todos os tipos de criterios no bd
   const criteriaData: Array<{ name: CriterionName; generalDescription: string; weight: number }> = [
@@ -50,7 +51,7 @@ async function main() {
     }
   }
 
-  // Criando os grupos de criterios 
+  // Criando os grupos de criterios para Backend
   const backendGroup1 = await prisma.criterionGroup.create({
     data: {
       name: 'Comportamento',
@@ -69,6 +70,7 @@ async function main() {
     },
   });
 
+  // Criando os grupos de criterios para Frontend
   const frontendGroup1 = await prisma.criterionGroup.create({
     data: {
       name: 'Comportamento',
@@ -87,7 +89,35 @@ async function main() {
     },
   });
 
-  // Criação das configuração de criterios
+  // Criando os grupos de criterios para Trilha de Liderança
+  const leadershipGroup1 = await prisma.criterionGroup.create({
+    data: {
+      name: 'Liderança Técnica',
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+    },
+  });
+
+  const leadershipGroup2 = await prisma.criterionGroup.create({
+    data: {
+      name: 'Gestão de Pessoas',
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+    },
+  });
+
+  const leadershipGroup3 = await prisma.criterionGroup.create({
+    data: {
+      name: 'Resultados e Performance',
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+    },
+  });
+
+  // Criação das configuração de criterios para Backend
   const backendConfigs = [
     {
       criterionId: criteria.find(c => c.name === CriterionName.ORGANIZACAO_NO_TRABALHO)?.id,
@@ -115,6 +145,7 @@ async function main() {
     },
   ];
 
+  // Criação das configuração de criterios para Frontend
   const frontendConfigs = [
     {
       criterionId: criteria.find(c => c.name === CriterionName.ORGANIZACAO_NO_TRABALHO)?.id,
@@ -142,7 +173,59 @@ async function main() {
     },
   ];
 
-  const allConfigs = [...backendConfigs, ...frontendConfigs];
+  // Criação das configuração de criterios para Trilha de Liderança
+  const leadershipConfigs = [
+    {
+      criterionId: criteria.find(c => c.name === CriterionName.GENTE)?.id,
+      groupId: leadershipGroup1.id,
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find(c => c.name === CriterionName.RESULTADOS)?.id,
+      groupId: leadershipGroup1.id,
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find(c => c.name === CriterionName.TEAM_PLAYER)?.id,
+      groupId: leadershipGroup2.id,
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find(c => c.name === CriterionName.SENTIMENTO_DE_DONO)?.id,
+      groupId: leadershipGroup2.id,
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find(c => c.name === CriterionName.EVOLUCAO_DA_ROCKET_COR)?.id,
+      groupId: leadershipGroup3.id,
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find(c => c.name === CriterionName.FAZER_MAIS_COM_MENOS)?.id,
+      groupId: leadershipGroup3.id,
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+      mandatory: false,
+    },
+  ];
+
+  const allConfigs = [...backendConfigs, ...frontendConfigs, ...leadershipConfigs];
   for (const config of allConfigs) {
     if (config.criterionId) {
       await prisma.configuredCriterion.create({

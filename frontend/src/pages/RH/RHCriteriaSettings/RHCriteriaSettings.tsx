@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import CollaboratorsSearchBar from '../../../components/CollaboratorsSearchBar';
 import RHCriteriaBox from '../../../components/RH/RHCriteria/RHCriteriaBox';
 import { IoFunnel } from "react-icons/io5";
-import { getAllTracks, createTrack, updateTrack, deleteTrack, getAllRhCriteria, createRhCriterion, updateRhCriterion, deleteRhCriterion, getCriteriaByTrack, addCriterionToTrack, removeCriterionFromTrack } from '../../../services/api';
+import { getAllTracks, createTrack, updateTrack, deleteTrack, getAllRhCriteria, createRhCriterion, updateRhCriterion, deleteRhCriterion, getCriteriaByTrack, addCriterionToTrack, removeCriterionFromTrack, getTracksWithCriteria } from '../../../services/api';
 import type { Track } from '../../../types/track';
 
 interface Criterion {
     id: number;
     name: string;
+    displayName: string;
     generalDescription: string;
     active: boolean;
     evaluations?: Evaluation[];
@@ -20,10 +21,30 @@ interface Evaluation {
     description: string;
 }
 
-interface CriteriaGroup {
-    trackName: string;
-    trackId?: number;
-    criteria: Criterion[];
+interface CriterionGroup {
+    id: number;
+    name: string;
+    trackId: number;
+    unitId: number;
+    positionId: number;
+    configuredCriteria: ConfiguredCriterion[];
+}
+
+interface ConfiguredCriterion {
+    id: number;
+    criterionId: number;
+    groupId: number;
+    trackId: number;
+    unitId: number;
+    positionId: number;
+    mandatory: boolean;
+    criterion: Criterion;
+}
+
+interface TrackWithCriteria {
+    id: number;
+    name: string;
+    CriterionGroup: CriterionGroup[];
 }
 
 function RhCriteriaSettings() {
@@ -33,11 +54,10 @@ function RhCriteriaSettings() {
     const [saving, setSaving] = useState(false);
 
     // Data from backend
-    const [tracks, setTracks] = useState<Track[]>([]);
+    const [tracksWithCriteria, setTracksWithCriteria] = useState<TrackWithCriteria[]>([]);
     const [criteria, setCriteria] = useState<Criterion[]>([]);
     
     // Local state for UI
-    const [criteriaData, setCriteriaData] = useState<CriteriaGroup[]>([]);
     const [editingTrackIdx, setEditingTrackIdx] = useState<number | null>(null);
     const [editingTrackName, setEditingTrackName] = useState('');
 
@@ -46,19 +66,12 @@ function RhCriteriaSettings() {
         const loadData = async () => {
             try {
                 setLoading(true);
-                const tracksData = await getAllTracks();
-                // For each track, fetch its criteria
-                const criteriaGroups = await Promise.all(
-                    tracksData.map(async (track: Track) => {
-                        const configured = await getCriteriaByTrack(track.id);
-                        return {
-                            trackName: track.name,
-                            trackId: track.id,
-                            criteria: configured.map((cfg: any) => cfg.criterion)
-                        };
-                    })
-                );
-                setCriteriaData(criteriaGroups);
+                const [tracksData, criteriaData] = await Promise.all([
+                    getTracksWithCriteria(),
+                    getAllRhCriteria()
+                ]);
+                setTracksWithCriteria(tracksData);
+                setCriteria(criteriaData);
             } catch (error) {
                 console.error('Error loading data:', error);
                 alert('Erro ao carregar dados');
@@ -71,13 +84,13 @@ function RhCriteriaSettings() {
 
     // Save track name on blur or Enter
     const handleTrackNameSave = async (idx: number) => {
-        const group = criteriaData[idx];
-        if (!group.trackId) return;
+        const track = tracksWithCriteria[idx];
+        if (!track) return;
 
         try {
-            await updateTrack(group.trackId, { name: editingTrackName });
-            setCriteriaData(prev => prev.map((group, gIdx) =>
-                gIdx === idx ? { ...group, trackName: editingTrackName } : group
+            await updateTrack(track.id, { name: editingTrackName });
+            setTracksWithCriteria(prev => prev.map((t, tIdx) =>
+                tIdx === idx ? { ...t, name: editingTrackName } : t
             ));
             setEditingTrackIdx(null);
         } catch (error) {
@@ -96,13 +109,13 @@ function RhCriteriaSettings() {
     const handleAddCriteriaGroup = async () => {
         try {
             const newTrack = await createTrack({ name: 'Nova Trilha' });
-            const newGroup = {
-                trackName: newTrack.name,
-                trackId: newTrack.id,
-                criteria: []
+            const newTrackWithCriteria = {
+                id: newTrack.id,
+                name: newTrack.name,
+                CriterionGroup: []
             };
             
-            setCriteriaData(prev => [newGroup, ...prev]);
+            setTracksWithCriteria(prev => [newTrackWithCriteria, ...prev]);
             setOpenBoxIndex(0);
         } catch (error) {
             console.error('Error creating track:', error);
@@ -111,40 +124,50 @@ function RhCriteriaSettings() {
     };
 
     // Add a new criterion to a track
-    const handleAddCriterion = async (groupIdx: number) => {
+    const handleAddCriterion = async (trackIdx: number, groupIdx: number) => {
         try {
-            // 1. Create the criterion itself
-            const newCriterion = await createRhCriterion({
-                name: 'Novo Critério',
-                generalDescription: 'Descrição do critério',
-                active: true
-            });
-            // 2. Associate it with the track (use default unitId/positionId)
-            const group = criteriaData[groupIdx];
-            const trackId = group.trackId;
-            const unitId = 1; // Default
-            const positionId = 1; // Default
-            await addCriterionToTrack(trackId, newCriterion.id, unitId, positionId, false);
-            // 3. Fetch updated criteria for this track
-            const updatedConfigured = await getCriteriaByTrack(trackId);
-            setCriteriaData(prev => prev.map((g, idx) =>
-                idx === groupIdx
-                    ? { ...g, criteria: updatedConfigured.map((cfg: any) => cfg.criterion) }
-                    : g
-            ));
+            const track = tracksWithCriteria[trackIdx];
+            const group = track.CriterionGroup[groupIdx];
+            
+            if (!track || !group) return;
+
+            // For now, we'll use the first available criterion
+            const availableCriterion = criteria.find(c => 
+                !group.configuredCriteria.some(cc => cc.criterionId === c.id)
+            );
+
+            if (!availableCriterion) {
+                alert('Todos os critérios já estão associados a este grupo');
+                return;
+            }
+
+            // Add criterion to the group
+            await addCriterionToTrack(
+                track.id, 
+                availableCriterion.id, 
+                group.id, 
+                group.unitId, 
+                group.positionId, 
+                false
+            );
+
+            // Refresh data
+            const updatedTracks = await getTracksWithCriteria();
+            setTracksWithCriteria(updatedTracks);
         } catch (error) {
+            console.error('Error adding criterion:', error);
             alert('Erro ao adicionar critério à trilha');
         }
     };
 
     // Delete a track
     const handleDeleteTrack = async (idx: number) => {
-        const group = criteriaData[idx];
-        if (!group.trackId) return;
+        const track = tracksWithCriteria[idx];
+        if (!track) return;
 
         try {
-            await deleteTrack(group.trackId);
-            setCriteriaData(prev => prev.filter((_, gIdx) => gIdx !== idx));
+            await deleteTrack(track.id);
+            setTracksWithCriteria(prev => prev.filter((_, tIdx) => tIdx !== idx));
             if (openBoxIndex === idx) setOpenBoxIndex(null);
         } catch (error) {
             console.error('Error deleting track:', error);
@@ -153,57 +176,45 @@ function RhCriteriaSettings() {
     };
 
     // Remove a criterion from a track
-    const handleDeleteCriterio = async (groupIdx: number, criterionIdx: number) => {
-        const group = criteriaData[groupIdx];
-        const criterion = group.criteria[criterionIdx];
+    const handleDeleteCriterio = async (trackIdx: number, groupIdx: number, criterionIdx: number) => {
+        const track = tracksWithCriteria[trackIdx];
+        const group = track?.CriterionGroup[groupIdx];
+        const configuredCriterion = group?.configuredCriteria[criterionIdx];
+        
+        if (!track || !group || !configuredCriterion) return;
+
         try {
-            await removeCriterionFromTrack(group.trackId, criterion.id);
-            // Fetch updated criteria for this track
-            const updatedConfigured = await getCriteriaByTrack(group.trackId);
-            setCriteriaData(prev => prev.map((g, idx) =>
-                idx === groupIdx
-                    ? { ...g, criteria: updatedConfigured.map((cfg: any) => cfg.criterion) }
-                    : g
-            ));
+            await removeCriterionFromTrack(track.id, configuredCriterion.criterionId);
+            
+            // Refresh data
+            const updatedTracks = await getTracksWithCriteria();
+            setTracksWithCriteria(updatedTracks);
         } catch (error) {
+            console.error('Error removing criterion:', error);
             alert('Erro ao remover critério da trilha');
         }
     };
 
     // Delete an evaluation (this would need backend implementation)
-    const handleDeleteEvaluation = (groupIdx: number, criterionIdx: number, evalIdx: number) => {
+    const handleDeleteEvaluation = (trackIdx: number, groupIdx: number, criterionIdx: number, evalIdx: number) => {
         // This would need backend implementation for evaluations
-        setCriteriaData(prev => prev.map((group, gIdx) =>
-            gIdx === groupIdx
-                ? {
-                    ...group,
-                    criteria: group.criteria.map((criterion, cIdx) =>
-                        cIdx === criterionIdx
-                            ? { ...criterion, evaluations: criterion.evaluations?.filter((_, eIdx) => eIdx !== evalIdx) || [] }
-                            : criterion
-                    )
-                }
-                : group
-        ));
+        console.log('Delete evaluation not implemented yet');
     };
 
     // Edit a criterion name
-    const handleEditCriterion = async (groupIdx: number, criterionIdx: number, newName: string) => {
-        const group = criteriaData[groupIdx];
-        const criterion = group.criteria[criterionIdx];
+    const handleEditCriterion = async (trackIdx: number, groupIdx: number, criterionIdx: number, newName: string) => {
+        const track = tracksWithCriteria[trackIdx];
+        const group = track?.CriterionGroup[groupIdx];
+        const configuredCriterion = group?.configuredCriteria[criterionIdx];
+        
+        if (!track || !group || !configuredCriterion) return;
         
         try {
-            await updateRhCriterion(criterion.id, { name: newName });
-            setCriteriaData(prev => prev.map((group, gIdx) =>
-                gIdx === groupIdx
-                    ? {
-                        ...group,
-                        criteria: group.criteria.map((criterion, cIdx) =>
-                            cIdx === criterionIdx ? { ...criterion, name: newName } : criterion
-                        )
-                    }
-                    : group
-            ));
+            await updateRhCriterion(configuredCriterion.criterionId, { name: newName });
+            
+            // Refresh data
+            const updatedTracks = await getTracksWithCriteria();
+            setTracksWithCriteria(updatedTracks);
         } catch (error) {
             console.error('Error updating criterion:', error);
             alert('Erro ao atualizar critério');
@@ -211,53 +222,15 @@ function RhCriteriaSettings() {
     };
 
     // Edit an evaluation field (this would need backend implementation)
-    const handleEditEvaluation = (groupIdx: number, criterionIdx: number, evalIdx: number, field: 'name' | 'weight' | 'description' | 'mandatory', value: string | number | boolean) => {
+    const handleEditEvaluation = (trackIdx: number, groupIdx: number, criterionIdx: number, evalIdx: number, field: 'name' | 'weight' | 'description' | 'mandatory', value: string | number | boolean) => {
         // This would need backend implementation for evaluations
-        setCriteriaData(prev => prev.map((group, gIdx) =>
-            gIdx === groupIdx
-                ? {
-                    ...group,
-                    criteria: group.criteria.map((criterion, cIdx) =>
-                        cIdx === criterionIdx
-                            ? {
-                                ...criterion,
-                                evaluations: criterion.evaluations?.map((evaluation, eIdx) =>
-                                    eIdx === evalIdx ? { ...evaluation, [field]: value } : evaluation
-                                ) || []
-                            }
-                            : criterion
-                    )
-                }
-                : group
-        ));
+        console.log('Edit evaluation not implemented yet');
     };
 
     // Add a new evaluation to a criterion (this would need backend implementation)
-    const handleAddEvaluation = (groupIdx: number, criterionIdx: number) => {
+    const handleAddEvaluation = (trackIdx: number, groupIdx: number, criterionIdx: number) => {
         // This would need backend implementation for evaluations
-        setCriteriaData(prev => prev.map((group, gIdx) =>
-            gIdx === groupIdx
-                ? {
-                    ...group,
-                    criteria: group.criteria.map((criterion, cIdx) =>
-                        cIdx === criterionIdx
-                            ? {
-                                ...criterion,
-                                evaluations: [
-                                    {
-                                        name: 'Nova Avaliação',
-                                        mandatory: false,
-                                        weight: 0,
-                                        description: ''
-                                    },
-                                    ...(criterion.evaluations || [])
-                                ]
-                            }
-                            : criterion
-                    )
-                }
-                : group
-        ));
+        console.log('Add evaluation not implemented yet');
     };
 
     // Save all changes
@@ -265,7 +238,7 @@ function RhCriteriaSettings() {
         try {
             setSaving(true);
             // Here you could implement bulk save if needed
-            console.log('Salvando critérios:', criteriaData);
+            console.log('Salvando critérios:', tracksWithCriteria);
             alert('Critérios salvos com sucesso!');
         } catch (error) {
             console.error('Error saving:', error);
@@ -335,30 +308,45 @@ function RhCriteriaSettings() {
                         </button>
                     </div>
                     <div className="flex flex-col gap-6">
-                        {criteriaData.map((group, idx) => (
-                            <div key={idx}>
+                        {tracksWithCriteria.map((track, trackIdx) => (
+                            <div key={track.id}>
                                 <RHCriteriaBox
-                                    trackName={group.trackName || `Trilha ${idx + 1}`}
-                                    criteria={group.criteria.map(criterion => ({
-                                        name: criterion.name,
-                                        evaluations: criterion.evaluations || []
+                                    trackName={track.name}
+                                    criteria={track.CriterionGroup.map(group => ({
+                                        name: group.name,
+                                        evaluations: group.configuredCriteria.map(cc => ({
+                                            name: cc.criterion.displayName,
+                                            mandatory: cc.mandatory,
+                                            weight: cc.criterion.weight,
+                                            description: cc.criterion.generalDescription
+                                        }))
                                     }))}
-                                    isExpanded={openBoxIndex === idx}
-                                    onToggle={() => setOpenBoxIndex(openBoxIndex === idx ? null : idx)}
-                                    onAddCriterion={() => handleAddCriterion(idx)}
-                                    onDeleteTrack={() => handleDeleteTrack(idx)}
-                                    onDeleteCriterio={criterionIdx => handleDeleteCriterio(idx, criterionIdx)}
-                                    onDeleteEvaluation={(criterionIdx, evalIdx) => handleDeleteEvaluation(idx, criterionIdx, evalIdx)}
+                                    isExpanded={openBoxIndex === trackIdx}
+                                    onToggle={() => setOpenBoxIndex(openBoxIndex === trackIdx ? null : trackIdx)}
+                                    onAddCriterion={() => {
+                                        // For now, add to the first group if it exists
+                                        if (track.CriterionGroup.length > 0) {
+                                            handleAddCriterion(trackIdx, 0);
+                                        }
+                                    }}
+                                    onDeleteTrack={() => handleDeleteTrack(trackIdx)}
+                                    onDeleteCriterio={(criterionIdx) => {
+                                        // For now, delete from the first group
+                                        if (track.CriterionGroup.length > 0) {
+                                            handleDeleteCriterio(trackIdx, 0, criterionIdx);
+                                        }
+                                    }}
+                                    onDeleteEvaluation={(criterionIdx, evalIdx) => handleDeleteEvaluation(trackIdx, 0, criterionIdx, evalIdx)}
                                     editingTrackIdx={editingTrackIdx}
                                     setEditingTrackIdx={setEditingTrackIdx}
                                     editingTrackName={editingTrackName}
                                     setEditingTrackName={setEditingTrackName}
                                     handleTrackNameSave={handleTrackNameSave}
                                     handleTrackNameKeyDown={(e, idx) => handleTrackNameKeyDown(e, idx)}
-                                    trilhaIdx={idx}
-                                    onEditCriterion={(criterionIdx, newName) => handleEditCriterion(idx, criterionIdx, newName)}
-                                    onEditEvaluation={(criterionIdx, evalIdx, field, value) => handleEditEvaluation(idx, criterionIdx, evalIdx, field, value)}
-                                    onAddEvaluation={criterionIdx => handleAddEvaluation(idx, criterionIdx)}
+                                    trilhaIdx={trackIdx}
+                                    onEditCriterion={(criterionIdx, newName) => handleEditCriterion(trackIdx, 0, criterionIdx, newName)}
+                                    onEditEvaluation={(criterionIdx, evalIdx, field, value) => handleEditEvaluation(trackIdx, 0, criterionIdx, evalIdx, field, value)}
+                                    onAddEvaluation={(criterionIdx) => handleAddEvaluation(trackIdx, 0, criterionIdx)}
                                 />
                             </div>
                         ))}

@@ -152,6 +152,13 @@ export const getCriteriaByTrack = async (trackId: number) => {
   return res.json();
 };
 
+// Get tracks with criteria organized by groups
+export const getTracksWithCriteria = async () => {
+  const res = await fetch(`${API_URL}/rh-criteria/tracks/with-criteria`);
+  if (!res.ok) throw new Error('Erro ao buscar trilhas com critérios');
+  return res.json();
+};
+
 // ConfiguredCriterion API functions
 export const createConfiguredCriterion = async (data: {
   criterionId: number;

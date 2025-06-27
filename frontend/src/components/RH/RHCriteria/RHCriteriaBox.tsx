@@ -186,16 +186,16 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, isExpanded, onTog
                                 {onDeleteCriterio && isExpanded && (
                                     <button
                                         className="text-xs text-red-600 hover:text-red-700 p-1 ml-2 border border-red-200 rounded-md bg-red-50 flex items-center justify-center"
-                                        title="Remover critério"
-                                        onClick={() => {
-                                            if (window.confirm('Tem certeza que deseja remover este critério?')) {
-                                                onDeleteCriterio(criterionIndex);
-                                            }
-                                        }}
-                                    >
-                                        <FaTrash size={12} />
-                                    </button>
-                                )}
+                                            title="Remover critério"
+                                            onClick={() => {
+                                                if (window.confirm('Tem certeza que deseja remover este critério?')) {
+                                                    onDeleteCriterio(criterionIndex);
+                                                }
+                                            }}
+                                        >
+                                            <FaTrash size={12} />
+                                        </button>
+                                    )}
                             </div>
                             {criterion.evaluations.map((evaluation, evalIndex) => (
                                 <div key={evalIndex} className="border-b border-gray-200 last:border-b-0">

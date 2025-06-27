@@ -7,6 +7,7 @@ import { UpdateCriterionDto } from './dto/update-criterion.dto';
 import { CreateConfiguredCriterionDto } from './dto/create-configured-criterion.dto';
 import { UpdateConfiguredCriterionDto } from './dto/update-configured-criterion.dto';
 import { CriterionName } from '@prisma/client';
+import { getCriterionDisplayName } from 'src/utils/criterion-formatter';
 
 @Injectable()
 export class RhCriteriaService {
@@ -18,11 +19,22 @@ export class RhCriteriaService {
   }
 
   async getAllCriteria() {
-    return this.prisma.criterion.findMany();
+    const criteria = await this.prisma.criterion.findMany();
+    return criteria.map(criterion => ({
+      ...criterion,
+      displayName: getCriterionDisplayName(criterion.name)
+    }));
   }
 
   async getCriterionById(id: number) {
-    return this.prisma.criterion.findUnique({ where: { id } });
+    const criterion = await this.prisma.criterion.findUnique({ where: { id } });
+    if (criterion) {
+      return {
+        ...criterion,
+        displayName: getCriterionDisplayName(criterion.name)
+      };
+    }
+    return criterion;
   }
 
   async updateCriterion(id: number, data: UpdateCriterionDto) {
@@ -74,7 +86,7 @@ export class RhCriteriaService {
   }
 
   async getConfiguredCriteria() {
-    return this.prisma.configuredCriterion.findMany({
+    const configuredCriteria = await this.prisma.configuredCriterion.findMany({
       include: {
         criterion: true,
         track: true,
@@ -83,6 +95,14 @@ export class RhCriteriaService {
         group: true,
       },
     });
+
+    return configuredCriteria.map(config => ({
+      ...config,
+      criterion: {
+        ...config.criterion,
+        displayName: getCriterionDisplayName(config.criterion.name)
+      }
+    }));
   }
 
   async updateConfiguredCriterion(id: number, data: UpdateConfiguredCriterionDto) {
@@ -95,7 +115,7 @@ export class RhCriteriaService {
 
   // Track-specific criteria management
   async getCriteriaByTrack(trackId: number) {
-    return this.prisma.configuredCriterion.findMany({
+    const criteria = await this.prisma.configuredCriterion.findMany({
       where: { trackId },
       include: {
         criterion: true,
@@ -105,6 +125,14 @@ export class RhCriteriaService {
         group: true,
       },
     });
+
+    return criteria.map(config => ({
+      ...config,
+      criterion: {
+        ...config.criterion,
+        displayName: getCriterionDisplayName(config.criterion.name)
+      }
+    }));
   }
 
   async addCriterionToTrack(
@@ -115,7 +143,7 @@ export class RhCriteriaService {
     positionId: number,
     mandatory: boolean = false
   ) {
-    return this.prisma.configuredCriterion.create({
+    const result = await this.prisma.configuredCriterion.create({
       data: {
         trackId,
         criterionId,
@@ -132,6 +160,14 @@ export class RhCriteriaService {
         group: true,
       },
     });
+
+    return {
+      ...result,
+      criterion: {
+        ...result.criterion,
+        displayName: getCriterionDisplayName(result.criterion.name)
+      }
+    };
   }
 
   async removeCriterionFromTrack(trackId: number, criterionId: number) {
@@ -163,7 +199,7 @@ export class RhCriteriaService {
       throw new Error('Criterion not found in track');
     }
 
-    return this.prisma.configuredCriterion.update({
+    const result = await this.prisma.configuredCriterion.update({
       where: { id: configuredCriterion.id },
       data,
       include: {
@@ -174,5 +210,44 @@ export class RhCriteriaService {
         group: true,
       },
     });
+
+    return {
+      ...result,
+      criterion: {
+        ...result.criterion,
+        displayName: getCriterionDisplayName(result.criterion.name)
+      }
+    };
+  }
+
+  // Get tracks with their criterion groups and criteria
+  async getTracksWithCriteria() {
+    const tracks = await this.prisma.track.findMany({
+      include: {
+        CriterionGroup: {
+          include: {
+            configuredCriteria: {
+              include: {
+                criterion: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return tracks.map(track => ({
+      ...track,
+      CriterionGroup: track.CriterionGroup.map(group => ({
+        ...group,
+        configuredCriteria: group.configuredCriteria.map(config => ({
+          ...config,
+          criterion: {
+            ...config.criterion,
+            displayName: getCriterionDisplayName(config.criterion.name)
+          }
+        }))
+      }))
+    }));
   }
 }

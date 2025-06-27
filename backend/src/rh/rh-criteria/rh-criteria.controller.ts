@@ -91,6 +91,13 @@ export class RhCriteriaController {
         return this.service.getCriteriaByTrack(Number(trackId));
     }
 
+    @Get('tracks/with-criteria')
+    @ApiOperation({ summary: 'Listar todas as trilhas com seus grupos de critérios e critérios organizados' })
+    @ApiResponse({ status: 200, description: 'Lista de trilhas com critérios organizados' })
+    getTracksWithCriteria() {
+        return this.service.getTracksWithCriteria();
+    }
+
     @Post('track/:trackId/criterion/:criterionId')
     @ApiOperation({ summary: 'Associar critério a uma trilha' })
     @ApiParam({ name: 'trackId', description: 'ID da trilha' })
