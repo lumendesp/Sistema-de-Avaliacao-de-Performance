@@ -25,6 +25,9 @@ export class ManagerEvaluationService {
   }
 
   async create(evaluatorId: number, dto: CreateManagerEvaluationDto) {
+    if (evaluatorId === dto.evaluateeId) {
+      throw new ConflictException('O gestor não pode se autoavaliar.');
+    }
     const existing = await this.prisma.managerEvaluation.findFirst({
       where: {
         evaluatorId,
@@ -108,5 +111,17 @@ export class ManagerEvaluationService {
     });
     if (!evaluation) throw new NotFoundException('Avaliação não encontrada');
     return evaluation;
+  }
+
+  async findByEvaluatorAndEvaluatee(evaluatorId: number, evaluateeId: number) {
+    return this.prisma.managerEvaluation.findFirst({
+      where: { evaluatorId, evaluateeId },
+      include: {
+        items: true,
+        evaluator: { select: { name: true, email: true } },
+        evaluatee: { select: { name: true, email: true } },
+        cycle: true,
+      },
+    });
   }
 }

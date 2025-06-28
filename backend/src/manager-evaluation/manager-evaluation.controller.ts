@@ -1,9 +1,12 @@
-import { Controller, Post, Patch, Get, Param, Body, Req, ParseIntPipe } from '@nestjs/common';
-import { ApiBody } from '@nestjs/swagger';
+import { Controller, Post, Patch, Get, Param, Body, Req, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
+import { ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ManagerEvaluationService } from './manager-evaluation.service';
 import { CreateManagerEvaluationDto } from './dto/create-manager-evaluation.dto';
 import { UpdateManagerEvaluationDto } from './dto/update-manager-evaluation.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('manager-evaluation')
 export class ManagerEvaluationController {
   constructor(private readonly service: ManagerEvaluationService) {}
@@ -19,24 +22,23 @@ export class ManagerEvaluationController {
           {
             criterionId: 1,
             score: 4,
-            justification: 'Demonstra postura profissional exemplar.',
+            justification: 'Demonstra postura profissional exemplar.'
           },
           {
             criterionId: 2,
             score: 3,
-            justification: 'Atende às expectativas de ética.',
-          },
-        ],
-      },
-    },
+            justification: 'Atende às expectativas de ética.'
+          }
+        ]
+      }
+    }
   })
-  async create(@Req() req, @Body() dto: CreateManagerEvaluationDto) {
-    // req.user.userId se usar auth, aqui só exemplo:
-    const evaluatorId = req.body.evaluatorId || 1;
+  async create(@Body() dto: CreateManagerEvaluationDto, @Request() req) {
+    const evaluatorId = req.user.userId;
     return this.service.create(evaluatorId, dto);
   }
 
-  @Patch(':id')
+  @Patch('by-evaluatee/:evaluateeId')
   @ApiBody({
     description: 'Exemplo de atualização de avaliação de gestor',
     schema: {
@@ -45,29 +47,41 @@ export class ManagerEvaluationController {
           {
             criterionId: 1,
             score: 5,
-            justification: 'Melhorou ainda mais a postura.',
+            justification: 'Melhorou ainda mais a postura.'
           },
           {
             criterionId: 2,
             score: 4,
-            justification: 'Superou as expectativas em ética.',
-          },
-        ],
-      },
-    },
+            justification: 'Superou as expectativas em ética.'
+          }
+        ]
+      }
+    }
   })
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateManagerEvaluationDto) {
-    return this.service.update(id, dto);
+  async updateByEvaluatee(
+    @Param('evaluateeId', ParseIntPipe) evaluateeId: number,
+    @Body() dto: UpdateManagerEvaluationDto,
+    @Request() req
+  ) {
+    const evaluatorId = req.user.userId;
+    // Busca a avaliação do gestor logado para o colaborador
+    const evaluation = await this.service.findByEvaluatorAndEvaluatee(evaluatorId, evaluateeId);
+    if (!evaluation) throw new Error('Avaliação não encontrada');
+    return this.service.update(evaluation.id, dto);
+  }
+
+  @Get('by-evaluatee/:evaluateeId')
+  async findByEvaluatorAndEvaluatee(
+    @Param('evaluateeId', ParseIntPipe) evaluateeId: number,
+    @Request() req
+  ) {
+    const evaluatorId = req.user.userId;
+    return this.service.findByEvaluatorAndEvaluatee(evaluatorId, evaluateeId);
   }
 
   @Get('by-manager/:evaluatorId')
   async findByManager(@Param('evaluatorId', ParseIntPipe) evaluatorId: number) {
     return this.service.findByManager(evaluatorId);
-  }
-
-  @Get('by-evaluatee/:evaluateeId')
-  async findByEvaluatee(@Param('evaluateeId', ParseIntPipe) evaluateeId: number) {
-    return this.service.findByEvaluatee(evaluateeId);
   }
 
   @Get(':id')
