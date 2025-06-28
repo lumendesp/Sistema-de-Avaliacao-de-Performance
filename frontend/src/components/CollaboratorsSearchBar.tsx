@@ -1,6 +1,7 @@
 import { IoIosSearch } from "react-icons/io";
 import { UserIcon } from "./UserIcon";
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { fetchCollaboratorsBySearch } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import type { Collaborator } from "../types/reference";
@@ -17,6 +18,13 @@ const CollaboratorsSearchBar = ({
   const [search, setSearch] = useState("");
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]); // lista de colaboradores
   const { user } = useAuth();
+  const location = useLocation(); // para detectar mudanças de rota
+
+  // Reset do estado quando a rota mudar
+  useEffect(() => {
+    setSearch("");
+    setCollaborators([]);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!search.trim()) {

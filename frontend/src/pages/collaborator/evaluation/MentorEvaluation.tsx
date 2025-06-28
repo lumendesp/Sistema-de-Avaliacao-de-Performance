@@ -32,7 +32,7 @@ const MentorEvaluation = () => {
     loadMentor();
   }, [user]);
 
-  if (loading) return <p>Carregando mentor...</p>;
+  if (loading) return <div className="bg-[#f1f1f1] h-screen w-full"></div>;
   if (!mentor)
     return (
       <div className="bg-[#f1f1f1] h-screen w-full p-3">
