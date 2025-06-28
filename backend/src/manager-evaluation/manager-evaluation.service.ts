@@ -1,43 +1,74 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-
-interface ManagerEvaluationItemDto {
-  criterionId: number;
-  score: number;
-  justification: string;
-  scoreDescription?: string;
-}
-
-interface CreateManagerEvaluationDto {
-  evaluateeId: number;
-  cycleId: number;
-  items: ManagerEvaluationItemDto[];
-}
-
-interface UpdateManagerEvaluationDto {
-  cycleId?: number;
-  items?: ManagerEvaluationItemDto[];
-}
+import { CreateManagerEvaluationDto, ManagerEvaluationItemDto } from './dto/create-manager-evaluation.dto';
+import { UpdateManagerEvaluationDto } from './dto/update-manager-evaluation.dto';
 
 @Injectable()
 export class ManagerEvaluationService {
   constructor(private prisma: PrismaService) {}
 
+  private getScoreDescription(score: number): string {
+    switch (score) {
+      case 1:
+        return 'Fica muito abaixo das expectativas';
+      case 2:
+        return 'Fica abaixo das expectativas';
+      case 3:
+        return 'Atinge as expectativas';
+      case 4:
+        return 'Fica acima das expectativas';
+      case 5:
+        return 'Supera as expectativas';
+      default:
+        return 'Nota inválida';
+    }
+  }
+
   async create(evaluatorId: number, dto: CreateManagerEvaluationDto) {
-    const { evaluateeId, cycleId, items } = dto;
+    const existing = await this.prisma.managerEvaluation.findFirst({
+      where: {
+        evaluatorId,
+        evaluateeId: dto.evaluateeId,
+        cycleId: dto.cycleId,
+      },
+    });
+    if (existing) {
+      throw new ConflictException('Já existe avaliação deste gestor para este colaborador neste ciclo');
+    }
     return this.prisma.managerEvaluation.create({
       data: {
         evaluatorId,
-        evaluateeId,
-        cycleId,
+        evaluateeId: dto.evaluateeId,
+        cycleId: dto.cycleId,
         items: {
-          create: items.map((item) => ({
-            criterionId: item.criterionId,
+          create: dto.items.map((item: ManagerEvaluationItemDto) => ({
+            criterion: { connect: { id: item.criterionId } },
             score: item.score,
-            justification: item.justification,
-            scoreDescription: item.scoreDescription || '',
+            justification: item.justification || '',
+            scoreDescription: this.getScoreDescription(item.score),
           })),
         },
+      },
+      include: { items: true },
+    });
+  }
+
+  async update(id: number, dto: UpdateManagerEvaluationDto) {
+    const items = (dto as any).items;
+    return this.prisma.managerEvaluation.update({
+      where: { id },
+      data: {
+        ...(items && {
+          items: {
+            deleteMany: {},
+            create: items.map((item: ManagerEvaluationItemDto) => ({
+              criterion: { connect: { id: item.criterionId } },
+              score: item.score,
+              justification: item.justification || '',
+              scoreDescription: this.getScoreDescription(item.score),
+            })),
+          },
+        }),
       },
       include: { items: true },
     });
@@ -47,9 +78,9 @@ export class ManagerEvaluationService {
     return this.prisma.managerEvaluation.findMany({
       where: { evaluatorId },
       include: {
+        items: true,
+        evaluatee: { select: { name: true, email: true } },
         cycle: true,
-        items: { include: { criterion: true } },
-        evaluatee: true,
       },
     });
   }
@@ -58,80 +89,24 @@ export class ManagerEvaluationService {
     return this.prisma.managerEvaluation.findMany({
       where: { evaluateeId },
       include: {
+        items: true,
+        evaluator: { select: { name: true, email: true } },
         cycle: true,
-        items: { include: { criterion: true } },
-        evaluator: true,
       },
     });
   }
 
-  // Cria avaliações para todos os colaboradores de todos os gestores no início do ciclo
-  async generateAllForCycle(cycleId: number) {
-    // Busca todos os relacionamentos gestor-colaborador
-    const relations = await this.prisma.managerCollaborator.findMany();
-    // Para cada relação, cria avaliação se não existir
-    for (const rel of relations) {
-      const exists = await this.prisma.managerEvaluation.findFirst({
-        where: {
-          evaluatorId: rel.managerId,
-          evaluateeId: rel.collaboratorId,
-          cycleId,
-        },
-      });
-      if (!exists) {
-        await this.prisma.managerEvaluation.create({
-          data: {
-            evaluatorId: rel.managerId,
-            evaluateeId: rel.collaboratorId,
-            cycleId,
-            status: 'draft',
-            items: { create: [] },
-          },
-        });
-      }
-    }
-    return { message: 'Avaliações de gestores geradas.' };
-  }
-
-  // Update só se status for draft
-  async update(id: number, dto: UpdateManagerEvaluationDto) {
+  async findOne(id: number) {
     const evaluation = await this.prisma.managerEvaluation.findUnique({
       where: { id },
-    });
-    if (!evaluation) throw new Error('Avaliação não encontrada');
-    if (evaluation.status !== 'draft')
-      throw new Error('Avaliação já enviada, não pode mais editar');
-    const { cycleId, items } = dto;
-    return this.prisma.managerEvaluation.update({
-      where: { id },
-      data: {
-        ...(cycleId && { cycleId }),
-        ...(items && {
-          items: {
-            deleteMany: {},
-            create: items.map((item) => ({
-              criterionId: item.criterionId,
-              score: item.score,
-              justification: item.justification,
-              scoreDescription: item.scoreDescription || '',
-            })),
-          },
-        }),
+      include: {
+        items: true,
+        evaluator: { select: { name: true, email: true } },
+        evaluatee: { select: { name: true, email: true } },
+        cycle: true,
       },
-      include: { items: true },
     });
-  }
-
-  // Envia avaliação (muda status para submitted)
-  async submit(id: number) {
-    const evaluation = await this.prisma.managerEvaluation.findUnique({
-      where: { id },
-    });
-    if (!evaluation) throw new Error('Avaliação não encontrada');
-    if (evaluation.status !== 'draft') throw new Error('Avaliação já enviada');
-    return this.prisma.managerEvaluation.update({
-      where: { id },
-      data: { status: 'submitted' },
-    });
+    if (!evaluation) throw new NotFoundException('Avaliação não encontrada');
+    return evaluation;
   }
 }
