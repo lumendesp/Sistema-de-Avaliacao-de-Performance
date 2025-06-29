@@ -30,7 +30,7 @@ const PeerEvaluation = () => {
     };
 
     loadInitialEvaluations();
-  }, [cycleId, user]); 
+  }, [cycleId, user]);
 
   // adiciona um colaborador à lista temporária (somente se ainda não estiver na lista)
   const handleAddCollaborator = (collaborator: Collaborator) => {
@@ -58,18 +58,18 @@ const PeerEvaluation = () => {
         onSelect={handleAddCollaborator}
         excludeIds={excludeIds}
       />
-      {myEvaluations.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-8">
-            Selecione um colaborador na barra de busca para começar uma avaliação.
-          </p>
-      ) : (
-        <PeerEvaluationForm
-          selectedCollaborators={selectedCollaborators}
-          onRemoveCollaborator={handleRemoveCollaborator}
-          myEvaluations={myEvaluations}
-          setMyEvaluations={setMyEvaluations}
-        />
+      {selectedCollaborators.length === 0 && myEvaluations.length === 0 && (
+        <p className="text-sm text-gray-400 text-center py-8">
+          Selecione um colaborador na barra de busca para começar uma avaliação.
+        </p>
       )}
+
+      <PeerEvaluationForm
+        selectedCollaborators={selectedCollaborators}
+        onRemoveCollaborator={handleRemoveCollaborator}
+        myEvaluations={myEvaluations}
+        setMyEvaluations={setMyEvaluations}
+      />
     </div>
   );
 };
