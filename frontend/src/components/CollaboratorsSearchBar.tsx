@@ -38,7 +38,7 @@ const CollaboratorsSearchBar = () => {
         <IoIosSearch size={16} className="text-[#1D1D1D]/75" />
         <input
           type="text"
-          placeholder={placeholder || 'Buscar por colaboradores'}
+          placeholder="Buscar por colaboradores"
           className="flex-1 outline-none text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
