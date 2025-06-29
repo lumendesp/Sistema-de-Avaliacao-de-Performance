@@ -122,3 +122,48 @@ export const updateEvaluation = async (id: number, data: any) => {
   }
   return response.json();
 };
+
+export const fetchManagerCollaborators = async (managerId: number) => {
+  const res = await fetch(`${API_URL}/manager/${managerId}/collaborators`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Erro ao buscar colaboradores');
+  return res.json();
+};
+
+export const fetchManagerEvaluation = async (collaboratorId: number) => {
+  const res = await fetch(`${API_URL}/manager-evaluation/by-evaluatee/${collaboratorId}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (res.status === 404) return null; // Não existe avaliação ainda
+  if (!res.ok) throw new Error('Erro ao buscar avaliação');
+  return res.json();
+};
+
+export const createManagerEvaluation = async (data: { evaluateeId: number; cycleId: number; groups: any[] }) => {
+  // Log para debug
+  console.log('Payload enviado para manager-evaluation:', data);
+  const res = await fetch(`${API_URL}/manager-evaluation`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    console.error('Erro ao criar avaliação:', error);
+    throw new Error(error.message || 'Erro ao criar avaliação');
+  }
+  return res.json();
+};
+
+export const updateManagerEvaluation = async (evaluateeId: number, data: any) => {
+  const res = await fetch(`${API_URL}/manager-evaluation/by-evaluatee/${evaluateeId}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Erro ao atualizar avaliação');
+  return res.json();
+};

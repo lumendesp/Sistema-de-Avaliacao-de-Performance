@@ -130,21 +130,41 @@ async function main() {
   await Promise.all([
     prisma.configuredCriterion.create({
       data: {
-        criterionId: criterion1.id,
+        criterionId: criterion1.id, // Resiliência nas adversidades
         trackId: track1.id,
         unitId: unit1.id,
         positionId: position1.id,
-        groupId: group1.id,
+        groupId: group1.id, // Comportamentais
         mandatory: true,
       },
     }),
     prisma.configuredCriterion.create({
       data: {
-        criterionId: criterion2.id,
+        criterionId: criterion2.id, // Sentimento de dono
         trackId: track1.id,
         unitId: unit1.id,
         positionId: position1.id,
-        groupId: group2.id,
+        groupId: group1.id, // Comportamentais
+        mandatory: true,
+      },
+    }),
+    prisma.configuredCriterion.create({
+      data: {
+        criterionId: criterion3.id, // Organização no trabalho
+        trackId: track1.id,
+        unitId: unit1.id,
+        positionId: position1.id,
+        groupId: group2.id, // Técnicas
+        mandatory: true,
+      },
+    }),
+    prisma.configuredCriterion.create({
+      data: {
+        criterionId: criterion4.id, // Atender aos prazos
+        trackId: track1.id,
+        unitId: unit1.id,
+        positionId: position1.id,
+        groupId: group2.id, // Técnicas
         mandatory: true,
       },
     }),

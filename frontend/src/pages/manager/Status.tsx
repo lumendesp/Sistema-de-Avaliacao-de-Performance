@@ -1,54 +1,35 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import searchIcon from "../../assets/search.png";
 import CollaboratorCard from "../../components/manager/CollaboratorCard";
 import type { Collaborator } from "../../types/collaboratorStatus.tsx";
-import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 
-export const collaborators: Collaborator[] = [
-  {
-    id: 1,
-    name: "Colaborador 1",
-    role: "Product Design",
-    status: "Em andamento",
-    selfScore: 4.0,
-    managerScore: null,
-  },
-  {
-    id: 2,
-    name: "Colaborador 2",
-    role: "Product Design",
-    status: "Em andamento",
-    selfScore: 4.0,
-    managerScore: null,
-  },
-  {
-    id: 3,
-    name: "Colaborador 3",
-    role: "Desenvolvedor",
-    status: "Em andamento",
-    selfScore: 4.0,
-    managerScore: null,
-  },
-  {
-    id: 4,
-    name: "Colaborador 4",
-    role: "Product Owner",
-    status: "Finalizado",
-    selfScore: 4.0,
-    managerScore: 4.5,
-  },
-  {
-    id: 5,
-    name: "Colaborador 5",
-    role: "Scrum Master",
-    status: "Finalizado",
-    selfScore: 4.0,
-    managerScore: 4.5,
-  },
-];
+const API_URL = "http://localhost:3000";
 
 export default function Collaborators() {
   const [search, setSearch] = useState("");
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user && user.id) {
+      fetch(`${API_URL}/managers/${user.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          // Garante que cada colaborador tenha os campos esperados
+          const parsed = (data.collaborators || []).map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            role: c.roles?.[0]?.role || "Colaborador",
+            status: c.status || "Em andamento",
+            selfScore: c.selfScore ?? 0,
+            managerScore: c.managerScore ?? null,
+          }));
+          setCollaborators(parsed);
+        })
+        .catch(() => setCollaborators([]));
+    }
+  }, [user]);
 
   const filtered = collaborators.filter((collab) =>
     collab.name.toLowerCase().includes(search.toLowerCase())
