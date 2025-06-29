@@ -269,7 +269,17 @@ async function main() {
     },
   });
 
+  const cycle = await prisma.evaluationCycle.create({
+    data: {
+      name: 'Ciclo 2025.1',
+      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 dias atrás
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),   // 7 dias à frente
+      status: 'IN_PROGRESS',
+    },
+  });
+
   console.log('Seed completed!');
+  console.log('Cycle ID criado:', cycle.id);
 }
 
 main()
