@@ -126,6 +126,43 @@ export const fetchMyReferences = async (cycleId: number) => {
   return res.json();
 };
 
+export const createPeerEvaluation = async (evaluationData: {
+  evaluateeId: number;
+  cycleId: number;
+  strengths: string;
+  improvements: string;
+  motivation: string; // CONCORDO_TOTALMENTE etc.
+  score: number;
+  projects: { name: string; period: number }[];
+}) => {
+  const res = await fetch(`${API_URL}/peer-evaluations`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(evaluationData),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao criar avaliação por pares");
+  }
+
+  return res.json();
+};
+
+export const fetchMyPeerEvaluations = async (cycleId: number) => {
+  const res = await fetch(`${API_URL}/peer-evaluations/me?cycleId=${cycleId}`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar avaliações por pares");
+  }
+
+  return res.json(); // retorna array de avaliações
+};
+
 // Fetches all users with their associated evaluations
 export const getUsersWithEvaluations = async () => {
   const response = await fetch(`${API_URL}/committee/users`);
