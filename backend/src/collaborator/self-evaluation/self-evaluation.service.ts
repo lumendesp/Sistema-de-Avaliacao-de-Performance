@@ -80,14 +80,24 @@ export class SelfEvaluationService {
 
 
   async findByUser(where: { userId: number; cycleId?: number }) {
-    return this.prisma.selfEvaluation.findMany({
+    const evaluations = await this.prisma.selfEvaluation.findMany({
       where,
       include: {
         items: true,
         cycle: true,
       },
     });
+
+    return evaluations.map((evaluation) => {
+      const now = new Date();
+      const isEditable = evaluation.cycle.endDate > now;
+      return {
+        ...evaluation,
+        isEditable,
+      };
+    });
   }
+
 
   async update(id: number, dto: UpdateSelfEvaluationDto) {
     const { cycleId, items } = dto;

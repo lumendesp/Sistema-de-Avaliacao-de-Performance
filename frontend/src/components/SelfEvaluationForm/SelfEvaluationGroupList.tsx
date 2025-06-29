@@ -12,7 +12,7 @@ interface Props {
 
 const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
   const { token } = useAuth();
-  const { setIsComplete, setIsUpdate } = useEvaluation();
+  const { setIsComplete, setIsUpdate, isUpdate } = useEvaluation();
 
   const [ratings, setRatings] = useState<Record<number, number[]>>({});
   const [justifications, setJustifications] = useState<Record<number, string[]>>({});
@@ -93,17 +93,37 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
   };
 
   useEffect(() => {
-    // Verificar se já existe avaliação para esse ciclo
     const fetch = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/self-evaluation?cycleId=${cycleId}`, {
+        const res = await axios.get(`http://localhost:3000/self-evaluation?cycleId=${cycleId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const current = response.data.find((e: any) => e.cycle.id === cycleId);
+        const current = res.data.find((e: any) => e.cycle.id === cycleId);
         if (current) {
           setSelfEvaluationId(current.id);
           setIsUpdate(true);
+
+          // Preencher os valores dos campos
+          const updatedRatings: Record<number, number[]> = {};
+          const updatedJustifications: Record<number, string[]> = {};
+
+          trackData.CriterionGroup.forEach((group) => {
+            const groupRatings: number[] = [];
+            const groupJustifications: string[] = [];
+
+            group.configuredCriteria.forEach((cc) => {
+              const item = current.items.find((i: any) => i.criterionId === cc.criterion.id);
+              groupRatings.push(item?.score || 0);
+              groupJustifications.push(item?.justification || "");
+            });
+
+            updatedRatings[group.id] = groupRatings;
+            updatedJustifications[group.id] = groupJustifications;
+          });
+
+          setRatings(updatedRatings);
+          setJustifications(updatedJustifications);
         }
       } catch (e) {
         console.error("Erro ao verificar avaliação existente:", e);
@@ -111,7 +131,7 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
     };
 
     fetch();
-  }, [token, cycleId]);
+  }, [token, cycleId, trackData]);
 
   return (
     <div className="pb-24">
@@ -122,7 +142,7 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
           cycleId={cycleId}
           criteria={group.configuredCriteria.map((cc, i) => ({
             id: cc.criterion.id,
-            title: cc.criterion.displayName,
+            title: cc.criterion.name,
             description: cc.criterion.generalDescription,
             score: ratings[group.id]?.[i] ?? 0,
             justification: justifications[group.id]?.[i] ?? "",
@@ -144,7 +164,7 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
           disabled={filled !== total || isSending}
           onClick={handleSubmit}
         >
-          {isSending ? "Enviando..." : "Enviar avaliação"}
+          {isSending ? "Enviando..." : isUpdate ? "Atualizar avaliação" : "Enviar avaliação"}
         </button>
       </div>
     </div>
