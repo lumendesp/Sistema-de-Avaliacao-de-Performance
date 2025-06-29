@@ -278,6 +278,28 @@ async function main() {
     },
   });
 
+  // Cria alguns projetos para peer evaluation
+  const projectsData = [
+    {
+      name: 'Project Apollo',
+      description: 'Sistema de automação para controle de produção',
+    },
+    {
+      name: 'Project Orion',
+      description: 'Aplicação web para gerenciamento de equipes',
+    },
+    {
+      name: 'Project Vega',
+      description: 'Ferramenta de análise de dados para marketing',
+    },
+  ];
+
+  for (const proj of projectsData) {
+    await prisma.project.create({
+      data: proj,
+    });
+  }
+
   console.log('Seed completed!');
   console.log('Cycle ID criado:', cycle.id);
 }

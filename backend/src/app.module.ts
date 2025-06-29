@@ -18,6 +18,8 @@ import { TrackModule } from './track/track.module';
 import { UnitModule } from './unit/unit.module';
 import { PositionModule } from './position/position.module';
 import { CollaboratorsSearchBarModule } from './collaborator/collaborators-search-bar/collaborators-search-bar.module';
+import { ReferenceModule } from './reference/reference.module';
+import { PeerEvaluationModule } from './collaborator/peer-evaluation/peer-evaluation.module';
 
 @Module({
   imports: [CiclosModule, NotasModule,
@@ -36,6 +38,8 @@ import { CollaboratorsSearchBarModule } from './collaborator/collaborators-searc
     UnitModule,
     PositionModule,
     CollaboratorsSearchBarModule,
+    ReferenceModule,
+    PeerEvaluationModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

@@ -22,6 +22,13 @@ enum Role {
   ADMIN
 }
 
+enum MotivationLevel {
+  CONCORDO_TOTALMENTE
+  CONCORDO_PARCIALMENTE
+  DISCORDO_PARCIALMENTE
+  DISCORDO_TOTALMENTE
+}
+
 enum CycleStatus {
   IN_PROGRESS
   CLOSED
@@ -97,9 +104,9 @@ model User {
   trackHistory UserTrack[]
 
   // Relacionamento mentor <-> colaboradores (mentees)
-  mentorId   Int? 
-  mentor     User?  @relation("UserMentor", fields: [mentorId], references: [id])
-  mentees    User[] @relation("UserMentor")
+  mentorId Int?
+  mentor   User?  @relation("UserMentor", fields: [mentorId], references: [id])
+  mentees  User[] @relation("UserMentor")
 
   // Avaliações & Referências
   peerEvaluationsGiven       PeerEvaluation[]    @relation("PeerEvaluator")
@@ -246,15 +253,15 @@ model PeerEvaluationProject {
 }
 
 model PeerEvaluation {
-  id           Int      @id @default(autoincrement())
+  id           Int              @id @default(autoincrement())
   evaluatorId  Int
   evaluateeId  Int
   cycleId      Int
-  createdAt    DateTime @default(now())
+  createdAt    DateTime         @default(now())
   score        Float
   strengths    String
   improvements String
-  motivation   String?
+  motivation   MotivationLevel?
 
   evaluator User                    @relation("PeerEvaluator", fields: [evaluatorId], references: [id])
   evaluatee User                    @relation("PeerEvaluatee", fields: [evaluateeId], references: [id])
