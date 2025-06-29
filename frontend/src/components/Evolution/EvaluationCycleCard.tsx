@@ -13,7 +13,7 @@ interface EvaluationCycleCardProps {
 const EvaluationCycleCard: React.FC<EvaluationCycleCardProps> = ({ cycle, status, self, exec, posture, final, summary }) => (
   <div className="border rounded p-4 bg-gray-50">
     <div className="flex items-center gap-4 mb-2">
-      <span className="font-bold">Ciclo {cycle}</span>
+      <span className="font-bold">Ciclo {cycle.replace(/^Ciclo\s*/i, "")}</span>
       <span className={`text-xs px-2 py-1 rounded ${status === 'Finalizado' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{status}</span>
       <span className="ml-auto font-bold text-lg">{final !== '-' ? final : ''}</span>
     </div>

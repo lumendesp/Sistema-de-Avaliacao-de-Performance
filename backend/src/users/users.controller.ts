@@ -28,6 +28,12 @@ export class UsersController {
     return await this.usersService.findAll();
   }
 
+  // retorna colaboradores com dados de avaliação para o dashboard
+  @Get('collaborators/dashboard')
+  async findCollaboratorsForDashboard() {
+    return await this.usersService.findCollaboratorsForDashboard();
+  }
+
   // retorna um usuário em específico, de acordo com o id
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<User> {

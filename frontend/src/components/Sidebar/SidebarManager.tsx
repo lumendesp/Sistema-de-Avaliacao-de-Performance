@@ -1,5 +1,6 @@
 import { useNavigate, NavLink } from "react-router-dom";
 import { FiLogOut } from "react-icons/fi";
+import { DocumentTextIcon } from "@heroicons/react/24/outline";
 import dashboardIcon from "../../assets/dashboard.svg";
 import colaboratorsIcon from "../../assets/collaborators.svg";
 import { useAuth } from "../../context/AuthContext";
@@ -16,6 +17,11 @@ const menuItems = [
     icon: (
       <img src={colaboratorsIcon} alt="Colaboradores" className="w-5 h-5" />
     ),
+  },
+  {
+    path: "/manager/brutal-facts",
+    label: "Brutal Facts",
+    icon: <DocumentTextIcon className="w-5 h-5" />,
   },
 ];
 
