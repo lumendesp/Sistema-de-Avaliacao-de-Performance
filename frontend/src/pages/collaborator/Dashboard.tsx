@@ -1,13 +1,67 @@
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import DashboardHeader from '../../components/CollaboratorDashboard/DashboardHeader';
 import EvaluationStatusButton from '../../components/EvaluationStatusButton/EvaluationStatusButton';
 import EvaluationCardList from '../../components/CollaboratorDashboard/EvaluationCardList';
 import PerformanceChart from '../../components/CollaboratorDashboard/PerformanceChart';
 
+interface Cycle {
+  id: number;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: 'IN_PROGRESS' | 'CLOSED' | 'PUBLISHED';
+}
+
 export default function Dashboard() {
+  const [cycle, setCycle] = useState<Cycle | null>(null);
+  const [diasRestantes, setDiasRestantes] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchCycle = async () => {
+      try {
+        const response = await axios.get<Cycle[]>('http://localhost:3000/ciclos');
+        const cicloAtivo = response.data.find(c => c.status === 'IN_PROGRESS');
+
+        if (cicloAtivo) {
+          setCycle(cicloAtivo);
+
+          const endDate = new Date(cicloAtivo.endDate);
+          const hoje = new Date();
+          const diff = Math.ceil((endDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+          setDiasRestantes(diff > 0 ? diff : 0);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar ciclos:', error);
+      }
+    };
+
+    fetchCycle();
+  }, []);
+
+  const mapCycleStatusToUIStatus = (status: string): 'aberto' | 'emBreve' | 'disponivel' => {
+    switch (status) {
+      case 'IN_PROGRESS':
+        return 'aberto';
+      case 'CLOSED':
+        return 'emBreve';
+      case 'PUBLISHED':
+        return 'disponivel';
+      default:
+        return 'emBreve';
+    }
+  };
+
   return (
     <div className="w-full flex flex-col gap-4 p-10 bg-[#f1f1f1]">
       <DashboardHeader name="João Silva" />
-      <EvaluationStatusButton status="aberto" ciclo="2025.1" diasRestantes={15} />
+      {cycle && diasRestantes !== null && (
+        <EvaluationStatusButton
+          status={mapCycleStatusToUIStatus(cycle.status)}
+          ciclo={cycle.name}
+          diasRestantes={diasRestantes}
+        />
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <EvaluationCardList />
         <PerformanceChart />
