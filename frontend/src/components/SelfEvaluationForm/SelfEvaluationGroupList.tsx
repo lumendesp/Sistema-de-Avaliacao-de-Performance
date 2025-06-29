@@ -12,7 +12,7 @@ interface Props {
 
 const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
   const { token } = useAuth();
-  const { setIsComplete, setIsUpdate, isUpdate } = useEvaluation();
+  const { setIsComplete, setIsUpdate, registerSubmitHandler } = useEvaluation();
 
   const [ratings, setRatings] = useState<Record<number, number[]>>({});
   const [justifications, setJustifications] = useState<Record<number, string[]>>({});
@@ -53,77 +53,18 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
     setJustifications({ ...justifications, [groupId]: updated });
   };
 
-  const handleSubmit = async () => {
-    const items = trackData.CriterionGroup.flatMap((group) =>
-      group.configuredCriteria.map((cc, i) => ({
-        criterionId: cc.criterion.id,
-        score: ratings[group.id]?.[i] ?? 0,
-        justification: justifications[group.id]?.[i] ?? "",
-      }))
-    );
-
-    const hasEmpty = items.some((item) => item.score <= 0 || item.justification.trim() === "");
-    if (hasEmpty) {
-      alert("Preencha todos os critérios antes de enviar.");
-      return;
-    }
-
-    setIsSending(true);
-
-    try {
-      const payload = { cycleId, items };
-
-      if (selfEvaluationId) {
-        await axios.patch(`http://localhost:3000/self-evaluation/${selfEvaluationId}`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        alert("Autoavaliação atualizada com sucesso!");
-      } else {
-        await axios.post("http://localhost:3000/self-evaluation", payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        alert("Autoavaliação enviada com sucesso!");
-      }
-    } catch (error: any) {
-      console.error("Erro ao enviar:", error);
-      alert("Erro ao enviar avaliação.");
-    } finally {
-      setIsSending(false);
-    }
-  };
-
   useEffect(() => {
+    // Verificar se já existe avaliação para esse ciclo
     const fetch = async () => {
       try {
-        const res = await axios.get(`http://localhost:3000/self-evaluation?cycleId=${cycleId}`, {
+        const response = await axios.get(`http://localhost:3000/self-evaluation?cycleId=${cycleId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const current = res.data.find((e: any) => e.cycle.id === cycleId);
+        const current = response.data.find((e: any) => e.cycle.id === cycleId);
         if (current) {
           setSelfEvaluationId(current.id);
           setIsUpdate(true);
-
-          // Preencher os valores dos campos
-          const updatedRatings: Record<number, number[]> = {};
-          const updatedJustifications: Record<number, string[]> = {};
-
-          trackData.CriterionGroup.forEach((group) => {
-            const groupRatings: number[] = [];
-            const groupJustifications: string[] = [];
-
-            group.configuredCriteria.forEach((cc) => {
-              const item = current.items.find((i: any) => i.criterionId === cc.criterion.id);
-              groupRatings.push(item?.score || 0);
-              groupJustifications.push(item?.justification || "");
-            });
-
-            updatedRatings[group.id] = groupRatings;
-            updatedJustifications[group.id] = groupJustifications;
-          });
-
-          setRatings(updatedRatings);
-          setJustifications(updatedJustifications);
         }
       } catch (e) {
         console.error("Erro ao verificar avaliação existente:", e);
@@ -131,7 +72,49 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
     };
 
     fetch();
-  }, [token, cycleId, trackData]);
+  }, [token, cycleId]);
+
+  useEffect(() => {
+    const submitSelfEvaluation = async () => {
+      const items = trackData.CriterionGroup.flatMap((group) =>
+        group.configuredCriteria.map((cc, i) => ({
+          criterionId: cc.criterion.id,
+          score: ratings[group.id]?.[i] ?? 0,
+          justification: justifications[group.id]?.[i] ?? "",
+        }))
+      );
+
+      const hasEmpty = items.some((item) => item.score <= 0 || item.justification.trim() === "");
+      if (hasEmpty) {
+        alert("Preencha todos os critérios antes de enviar.");
+        return;
+      }
+
+      setIsSending(true);
+      try {
+        const payload = { cycleId, items };
+
+        if (selfEvaluationId) {
+          await axios.patch(`http://localhost:3000/self-evaluation/${selfEvaluationId}`, payload, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          alert("Autoavaliação atualizada com sucesso!");
+        } else {
+          await axios.post("http://localhost:3000/self-evaluation", payload, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          alert("Autoavaliação enviada com sucesso!");
+        }
+      } catch (error: any) {
+        console.error("Erro ao enviar:", error);
+        alert("Erro ao enviar avaliação.");
+      } finally {
+        setIsSending(false);
+      }
+    };
+
+    registerSubmitHandler("self-evaluation", submitSelfEvaluation);
+  }, [ratings, justifications, selfEvaluationId, cycleId]);
 
   return (
     <div className="pb-24">
@@ -142,7 +125,7 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
           cycleId={cycleId}
           criteria={group.configuredCriteria.map((cc, i) => ({
             id: cc.criterion.id,
-            title: cc.criterion.name,
+            title: cc.criterion.displayName,
             description: cc.criterion.generalDescription,
             score: ratings[group.id]?.[i] ?? 0,
             justification: justifications[group.id]?.[i] ?? "",
@@ -152,21 +135,6 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
           onJustificationChange={(i, v) => handleJustificationChange(group.id, i, v)}
         />
       ))}
-
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-inner border-t border-gray-200 flex justify-between items-center z-50">
-        <p className="text-sm text-gray-600">
-          {filled}/{total} critérios preenchidos
-        </p>
-        <button
-          className={`px-6 py-2 text-white font-bold rounded-lg ${
-            filled === total ? "bg-green-600 hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"
-          }`}
-          disabled={filled !== total || isSending}
-          onClick={handleSubmit}
-        >
-          {isSending ? "Enviando..." : isUpdate ? "Atualizar avaliação" : "Enviar avaliação"}
-        </button>
-      </div>
     </div>
   );
 };

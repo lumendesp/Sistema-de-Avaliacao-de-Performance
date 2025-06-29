@@ -27,8 +27,9 @@ const EvaluationLayout = () => {
             isComplete={isComplete}
             isUpdate={isUpdate}
             onClick={submitAll}
-            disabled={!isSelfEvaluation}
+            disabled={!isSelfEvaluation || !isComplete}
           />
+
         </header>
 
         <nav className="flex gap-20 pt-16 m-0 pl-10">
