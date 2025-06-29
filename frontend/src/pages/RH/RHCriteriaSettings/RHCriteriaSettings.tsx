@@ -498,7 +498,7 @@ function RhCriteriaSettings() {
                 <div>
                     <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
                         <div className="flex-grow w-full md:w-auto">
-                            <CollaboratorsSearchBar placeholder="Buscar por Trilha" onSearch={term => console.log('Search term:', term)} />
+                            <CollaboratorsSearchBar/>
                         </div>
                         <div className="bg-[#08605F] p-3 rounded-md text-white">
                             <IoFunnel size={24} />

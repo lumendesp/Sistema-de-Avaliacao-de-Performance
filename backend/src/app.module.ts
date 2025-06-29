@@ -15,6 +15,7 @@ import { RhModule } from './rh/rh.modules';
 import { TrackModule } from './track/track.module';
 import { UnitModule } from './unit/unit.module';
 import { PositionModule } from './position/position.module';
+import { CollaboratorsSearchBarModule } from './collaborator/collaborators-search-bar/collaborators-search-bar.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { PositionModule } from './position/position.module';
     TrackModule,
     UnitModule,
     PositionModule,
+    CollaboratorsSearchBarModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
