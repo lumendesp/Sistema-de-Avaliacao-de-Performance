@@ -19,7 +19,7 @@ export class ReferenceService {
 
     if (existing) {
       throw new BadRequestException(
-        'Você já adicionou uma referência para essa pessoa neste ciclo.',
+        'You have already added a reference to this person in this cycle.',
       );
     }
 
