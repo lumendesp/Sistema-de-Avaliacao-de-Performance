@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CiclosModule } from './ciclos/ciclos.module';
+import { NotasModule } from './notas/notas.module';
 import { PrismaService } from './prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma.module';
@@ -18,7 +20,7 @@ import { PositionModule } from './position/position.module';
 import { CollaboratorsSearchBarModule } from './collaborator/collaborators-search-bar/collaborators-search-bar.module';
 
 @Module({
-  imports: [
+  imports: [CiclosModule, NotasModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
