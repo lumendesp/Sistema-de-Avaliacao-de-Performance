@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
 import DashboardHeader from '../../components/CollaboratorDashboard/DashboardHeader';
 import EvaluationStatusButton from '../../components/EvaluationStatusButton/EvaluationStatusButton';
 import EvaluationCardList from '../../components/CollaboratorDashboard/EvaluationCardList';
@@ -14,13 +15,17 @@ interface Cycle {
 }
 
 export default function Dashboard() {
+  const { user, token } = useAuth();
   const [cycle, setCycle] = useState<Cycle | null>(null);
   const [diasRestantes, setDiasRestantes] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchCycle = async () => {
       try {
-        const response = await axios.get<Cycle[]>('http://localhost:3000/ciclos');
+        const response = await axios.get<Cycle[]>('http://localhost:3000/ciclos', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
         const cicloAtivo = response.data.find(c => c.status === 'IN_PROGRESS');
 
         if (cicloAtivo) {
@@ -37,7 +42,7 @@ export default function Dashboard() {
     };
 
     fetchCycle();
-  }, []);
+  }, [token]);
 
   const mapCycleStatusToUIStatus = (status: string): 'aberto' | 'emBreve' | 'disponivel' => {
     switch (status) {
@@ -54,7 +59,7 @@ export default function Dashboard() {
 
   return (
     <div className="w-full flex flex-col gap-4 p-10 bg-[#f1f1f1]">
-      <DashboardHeader name="João Silva" />
+      <DashboardHeader name={user?.name ?? 'Usuário'} />
       {cycle && diasRestantes !== null && (
         <EvaluationStatusButton
           status={mapCycleStatusToUIStatus(cycle.status)}
