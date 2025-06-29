@@ -38,18 +38,22 @@ export class ManagerEvaluationService {
     if (existing) {
       throw new ConflictException('Já existe avaliação deste gestor para este colaborador neste ciclo');
     }
+    // Salva o groupId em cada item
     return this.prisma.managerEvaluation.create({
       data: {
         evaluatorId,
         evaluateeId: dto.evaluateeId,
         cycleId: dto.cycleId,
         items: {
-          create: dto.items.map((item: ManagerEvaluationItemDto) => ({
-            criterion: { connect: { id: item.criterionId } },
-            score: item.score,
-            justification: item.justification || '',
-            scoreDescription: this.getScoreDescription(item.score),
-          })),
+          create: dto.groups.flatMap(group =>
+            group.items.map(item => ({
+              criterion: { connect: { id: item.criterionId } },
+              score: item.score,
+              justification: item.justification || '',
+              scoreDescription: this.getScoreDescription(item.score),
+              groupId: group.groupId,
+            }))
+          ),
         },
       },
       include: { items: true },
@@ -57,19 +61,22 @@ export class ManagerEvaluationService {
   }
 
   async update(id: number, dto: UpdateManagerEvaluationDto) {
-    const items = (dto as any).items;
+    const groups = (dto as any).groups;
     return this.prisma.managerEvaluation.update({
       where: { id },
       data: {
-        ...(items && {
+        ...(groups && {
           items: {
             deleteMany: {},
-            create: items.map((item: ManagerEvaluationItemDto) => ({
-              criterion: { connect: { id: item.criterionId } },
-              score: item.score,
-              justification: item.justification || '',
-              scoreDescription: this.getScoreDescription(item.score),
-            })),
+            create: groups.flatMap(group =>
+              group.items.map(item => ({
+                criterion: { connect: { id: item.criterionId } },
+                score: item.score,
+                justification: item.justification || '',
+                scoreDescription: this.getScoreDescription(item.score),
+                groupId: group.groupId,
+              }))
+            ),
           },
         }),
       },
@@ -77,8 +84,23 @@ export class ManagerEvaluationService {
     });
   }
 
+  // Agrupa os itens por groupId ao retornar avaliações
+  private groupItems(items: any[]) {
+    const groups: any = {};
+    for (const item of items) {
+      if (!groups[item.groupId]) {
+        groups[item.groupId] = {
+          groupId: item.groupId,
+          items: [],
+        };
+      }
+      groups[item.groupId].items.push(item);
+    }
+    return Object.values(groups);
+  }
+
   async findByManager(evaluatorId: number) {
-    return this.prisma.managerEvaluation.findMany({
+    const evaluations = await this.prisma.managerEvaluation.findMany({
       where: { evaluatorId },
       include: {
         items: true,
@@ -86,10 +108,11 @@ export class ManagerEvaluationService {
         cycle: true,
       },
     });
+    return evaluations.map(ev => ({ ...ev, groups: this.groupItems(ev.items) }));
   }
 
   async findByEvaluatee(evaluateeId: number) {
-    return this.prisma.managerEvaluation.findMany({
+    const evaluations = await this.prisma.managerEvaluation.findMany({
       where: { evaluateeId },
       include: {
         items: true,
@@ -97,6 +120,7 @@ export class ManagerEvaluationService {
         cycle: true,
       },
     });
+    return evaluations.map(ev => ({ ...ev, groups: this.groupItems(ev.items) }));
   }
 
   async findOne(id: number) {
@@ -110,11 +134,11 @@ export class ManagerEvaluationService {
       },
     });
     if (!evaluation) throw new NotFoundException('Avaliação não encontrada');
-    return evaluation;
+    return { ...evaluation, groups: this.groupItems(evaluation.items) };
   }
 
   async findByEvaluatorAndEvaluatee(evaluatorId: number, evaluateeId: number) {
-    return this.prisma.managerEvaluation.findFirst({
+    const evaluation = await this.prisma.managerEvaluation.findFirst({
       where: { evaluatorId, evaluateeId },
       include: {
         items: true,
@@ -123,5 +147,7 @@ export class ManagerEvaluationService {
         cycle: true,
       },
     });
+    if (!evaluation) return null;
+    return { ...evaluation, groups: this.groupItems(evaluation.items) };
   }
 }

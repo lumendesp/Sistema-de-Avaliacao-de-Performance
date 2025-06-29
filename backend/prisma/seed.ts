@@ -4,17 +4,6 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.selfEvaluationItem.deleteMany();
-  await prisma.selfEvaluation.deleteMany();
-  await prisma.userRole.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.configuredCriterion.deleteMany();
-  await prisma.criterion.deleteMany();
-  await prisma.evaluationCycle.deleteMany();
-  await prisma.track.deleteMany();
-
-  await prisma.unit.deleteMany();
-  await prisma.position.deleteMany();
   // Criar posições
   const [position1, position2] = await Promise.all([
     prisma.position.create({ data: { name: 'Developer' } }),
@@ -81,13 +70,14 @@ async function main() {
   });
 
   // Criar critérios
-  const [criterion1, criterion2] = await Promise.all([
+  const [criterion1, criterion2, criterion3, criterion4] = await Promise.all([
     prisma.criterion.create({
       data: {
         name: 'Resiliência nas adversidades',
         generalDescription:
           'Capacidade de manter desempenho diante de desafios',
         active: true,
+        weight: 1,
       },
     }),
     prisma.criterion.create({
@@ -95,6 +85,43 @@ async function main() {
         name: 'Sentimento de dono',
         generalDescription: 'Proatividade e responsabilidade sobre entregas',
         active: true,
+        weight: 1,
+      },
+    }),
+    prisma.criterion.create({
+      data: {
+        name: 'Organização no trabalho',
+        generalDescription: 'Organização e planejamento das atividades',
+        active: true,
+        weight: 1,
+      },
+    }),
+    prisma.criterion.create({
+      data: {
+        name: 'Atender aos prazos',
+        generalDescription: 'Cumprimento de prazos estabelecidos',
+        active: true,
+        weight: 1,
+      },
+    }),
+  ]);
+
+  // Criar grupos de critério (agora com track, unit e position obrigatórios)
+  const [group1, group2] = await Promise.all([
+    prisma.criterionGroup.create({
+      data: {
+        name: 'Competências Comportamentais',
+        trackId: track1.id,
+        unitId: unit1.id,
+        positionId: position1.id,
+      },
+    }),
+    prisma.criterionGroup.create({
+      data: {
+        name: 'Competências Técnicas',
+        trackId: track2.id,
+        unitId: unit2.id,
+        positionId: position2.id,
       },
     }),
   ]);
@@ -107,6 +134,7 @@ async function main() {
         trackId: track1.id,
         unitId: unit1.id,
         positionId: position1.id,
+        groupId: group1.id,
         mandatory: true,
       },
     }),
@@ -116,6 +144,7 @@ async function main() {
         trackId: track1.id,
         unitId: unit1.id,
         positionId: position1.id,
+        groupId: group2.id,
         mandatory: true,
       },
     }),

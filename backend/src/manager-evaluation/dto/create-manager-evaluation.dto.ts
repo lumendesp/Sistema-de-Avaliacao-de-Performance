@@ -11,10 +11,20 @@ export class ManagerEvaluationItemDto {
   @IsString()
   @IsOptional()
   justification?: string;
+}
+
+export class ManagerEvaluationGroupDto {
+  @IsInt()
+  groupId: number;
 
   @IsString()
   @IsOptional()
-  group?: string; // Ex: 'postura', 'eticos', etc
+  groupName?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ManagerEvaluationItemDto)
+  items: ManagerEvaluationItemDto[];
 }
 
 export class CreateManagerEvaluationDto {
@@ -26,6 +36,6 @@ export class CreateManagerEvaluationDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ManagerEvaluationItemDto)
-  items: ManagerEvaluationItemDto[];
+  @Type(() => ManagerEvaluationGroupDto)
+  groups: ManagerEvaluationGroupDto[];
 }

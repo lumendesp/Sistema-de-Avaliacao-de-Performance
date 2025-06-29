@@ -18,16 +18,33 @@ export class ManagerEvaluationController {
       example: {
         evaluateeId: 1,
         cycleId: 1,
-        items: [
+        groups: [
           {
-            criterionId: 1,
-            score: 4,
-            justification: 'Demonstra postura profissional exemplar.'
+            groupId: 1,
+            groupName: 'Postura',
+            items: [
+              {
+                criterionId: 1,
+                score: 4,
+                justification: 'Demonstra postura profissional exemplar.'
+              },
+              {
+                criterionId: 2,
+                score: 3,
+                justification: 'Atende às expectativas de ética.'
+              }
+            ]
           },
           {
-            criterionId: 2,
-            score: 3,
-            justification: 'Atende às expectativas de ética.'
+            groupId: 2,
+            groupName: 'Resultados',
+            items: [
+              {
+                criterionId: 3,
+                score: 5,
+                justification: 'Entrega acima do esperado.'
+              }
+            ]
           }
         ]
       }
@@ -43,16 +60,22 @@ export class ManagerEvaluationController {
     description: 'Exemplo de atualização de avaliação de gestor',
     schema: {
       example: {
-        items: [
+        groups: [
           {
-            criterionId: 1,
-            score: 5,
-            justification: 'Melhorou ainda mais a postura.'
-          },
-          {
-            criterionId: 2,
-            score: 4,
-            justification: 'Superou as expectativas em ética.'
+            groupId: 1,
+            groupName: 'Postura',
+            items: [
+              {
+                criterionId: 1,
+                score: 5,
+                justification: 'Melhorou ainda mais a postura.'
+              },
+              {
+                criterionId: 2,
+                score: 4,
+                justification: 'Superou as expectativas em ética.'
+              }
+            ]
           }
         ]
       }

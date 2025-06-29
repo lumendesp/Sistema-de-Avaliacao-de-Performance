@@ -28,11 +28,28 @@ enum CycleStatus {
   PUBLISHED
 }
 
+enum CriterionName {
+  ORGANIZACAO_NO_TRABALHO
+  ATENDER_AOS_PRAZOS
+  SENTIMENTO_DE_DONO
+  RESILIENCIA_NAS_ADVERSIDADES
+  CAPACIDADE_DE_APRENDER
+  TEAM_PLAYER
+  FAZER_MAIS_COM_MENOS
+  ENTREGAR_COM_QUALIDADE
+  PENSAR_FORA_DA_CAIXA
+  GENTE
+  RESULTADOS
+  EVOLUCAO_DA_ROCKET_COR
+}
+
+
 model Position {
   id                      Int                     @id @default(autoincrement())
   name                    String
   users                   User[]
   configuredCriteria      ConfiguredCriterion[]
+  CriterionGroup     CriterionGroup[]
 }
 
 model Track {
@@ -41,6 +58,7 @@ model Track {
   users                   User[]
   configuredCriteria      ConfiguredCriterion[]
   userHistory             UserTrack[]
+  CriterionGroup     CriterionGroup[]
 }
 
 model Unit {
@@ -48,6 +66,7 @@ model Unit {
   name                    String
   users                   User[]
   configuredCriteria      ConfiguredCriterion[]
+  CriterionGroup     CriterionGroup[]
 }
 
 model UserRole {
@@ -121,21 +140,39 @@ model Criterion {
   name                   String
   generalDescription     String
   active                 Boolean                 @default(true)
+  weight                 Int
+
   configurations         ConfiguredCriterion[]
   selfEvaluationItems    SelfEvaluationItem[]
   mentorEvaluationItems  MentorEvaluationItem[]
   managerEvaluationItems ManagerEvaluationItem[]
 }
 
+model CriterionGroup {
+  id         Int    @id @default(autoincrement())
+  name       String
+  trackId    Int
+  unitId     Int
+  positionId Int
+
+  track    Track    @relation(fields: [trackId], references: [id])
+  unit     Unit     @relation(fields: [unitId], references: [id])
+  position Position @relation(fields: [positionId], references: [id])
+
+  configuredCriteria ConfiguredCriterion[] @relation("GroupConfiguredCriteria")
+}
+
 model ConfiguredCriterion {
   id          Int     @id @default(autoincrement())
   criterionId Int
+  groupId     Int
   trackId     Int
   unitId      Int
   positionId  Int
   mandatory   Boolean
 
   criterion Criterion @relation(fields: [criterionId], references: [id])
+  group    CriterionGroup @relation("GroupConfiguredCriteria", fields: [groupId], references: [id])
   track     Track     @relation(fields: [trackId], references: [id])
   unit      Unit      @relation(fields: [unitId], references: [id])
   position  Position  @relation(fields: [positionId], references: [id])
@@ -273,6 +310,7 @@ model ManagerEvaluationItem {
   score         Int
   justification String
   scoreDescription String?
+  groupId       Int
 
   evaluation ManagerEvaluation @relation(fields: [evaluationId], references: [id])
   criterion  Criterion         @relation(fields: [criterionId], references: [id])
