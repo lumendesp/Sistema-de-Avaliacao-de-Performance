@@ -99,4 +99,75 @@ export class UsersService {
     });
     return { message: `User ${id} deleted` };
   }
+
+  // função para buscar usuários com suas avaliações (para o comitê)
+  async findUsersWithEvaluations() {
+    const users = await this.prisma.user.findMany({
+      include: {
+        roles: true,
+        peerEvaluationsReceived: {
+          include: {
+            evaluator: { select: { id: true, name: true } },
+            cycle: true,
+          },
+        },
+        managerEvaluationsReceived: {
+          include: {
+            evaluator: { select: { id: true, name: true } },
+            cycle: true,
+            items: true,
+          },
+        },
+        finalScores: {
+          include: {
+            cycle: true,
+            adjuster: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+
+    // Transform the data to match the frontend expectations
+    return users.map(user => {
+      const evaluationsEvaluated = [
+        // Peer evaluations
+        ...user.peerEvaluationsReceived.map(evaluation => ({
+          id: evaluation.id,
+          type: 'PEER',
+          score: evaluation.score,
+          justification: evaluation.strengths + ' ' + evaluation.improvements,
+          evaluator: evaluation.evaluator,
+          cycle: evaluation.cycle,
+        })),
+        // Manager evaluations
+        ...user.managerEvaluationsReceived.map(evaluation => ({
+          id: evaluation.id,
+          type: 'MANAGER',
+          score: evaluation.items.reduce((sum, item) => sum + item.score, 0) / evaluation.items.length || 0,
+          justification: evaluation.items.map(item => item.justification).join(' '),
+          evaluator: evaluation.evaluator,
+          cycle: evaluation.cycle,
+        })),
+        // Final evaluations
+        ...user.finalScores.map(evaluation => ({
+          id: evaluation.id,
+          type: 'FINAL',
+          score: evaluation.finalScore || 0,
+          justification: evaluation.justification,
+          evaluator: evaluation.adjuster,
+          cycle: evaluation.cycle,
+        })),
+      ];
+
+      const hasAllEvaluations = user.peerEvaluationsReceived.length > 0 && 
+                               user.managerEvaluationsReceived.length > 0 && 
+                               user.finalScores.length > 0;
+
+      return {
+        ...user,
+        evaluationsEvaluated,
+        hasAllEvaluations,
+      };
+    });
+  }
 }

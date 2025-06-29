@@ -4,7 +4,7 @@ import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import EvaluationSummary from "../../components/Committee/CommitteeEquali/EvaluationSummary";
 import FilterIcon from '../../assets/committee/filter-icon.png';
-import { getUsersWithEvaluations, createFinalEvaluation } from "../../services/api";
+import { getUsersWithEvaluations } from '../../services/api';
 
 // Enums manually mirrored from backend
 const EvaluationStatus = {
@@ -137,32 +137,15 @@ function Equalization(){
 
         if (!collaborator || currentEvaluation?.notaFinal === undefined) return;
 
-        // The evaluatorId should come from the logged-in user context in a real app
-        // For now, we'll use the committee member ID from the seed data
-        const evaluatorId = 5; // Eve is the committee member (ID 5)
-
-        const evaluationData = {
-            score: currentEvaluation.notaFinal,
-            justification: currentEvaluation.justification || '',
-            evaluateeId: collabId,
-            evaluatorId: evaluatorId,
-        };
-
-        try {
-            // For this page, we are always creating a *new* final evaluation
-            const newFinalEvaluation = await createFinalEvaluation(evaluationData);
-            
-            // Refresh the data to get updated status
-            await fetchCollaborators();
-            
-            setEvaluationState(prev => ({
-                ...prev,
-                [collabId]: { ...prev[collabId], isEditing: false }
-            }));
-
-        } catch (error) {
-            console.error("Failed to save evaluation:", error);
-        }
+        // This is a placeholder implementation since final evaluation creation is someone else's task
+        console.log("Final evaluation creation logic not implemented");
+        alert("Funcionalidade de criação de avaliação final será implementada posteriormente");
+        
+        // For now, just update the local state
+        setEvaluationState(prev => ({
+            ...prev,
+            [collabId]: { ...prev[collabId], isEditing: false }
+        }));
     };
 
     const handleEdit = (collabId: number) => {
@@ -251,6 +234,7 @@ function Equalization(){
                                                 justificativaAutoAvaliacao={collab.justificativaAutoAvaliacao}
                                                 justificativaGestor={collab.justificativaGestor}
                                                 justificativa360={collab.justificativa360}
+                                                backendData={collab}
                                             />
                                         </div>
                                     )}

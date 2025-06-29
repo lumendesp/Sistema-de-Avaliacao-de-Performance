@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { getUsersWithEvaluations } from '../../services/api';
+import { exportEvaluationToExcel, exportEvaluationToCSV, transformBackendDataToExport } from '../../services/export.service';
 
 import InfoCard from "../../components/Committee/CommitteeHome/InfoCard";
 import CircularProgress from "../../components/Committee/CirculaProgress";
 import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import persons from "../../assets/committee/two-persons.png";
 import { UserIcon } from '../../components/UserIcon';
-import { getUsersWithEvaluations } from '../../services/api';
+import { FaDownload } from 'react-icons/fa';
 
 interface Collaborator {
     id: number;
@@ -23,6 +25,7 @@ interface Collaborator {
 
 function Committee(){
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+    const [showBulkExportOptions, setShowBulkExportOptions] = useState(false);
 
     const fetchCollaborators = async () => {
         try {
@@ -86,13 +89,84 @@ function Committee(){
 
     const remainingDays = getRemainingDays();
 
+    const handleBulkExport = (type: 'csv' | 'xlsx') => {
+        // Export all collaborators' data
+        collaborators.forEach((collab, index) => {
+            // Create a delay to avoid overwhelming the browser
+            setTimeout(() => {
+                const evaluationData = transformBackendDataToExport({
+                    id: collab.id,
+                    name: collab.name,
+                    email: `${collab.name.toLowerCase().replace(/\s+/g, '.')}@empresa.com`,
+                    unit: { name: 'Engenharia' }, // Placeholder
+                    position: { name: collab.role },
+                    track: { name: 'Backend' }, // Placeholder
+                    selfEvaluations: [],
+                    peerEvaluationsReceived: [],
+                    referencesReceived: [],
+                    finalScores: []
+                });
+                
+                const fileName = `${collab.name.replace(/\s+/g, '_')}_${type === 'xlsx' ? 'xlsx' : 'csv'}`;
+                
+                if (type === 'csv') {
+                    exportEvaluationToCSV(evaluationData, fileName);
+                } else {
+                    exportEvaluationToExcel(evaluationData, fileName);
+                }
+            }, index * 100); // 100ms delay between each export
+        });
+    };
+
     return(
         <div className="w-full min-h-screen bg-gray-300">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 gap-4">
                 <h1 className="text-xl sm:text-2xl">
                     <span className="font-bold">Olá,</span> comite
                 </h1>
-                <UserIcon initials="CN" size={40} />
+                <div className="flex items-center gap-4">
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowBulkExportOptions(!showBulkExportOptions)}
+                            className="px-4 py-2 bg-[#08605F] text-white rounded-md hover:bg-[#064a49] transition-colors flex items-center gap-2"
+                        >
+                            <FaDownload className="w-4 h-4" />
+                            Exportar Todos
+                        </button>
+                        
+                        {showBulkExportOptions && (
+                            <>
+                                <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowBulkExportOptions(false)}
+                                />
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+                                    <div className="py-1">
+                                        <button
+                                            onClick={() => {
+                                                handleBulkExport('xlsx');
+                                                setShowBulkExportOptions(false);
+                                            }}
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            Exportar Excel (.xlsx)
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                handleBulkExport('csv');
+                                                setShowBulkExportOptions(false);
+                                            }}
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            Exportar CSV (.csv)
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                    <UserIcon initials="CN" size={40} />
+                </div>
             </div>
 
             <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 m-4 sm:m-5">

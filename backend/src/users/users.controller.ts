@@ -6,11 +6,13 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from '@prisma/client';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
@@ -26,6 +28,13 @@ export class UsersController {
   @Get()
   async findAll(): Promise<User[]> {
     return await this.usersService.findAll();
+  }
+
+  // retorna usuários com suas avaliações (para o comitê)
+  @Get('evaluations')
+  @UseGuards(JwtAuthGuard)
+  async findUsersWithEvaluations() {
+    return await this.usersService.findUsersWithEvaluations();
   }
 
   // retorna um usuário em específico, de acordo com o id

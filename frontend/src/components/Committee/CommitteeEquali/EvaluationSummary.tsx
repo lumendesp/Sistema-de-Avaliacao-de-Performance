@@ -4,7 +4,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from "jspdf";
 import downloadIcon from '../../../assets/committee/pdf-download.png';
 import GenAITextBox from "./GenAITextBox";
-import * as XLSX from 'xlsx';
+import { exportEvaluationToExcel, exportEvaluationToCSV, createSampleEvaluationData, transformBackendDataToExport } from '../../../services/export.service';
 
 interface CriterionProps {
     name: string;
@@ -61,6 +61,7 @@ interface EvaluationSummaryProps {
     justificativaAutoAvaliacao?: string;
     justificativaGestor?: string;
     justificativa360?: string;
+    backendData?: any;
 }
 
 function EvaluationSummary({ 
@@ -80,7 +81,8 @@ function EvaluationSummary({
     id,
     justificativaAutoAvaliacao = '',
     justificativaGestor = '',
-    justificativa360 = ''
+    justificativa360 = '',
+    backendData
 }: EvaluationSummaryProps) {
     
     const hasAllGrades =
@@ -222,55 +224,15 @@ function EvaluationSummary({
 
     // CSV/Excel download logic
     const handleDownloadSpreadsheet = (type: 'csv' | 'xlsx') => {
-        const data = [
-            {
-                'ID': id || '',
-                'Nome': name,
-                'Cargo': role,
-                'Autoavaliação': autoAvaliacao,
-                'Justificativa Autoavaliação': justificativaAutoAvaliacao || 'Não disponível',
-                'Avaliação 360°': avaliacao360,
-                'Justificativa 360°': justificativa360 || 'Não disponível',
-                'Nota do Gestor': notaGestor,
-                'Justificativa do Gestor': justificativaGestor || 'Não disponível',
-                'Nota Final': notaFinal ?? '',
-                'Justificativa Final': currentJustification || 'Não disponível'
-            }
-        ];
-
-        const filename = generateFilename(type);
-
+        // Use real backend data if available, otherwise use sample data
+        const evaluationData = backendData 
+            ? transformBackendDataToExport(backendData)
+            : createSampleEvaluationData(name, `${name.toLowerCase().replace(/\s+/g, '.')}@empresa.com`);
+        
         if (type === 'csv') {
-            const csvRows = [
-                Object.keys(data[0]).join(','),
-                ...data.map(row => Object.values(row).map(value => 
-                    typeof value === 'string' && value.includes(',') ? `"${value}"` : value
-                ).join(','))
-            ];
-            const csvContent = csvRows.join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-            URL.revokeObjectURL(url);
+            exportEvaluationToCSV(evaluationData);
         } else {
-            const wb = XLSX.utils.book_new();
-            
-            // Create sheets
-            const profileSheet = XLSX.utils.json_to_sheet(data);
-            const selfAssessmentSheet = XLSX.utils.json_to_sheet(data);
-            const assessment360Sheet = XLSX.utils.json_to_sheet(data);
-            const referenceSheet = XLSX.utils.json_to_sheet(data);
-
-            // Append sheets with specified names
-            XLSX.utils.book_append_sheet(wb, profileSheet, 'Perfil');
-            XLSX.utils.book_append_sheet(wb, selfAssessmentSheet, 'Autoavaliação');
-            XLSX.utils.book_append_sheet(wb, assessment360Sheet, 'Avaliação 360');
-            XLSX.utils.book_append_sheet(wb, referenceSheet, 'Pesquisa de Referência');
-            
-            XLSX.writeFile(wb, filename);
+            exportEvaluationToExcel(evaluationData);
         }
         
         // Close modals

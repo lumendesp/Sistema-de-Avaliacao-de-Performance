@@ -28,26 +28,45 @@ enum CycleStatus {
   PUBLISHED
 }
 
+enum CriterionName {
+  ORGANIZACAO_NO_TRABALHO
+  ATENDER_AOS_PRAZOS
+  SENTIMENTO_DE_DONO
+  RESILIENCIA_NAS_ADVERSIDADES
+  CAPACIDADE_DE_APRENDER
+  TEAM_PLAYER
+  FAZER_MAIS_COM_MENOS
+  ENTREGAR_COM_QUALIDADE
+  PENSAR_FORA_DA_CAIXA
+  GENTE
+  RESULTADOS
+  EVOLUCAO_DA_ROCKET_COR
+}
+
+
 model Position {
-  id                      Int                     @id @default(autoincrement())
-  name                    String
-  users                   User[]
-  configuredCriteria      ConfiguredCriterion[]
+  id                 Int                   @id @default(autoincrement())
+  name               String
+  users              User[]
+  configuredCriteria ConfiguredCriterion[] @relation("PositionConfiguredCriteria")
+  CriterionGroup     CriterionGroup[]
 }
 
 model Track {
-  id                      Int                     @id @default(autoincrement())
-  name                    String
-  users                   User[]
-  configuredCriteria      ConfiguredCriterion[]
-  userHistory             UserTrack[]
+  id                 Int                   @id @default(autoincrement())
+  name               String
+  users              User[]
+  configuredCriteria ConfiguredCriterion[] @relation("TrackConfiguredCriteria")
+  userHistory        UserTrack[]
+  CriterionGroup     CriterionGroup[]
 }
 
 model Unit {
-  id                      Int                     @id @default(autoincrement())
-  name                    String
-  users                   User[]
-  configuredCriteria      ConfiguredCriterion[]
+  id                 Int                   @id @default(autoincrement())
+  name               String
+  users              User[]
+  configuredCriteria ConfiguredCriterion[] @relation("UnitConfiguredCriteria")
+  CriterionGroup     CriterionGroup[]
 }
 
 model UserRole {
@@ -71,11 +90,11 @@ model User {
   unitId     Int?
   trackId    Int?
 
-  position      Position?    @relation(fields: [positionId], references: [id])
-  track         Track?       @relation(fields: [trackId], references: [id])
-  unit          Unit?        @relation(fields: [unitId], references: [id])
-  roles         UserRole[]
-  trackHistory  UserTrack[]
+  position     Position?   @relation(fields: [positionId], references: [id])
+  track        Track?      @relation(fields: [trackId], references: [id])
+  unit         Unit?       @relation(fields: [unitId], references: [id])
+  roles        UserRole[]
+  trackHistory UserTrack[]
 
   // Relacionamento mentor <-> colaboradores (mentees)
   mentorId   Int? 
@@ -94,64 +113,85 @@ model User {
   managerEvaluationsReceived ManagerEvaluation[] @relation("ManagerEvaluatee")
 
   // Equalização
-  adjustedScores    FinalScore[]        @relation("CommitteeAdjuster")
-  committeeNotes    CommitteeNote[]
-  discrepancies    Discrepancy[]
-  aiSummaries      AISummary[]
-  finalScores      FinalScore[]
+  adjustedScores FinalScore[]    @relation("CommitteeAdjuster")
+  committeeNotes CommitteeNote[]
+  discrepancies  Discrepancy[]
+  aiSummaries    AISummary[]
+  finalScores    FinalScore[]
 }
 
 // ---------------- HISTÓRICO DE TRILHAS -----------------
 model UserTrack {
-  id       Int       @id @default(autoincrement())
-  userId   Int
-  trackId  Int
-  start    DateTime
-  end      DateTime?
+  id      Int       @id @default(autoincrement())
+  userId  Int
+  trackId Int
+  start   DateTime
+  end     DateTime?
 
-  user  User   @relation(fields: [userId], references: [id])
-  track Track  @relation(fields: [trackId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+  track Track @relation(fields: [trackId], references: [id])
 }
 
 model Criterion {
   id                     Int                     @id @default(autoincrement())
-  name                   String
+  name                   CriterionName
   generalDescription     String
   active                 Boolean                 @default(true)
+  weight                 Int
+
   configurations         ConfiguredCriterion[]
   selfEvaluationItems    SelfEvaluationItem[]
   mentorEvaluationItems  MentorEvaluationItem[]
   managerEvaluationItems ManagerEvaluationItem[]
 }
 
+
+
+model CriterionGroup {
+  id         Int    @id @default(autoincrement())
+  name       String
+  trackId    Int
+  unitId     Int
+  positionId Int
+
+  track    Track    @relation(fields: [trackId], references: [id])
+  unit     Unit     @relation(fields: [unitId], references: [id])
+  position Position @relation(fields: [positionId], references: [id])
+
+  configuredCriteria ConfiguredCriterion[] @relation("GroupConfiguredCriteria")
+}
+
 model ConfiguredCriterion {
   id          Int     @id @default(autoincrement())
   criterionId Int
+  groupId     Int
   trackId     Int
   unitId      Int
   positionId  Int
   mandatory   Boolean
 
   criterion Criterion @relation(fields: [criterionId], references: [id])
-  track     Track     @relation(fields: [trackId], references: [id])
-  unit      Unit      @relation(fields: [unitId], references: [id])
-  position  Position  @relation(fields: [positionId], references: [id])
+  group    CriterionGroup @relation("GroupConfiguredCriteria", fields: [groupId], references: [id])
+  track    Track          @relation("TrackConfiguredCriteria", fields: [trackId], references: [id])
+  unit     Unit           @relation("UnitConfiguredCriteria", fields: [unitId], references: [id])
+  position Position       @relation("PositionConfiguredCriteria", fields: [positionId], references: [id])
 }
+
 
 // ---------- CICLOS ----------
 model EvaluationCycle {
-  id           Int         @id @default(autoincrement())
-  name         String
-  startDate    DateTime
-  endDate      DateTime
-  status       CycleStatus
+  id        Int         @id @default(autoincrement())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  status    CycleStatus
 
   // Todas as avaliações ligadas ao ciclo
   selfEvaluations    SelfEvaluation[]
   peerEvaluations    PeerEvaluation[]
   mentorEvaluations  MentorEvaluation[]
   references         Reference[]
-  finalScores       FinalScore[]
+  finalScores        FinalScore[]
   discrepancies      Discrepancy[]
   aiSummaries        AISummary[]
   committeeNotes     CommitteeNote[]
@@ -165,17 +205,17 @@ model SelfEvaluation {
   cycleId   Int
   createdAt DateTime @default(now())
 
-  user  User             @relation(fields: [userId], references: [id])
-  cycle EvaluationCycle  @relation(fields: [cycleId], references: [id])
+  user  User                 @relation(fields: [userId], references: [id])
+  cycle EvaluationCycle      @relation(fields: [cycleId], references: [id])
   items SelfEvaluationItem[]
 }
 
 model SelfEvaluationItem {
-  id            Int     @id @default(autoincrement())
-  evaluationId  Int
-  criterionId   Int
-  score         Int
-  justification String
+  id               Int     @id @default(autoincrement())
+  evaluationId     Int
+  criterionId      Int
+  score            Int
+  justification    String
   scoreDescription String?
 
   evaluation SelfEvaluation @relation(fields: [evaluationId], references: [id])
@@ -195,8 +235,8 @@ model Project {
 model PeerEvaluationProject {
   id               Int @id @default(autoincrement())
   peerEvaluationId Int
-  projectId       Int
-  period          Int // vamos considerar meses
+  projectId        Int
+  period           Int // vamos considerar meses
 
   peerEvaluation PeerEvaluation @relation(fields: [peerEvaluationId], references: [id])
   project        Project        @relation(fields: [projectId], references: [id])
@@ -216,10 +256,10 @@ model PeerEvaluation {
   improvements String
   motivation   String?
 
-  evaluator User             @relation("PeerEvaluator", fields: [evaluatorId], references: [id])
-  evaluatee User             @relation("PeerEvaluatee", fields: [evaluateeId], references: [id])
-  cycle    EvaluationCycle   @relation(fields: [cycleId], references: [id])
-  projects PeerEvaluationProject[]
+  evaluator User                    @relation("PeerEvaluator", fields: [evaluatorId], references: [id])
+  evaluatee User                    @relation("PeerEvaluatee", fields: [evaluateeId], references: [id])
+  cycle     EvaluationCycle         @relation(fields: [cycleId], references: [id])
+  projects  PeerEvaluationProject[]
 }
 
 model MentorEvaluation {
@@ -231,18 +271,18 @@ model MentorEvaluation {
   score         Int
   justification String
 
-  evaluator User             @relation("MentorEvaluator", fields: [evaluatorId], references: [id])
-  evaluatee User             @relation("MentorEvaluatee", fields: [evaluateeId], references: [id])
-  cycle    EvaluationCycle   @relation(fields: [cycleId], references: [id])
-  items    MentorEvaluationItem[]
+  evaluator User                   @relation("MentorEvaluator", fields: [evaluatorId], references: [id])
+  evaluatee User                   @relation("MentorEvaluatee", fields: [evaluateeId], references: [id])
+  cycle     EvaluationCycle        @relation(fields: [cycleId], references: [id])
+  items     MentorEvaluationItem[]
 }
 
 model MentorEvaluationItem {
-  id            Int     @id @default(autoincrement())
-  evaluationId  Int
-  criterionId   Int
-  score         Int
-  justification String
+  id               Int     @id @default(autoincrement())
+  evaluationId     Int
+  criterionId      Int
+  score            Int
+  justification    String
   scoreDescription String?
 
   evaluation MentorEvaluation @relation(fields: [evaluationId], references: [id])
@@ -256,18 +296,18 @@ model ManagerEvaluation {
   cycleId     Int
   createdAt   DateTime @default(now())
 
-  evaluator User             @relation("ManagerEvaluator", fields: [evaluatorId], references: [id])
-  evaluatee User             @relation("ManagerEvaluatee", fields: [evaluateeId], references: [id])
-  cycle    EvaluationCycle   @relation(fields: [cycleId], references: [id])
-  items    ManagerEvaluationItem[]
+  evaluator User                    @relation("ManagerEvaluator", fields: [evaluatorId], references: [id])
+  evaluatee User                    @relation("ManagerEvaluatee", fields: [evaluateeId], references: [id])
+  cycle     EvaluationCycle         @relation(fields: [cycleId], references: [id])
+  items     ManagerEvaluationItem[]
 }
 
 model ManagerEvaluationItem {
-  id            Int     @id @default(autoincrement())
-  evaluationId  Int
-  criterionId   Int
-  score         Int
-  justification String
+  id               Int     @id @default(autoincrement())
+  evaluationId     Int
+  criterionId      Int
+  score            Int
+  justification    String
   scoreDescription String?
 
   evaluation ManagerEvaluation @relation(fields: [evaluationId], references: [id])
@@ -290,19 +330,19 @@ model Reference {
 
 // ---------- EQUALIZAÇÃO ----------
 model FinalScore {
-  id            Int     @id @default(autoincrement())
-  userId        Int
-  cycleId       Int
-  executionScore  Float? // Nota de execução
+  id             Int     @id @default(autoincrement())
+  userId         Int
+  cycleId        Int
+  executionScore Float? // Nota de execução
   postureScore   Float? // Nota de postura
   finalScore     Float? // Nota final consolidada
   summary        String? // Resumo textual do ciclo para o usuário
-  adjustedBy    Int? // membro do comitê
-  justification String
+  adjustedBy     Int? // membro do comitê
+  justification  String
 
-  user      User             @relation(fields: [userId], references: [id])
-  cycle     EvaluationCycle  @relation(fields: [cycleId], references: [id])
-  adjuster  User?            @relation("CommitteeAdjuster", fields: [adjustedBy], references: [id])
+  user     User            @relation(fields: [userId], references: [id])
+  cycle    EvaluationCycle @relation(fields: [cycleId], references: [id])
+  adjuster User?           @relation("CommitteeAdjuster", fields: [adjustedBy], references: [id])
 }
 
 model Discrepancy {
@@ -312,8 +352,8 @@ model Discrepancy {
   type    String // exemplo: "Auto vs Pares"
   detail  String
 
-  user  User             @relation(fields: [userId], references: [id])
-  cycle EvaluationCycle  @relation(fields: [cycleId], references: [id])
+  user  User            @relation(fields: [userId], references: [id])
+  cycle EvaluationCycle @relation(fields: [cycleId], references: [id])
 }
 
 model AISummary {
@@ -322,8 +362,8 @@ model AISummary {
   cycleId Int
   text    String
 
-  user  User             @relation(fields: [userId], references: [id])
-  cycle EvaluationCycle  @relation(fields: [cycleId], references: [id])
+  user  User            @relation(fields: [userId], references: [id])
+  cycle EvaluationCycle @relation(fields: [cycleId], references: [id])
 }
 
 model CommitteeNote {
@@ -332,6 +372,6 @@ model CommitteeNote {
   cycleId Int
   text    String
 
-  user  User             @relation(fields: [userId], references: [id])
-  cycle EvaluationCycle  @relation(fields: [cycleId], references: [id])
+  user  User            @relation(fields: [userId], references: [id])
+  cycle EvaluationCycle @relation(fields: [cycleId], references: [id])
 }
