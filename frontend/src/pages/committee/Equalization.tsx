@@ -4,7 +4,6 @@ import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import EvaluationSummary from "../../components/Committee/CommitteeEquali/EvaluationSummary";
 import FilterIcon from '../../assets/committee/filter-icon.png';
-import { getUsersWithEvaluations, createFinalEvaluation } from "../../services/api";
 
 // Enums manually mirrored from backend
 const EvaluationStatus = {

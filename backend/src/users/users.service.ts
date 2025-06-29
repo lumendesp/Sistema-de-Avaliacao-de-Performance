@@ -32,7 +32,41 @@ export class UsersService {
   // função que retorna todos os usuários
   async findAll() {
     return this.prisma.user.findMany({
-      include: { roles: true },
+      include: { roles: true, unit: true, position: true, track: true },
+    });
+  }
+
+  // função que retorna colaboradores com dados de avaliação para o dashboard
+  async findCollaboratorsForDashboard() {
+    return this.prisma.user.findMany({
+      where: {
+        roles: {
+          some: {
+            role: 'COLLABORATOR'
+          }
+        }
+      },
+      include: { 
+        roles: true, 
+        unit: true, 
+        position: true, 
+        track: true,
+        finalScores: {
+          include: {
+            cycle: true
+          }
+        },
+        selfEvaluations: {
+          include: {
+            items: true
+          }
+        },
+        managerEvaluationsReceived: {
+          include: {
+            items: true
+          }
+        }
+      },
     });
   }
 
@@ -40,7 +74,7 @@ export class UsersService {
   async findOne(id: number) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: { roles: true },
+      include: { roles: true, unit: true, position: true, track: true },
     });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);

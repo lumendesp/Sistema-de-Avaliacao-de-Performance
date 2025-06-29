@@ -26,51 +26,98 @@ export class SelfEvaluationService {
   }
 
   async create(userId: number, dto: CreateSelfEvaluationDto) {
-    const existing = await this.prisma.selfEvaluation.findFirst({
-      where: {
-        userId,
-        cycleId: dto.cycleId,
-      },
-    });
+    try {
+      // Verifica se já existe avaliação do usuário no ciclo informado
+      const existing = await this.prisma.selfEvaluation.findFirst({
+        where: {
+          userId,
+          cycleId: dto.cycleId,
+        },
+      });
 
-    if (existing) {
-      throw new ConflictException('Autoavaliação já existe para este ciclo');
-    }
+      if (existing) {
+        throw new ConflictException('Autoavaliação já existe para este ciclo');
+      }
 
-    return this.prisma.selfEvaluation.create({
-      data: {
-        userId,
-        cycleId: dto.cycleId,
-        items: {
-          createMany: {
-            data: dto.items.map((item) => ({
-              criterionId: item.criterionId,
-              score: item.score,
-              justification: item.justification,
-              scoreDescription: this.getScoreDescription(item.score),
-            })),
+      // Validação dos critérios enviados
+      const allCriterionIds = dto.items.map((i) => i.criterionId);
+      const existingCriteria = await this.prisma.criterion.findMany({
+        where: { id: { in: allCriterionIds } },
+      });
+
+      const validIds = new Set(existingCriteria.map((c) => c.id));
+      const invalid = allCriterionIds.filter((id) => !validIds.has(id));
+
+      if (invalid.length > 0) {
+        throw new Error(`Critérios inválidos: ${invalid.join(', ')}`);
+      }
+
+      // Criação da avaliação
+      return await this.prisma.selfEvaluation.create({
+        data: {
+          userId,
+          cycleId: dto.cycleId,
+          items: {
+            createMany: {
+              data: dto.items.map((item) => ({
+                criterionId: item.criterionId,
+                score: item.score,
+                justification: item.justification,
+                scoreDescription: this.getScoreDescription(item.score),
+              })),
+            },
           },
         },
-      },
-      include: {
-        items: true,
-      },
-    });
+        include: {
+          items: true,
+        },
+      });
+    } catch (error) {
+      console.error('Erro ao criar autoavaliação:', error);
+      throw error;
+    }
   }
 
+
   async findByUser(where: { userId: number; cycleId?: number }) {
-    return this.prisma.selfEvaluation.findMany({
+    const evaluations = await this.prisma.selfEvaluation.findMany({
       where,
       include: {
         items: true,
         cycle: true,
       },
     });
+
+    return evaluations.map((evaluation) => {
+      const now = new Date();
+      const isEditable = evaluation.cycle.endDate > now;
+      return {
+        ...evaluation,
+        isEditable,
+      };
+    });
   }
+
 
   async update(id: number, dto: UpdateSelfEvaluationDto) {
     const { cycleId, items } = dto;
 
+    if (items && items.length > 0) {
+      // Valida se os critérios existem
+      const allCriterionIds = items.map((i) => i.criterionId);
+      const existingCriteria = await this.prisma.criterion.findMany({
+        where: { id: { in: allCriterionIds } },
+      });
+
+      const validIds = new Set(existingCriteria.map((c) => c.id));
+      const invalid = allCriterionIds.filter((id) => !validIds.has(id));
+
+      if (invalid.length > 0) {
+        throw new Error(`Critérios inválidos: ${invalid.join(', ')}`);
+      }
+    }
+
+    // Atualiza avaliação e substitui os itens
     return this.prisma.selfEvaluation.update({
       where: { id },
       data: {
