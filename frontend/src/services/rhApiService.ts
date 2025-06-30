@@ -8,6 +8,15 @@ const apiClient = axios.create({
     },
 });
 
+export interface CollaboratorStatus {
+    id: number;
+    name: string;
+    role: string;
+    status: 'finalizado' | 'pendente';
+    avatarInitials: string;
+    unit: string;
+}
+
 // Definimos o tipo de dado que esperamos receber da API
 // Este DTO deve ser idêntico ao que definimos no backend
 export interface RHDashboardData {
@@ -15,12 +24,7 @@ export interface RHDashboardData {
     completedEvaluations: number;
     pendingEvaluations: number;
     completionPercentage: number;
-    collaborators: {
-        id: number;
-        name: string;
-        role: string;
-        status: 'finalizado' | 'pendente';
-    }[];
+    collaborators: CollaboratorStatus[];
     completionByUnit: {
         unit: string;
         completedCount: number;

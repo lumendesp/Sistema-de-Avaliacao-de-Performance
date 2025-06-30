@@ -1,8 +1,8 @@
 import StatusBadge from '../StatusBadge/StatusBadge';
-import { type Collaborator } from '../../../types/evaluations';
+import { type CollaboratorStatus } from '../../../services/rhApiService';
 
 interface CollaboratorRowProps {
-    collaborator: Collaborator;
+    collaborator: CollaboratorStatus;
 }
 
 // Componente interno para a linha do colaborador, para manter a página limpa
