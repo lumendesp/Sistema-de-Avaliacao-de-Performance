@@ -1,22 +1,49 @@
-import React, { useState } from 'react';
-import { mockCollaborators } from '../../../data/rh_data';
+import React, { useState, useEffect } from 'react';
+import { getRhCollaborators, type RhCollaborator } from '../../../services/rhApiService';
 import RHCollaboratorInfoCard from '../../../components/RH/RHCollaboratorInfoCard/RHCollaboratorInfoCard';
 import RHCollaboratorSearchBar from '../../../components/RH/RHCollaboratorSearchBar/RHCollaboratorSearchBar';
 import { IoFunnel } from "react-icons/io5";
 
 const RHCollaboratorsPage: React.FC = () => {
 
+    const [collaborators, setCollaborators] = useState<RhCollaborator[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filteredCollaborators = mockCollaborators.filter(collaborator =>
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const data = await getRhCollaborators();
+                setCollaborators(data);
+            } catch (err) {
+                setError('Falha ao carregar a lista de colaboradores.');
+                console.error(err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    const filteredCollaborators = collaborators.filter(collaborator =>
         collaborator.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    if (isLoading) {
+        return <div className="p-8 text-center text-gray-500">Carregando colaboradores...</div>;
+    }
+
+    if (error) {
+        return <div className="p-8 text-center text-red-500">{error}</div>;
+    }
 
     return (
         <>
             <h1 className="text-3xl font-bold text-gray-800 mb-6">Colaboradores</h1>
 
-            {/* 3. A toolbar com a busca e o filtro, como no Figma */}
             <div className="flex items-center justify-between mb-6">
                 <div className="w-full max-w-sm">
                     <RHCollaboratorSearchBar
@@ -30,7 +57,6 @@ const RHCollaboratorsPage: React.FC = () => {
             </div>
 
 
-            {/* 4. A lista é renderizada com base nos resultados filtrados */}
             <div className="flex flex-col gap-4">
                 {filteredCollaborators.length > 0 ? (
                     filteredCollaborators.map(collaborator => (
