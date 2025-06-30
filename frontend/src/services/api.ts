@@ -4,7 +4,7 @@ export const API_URL = "http://localhost:3000";
 const getAuthToken = () => localStorage.getItem("token");
 
 // Headers padrão para chamadas autenticadas
-const getAuthHeaders = () => ({
+export const getAuthHeaders = () => ({
   "Content-Type": "application/json",
   Authorization: `Bearer ${getAuthToken()}`,
 });
@@ -588,4 +588,21 @@ export const deleteCriterionGroup = async (id: number) => {
     return { success: true };
   }
   return res.json();
+};
+
+export const fetchManagersBySearch = async (searchTerm: string) => {
+  const res = await fetch(
+    `${API_URL}/managers-search-bar?search=${encodeURIComponent(searchTerm)}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar gestores");
+  }
+
+  return res.json(); // array de usuários com role MANAGER
 };

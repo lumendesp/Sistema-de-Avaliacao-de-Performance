@@ -3,23 +3,25 @@ import searchIcon from "../../assets/search.png";
 import CollaboratorCard from "../../components/manager/CollaboratorCard";
 import type { Collaborator } from "../../types/collaboratorStatus.tsx";
 import { useAuth } from "../../context/AuthContext";
-
-const API_URL = "http://localhost:3000";
+import { API_URL, getAuthHeaders } from "../../services/api";
 
 export default function Collaborators() {
   const [search, setSearch] = useState("");
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [searchResults, setSearchResults] = useState<Collaborator[]>([]);
   const { user } = useAuth();
 
+  // Carrega todos os colaboradores do manager ao entrar na página
   useEffect(() => {
     if (user && user.id) {
       fetch(`${API_URL}/managers/${user.id}`)
         .then((res) => res.json())
         .then((data) => {
-          // Garante que cada colaborador tenha os campos esperados
           const parsed = (data.collaborators || []).map((c: any) => ({
             id: c.id,
             name: c.name,
+            email: c.email,
+            photo: c.photo,
             role: c.roles?.[0]?.role || "Colaborador",
             status: c.status || "Em andamento",
             selfScore: c.selfScore ?? 0,
@@ -31,9 +33,46 @@ export default function Collaborators() {
     }
   }, [user]);
 
-  const filtered = collaborators.filter((collab) =>
-    collab.name.toLowerCase().includes(search.toLowerCase())
-  );
+  // Busca filtrada ao digitar na searchbar
+  useEffect(() => {
+    if (search.trim() !== "" && user && user.id) {
+      const url = `${API_URL}/manager-search-bar/${user.id}?search=${encodeURIComponent(
+        search.trim()
+      )}`;
+      const headers = getAuthHeaders();
+      fetch(url, {
+        method: "GET",
+        headers,
+      })
+        .then(async (res) => {
+          const data = await res.json();
+          if (!res.ok) {
+            return setSearchResults([]);
+          }
+          // Mapeia igual à listagem inicial
+          setSearchResults(
+            (data || []).map((c: any) => ({
+              id: c.id,
+              name: c.name,
+              email: c.email,
+              photo: c.photo,
+              role: "Colaborador",
+              status: "Em andamento",
+              selfScore: 0,
+              managerScore: null,
+            }))
+          );
+        })
+        .catch(() => {
+          setSearchResults([]);
+        });
+    } else {
+      setSearchResults([]);
+    }
+  }, [search, user]);
+
+  // Mostra searchResults se houver busca, senão lista completa
+  const list = search.trim() !== "" ? searchResults : collaborators;
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-[#F5F6FA]">
@@ -42,7 +81,6 @@ export default function Collaborators() {
         Colaboradores
       </h1>
       <div className="h-[60px] w-full" />
-      {/* Barra de busca com espaçamento maior do topo */}
       <div className="flex items-center gap-2 rounded-xl py-4 px-7 w-full bg-white/50 mt-0 mb-4">
         <input
           type="text"
@@ -55,29 +93,15 @@ export default function Collaborators() {
           <img src={searchIcon} alt="Buscar" className="w-5 h-5" />
         </button>
       </div>
-
-      {/* Lista dos colaboradores com mais espaçamento */}
-      <div
-        className={
-          search.trim() !== ""
-            ? "absolute top-full mt-2 w-full bg-white rounded-xl shadow-md px-2 py-3 flex flex-col gap-4 z-10"
-            : "flex flex-col gap-4 w-full"
-        }
-      >
-        {search.trim() !== "" && (
-          <p className="ml-2 text-sm font-semibold text-[#334155]">
-            Resultados
-          </p>
-        )}
-        {(search.trim() !== "" ? filtered : collaborators).length > 0 ? (
-          (search.trim() !== "" ? filtered : collaborators).map(
-            (collaborator) => (
-              <CollaboratorCard
-                key={collaborator.id}
-                collaborator={collaborator}
-              />
-            )
-          )
+      {/* Container de resultados sem overflow horizontal */}
+      <div className="flex flex-col gap-4 w-full px-8">
+        {list.length > 0 ? (
+          list.map((collaborator) => (
+            <CollaboratorCard
+              key={collaborator.id}
+              collaborator={collaborator}
+            />
+          ))
         ) : (
           <p className="text-sm text-[#1D1D1D]/50 p-2">
             Nenhum colaborador encontrado.
