@@ -6,21 +6,20 @@ const StarRating = ({ score, onChange, size = 24 }: StarRatingProps) => {
   const [hovered, setHovered] = useState<number | null>(null);
 
   return (
-    <div className="flex gap-7">
-      {Array.from({ length: 5 }).map((_, i) => {
-        const starIndex = i + 1;
-        const filled = (hovered ?? score) >= starIndex;
+    <div className="flex gap-5">
+      {[1, 2, 3, 4, 5].map((value) => {
+        const isActive = hovered !== null ? value <= hovered : value <= score;
 
         return (
           <button
-            key={i}
+            key={value}
             type="button"
-            onMouseEnter={() => setHovered(starIndex)}
+            onMouseEnter={() => setHovered(value)}
             onMouseLeave={() => setHovered(null)}
-            onClick={() => onChange(starIndex)}
-            className="focus:outline-none transition-colors duration-100"
+            onClick={() => onChange(value)}
+            className="transition-colors"
           >
-            {filled ? (
+            {isActive ? (
               <FaStar size={size} className="text-[#08605F]" />
             ) : (
               <FaRegStar size={size} className="text-[#08605F]" />

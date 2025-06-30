@@ -1,12 +1,21 @@
-import { Controller, Post, Body, Get, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Req,
+  UseGuards,
+  Param,
+  Patch,
+  ParseIntPipe,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { SelfEvaluationService } from './self-evaluation.service';
 import { CreateSelfEvaluationDto } from './dto/create-self-evaluation.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { Param, Patch, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { UpdateSelfEvaluationDto } from './dto/update-self-evaluation.dto';
-import { Delete } from '@nestjs/common';
-
 
 @ApiTags('Self Evaluation')
 @ApiBearerAuth()
@@ -22,9 +31,13 @@ export class SelfEvaluationController {
   }
 
   @Get()
-  async findByUser(@Req() req) {
+  async findByUser(@Req() req, @Query('cycleId') cycleId?: number) {
     const userId = req.user.userId;
-    return this.selfEvaluationService.findByUser(userId);
+
+    const where: any = { userId };
+    if (cycleId) where.cycleId = cycleId;
+
+    return this.selfEvaluationService.findByUser(where);
   }
 
   @Patch(':id')
@@ -35,11 +48,16 @@ export class SelfEvaluationController {
     return this.selfEvaluationService.update(id, dto);
   }
 
-  
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    return this.selfEvaluationService.delete(+id);
+  async delete(@Param('id', ParseIntPipe) id: number) {
+    return this.selfEvaluationService.delete(id);
   }
 
 
+  @Get('available')
+  @ApiOperation({ summary: 'Listar critérios de autoavaliação disponíveis' })
+  async getAvailableCriteria(@Req() req) {
+    const userId = req.user.userId;
+    return this.selfEvaluationService.getAvailableCriteria(userId);
+  }
 }

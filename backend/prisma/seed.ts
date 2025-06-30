@@ -1,186 +1,387 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, CriterionName } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Criar posições
-  const [position1, position2] = await Promise.all([
-    prisma.position.create({ data: { name: 'Developer' } }),
-    prisma.position.create({ data: { name: 'Manager' } }),
-  ]);
+  // Cria posições
+  const position1 = await prisma.position.create({
+    data: { name: 'Developer' },
+  });
+  const position2 = await prisma.position.create({ data: { name: 'Manager' } });
 
-  // Criar unidades
-  const [unit1, unit2] = await Promise.all([
-    prisma.unit.create({ data: { name: 'Engineering' } }),
-    prisma.unit.create({ data: { name: 'HR' } }),
-  ]);
+  // Cria unidades
+  const unit1 = await prisma.unit.create({ data: { name: 'Engineering' } });
+  const unit2 = await prisma.unit.create({ data: { name: 'HR' } });
 
-  // Criar trilhas
-  const [track1, track2] = await Promise.all([
-    prisma.track.create({ data: { name: 'Backend' } }),
-    prisma.track.create({ data: { name: 'Frontend' } }),
-  ]);
+  // Cria trilhas
+  const track1 = await prisma.track.create({ data: { name: 'Backend' } });
+  const track2 = await prisma.track.create({ data: { name: 'Frontend' } });
+  const track3 = await prisma.track.create({
+    data: { name: 'Trilha de Liderança' },
+  });
 
-  // Criar usuários
-  const [passwordHash1, passwordHash2] = await Promise.all([
-    bcrypt.hash('password123', 10),
-    bcrypt.hash('adminpass', 10),
-  ]);
+  // Adicionando todos os tipos de criterios no bd
+  const criteriaData: Array<{
+    name: CriterionName;
+    generalDescription: string;
+    weight: number;
+  }> = [
+    {
+      name: CriterionName.ORGANIZACAO_NO_TRABALHO,
+      generalDescription: 'Capacidade de manter o ambiente organizado',
+      weight: 10,
+    },
+    {
+      name: CriterionName.ATENDER_AOS_PRAZOS,
+      generalDescription: 'Capacidade de cumprir prazos estabelecidos',
+      weight: 10,
+    },
+    {
+      name: CriterionName.SENTIMENTO_DE_DONO,
+      generalDescription:
+        'Demonstra responsabilidade e compromisso com os resultados',
+      weight: 10,
+    },
+    {
+      name: CriterionName.RESILIENCIA_NAS_ADVERSIDADES,
+      generalDescription: 'Capacidade de se adaptar e superar desafios',
+      weight: 10,
+    },
+    {
+      name: CriterionName.CAPACIDADE_DE_APRENDER,
+      generalDescription:
+        'Disposição para aprender e se desenvolver continuamente',
+      weight: 10,
+    },
+    {
+      name: CriterionName.TEAM_PLAYER,
+      generalDescription: 'Capacidade de trabalhar em equipe e colaborar',
+      weight: 10,
+    },
+    {
+      name: CriterionName.FAZER_MAIS_COM_MENOS,
+      generalDescription: 'Eficiência na utilização de recursos',
+      weight: 10,
+    },
+    {
+      name: CriterionName.ENTREGAR_COM_QUALIDADE,
+      generalDescription: 'Compromisso com a qualidade das entregas',
+      weight: 10,
+    },
+    {
+      name: CriterionName.PENSAR_FORA_DA_CAIXA,
+      generalDescription: 'Criatividade e inovação na resolução de problemas',
+      weight: 10,
+    },
+    {
+      name: CriterionName.GENTE,
+      generalDescription: 'Habilidades de relacionamento e liderança',
+      weight: 10,
+    },
+    {
+      name: CriterionName.RESULTADOS,
+      generalDescription: 'Foco em resultados e performance',
+      weight: 10,
+    },
+    {
+      name: CriterionName.EVOLUCAO_DA_ROCKET_COR,
+      generalDescription: 'Contribuição para o crescimento da empresa',
+      weight: 10,
+    },
+  ];
 
-  const [user1, user2] = await Promise.all([
-    prisma.user.create({
-      data: {
-        name: 'Alice Johnson',
-        username: 'alice.j',
-        email: 'alice@example.com',
-        password: passwordHash1,
-        active: true,
-        positionId: position1.id,
-        unitId: unit1.id,
-        trackId: track1.id,
-        roles: {
-          create: [{ role: 'COLLABORATOR' }],
-        },
-      },
-    }),
-    prisma.user.create({
-      data: {
-        name: 'Bob Manager',
-        username: 'bob.m',
-        email: 'bob@example.com',
-        password: passwordHash2,
-        active: true,
-        positionId: position2.id,
-        unitId: unit2.id,
-        trackId: track2.id,
-        roles: {
-          create: [{ role: 'MANAGER' }, { role: 'ADMIN' }],
-        },
-      },
-    }),
-  ]);
+  const criteria: any[] = [];
+  for (const criterionData of criteriaData) {
+    const existing = await prisma.criterion.findFirst({
+      where: { name: criterionData.name },
+    });
 
-  // Relacionar Alice como colaboradora gerenciada por Bob
-  await prisma.managerCollaborator.create({
+    if (!existing) {
+      const criterion = await prisma.criterion.create({
+        data: criterionData,
+      });
+      criteria.push(criterion);
+    } else {
+      criteria.push(existing);
+    }
+  }
+
+  // Criando os grupos de criterios para Backend
+  const backendGroup1 = await prisma.criterionGroup.create({
     data: {
-      managerId: user2.id, // Bob
-      collaboratorId: user1.id, // Alice
+      name: 'Comportamento',
+      trackId: track1.id,
+      unitId: unit1.id,
+      positionId: position1.id,
     },
   });
 
-  // Criar critérios
-  const [criterion1, criterion2, criterion3, criterion4] = await Promise.all([
-    prisma.criterion.create({
-      data: {
-        name: 'Resiliência nas adversidades',
-        generalDescription:
-          'Capacidade de manter desempenho diante de desafios',
-        active: true,
-        weight: 1,
-      },
-    }),
-    prisma.criterion.create({
-      data: {
-        name: 'Sentimento de dono',
-        generalDescription: 'Proatividade e responsabilidade sobre entregas',
-        active: true,
-        weight: 1,
-      },
-    }),
-    prisma.criterion.create({
-      data: {
-        name: 'Organização no trabalho',
-        generalDescription: 'Organização e planejamento das atividades',
-        active: true,
-        weight: 1,
-      },
-    }),
-    prisma.criterion.create({
-      data: {
-        name: 'Atender aos prazos',
-        generalDescription: 'Cumprimento de prazos estabelecidos',
-        active: true,
-        weight: 1,
-      },
-    }),
-  ]);
-
-  // Criar grupos de critério (agora com track, unit e position obrigatórios)
-  const [group1, group2] = await Promise.all([
-    prisma.criterionGroup.create({
-      data: {
-        name: 'Competências Comportamentais',
-        trackId: track1.id,
-        unitId: unit1.id,
-        positionId: position1.id,
-      },
-    }),
-    prisma.criterionGroup.create({
-      data: {
-        name: 'Competências Técnicas',
-        trackId: track2.id,
-        unitId: unit2.id,
-        positionId: position2.id,
-      },
-    }),
-  ]);
-
-  // Relacionar critérios à configuração da posição + trilha + unidade
-  await Promise.all([
-    prisma.configuredCriterion.create({
-      data: {
-        criterionId: criterion1.id, // Resiliência nas adversidades
-        trackId: track1.id,
-        unitId: unit1.id,
-        positionId: position1.id,
-        groupId: group1.id, // Comportamentais
-        mandatory: true,
-      },
-    }),
-    prisma.configuredCriterion.create({
-      data: {
-        criterionId: criterion2.id, // Sentimento de dono
-        trackId: track1.id,
-        unitId: unit1.id,
-        positionId: position1.id,
-        groupId: group1.id, // Comportamentais
-        mandatory: true,
-      },
-    }),
-    prisma.configuredCriterion.create({
-      data: {
-        criterionId: criterion3.id, // Organização no trabalho
-        trackId: track1.id,
-        unitId: unit1.id,
-        positionId: position1.id,
-        groupId: group2.id, // Técnicas
-        mandatory: true,
-      },
-    }),
-    prisma.configuredCriterion.create({
-      data: {
-        criterionId: criterion4.id, // Atender aos prazos
-        trackId: track1.id,
-        unitId: unit1.id,
-        positionId: position1.id,
-        groupId: group2.id, // Técnicas
-        mandatory: true,
-      },
-    }),
-  ]);
-
-  // Criar ciclo de avaliação
-  await prisma.evaluationCycle.create({
+  const backendGroup2 = await prisma.criterionGroup.create({
     data: {
-      name: '2025 Mid-Year Cycle',
-      startDate: new Date('2025-06-01T00:00:00Z'),
-      endDate: new Date('2025-07-31T23:59:59Z'),
+      name: 'Relacionamento',
+      trackId: track1.id,
+      unitId: unit1.id,
+      positionId: position1.id,
+    },
+  });
+
+  // Criando os grupos de criterios para Frontend
+  const frontendGroup1 = await prisma.criterionGroup.create({
+    data: {
+      name: 'Comportamento',
+      trackId: track2.id,
+      unitId: unit1.id,
+      positionId: position1.id,
+    },
+  });
+
+  const frontendGroup2 = await prisma.criterionGroup.create({
+    data: {
+      name: 'Relacionamento',
+      trackId: track2.id,
+      unitId: unit1.id,
+      positionId: position1.id,
+    },
+  });
+
+  // Criando os grupos de criterios para Trilha de Liderança
+  const leadershipGroup1 = await prisma.criterionGroup.create({
+    data: {
+      name: 'Liderança Técnica',
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+    },
+  });
+
+  const leadershipGroup2 = await prisma.criterionGroup.create({
+    data: {
+      name: 'Gestão de Pessoas',
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+    },
+  });
+
+  const leadershipGroup3 = await prisma.criterionGroup.create({
+    data: {
+      name: 'Resultados e Performance',
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+    },
+  });
+
+  // Criação das configuração de criterios para Backend
+  const backendConfigs = [
+    {
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.ORGANIZACAO_NO_TRABALHO,
+      )?.id,
+      groupId: backendGroup1.id,
+      trackId: track1.id,
+      unitId: unit1.id,
+      positionId: position1.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find((c) => c.name === CriterionName.TEAM_PLAYER)
+        ?.id,
+      groupId: backendGroup2.id,
+      trackId: track1.id,
+      unitId: unit1.id,
+      positionId: position1.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.ENTREGAR_COM_QUALIDADE,
+      )?.id,
+      groupId: backendGroup2.id,
+      trackId: track1.id,
+      unitId: unit1.id,
+      positionId: position1.id,
+      mandatory: false,
+    },
+  ];
+
+  // Criação das configuração de criterios para Frontend
+  const frontendConfigs = [
+    {
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.ORGANIZACAO_NO_TRABALHO,
+      )?.id,
+      groupId: frontendGroup1.id,
+      trackId: track2.id,
+      unitId: unit1.id,
+      positionId: position1.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.SENTIMENTO_DE_DONO,
+      )?.id,
+      groupId: frontendGroup1.id,
+      trackId: track2.id,
+      unitId: unit1.id,
+      positionId: position1.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find((c) => c.name === CriterionName.TEAM_PLAYER)
+        ?.id,
+      groupId: frontendGroup2.id,
+      trackId: track2.id,
+      unitId: unit1.id,
+      positionId: position1.id,
+      mandatory: true,
+    },
+  ];
+
+  // Criação das configuração de criterios para Trilha de Liderança
+  const leadershipConfigs = [
+    {
+      criterionId: criteria.find((c) => c.name === CriterionName.GENTE)?.id,
+      groupId: leadershipGroup1.id,
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find((c) => c.name === CriterionName.RESULTADOS)
+        ?.id,
+      groupId: leadershipGroup1.id,
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find((c) => c.name === CriterionName.TEAM_PLAYER)
+        ?.id,
+      groupId: leadershipGroup2.id,
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.SENTIMENTO_DE_DONO,
+      )?.id,
+      groupId: leadershipGroup2.id,
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.EVOLUCAO_DA_ROCKET_COR,
+      )?.id,
+      groupId: leadershipGroup3.id,
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+      mandatory: true,
+    },
+    {
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.FAZER_MAIS_COM_MENOS,
+      )?.id,
+      groupId: leadershipGroup3.id,
+      trackId: track3.id,
+      unitId: unit1.id,
+      positionId: position2.id,
+      mandatory: false,
+    },
+  ];
+
+  const allConfigs = [
+    ...backendConfigs,
+    ...frontendConfigs,
+    ...leadershipConfigs,
+  ];
+  for (const config of allConfigs) {
+    if (config.criterionId) {
+      await prisma.configuredCriterion.create({
+        data: config,
+      });
+    }
+  }
+
+  // Hash simples para senha (exemplo)
+  const passwordHash1 = await bcrypt.hash('password123', 10);
+  const passwordHash2 = await bcrypt.hash('adminpass', 10);
+
+  // Cria usuários
+  const user1 = await prisma.user.create({
+    data: {
+      name: 'Alice Johnson',
+      username: 'alice.j',
+      email: 'alice@example.com',
+      password: passwordHash1,
+      active: true,
+      positionId: position1.id,
+      unitId: unit1.id,
+      trackId: track1.id,
+      roles: {
+        create: [{ role: 'COLLABORATOR' }],
+      },
+    },
+  });
+
+  const user2 = await prisma.user.create({
+    data: {
+      name: 'Bob Manager',
+      username: 'bob.m',
+      email: 'bob@example.com',
+      password: passwordHash2,
+      active: true,
+      positionId: position2.id,
+      unitId: unit2.id,
+      trackId: track2.id,
+      roles: {
+        create: [{ role: 'MANAGER' }, { role: 'ADMIN' }],
+      },
+    },
+  });
+
+  const cycle = await prisma.evaluationCycle.create({
+    data: {
+      name: 'Ciclo 2025.1',
+      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 dias atrás
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias à frente
       status: 'IN_PROGRESS',
     },
   });
 
-  console.log('✅ Seed executada com sucesso!');
+  // Cria alguns projetos para peer evaluation
+  const projectsData = [
+    {
+      name: 'Project Apollo',
+      description: 'Sistema de automação para controle de produção',
+    },
+    {
+      name: 'Project Orion',
+      description: 'Aplicação web para gerenciamento de equipes',
+    },
+    {
+      name: 'Project Vega',
+      description: 'Ferramenta de análise de dados para marketing',
+    },
+  ];
+
+  for (const proj of projectsData) {
+    await prisma.project.create({
+      data: proj,
+    });
+  }
+
+  console.log('Seed completed!');
+  console.log('Cycle ID criado:', cycle.id);
 }
 
 main()

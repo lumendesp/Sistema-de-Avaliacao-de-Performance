@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import searchIcon from "../../assets/search.png";
 import CollaboratorCard from "../../components/manager/CollaboratorCard";
 import type { Collaborator } from "../../types/collaboratorStatus.tsx";
@@ -35,6 +36,9 @@ export default function Collaborators() {
     collab.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  if (loading) return <div>Carregando colaboradores...</div>;
+  if (error) return <div>Erro: {error}</div>;
+
   return (
     <div className="flex flex-col w-full min-h-screen bg-[#F5F6FA]">
       <div className="h-[20px] w-full" />
@@ -57,20 +61,14 @@ export default function Collaborators() {
       </div>
 
       {/* Lista dos colaboradores com mais espaçamento */}
-      <div
-        className={
-          search.trim() !== ""
-            ? "absolute top-full mt-2 w-full bg-white rounded-xl shadow-md px-2 py-3 flex flex-col gap-4 z-10"
-            : "flex flex-col gap-4 w-full"
-        }
-      >
+      <div className="flex flex-col gap-4 w-full">
         {search.trim() !== "" && (
           <p className="ml-2 text-sm font-semibold text-[#334155]">
             Resultados
           </p>
         )}
-        {(search.trim() !== "" ? filtered : collaborators).length > 0 ? (
-          (search.trim() !== "" ? filtered : collaborators).map(
+        {(search.trim() !== "" ? filtered : colaboradores).length > 0 ? (
+          (search.trim() !== "" ? filtered : colaboradores).map(
             (collaborator) => (
               <CollaboratorCard
                 key={collaborator.id}

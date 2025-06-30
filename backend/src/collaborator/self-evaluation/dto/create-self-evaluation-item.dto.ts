@@ -1,4 +1,4 @@
-import { IsInt, IsString, IsOptional } from 'class-validator';
+import { IsInt, IsString, Min, Max } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSelfEvaluationItemDto {
@@ -8,14 +8,11 @@ export class CreateSelfEvaluationItemDto {
 
   @ApiProperty({ example: 4, description: 'Nota de 1 a 5' })
   @IsInt()
+  @Min(1)
+  @Max(5)
   score: number;
 
-  @ApiProperty({ example: 'Fui resiliente em situações difíceis' })
+  @ApiProperty({ example: 'Justificativa da nota' })
   @IsString()
   justification: string;
-
-  @ApiProperty({ example: 'Desempenho consistente', required: false })
-  @IsOptional()
-  @IsString()
-  scoreDescription?: string;
 }

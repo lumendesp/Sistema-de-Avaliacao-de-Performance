@@ -1,5 +1,6 @@
 import ScoreBox from "../ScoreBox";
 import StarRating from "../StarRating";
+import StarRatingReadOnly from "../StarRatingReadOnly";
 import type { MentorEvaluationProps } from "../../types/mentor-evaluation";
 
 import { UserIcon } from "../UserIcon";
@@ -15,12 +16,12 @@ const MentorEvaluationForm = ({
 }: MentorEvaluationProps) => {
   const [score, setScore] = useState<number | undefined>(undefined);
   const [feedback, setFeedback] = useState("");
-  const [wasJustSubmitted, setWasJustSubmitted] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // função auxiliar para pegar as iniciais
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -29,6 +30,7 @@ const MentorEvaluationForm = ({
       .toUpperCase();
   };
 
+  // envia os dados para o backend, verificando se todos os campos estão preenchidos
   const handleSubmit = async () => {
     if (!score || !feedback.trim()) {
       setError("Preencha todos os campos");
@@ -39,7 +41,6 @@ const MentorEvaluationForm = ({
       setIsSubmitting(true);
       await submitMentorEvaluation(evaluateeId, score, feedback);
       setSuccess(true);
-      setWasJustSubmitted(true);
       setError(null);
     } catch (err: any) {
       setError(err.message);
@@ -48,6 +49,7 @@ const MentorEvaluationForm = ({
     }
   };
 
+  // se já tiver avaliação registrada, carrega na tela
   useEffect(() => {
     const loadEvaluation = async () => {
       try {
@@ -65,6 +67,52 @@ const MentorEvaluationForm = ({
     loadEvaluation();
   }, [evaluateeId]);
 
+  // para fazer sumir a mensagem de erro, ao começar a escrever ou ao selecionar as estrelaas
+  useEffect(() => {
+    if (error && (score || feedback.trim())) {
+      setError(null);
+    }
+  }, [score, feedback]);
+
+  // se já existe uma avaliação ou foi enviada com sucesso, mostra como avaliação enviada, apenas para visualização
+  if (success) {
+    return (
+      <div className="bg-white w-full flex flex-col px-6 py-9 rounded-xl opacity-80">
+        <div className="flex justify-between items-center mb-5">
+          <div className="flex justify-center items-center gap-3">
+            <UserIcon initials={getInitials(mentor.name)} size={40} />
+            <div className="flex flex-col">
+              <p className="text-sm font-bold ">{mentor.name}</p>
+              <p className="text-xs font-normal text-opacity-75 text-[#1D1D1D]">
+                {mentor.role ?? "Mentor"}
+              </p>
+            </div>
+          </div>
+          <ScoreBox score={score} />
+        </div>
+        <div className="flex flex-col mb-4 gap-3">
+          <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
+            Avaliação enviada
+          </p>
+          <div>
+            <StarRatingReadOnly score={score ?? 0} dimmed={true} />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1 flex-1">
+          <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
+            Justificativa enviada
+          </p>
+          <textarea
+            className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm bg-gray-100 text-[#1D1D1D]"
+            value={feedback}
+            disabled
+          ></textarea>
+        </div>
+      </div>
+    );
+  }
+
+  // criação de uma nova avaliação
   return (
     <div className="bg-white w-full flex flex-col px-6 py-9 rounded-xl">
       <div className="flex justify-between items-center mb-5">
@@ -86,9 +134,7 @@ const MentorEvaluationForm = ({
         <div>
           <StarRating
             score={score ?? 0}
-            onChange={(newScore) => {
-              if (!success) setScore(newScore);
-            }}
+            onChange={(newScore) => setScore(newScore)}
           />
         </div>
       </div>
@@ -98,25 +144,18 @@ const MentorEvaluationForm = ({
         </p>
         <textarea
           className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
-          name=""
-          id=""
           placeholder="Justifique sua nota..."
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
-          disabled={success}
         ></textarea>
       </div>
 
-      {/* Erro ou sucesso */}
       {error && <p className="text-red-500 text-sm">{error}</p>}
-      {wasJustSubmitted && success && (
-        <p className="text-green-600 text-sm">Avaliação enviada com sucesso!</p>
-      )}
 
-      {/* Botão */}
+      {/* botão, que será removido depois */}
       <button
         className="mt-4 px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 transition"
-        disabled={isSubmitting || success}
+        disabled={isSubmitting}
         onClick={handleSubmit}
       >
         {isSubmitting ? "Enviando..." : "Enviar Avaliação"}

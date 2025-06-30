@@ -1,7 +1,6 @@
+import type { Mentor } from "./mentor";
+
 export type MentorEvaluationProps = {
   evaluateeId: number;
-  mentor: {
-    name: string;
-    role?: string;
-  };
+  mentor: Mentor;
 };

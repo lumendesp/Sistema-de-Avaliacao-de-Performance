@@ -6,7 +6,6 @@ import CircularProgress from "../../components/Committee/CirculaProgress";
 import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import persons from "../../assets/committee/two-persons.png";
 import { UserIcon } from '../../components/UserIcon';
-import { getUsersWithEvaluations } from '../../services/api';
 
 interface Collaborator {
     id: number;
@@ -26,7 +25,6 @@ function Committee(){
 
     const fetchCollaborators = async () => {
         try {
-            const users = await getUsersWithEvaluations();
             const formattedCollaborators = users.map((user: any) => {
                 const evaluations = user.evaluationsEvaluated || [];
                 
