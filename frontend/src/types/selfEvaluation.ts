@@ -1,9 +1,35 @@
 export interface Criterion {
   id: number;
   title: string;
-  description?: string;
+  description: string;
   score?: number;
   justification?: string;
+}
+
+export interface ConfiguredCriterion {
+  id: number;
+  criterionId: number;
+  mandatory: boolean;
+  criterion: {
+    id: number;
+    name: string;
+    generalDescription: string;
+    active: boolean;
+    weight: number;
+    displayName: string;
+  };
+}
+
+export interface CriterionGroup {
+  id: number;
+  name: string;
+  configuredCriteria: ConfiguredCriterion[];
+}
+
+export interface TrackWithGroups {
+  id: number;
+  name: string;
+  CriterionGroup: CriterionGroup[];
 }
 
 export interface SelfEvaluationFormProps {

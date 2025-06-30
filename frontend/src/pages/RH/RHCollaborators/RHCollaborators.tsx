@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { mockCollaborators } from '../../../data/rh_data';
 import RHCollaboratorInfoCard from '../../../components/RH/RHCollaboratorInfoCard/RHCollaboratorInfoCard';
 import RHCollaboratorSearchBar from '../../../components/RH/RHCollaboratorSearchBar/RHCollaboratorSearchBar';
-import { FunnelIcon } from '@heroicons/react/24/outline';
+import { IoFunnel } from "react-icons/io5";
 
 const RHCollaboratorsPage: React.FC = () => {
 
@@ -24,9 +24,8 @@ const RHCollaboratorsPage: React.FC = () => {
                         onSearchChange={setSearchTerm}
                     />
                 </div>
-                <button className="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-700 font-semibold hover:bg-gray-50">
-                    <FunnelIcon className="h-5 w-5" />
-                    <span>Filtrar</span>
+                <button className="bg-[#08605F] p-3 rounded-md text-white">
+                    <IoFunnel size={24} />
                 </button>
             </div>
 
