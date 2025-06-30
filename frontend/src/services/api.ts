@@ -209,6 +209,8 @@ export const updateEvaluation = async (id: number, data: any) => {
   return response.json();
 };
 
+// Gestor (avaliações)
+
 export const fetchManagerCollaborators = async (managerId: number) => {
   const res = await fetch(`${API_URL}/manager/${managerId}/collaborators`, {
     method: "GET",

@@ -207,6 +207,7 @@ CREATE TABLE "ManagerEvaluationItem" (
     "score" INTEGER NOT NULL,
     "justification" TEXT NOT NULL,
     "scoreDescription" TEXT,
+    "groupId" INTEGER NOT NULL,
     CONSTRAINT "ManagerEvaluationItem_evaluationId_fkey" FOREIGN KEY ("evaluationId") REFERENCES "ManagerEvaluation" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "ManagerEvaluationItem_criterionId_fkey" FOREIGN KEY ("criterionId") REFERENCES "Criterion" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );

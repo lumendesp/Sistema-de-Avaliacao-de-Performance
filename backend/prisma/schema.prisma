@@ -50,23 +50,6 @@ enum CriterionName {
   EVOLUCAO_DA_ROCKET_COR
 }
 
-
-enum CriterionName {
-  ORGANIZACAO_NO_TRABALHO
-  ATENDER_AOS_PRAZOS
-  SENTIMENTO_DE_DONO
-  RESILIENCIA_NAS_ADVERSIDADES
-  CAPACIDADE_DE_APRENDER
-  TEAM_PLAYER
-  FAZER_MAIS_COM_MENOS
-  ENTREGAR_COM_QUALIDADE
-  PENSAR_FORA_DA_CAIXA
-  GENTE
-  RESULTADOS
-  EVOLUCAO_DA_ROCKET_COR
-}
-
-
 model Position {
   id                 Int                   @id @default(autoincrement())
   name               String
@@ -402,16 +385,6 @@ model CommitteeNote {
 
   user  User            @relation(fields: [userId], references: [id])
   cycle EvaluationCycle @relation(fields: [cycleId], references: [id])
-}
-
-model ManagerCollaborator {
-  managerId      Int
-  collaboratorId Int
-
-  manager        User @relation("ManagerToCollaborator", fields: [managerId], references: [id])
-  collaborator   User @relation("CollaboratorToManager", fields: [collaboratorId], references: [id])
-
-  @@id([managerId, collaboratorId])
 }
 
 model ManagerCollaborator {

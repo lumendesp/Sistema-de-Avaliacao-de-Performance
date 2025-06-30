@@ -349,6 +349,14 @@ async function main() {
     },
   });
 
+  // Relacionar Alice como colaboradora gerenciada por Bob
+  await prisma.managerCollaborator.create({
+    data: {
+      managerId: user2.id, // Bob
+      collaboratorId: user1.id, // Alice
+    },
+  });
+
   const cycle = await prisma.evaluationCycle.create({
     data: {
       name: 'Ciclo 2025.1',
