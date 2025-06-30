@@ -9,6 +9,7 @@ export default function Collaborators() {
   const [search, setSearch] = useState("");
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [searchResults, setSearchResults] = useState<Collaborator[]>([]);
+  const [evaluations, setEvaluations] = useState<Record<number, any>>({});
   const { user } = useAuth();
 
   // Carrega todos os colaboradores do manager ao entrar na página
@@ -23,9 +24,9 @@ export default function Collaborators() {
             email: c.email,
             photo: c.photo,
             role: c.roles?.[0]?.role || "Colaborador",
-            status: c.status || "Em andamento",
+            status: "Em andamento",
             selfScore: c.selfScore ?? 0,
-            managerScore: c.managerScore ?? null,
+            managerScore: null,
           }));
           setCollaborators(parsed);
         })
@@ -49,7 +50,6 @@ export default function Collaborators() {
           if (!res.ok) {
             return setSearchResults([]);
           }
-          // Mapeia igual à listagem inicial
           setSearchResults(
             (data || []).map((c: any) => ({
               id: c.id,
@@ -70,6 +70,54 @@ export default function Collaborators() {
       setSearchResults([]);
     }
   }, [search, user]);
+
+  // Buscar avaliações dos colaboradores visíveis (tanto lista quanto busca)
+  useEffect(() => {
+    const currentList = search.trim() !== "" ? searchResults : collaborators;
+    const ids = currentList.map((c) => c.id);
+    if (ids.length === 0) return;
+    Promise.all(
+      ids.map((id) =>
+        fetch(`${API_URL}/manager-evaluation/by-evaluatee/${id}`, {
+          method: "GET",
+          headers: getAuthHeaders(),
+        })
+          .then(async (res) => {
+            if (!res.ok) return { id, evaluation: null };
+            const evaluation = await res.json();
+            return { id, evaluation };
+          })
+          .catch(() => ({ id, evaluation: null }))
+      )
+    ).then((results) => {
+      const evalMap: Record<number, any> = {};
+      results.forEach(({ id, evaluation }) => {
+        evalMap[id] = evaluation;
+      });
+      setEvaluations(evalMap);
+    });
+  }, [search, collaborators, searchResults]);
+
+  // Função para calcular status e nota do gestor
+  function getStatusAndScore(collaboratorId: number) {
+    const evaluation = evaluations[collaboratorId];
+    const allCriteria = (evaluation?.groups || []).flatMap((g: any) => g.items || []);
+    // Critérios com nota preenchida
+    const withScore = allCriteria.filter((c: any) => c.score !== null && c.score !== undefined);
+    // Critérios com nota E justificativa preenchidas
+    const filled = allCriteria.filter((c: any) =>
+      c.score !== null && c.score !== undefined && c.justification && c.justification.trim() !== ""
+    );
+    const total = allCriteria.length;
+    let managerScore = null;
+    if (withScore.length > 0) {
+      managerScore = withScore.reduce((sum: number, c: any) => sum + (c.score || 0), 0) / withScore.length;
+    }
+    if (!evaluation || total === 0 || filled.length < total) {
+      return { status: "Em andamento" as const, managerScore };
+    }
+    return { status: "Finalizado" as const, managerScore };
+  }
 
   // Mostra searchResults se houver busca, senão lista completa
   const list = search.trim() !== "" ? searchResults : collaborators;
@@ -96,12 +144,19 @@ export default function Collaborators() {
       {/* Container de resultados sem overflow horizontal */}
       <div className="flex flex-col gap-4 w-full px-8">
         {list.length > 0 ? (
-          list.map((collaborator) => (
-            <CollaboratorCard
-              key={collaborator.id}
-              collaborator={collaborator}
-            />
-          ))
+          list.map((collaborator) => {
+            const { status, managerScore } = getStatusAndScore(collaborator.id);
+            return (
+              <CollaboratorCard
+                key={collaborator.id}
+                collaborator={{
+                  ...collaborator,
+                  status,
+                  managerScore,
+                }}
+              />
+            );
+          })
         ) : (
           <p className="text-sm text-[#1D1D1D]/50 p-2">
             Nenhum colaborador encontrado.
