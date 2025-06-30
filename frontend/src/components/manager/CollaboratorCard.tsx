@@ -13,6 +13,8 @@ export default function CollaboratorCard({ collaborator }: Props) {
         return "bg-yellow-200 text-yellow-700";
       case "Finalizado":
         return "bg-green-200 text-green-700";
+      case "Pendente":
+        return "bg-red-200 text-red-700";
       default:
         return "bg-gray-200 text-gray-700";
     }

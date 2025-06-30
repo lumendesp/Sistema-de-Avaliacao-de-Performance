@@ -113,7 +113,10 @@ export default function Collaborators() {
     if (withScore.length > 0) {
       managerScore = withScore.reduce((sum: number, c: any) => sum + (c.score || 0), 0) / withScore.length;
     }
-    if (!evaluation || total === 0 || filled.length < total) {
+    if (!evaluation || total === 0 || withScore.length === 0) {
+      return { status: "Pendente" as const, managerScore: null };
+    }
+    if (filled.length < total) {
       return { status: "Em andamento" as const, managerScore };
     }
     return { status: "Finalizado" as const, managerScore };
