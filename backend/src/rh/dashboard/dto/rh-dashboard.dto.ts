@@ -25,6 +25,12 @@ export class CollaboratorStatusDto {
 
     @ApiProperty({ example: 'finalizado', enum: ['finalizado', 'pendente'] })
     status: 'finalizado' | 'pendente';
+
+    @ApiProperty({ example: 'AS' })
+    avatarInitials: string;
+
+    @ApiProperty({ example: 'Tecnologia' })
+    unit: string;
 }
 
 // DTO principal para a resposta completa do dashboard

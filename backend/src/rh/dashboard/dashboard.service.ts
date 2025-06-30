@@ -43,13 +43,21 @@ export class RHDashboardService {
             totalEvaluations > 0 ? Math.round((completedCount / totalEvaluations) * 100) : 0;
 
         // 5. Formata a lista de colaboradores com status
-        const collaboratorsStatus: CollaboratorStatusDto[] = allCollaborators.map((user) => ({
-            id: user.id,
-            name: user.name,
-            role: user.position?.name || 'N/A',
-            // Agora o TypeScript sabe que o resultado deve ser 'finalizado' ou 'pendente'
-            status: completedUserIds.has(user.id) ? 'finalizado' : 'pendente',
-        }));
+        const collaboratorsStatus: CollaboratorStatusDto[] = allCollaborators.map((user) => {
+            const nameParts = user.name.split(' ');
+            const initials = (
+                (nameParts[0]?.[0] || '') + (nameParts[nameParts.length - 1]?.[0] || '')
+            ).toUpperCase();
+
+            return {
+                id: user.id,
+                name: user.name,
+                role: user.position?.name || 'N/A',
+                status: completedUserIds.has(user.id) ? 'finalizado' : 'pendente',
+                avatarInitials: initials,
+                unit: user.unit?.name || 'N/A',
+            };
+        });
 
         // 6. Calcula o preenchimento por unidade
         const completionByUnit = await this.getCompletionByUnit(allCollaborators, completedUserIds);
