@@ -74,7 +74,7 @@ export default function ManagerEvaluationLayout() {
                 <h1 className="text-xl font-bold text-gray-900 leading-tight truncate">
                   {name}
                 </h1>
-                <p className="text-sm text-gray-500 truncate">{role}</p>
+                <p className="text-sm text-gray-500 truncate">COLABORADOR</p>
               </div>
             </div>
             <button

@@ -39,7 +39,7 @@ export default function CollaboratorCard({ collaborator }: Props) {
         </div>
         <div>
           <p className="font-semibold">{name}</p>
-          <p className="text-sm text-gray-500">{role}</p>
+          <p className="text-sm text-gray-500">COLABORADOR</p>
         </div>
         <span className={`text-xs px-2 py-1 rounded ${getStatusStyle(status)}`}>
           {status}
