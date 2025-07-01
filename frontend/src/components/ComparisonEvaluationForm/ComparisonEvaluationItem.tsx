@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FaChevronUp, FaChevronDown } from 'react-icons/fa';
 import type { EvaluationComparisonItemProps } from '../../types/evaluationComparison';
 import StarRatingReadOnly from '../StarRatingReadOnly';
-import ScoreBox from '../ScoreBox';
+import ScoreBoxComparison from './ScoreBoxComparison';
 
 const EvaluationComparisonItem = ({
   index,
@@ -23,12 +23,12 @@ const EvaluationComparisonItem = ({
           <p className="font-semibold text-gray-800">{title}</p>
         </div>
         <div className="flex items-center gap-3">
-          <ScoreBox score={finalScore} />
-          <ScoreBox score={selfScore}/>
+          <ScoreBoxComparison score={selfScore} type="self-text" />
+          <ScoreBoxComparison score={finalScore} type="final-text" />
           <button onClick={() => setIsOpen(!isOpen)}>
             {isOpen ? <FaChevronUp /> : <FaChevronDown />}
           </button>
-        </div>
+        </div> 
       </div>
 
       {isOpen && (

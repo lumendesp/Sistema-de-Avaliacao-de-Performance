@@ -21,6 +21,7 @@ const ComparisonLayout = () => {
             <NavLink
               key={path}
               to={path}
+              end={path === "/collaborator/evaluation-comparison"}
               className={({ isActive }) =>
                 isActive
                   ? "text-md font-bold text-green-main border-b-2 border-green-main pb-1"

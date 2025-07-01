@@ -1,7 +1,10 @@
 import CollaboratorsSearchBar from "../../../components/CollaboratorsSearchBar";
 import ReferenceEvaluationForm from "../../../components/ReferenceEvaluationForm/ReferenceEvaluationForm";
 import { useState, useEffect } from "react";
-import { fetchMyReferences } from "../../../services/api";
+import {
+  fetchMyReferences,
+  fetchActiveEvaluationCycle,
+} from "../../../services/api";
 import { useAuth } from "../../../context/AuthContext";
 import type { Collaborator, Reference } from "../../../types/reference";
 
@@ -10,15 +13,38 @@ const ReferenceEvaluation = () => {
     Collaborator[]
   >([]); // lista temporária de colaboradores que o usuário está selecionando para avaliar
   const [myReferences, setMyReferences] = useState<Reference[]>([]); // lista de referências já enviadas do usuário logado
+  const [activeCycleId, setActiveCycleId] = useState<number | null>(null);
   const { user } = useAuth();
 
   // busca as referências já enviadas do usuário logado
   useEffect(() => {
-    if (!user) return;
-    fetchMyReferences(1)
-      .then(setMyReferences)
-      .catch(() => setMyReferences([]));
-  }, [user]);
+    const loadActiveCycle = async () => {
+      try {
+        const cycle = await fetchActiveEvaluationCycle();
+        setActiveCycleId(cycle.id);
+      } catch (err) {
+        console.error("Erro ao carregar ciclo ativo:", err);
+      }
+    };
+
+    loadActiveCycle();
+  }, []);
+
+  useEffect(() => {
+    if (!user || !activeCycleId) return;
+
+    const loadEvaluations = async () => {
+      try {
+        const data = await fetchMyReferences(activeCycleId);
+        setMyReferences(data);
+      } catch (err) {
+        console.error("Erro ao carregar avaliações:", err);
+        setMyReferences([]);
+      }
+    };
+
+    loadEvaluations();
+  }, [user, activeCycleId]);
 
   // adiciona um colaborador à lista temporária (somente se ainda não estiver na lista)
   const handleAddCollaborator = (collaborator: Collaborator) => {
@@ -52,6 +78,7 @@ const ReferenceEvaluation = () => {
         onRemoveCollaborator={handleRemoveCollaborator}
         myReferences={myReferences}
         setMyReferences={setMyReferences}
+        cycleId={activeCycleId!}
       />
     </div>
   );
