@@ -184,6 +184,8 @@ model ConfiguredCriterion {
   track    Track          @relation("TrackConfiguredCriteria", fields: [trackId], references: [id])
   unit     Unit           @relation("UnitConfiguredCriteria", fields: [unitId], references: [id])
   position Position       @relation("PositionConfiguredCriteria", fields: [positionId], references: [id])
+
+  selfEvaluationItems SelfEvaluationItem[]
 }
 
 
@@ -220,16 +222,19 @@ model SelfEvaluation {
 }
 
 model SelfEvaluationItem {
-  id               Int     @id @default(autoincrement())
-  evaluationId     Int
-  criterionId      Int
-  score            Int
-  justification    String
-  scoreDescription String?
+  id                   Int     @id @default(autoincrement())
+  evaluationId         Int
+  criterionId          Int
+  configuredCriterionId Int?
+  score                Int
+  justification        String
+  scoreDescription     String?
 
-  evaluation SelfEvaluation @relation(fields: [evaluationId], references: [id])
-  criterion  Criterion      @relation(fields: [criterionId], references: [id])
+  evaluation          SelfEvaluation     @relation(fields: [evaluationId], references: [id])
+  criterion           Criterion          @relation(fields: [criterionId], references: [id])
+  configuredCriterion ConfiguredCriterion? @relation(fields: [configuredCriterionId], references: [id])
 }
+
 
 model Project {
   id          Int                     @id @default(autoincrement())

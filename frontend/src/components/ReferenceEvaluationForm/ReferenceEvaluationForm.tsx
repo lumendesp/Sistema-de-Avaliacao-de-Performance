@@ -10,13 +10,13 @@ const ReferenceEvaluationForm = ({
   onRemoveCollaborator,
   myReferences,
   setMyReferences,
+  cycleId
 }: ReferenceEvaluationFormProps) => {
 
   const [formData, setFormData] = useState<{ [key: number]: string }>({}); 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const cycleId = 1; // por enquanto, só temos um ciclo no banco
 
   // função para atualizar o estado do formulário quando o usuário digita no textarea
   const handleInputChange = (collaboratorId: number, value: string) => {

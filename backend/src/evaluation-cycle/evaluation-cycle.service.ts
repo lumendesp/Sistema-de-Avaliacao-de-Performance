@@ -11,4 +11,23 @@ export class EvaluationCycleService {
       where: { status: 'IN_PROGRESS' },
     });
   }
+ 
+  async getClosedCycles() {
+    const activeCycle = await this.findActiveCycle();
+
+    return this.prisma.evaluationCycle.findMany({
+      where: {
+        id: {
+          not: activeCycle?.id, // Exclui o ativo
+        },
+        startDate: {
+          lt: activeCycle?.startDate, // Só os anteriores
+        },
+      },
+      orderBy: {
+        startDate: 'desc',
+      },
+    });
+  }
 }
+
