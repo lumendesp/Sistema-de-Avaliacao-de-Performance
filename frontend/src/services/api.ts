@@ -63,6 +63,18 @@ export const submitMentorEvaluation = async (
   return res.json();
 };
 
+export const fetchActiveEvaluationCycle = async () => {
+  const res = await fetch(`${API_URL}/evaluation-cycle/active`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error("Erro ao buscar ciclo ativo");
+  }
+
+  return res.json();
+};
+
 export const fetchMentorEvaluation = async (evaluateeId: number) => {
   const res = await fetch(`${API_URL}/mentor-evaluations/me/${evaluateeId}`, {
     method: "GET",
