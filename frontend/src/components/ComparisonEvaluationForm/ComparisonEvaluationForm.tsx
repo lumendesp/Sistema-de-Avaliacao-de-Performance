@@ -1,5 +1,5 @@
 import EvaluationComparisonItem from './ComparisonEvaluationItem';
-import ScoreBox from '../ScoreBox';
+import ScoreBoxComparison from './ScoreBoxComparison';
 import type { EvaluationComparisonItemData } from '../../types/evaluationComparison';
 
 interface Props {
@@ -14,10 +14,10 @@ const EvaluationComparisonForm = ({ title, criteria }: Props) => {
   return (
     <div className="bg-white rounded-xl shadow p-6 w-full">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-sm font-semibold text-green-main">{title}</h3>
+        <h3 className="text-bg font-semibold text-green-main">{title}</h3>
         <div className="flex gap-4">
-          <ScoreBox score={avgFinal} />
-          <ScoreBox score={avgSelf} />
+          <ScoreBoxComparison score={avgSelf} type='self-box' />
+          <ScoreBoxComparison score={avgFinal} type="final-box" />
         </div>
       </div>
 

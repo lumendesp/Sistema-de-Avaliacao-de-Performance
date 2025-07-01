@@ -1,37 +1,32 @@
+import { useEffect, useState } from "react";
 import EvaluationComparisonGroupList from "../../../components/ComparisonEvaluationForm/EvaluationComparisonGroupList";
 import type { TrackWithGroups } from "../../../types/selfEvaluation";
-
-// isso virá do backend em breve, mas pode ser passado como prop
-const mockTrackData: TrackWithGroups = {
-  id: 1,
-  name: "Trilha Backend",
-  CriterionGroup: [
-    {
-      id: 10,
-      name: "Postura",
-      configuredCriteria: [
-        {
-          id: 101,
-          criterionId: 1,
-          mandatory: true,
-          criterion: {
-            id: 1,
-            name: "SENTIMENTO_DE_DONO",
-            generalDescription: "Desenvolve senso de responsabilidade",
-            active: true,
-            weight: 1,
-            displayName: "Sentimento de Dono",
-          },
-        },
-        // ...
-      ],
-    },
-    // outros grupos...
-  ],
-};
+import { useAuth } from "../../../context/AuthContext";
 
 export default function ComparisonEvaluation() {
-  return (
-    <EvaluationComparisonGroupList trackData={mockTrackData} cycleId={1} />
-  );
+  const { token, user } = useAuth();
+  const [trackData, setTrackData] = useState<TrackWithGroups | null>(null);
+
+  useEffect(() => {
+    const fetchTrack = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/rh-criteria/tracks/with-criteria", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data: TrackWithGroups[] = await response.json();
+
+        // Encontra a trilha do usuário
+        const track = data.find((t) => t.id === user?.trackId);
+        if (track) setTrackData(track);
+      } catch (err) {
+        console.error("Erro ao buscar dados da trilha:", err);
+      }
+    };
+
+    fetchTrack();
+  }, [token, user?.trackId]);
+
+  if (!trackData) return <div>Carregando trilha...</div>;
+
+  return <EvaluationComparisonGroupList trackData={trackData} cycleId={1} />;
 }
