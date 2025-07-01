@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { useState } from "react";
 import EvaluationCycleSelector from "../components/ComparisonEvaluationForm/EvaluationCycleSelector";
 
 const tabs = [
@@ -9,12 +10,22 @@ const tabs = [
 ];
 
 const ComparisonLayout = () => {
+  const [selectedCycleId, setSelectedCycleId] = useState<number | null>(null);
+  const [selectedCycleName, setSelectedCycleName] = useState<string>("");
+
+  const handleCycleChange = (id: number, name: string) => {
+    setSelectedCycleId(id);
+    setSelectedCycleName(name);
+  };
+
   return (
     <div className="pt-6">
       <div className="p-6 pb-0 m-0">
         <header className="flex justify-between items-center">
-          <h1 className="text-xl font-semibold">Ciclo 2024.2</h1>
-          <EvaluationCycleSelector currentCycle="2024.2" />
+          <h1 className="text-xl font-semibold">
+            {selectedCycleName ? `Ciclo ${selectedCycleName}` : "Selecione um ciclo"}
+          </h1>
+          <EvaluationCycleSelector currentCycle={selectedCycleName} onChange={handleCycleChange} />
         </header>
         <nav className="flex gap-20 pt-16 m-0 pl-10">
           {tabs.map(({ label, path }) => (
@@ -33,7 +44,7 @@ const ComparisonLayout = () => {
           ))}
         </nav>
       </div>
-      <Outlet />
+      <Outlet context={{ selectedCycleId, selectedCycleName }} /> {/* 👈 IMPORTANTE */}
     </div>
   );
 };
