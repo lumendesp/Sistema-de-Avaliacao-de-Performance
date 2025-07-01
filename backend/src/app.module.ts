@@ -11,6 +11,14 @@ import { TrackModule } from './track/track.module';
 import { UnitModule } from './unit/unit.module';
 import { PositionModule } from './position/position.module';
 import { UsersModule } from './users/users.module';
+import { MentorEvaluationModule } from './mentor-evaluation/mentor-evaluation.module';
+import { EvaluationCycleModule } from './evaluation-cycle/evaluation-cycle.module';
+import { MentorModule } from './mentor/mentor.module';
+import { CollaboratorsSearchBarModule } from './collaborator/collaborators-search-bar/collaborators-search-bar.module';
+import { ReferenceModule } from './reference/reference.module';
+import { PeerEvaluationModule } from './collaborator/peer-evaluation/peer-evaluation.module';
+import { FinalScoreModule } from './final-score/final-score.module';
+import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
 
 @Module({
   imports: [
@@ -24,6 +32,14 @@ import { UsersModule } from './users/users.module';
     UnitModule,
     PositionModule,
     UsersModule,
+    MentorEvaluationModule,
+    EvaluationCycleModule,
+    MentorModule,
+    CollaboratorsSearchBarModule,
+    ReferenceModule,
+    PeerEvaluationModule,
+    FinalScoreModule,
+    ManagerEvaluationModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

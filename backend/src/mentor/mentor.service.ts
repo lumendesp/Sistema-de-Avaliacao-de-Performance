@@ -54,6 +54,13 @@ export class MentorService {
 
   // função para atribuir um mentor a um mentorado
   async assignMentee(mentorId: number, userId: number) {
+    // verifica se não está tentando atribuir um mentor a ele mesmo
+    if (mentorId === userId) {
+      throw new BadRequestException(
+        'A mentor cannot be assigned to themselves',
+      );
+    }
+
     // busca o usuário que vai receber o mentor
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -72,6 +79,13 @@ export class MentorService {
     if (!isCollaborator) {
       throw new BadRequestException(
         'Only collaborators can be assigned a mentor',
+      );
+    }
+
+    // verifica se o usuário já tem um mentor atribuído, pq ele não pode ter 2 ao mesmo tempo
+    if (user.mentorId && user.mentorId !== mentorId) {
+      throw new BadRequestException(
+        'This user already has a mentor assigned. Please unassign the current mentor first.',
       );
     }
 

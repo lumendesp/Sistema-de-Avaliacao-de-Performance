@@ -40,9 +40,10 @@ function Committee(){
 
                 const finalEval = evaluations.find((e: any) => e.type === 'FINAL');
 
-                // Determine state based on having all 3 evaluations (PEER, MANAGER, FINAL)
-                // Note: SELF evaluation is not in the current schema
-                const hasAllEvaluations = user.hasAllEvaluations || evaluations.length >= 3;
+                // Determine state based on having all 4 required evaluation types
+                const requiredTypes = ['SELF', 'PEER', 'MANAGER', 'FINAL'];
+                const typesPresent = evaluations.map((e: any) => e.type);
+                const hasAllEvaluations = requiredTypes.every(type => typesPresent.includes(type));
                 const state = hasAllEvaluations ? 'finalizado' : 'pendente';
 
                 return {
@@ -51,7 +52,7 @@ function Committee(){
                     role: user.roles.map((r: any) => r.role).join(', ') || 'N/A',
                     initials: user.name.split(' ').map((n: string) => n[0]).join(''),
                     state: state,
-                    autoAvaliacao: 0, // SELF evaluation not available in current schema
+                    autoAvaliacao: getScore('SELF'),
                     avaliacao360: getScore('PEER'),
                     notaGestor: getScore('MANAGER'),
                     notaFinal: finalEval ? finalEval.score : undefined,
@@ -92,23 +93,12 @@ function Committee(){
     const handleBulkExport = (type: 'csv' | 'xlsx') => {
         // Export all collaborators' data
         collaborators.forEach((collab, index) => {
-            // Create a delay to avoid overwhelming the browser
             setTimeout(() => {
-                const evaluationData = transformBackendDataToExport({
-                    id: collab.id,
-                    name: collab.name,
-                    email: `${collab.name.toLowerCase().replace(/\s+/g, '.')}@empresa.com`,
-                    unit: { name: 'Engenharia' }, // Placeholder
-                    position: { name: collab.role },
-                    track: { name: 'Backend' }, // Placeholder
-                    selfEvaluations: [],
-                    peerEvaluationsReceived: [],
-                    referencesReceived: [],
-                    finalScores: []
-                });
-                
+                // Find the full user object from the original users array
+                const user = users.find((u: any) => u.id === collab.id);
+                if (!user) return;
+                const evaluationData = transformBackendDataToExport(user);
                 const fileName = `${collab.name.replace(/\s+/g, '_')}_${type === 'xlsx' ? 'xlsx' : 'csv'}`;
-                
                 if (type === 'csv') {
                     exportEvaluationToCSV(evaluationData, fileName);
                 } else {
@@ -128,10 +118,10 @@ function Committee(){
                     <div className="relative">
                         <button
                             onClick={() => setShowBulkExportOptions(!showBulkExportOptions)}
-                            className="px-4 py-2 bg-[#08605F] text-white rounded-md hover:bg-[#064a49] transition-colors flex items-center gap-2"
+                            className="px-3 py-1.5 bg-[#08605F] text-white rounded-md hover:bg-[#064a49] transition-colors flex items-center gap-1.5 text-sm"
                         >
-                            <FaDownload className="w-4 h-4" />
-                            Exportar Todos
+                            <FaDownload className="w-3 h-3" />
+                            Exportar tudo
                         </button>
                         
                         {showBulkExportOptions && (

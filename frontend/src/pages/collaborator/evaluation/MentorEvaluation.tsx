@@ -31,9 +31,16 @@ const MentorEvaluation = () => {
 
     loadMentor();
   }, [user]);
-  
-  if (loading) return <p>Carregando mentor...</p>;
-  if (!mentor) return <p>Mentor não encontrado.</p>;
+
+  if (loading) return <div className="bg-[#f1f1f1] h-screen w-full"></div>;
+  if (!mentor)
+    return (
+      <div className="bg-[#f1f1f1] h-screen w-full p-3">
+        <p className="text-sm text-gray-400 text-center py-8">
+          Você não tem um mentor atribuído ainda.
+        </p>
+      </div>
+    );
 
   return (
     <div className="bg-[#f1f1f1] h-screen w-full p-3">

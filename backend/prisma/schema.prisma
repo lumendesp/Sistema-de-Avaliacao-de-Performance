@@ -22,6 +22,13 @@ enum Role {
   ADMIN
 }
 
+enum MotivationLevel {
+  CONCORDO_TOTALMENTE
+  CONCORDO_PARCIALMENTE
+  DISCORDO_PARCIALMENTE
+  DISCORDO_TOTALMENTE
+}
+
 enum CycleStatus {
   IN_PROGRESS
   CLOSED
@@ -42,7 +49,6 @@ enum CriterionName {
   RESULTADOS
   EVOLUCAO_DA_ROCKET_COR
 }
-
 
 model Position {
   id                 Int                   @id @default(autoincrement())
@@ -97,9 +103,9 @@ model User {
   trackHistory UserTrack[]
 
   // Relacionamento mentor <-> colaboradores (mentees)
-  mentorId   Int? 
-  mentor     User?  @relation("UserMentor", fields: [mentorId], references: [id])
-  mentees    User[] @relation("UserMentor")
+  mentorId Int?
+  mentor   User?  @relation("UserMentor", fields: [mentorId], references: [id])
+  mentees  User[] @relation("UserMentor")
 
   // Avaliações & Referências
   peerEvaluationsGiven       PeerEvaluation[]    @relation("PeerEvaluator")
@@ -135,6 +141,7 @@ model UserTrack {
 model Criterion {
   id                     Int                     @id @default(autoincrement())
   name                   CriterionName
+  displayName            String
   generalDescription     String
   active                 Boolean                 @default(true)
   weight                 Int
@@ -144,8 +151,6 @@ model Criterion {
   mentorEvaluationItems  MentorEvaluationItem[]
   managerEvaluationItems ManagerEvaluationItem[]
 }
-
-
 
 model CriterionGroup {
   id         Int    @id @default(autoincrement())
@@ -176,7 +181,6 @@ model ConfiguredCriterion {
   unit     Unit           @relation("UnitConfiguredCriteria", fields: [unitId], references: [id])
   position Position       @relation("PositionConfiguredCriteria", fields: [positionId], references: [id])
 }
-
 
 // ---------- CICLOS ----------
 model EvaluationCycle {
@@ -246,15 +250,15 @@ model PeerEvaluationProject {
 }
 
 model PeerEvaluation {
-  id           Int      @id @default(autoincrement())
+  id           Int              @id @default(autoincrement())
   evaluatorId  Int
   evaluateeId  Int
   cycleId      Int
-  createdAt    DateTime @default(now())
+  createdAt    DateTime         @default(now())
   score        Float
   strengths    String
   improvements String
-  motivation   String?
+  motivation   MotivationLevel?
 
   evaluator User                    @relation("PeerEvaluator", fields: [evaluatorId], references: [id])
   evaluatee User                    @relation("PeerEvaluatee", fields: [evaluateeId], references: [id])
@@ -330,7 +334,7 @@ model Reference {
 
 // ---------- EQUALIZAÇÃO ----------
 model FinalScore {
-  id             Int     @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   userId         Int
   cycleId        Int
   executionScore Float? // Nota de execução
@@ -339,6 +343,7 @@ model FinalScore {
   summary        String? // Resumo textual do ciclo para o usuário
   adjustedBy     Int? // membro do comitê
   justification  String
+  createdAt      DateTime  @default(now())
 
   user     User            @relation(fields: [userId], references: [id])
   cycle    EvaluationCycle @relation(fields: [cycleId], references: [id])

@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
-import SearchBar from "../../components/CollaboratorsSearchBar";
+import { IoIosSearch } from "react-icons/io";
 import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import EvaluationSummary from "../../components/Committee/CommitteeEquali/EvaluationSummary";
 import FilterIcon from '../../assets/committee/filter-icon.png';
-import { getUsersWithEvaluations } from '../../services/api';
+import { getUsersWithEvaluations, createFinalScore, updateFinalScore } from '../../services/api';
 
 // Enums manually mirrored from backend
 const EvaluationStatus = {
@@ -77,9 +77,10 @@ function Equalization(){
 
                 const finalEval = evaluations.find((e: any) => e.type === 'FINAL');
 
-                // Determine state based on having all 3 evaluations (PEER, MANAGER, FINAL)
-                // Note: SELF evaluation is not in the current schema
-                const hasAllEvaluations = user.hasAllEvaluations || evaluations.length >= 3;
+                // Determine state based on having all 4 required evaluation types
+                const requiredTypes = ['SELF', 'PEER', 'MANAGER', 'FINAL'];
+                const typesPresent = evaluations.map((e: any) => e.type);
+                const hasAllEvaluations = requiredTypes.every(type => typesPresent.includes(type));
                 const state = hasAllEvaluations ? 'finalizado' : 'pendente';
 
                 return {
@@ -88,17 +89,18 @@ function Equalization(){
                     role: user.roles.map((r: any) => r.role).join(', ') || 'N/A',
                     initials: user.name.split(' ').map((n: string) => n[0]).join(''),
                     state: state,
-                    autoAvaliacao: 0, // SELF evaluation not available in current schema
+                    autoAvaliacao: getScore('SELF'),
                     avaliacao360: getScore('PEER'),
                     notaGestor: getScore('MANAGER'),
                     notaFinal: finalEval ? finalEval.score : undefined,
                     finalEvaluationId: finalEval ? finalEval.id : undefined,
                     justification: finalEval ? finalEval.justification : '',
-                    justificativaAutoAvaliacao: '', // SELF evaluation not available in current schema
+                    justificativaAutoAvaliacao: getJustification('SELF'),
                     justificativaGestor: getJustification('MANAGER'),
                     justificativa360: getJustification('PEER'),
                 };
             });
+            
             setCollaborators(formattedCollaborators);
         } catch (error) {
             console.error("Failed to fetch collaborators:", error);
@@ -137,15 +139,35 @@ function Equalization(){
 
         if (!collaborator || currentEvaluation?.notaFinal === undefined) return;
 
-        // This is a placeholder implementation since final evaluation creation is someone else's task
-        console.log("Final evaluation creation logic not implemented");
-        alert("Funcionalidade de criação de avaliação final será implementada posteriormente");
-        
-        // For now, just update the local state
-        setEvaluationState(prev => ({
-            ...prev,
-            [collabId]: { ...prev[collabId], isEditing: false }
-        }));
+        try {
+            if (collaborator.finalEvaluationId) {
+                // Update existing final evaluation
+                await updateFinalScore(collaborator.finalEvaluationId, {
+                    finalScore: currentEvaluation.notaFinal,
+                    justification: currentEvaluation.justification || '',
+                });
+            } else {
+                // Create new final evaluation
+                await createFinalScore({
+                    userId: collabId,
+                    finalScore: currentEvaluation.notaFinal,
+                    justification: currentEvaluation.justification || '',
+                });
+            }
+
+            // Refresh data
+            await fetchCollaborators();
+            
+            // Update local state
+            setEvaluationState(prev => ({
+                ...prev,
+                [collabId]: { ...prev[collabId], isEditing: false }
+            }));
+
+        } catch (error) {
+            console.error('Error saving final evaluation:', error);
+            alert('Erro ao salvar avaliação final');
+        }
     };
 
     const handleEdit = (collabId: number) => {
@@ -175,7 +197,16 @@ function Equalization(){
                 <div className="p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-6 gap-4">
                         <div className="flex-1">
-                            <SearchBar onSearch={setSearchTerm} />
+                            <div className="flex items-center gap-2 rounded-xl py-4 px-7 w-full bg-white">
+                                <IoIosSearch size={16} className="text-[#1D1D1D]/75" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por colaboradores"
+                                    className="flex-1 outline-none text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
                         </div>
                         <div className="w-12 h-12 bg-[#08605F] rounded-lg flex items-center justify-center self-center sm:self-auto">
                             <img 

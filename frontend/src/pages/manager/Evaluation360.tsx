@@ -36,7 +36,7 @@ const fakePeerEvaluations = [
 const PeerEvaluationManager = () => {
   return (
     <div className="bg-[#f1f1f1] h-screen w-full flex flex-col gap-4 p-3">
-      <CollaboratorsSearchBar />
+      <CollaboratorsSearchBar/>
       {fakePeerEvaluations.map((evaluation, idx) => (
         <PeerEvaluationReadOnlyForm key={idx} {...evaluation} />
       ))}

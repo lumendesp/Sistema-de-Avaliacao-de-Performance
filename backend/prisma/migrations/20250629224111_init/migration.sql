@@ -59,19 +59,35 @@ CREATE TABLE "UserTrack" (
 CREATE TABLE "Criterion" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "name" TEXT NOT NULL,
+    "displayName" TEXT NOT NULL,
     "generalDescription" TEXT NOT NULL,
-    "active" BOOLEAN NOT NULL DEFAULT true
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "weight" INTEGER NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "CriterionGroup" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "name" TEXT NOT NULL,
+    "trackId" INTEGER NOT NULL,
+    "unitId" INTEGER NOT NULL,
+    "positionId" INTEGER NOT NULL,
+    CONSTRAINT "CriterionGroup_trackId_fkey" FOREIGN KEY ("trackId") REFERENCES "Track" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "CriterionGroup_unitId_fkey" FOREIGN KEY ("unitId") REFERENCES "Unit" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "CriterionGroup_positionId_fkey" FOREIGN KEY ("positionId") REFERENCES "Position" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
 CREATE TABLE "ConfiguredCriterion" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "criterionId" INTEGER NOT NULL,
+    "groupId" INTEGER NOT NULL,
     "trackId" INTEGER NOT NULL,
     "unitId" INTEGER NOT NULL,
     "positionId" INTEGER NOT NULL,
     "mandatory" BOOLEAN NOT NULL,
     CONSTRAINT "ConfiguredCriterion_criterionId_fkey" FOREIGN KEY ("criterionId") REFERENCES "Criterion" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "ConfiguredCriterion_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "CriterionGroup" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "ConfiguredCriterion_trackId_fkey" FOREIGN KEY ("trackId") REFERENCES "Track" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "ConfiguredCriterion_unitId_fkey" FOREIGN KEY ("unitId") REFERENCES "Unit" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "ConfiguredCriterion_positionId_fkey" FOREIGN KEY ("positionId") REFERENCES "Position" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
@@ -219,6 +235,7 @@ CREATE TABLE "FinalScore" (
     "summary" TEXT,
     "adjustedBy" INTEGER,
     "justification" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "FinalScore_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "FinalScore_cycleId_fkey" FOREIGN KEY ("cycleId") REFERENCES "EvaluationCycle" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "FinalScore_adjustedBy_fkey" FOREIGN KEY ("adjustedBy") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE

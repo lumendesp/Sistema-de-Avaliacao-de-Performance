@@ -105,6 +105,19 @@ export class UsersService {
     const users = await this.prisma.user.findMany({
       include: {
         roles: true,
+        unit: true,
+        position: true,
+        track: true,
+        selfEvaluations: {
+          include: {
+            items: {
+              include: {
+                criterion: true,
+              },
+            },
+            cycle: true,
+          },
+        },
         peerEvaluationsReceived: {
           include: {
             evaluator: { select: { id: true, name: true } },
@@ -115,7 +128,11 @@ export class UsersService {
           include: {
             evaluator: { select: { id: true, name: true } },
             cycle: true,
-            items: true,
+            items: {
+              include: {
+                criterion: true,
+              },
+            },
           },
         },
         finalScores: {
@@ -124,18 +141,34 @@ export class UsersService {
             adjuster: { select: { id: true, name: true } },
           },
         },
+        referencesReceived: {
+          include: {
+            provider: { select: { id: true, name: true, email: true } },
+            cycle: true,
+          },
+        },
       },
     });
 
     // Transform the data to match the frontend expectations
     return users.map(user => {
       const evaluationsEvaluated = [
+        // Self evaluations
+        ...user.selfEvaluations.map(evaluation => ({
+          id: evaluation.id,
+          type: 'SELF',
+          score: evaluation.items.reduce((sum, item) => sum + item.score, 0) / evaluation.items.length || 0,
+          justification: evaluation.items.map(item => item.justification).join(' '),
+          evaluator: { id: user.id, name: user.name },
+          cycle: evaluation.cycle,
+          items: evaluation.items,
+        })),
         // Peer evaluations
         ...user.peerEvaluationsReceived.map(evaluation => ({
           id: evaluation.id,
           type: 'PEER',
           score: evaluation.score,
-          justification: evaluation.strengths + ' ' + evaluation.improvements,
+          justification: `${evaluation.strengths} ${evaluation.improvements}`,
           evaluator: evaluation.evaluator,
           cycle: evaluation.cycle,
         })),
@@ -147,6 +180,7 @@ export class UsersService {
           justification: evaluation.items.map(item => item.justification).join(' '),
           evaluator: evaluation.evaluator,
           cycle: evaluation.cycle,
+          items: evaluation.items,
         })),
         // Final evaluations
         ...user.finalScores.map(evaluation => ({
@@ -159,7 +193,8 @@ export class UsersService {
         })),
       ];
 
-      const hasAllEvaluations = user.peerEvaluationsReceived.length > 0 && 
+      const hasAllEvaluations = user.selfEvaluations.length > 0 && 
+                               user.peerEvaluationsReceived.length > 0 && 
                                user.managerEvaluationsReceived.length > 0 && 
                                user.finalScores.length > 0;
 
@@ -167,6 +202,7 @@ export class UsersService {
         ...user,
         evaluationsEvaluated,
         hasAllEvaluations,
+        referencesReceived: user.referencesReceived || [],
       };
     });
   }

@@ -298,97 +298,29 @@ export const transformBackendDataToExport = (backendData: any): EvaluationData =
     justification: item.justification || 'Justificativa não disponível'
   })) || [];
 
-  // If no self evaluation data, create sample data
-  if (selfEvaluation.length === 0) {
-    selfEvaluation.push(
-      {
-        criterion: 'Organização no Trabalho',
-        generalDescription: 'Capacidade de manter o ambiente organizado e cumprir prazos estabelecidos',
-        selfEvaluation: 4.0,
-        scoreDescription: 'Excelente',
-        justification: 'Mantive todos os projetos organizados e documentados durante o ciclo.'
-      },
-      {
-        criterion: 'Team Player',
-        generalDescription: 'Capacidade de trabalhar em equipe e colaborar efetivamente',
-        selfEvaluation: 4.5,
-        scoreDescription: 'Excelente',
-        justification: 'Colaborei ativamente com a equipe em todos os projetos.'
-      },
-      {
-        criterion: 'Entregar com Qualidade',
-        generalDescription: 'Compromisso com a qualidade das entregas e boas práticas',
-        selfEvaluation: 4.2,
-        scoreDescription: 'Muito Bom',
-        justification: 'Todas as entregas foram feitas com alta qualidade.'
-      }
-    );
-  }
-
   // Extract peer evaluation data
   const peerEvaluations: PeerEvaluation[] = backendData.peerEvaluationsReceived?.map((evaluation: any) => ({
-    evaluatorEmail: evaluation.evaluator?.email || `${evaluation.evaluator?.name?.toLowerCase().replace(/\s+/g, '.')}@empresa.com`,
+    evaluatorEmail: evaluation.evaluator?.email || `${evaluation.evaluator?.name?.toLowerCase().replace(/\s+/g, '.') || 'avaliador'}@empresa.com`,
     evaluatorName: evaluation.evaluator?.name || 'Avaliador não informado',
-    projects: 'Projetos não especificados', // This would need to come from a separate field
-    period: 'Período não especificado', // This would need to come from a separate field
-    motivatedToWorkAgain: 'Sim', // This would need to come from a separate field
+    projects: evaluation.projects?.map((p: any) => p.project?.name).join(', ') || 'Projetos não especificados',
+    period: evaluation.projects?.map((p: any) => `${p.period} meses`).join(', ') || 'Período não especificado',
+    motivatedToWorkAgain: evaluation.motivation || 'Não informado', // This should be mapped from backend if available
     overallGrade: evaluation.score || 0,
     improvementPoints: evaluation.improvements || 'Pontos de melhoria não especificados',
     strengths: evaluation.strengths || 'Pontos fortes não especificados'
   })) || [];
 
-  // If no peer evaluation data, create sample data
-  if (peerEvaluations.length === 0) {
-    peerEvaluations.push(
-      {
-        evaluatorEmail: 'joao.silva@empresa.com',
-        evaluatorName: 'João Silva',
-        projects: 'Sistema de Pagamentos, API Gateway',
-        period: '6 meses',
-        motivatedToWorkAgain: 'Sim',
-        overallGrade: 4.3,
-        improvementPoints: 'Poderia melhorar a documentação técnica',
-        strengths: 'Excelente comunicação, muito proativo, sempre disponível para ajudar'
-      },
-      {
-        evaluatorEmail: 'maria.santos@empresa.com',
-        evaluatorName: 'Maria Santos',
-        projects: 'Dashboard Analytics',
-        period: '4 meses',
-        motivatedToWorkAgain: 'Sim',
-        overallGrade: 4.0,
-        improvementPoints: 'Às vezes demora para responder mensagens',
-        strengths: 'Muito técnico, resolve problemas complexos rapidamente'
-      }
-    );
-  }
-
-  // Extract reference data
-  const references: Reference[] = backendData.referencesReceived?.map((ref: any) => ({
-    referenceEmail: ref.provider?.email || `${ref.provider?.name?.toLowerCase().replace(/\s+/g, '.')}@empresa.com`,
-    referenceName: ref.provider?.name || 'Referência não informada',
-    justification: ref.justification || 'Justificativa não disponível'
+  // Extract references data
+  const references: Reference[] = backendData.referencesReceived?.map((reference: any) => ({
+    referenceEmail: reference.provider?.email || `${reference.provider?.name?.toLowerCase().replace(/\s+/g, '.') || 'referencia'}@empresa.com`,
+    referenceName: reference.provider?.name || 'Referência não informada',
+    justification: reference.justification || 'Justificativa não disponível'
   })) || [];
 
-  // If no reference data, create sample data
-  if (references.length === 0) {
-    references.push(
-      {
-        referenceEmail: 'carlos.rodrigues@empresa.com',
-        referenceName: 'Carlos Rodrigues',
-        justification: 'Excelente profissional, sempre entrega com qualidade e dentro do prazo.'
-      },
-      {
-        referenceEmail: 'julia.ferreira@empresa.com',
-        referenceName: 'Júlia Ferreira',
-        justification: 'Muito competente tecnicamente e sempre busca aprender novas tecnologias.'
-      }
-    );
-  }
-
-  // Determine cycle
+  // Get cycle information
   const cycle = backendData.finalScores?.[0]?.cycle?.name || 
                 backendData.selfEvaluations?.[0]?.cycle?.name || 
+                backendData.peerEvaluationsReceived?.[0]?.cycle?.name || 
                 '2024.2';
 
   return {
@@ -401,11 +333,19 @@ export const transformBackendDataToExport = (backendData: any): EvaluationData =
 };
 
 // Helper function to get score description
-const getScoreDescription = (score: number): string => {
-  if (score >= 4.5) return 'Excelente';
-  if (score >= 4.0) return 'Muito Bom';
-  if (score >= 3.5) return 'Bom';
-  if (score >= 3.0) return 'Regular';
-  if (score >= 2.0) return 'Insuficiente';
-  return 'Muito Insuficiente';
-}; 
+function getScoreDescription(score: number): string {
+  switch (score) {
+    case 1:
+      return 'Fica muito abaixo das expectativas';
+    case 2:
+      return 'Fica abaixo das expectativas';
+    case 3:
+      return 'Atinge as expectativas';
+    case 4:
+      return 'Fica acima das expectativas';
+    case 5:
+      return 'Supera as expectativas';
+    default:
+      return 'Nota inválida';
+  }
+} 
