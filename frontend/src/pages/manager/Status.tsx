@@ -10,6 +10,7 @@ export default function Collaborators() {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [searchResults, setSearchResults] = useState<Collaborator[]>([]);
   const [evaluations, setEvaluations] = useState<Record<number, any>>({});
+  const [selfEvaluations, setSelfEvaluations] = useState<Record<number, any>>({});
   const { user } = useAuth();
 
   // Carrega todos os colaboradores do manager ao entrar na página
@@ -78,29 +79,51 @@ export default function Collaborators() {
     if (ids.length === 0) return;
     Promise.all(
       ids.map((id) =>
-        fetch(`${API_URL}/manager-evaluation/by-evaluatee/${id}`, {
-          method: "GET",
-          headers: getAuthHeaders(),
-        })
-          .then(async (res) => {
-            if (!res.ok) return { id, evaluation: null };
-            const evaluation = await res.json();
-            return { id, evaluation };
+        Promise.all([
+          fetch(`${API_URL}/manager-evaluation/by-evaluatee/${id}`, {
+            method: "GET",
+            headers: getAuthHeaders(),
           })
-          .catch(() => ({ id, evaluation: null }))
+            .then(async (res) => {
+              if (!res.ok) return { id, evaluation: null };
+              const evaluation = await res.json();
+              return { id, evaluation };
+            })
+            .catch(() => ({ id, evaluation: null })),
+          fetch(`${API_URL}/self-evaluation/user/${id}`,
+            { method: "GET", headers: getAuthHeaders() })
+            .then(async (res) => {
+              if (!res.ok) return { id, selfEval: null };
+              const selfEval = await res.json();
+              return { id, selfEval };
+            })
+            .catch(() => ({ id, selfEval: null })),
+        ])
       )
     ).then((results) => {
       const evalMap: Record<number, any> = {};
-      results.forEach(({ id, evaluation }) => {
+      const selfEvalMap: Record<number, any> = {};
+      results.forEach((pairArr) => {
+        const [{ id, evaluation }, { selfEval }] = pairArr;
         evalMap[id] = evaluation;
+        // Pega a autoavaliação mais recente (maior cycleId)
+        let latest = null;
+        if (Array.isArray(selfEval) && selfEval.length > 0) {
+          latest = selfEval.reduce((prev, curr) =>
+            prev.cycle && curr.cycle && prev.cycle.id > curr.cycle.id ? prev : curr
+          );
+        }
+        selfEvalMap[id] = latest;
       });
       setEvaluations(evalMap);
+      setSelfEvaluations(selfEvalMap);
     });
   }, [search, collaborators, searchResults]);
 
-  // Função para calcular status e nota do gestor
+  // Função para calcular status, nota do gestor e nota de autoavaliação
   function getStatusAndScore(collaboratorId: number) {
     const evaluation = evaluations[collaboratorId];
+    const selfEval = selfEvaluations[collaboratorId];
     const allCriteria = (evaluation?.groups || []).flatMap((g: any) => g.items || []);
     // Critérios com nota preenchida
     const withScore = allCriteria.filter((c: any) => c.score !== null && c.score !== undefined);
@@ -113,13 +136,18 @@ export default function Collaborators() {
     if (withScore.length > 0) {
       managerScore = withScore.reduce((sum: number, c: any) => sum + (c.score || 0), 0) / withScore.length;
     }
+    // Calcula média da autoavaliação
+    let selfScore = null;
+    if (selfEval && selfEval.items && selfEval.items.length > 0) {
+      selfScore = selfEval.items.reduce((sum: number, item: any) => sum + item.score, 0) / selfEval.items.length;
+    }
     if (!evaluation || total === 0 || withScore.length === 0) {
-      return { status: "Pendente" as const, managerScore: null };
+      return { status: "Pendente" as const, managerScore: null, selfScore };
     }
     if (filled.length < total) {
-      return { status: "Em andamento" as const, managerScore };
+      return { status: "Em andamento" as const, managerScore, selfScore };
     }
-    return { status: "Finalizado" as const, managerScore };
+    return { status: "Finalizado" as const, managerScore, selfScore };
   }
 
   // Mostra searchResults se houver busca, senão lista completa
@@ -148,7 +176,7 @@ export default function Collaborators() {
       <div className="flex flex-col gap-4 w-full px-8">
         {list.length > 0 ? (
           list.map((collaborator) => {
-            const { status, managerScore } = getStatusAndScore(collaborator.id);
+            const { status, managerScore, selfScore } = getStatusAndScore(collaborator.id);
             return (
               <CollaboratorCard
                 key={collaborator.id}
@@ -156,6 +184,7 @@ export default function Collaborators() {
                   ...collaborator,
                   status,
                   managerScore,
+                  selfScore,
                 }}
               />
             );
