@@ -14,7 +14,7 @@ import {
 import { SelfEvaluationService } from './self-evaluation.service';
 import { CreateSelfEvaluationDto } from './dto/create-self-evaluation.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam} from '@nestjs/swagger';
 import { UpdateSelfEvaluationDto } from './dto/update-self-evaluation.dto';
 
 @ApiTags('Self Evaluation')
@@ -60,4 +60,24 @@ export class SelfEvaluationController {
     const userId = req.user.userId;
     return this.selfEvaluationService.getAvailableCriteria(userId);
   }
+
+  @Get('grouped/:cycleId')
+  @ApiOperation({ summary: 'Critérios e respostas agrupados por grupo de critérios de um ciclo anterior' })
+  @UseGuards(JwtAuthGuard)
+  async getGroupedByCycle(
+    @Param('cycleId', ParseIntPipe) cycleId: number,
+    @Req() req: any
+  ) {
+    const userId = req.user.userId; // conforme seu token
+    return this.selfEvaluationService.getGroupedEvaluation(cycleId, userId);
+  }
+
+
+  @Get('user/:userId')
+  @ApiOperation({ summary: 'Listar todas as autoavaliações anteriores de um usuário' })
+  @ApiParam({ name: 'userId', type: Number })
+  getByUserId(@Param('userId', ParseIntPipe) userId: number) {
+    return this.selfEvaluationService.getByUserId(userId);
+  }
+
 }
