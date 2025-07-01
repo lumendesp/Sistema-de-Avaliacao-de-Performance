@@ -176,10 +176,8 @@ export class SelfEvaluationService {
         items: true,
       },
     });
+    
   }
-
-
-
   async delete(id: number) {
     try {
       const deletedItems = await this.prisma.selfEvaluationItem.deleteMany({
@@ -230,4 +228,73 @@ export class SelfEvaluationService {
       description: cc.criterion.generalDescription,
     }));
   }
+
+  async getGroupedEvaluation(cycleId: number, userId: number) {
+    const evaluation = await this.prisma.selfEvaluation.findFirst({
+      where: { cycleId, userId },
+      include: {
+        items: {
+          include: {
+            configuredCriterion: {
+              include: {
+                group: true,
+                criterion: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!evaluation) {
+      throw new Error('Avaliação não encontrada para esse ciclo e usuário.');
+    }
+
+    const grouped: Record<number, {
+      groupId: number;
+      groupName: string;
+      criteria: {
+        criterionId: number;
+        title: string;
+        description: string;
+        score: number;
+        justification: string;
+      }[];
+    }> = {};
+
+    for (const item of evaluation.items) {
+      const configured = item.configuredCriterion;
+
+      if (!configured || !configured.group || !configured.criterion) continue;
+
+      const criterion = configured.criterion;
+      const group = configured.group;
+
+      if (!grouped[group.id]) {
+        grouped[group.id] = {
+          groupId: group.id,
+          groupName: group.name,
+          criteria: [],
+        };
+      }
+
+      grouped[group.id].criteria.push({
+        criterionId: criterion.id,
+        title: criterion.name,
+        description: criterion.generalDescription,
+        score: item.score,
+        justification: item.justification,
+      });
+    }
+
+    const result = Object.values(grouped);
+    return result.sort((a, b) => a.groupName.localeCompare(b.groupName));
+  }
+
+
+
+
+  
+
+
 }

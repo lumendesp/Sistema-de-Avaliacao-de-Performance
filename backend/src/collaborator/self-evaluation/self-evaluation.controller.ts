@@ -60,4 +60,16 @@ export class SelfEvaluationController {
     const userId = req.user.userId;
     return this.selfEvaluationService.getAvailableCriteria(userId);
   }
+
+  @Get('grouped/:cycleId')
+  @ApiOperation({ summary: 'Critérios e respostas agrupados por grupo de critérios de um ciclo anterior' })
+  @UseGuards(JwtAuthGuard)
+  async getGroupedByCycle(
+    @Param('cycleId', ParseIntPipe) cycleId: number,
+    @Req() req: any
+  ) {
+    const userId = req.user.userId; // conforme seu token
+    return this.selfEvaluationService.getGroupedEvaluation(cycleId, userId);
+  }
+
 }

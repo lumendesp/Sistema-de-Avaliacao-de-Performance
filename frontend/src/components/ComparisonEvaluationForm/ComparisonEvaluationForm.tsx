@@ -1,18 +1,15 @@
 import EvaluationComparisonItem from './ComparisonEvaluationItem';
 import ScoreBox from '../ScoreBox';
-import type { EvaluationComparisonFormProps } from '../../types/evaluationComparison';
+import type { EvaluationComparisonItemData } from '../../types/evaluationComparison';
 
-const EvaluationComparisonForm = ({ title, criteria }: EvaluationComparisonFormProps) => {
-  const selfScores = [3.5, 4.0, 3.0];
-  const finalScores = [4.0, 4.0, 4.0];
-  const justifications = [
-    'Me mostrei resiliente em situações complicadas',
-    'Busquei apoio e mantive consistência',
-    'Contribuí na organização de entregas',
-  ];
+interface Props {
+  title: string;
+  criteria: EvaluationComparisonItemData[];
+}
 
-  const avgSelf = selfScores.reduce((s, v) => s + v, 0) / criteria.length;
-  const avgFinal = finalScores.reduce((s, v) => s + v, 0) / criteria.length;
+const EvaluationComparisonForm = ({ title, criteria }: Props) => {
+  const avgSelf = criteria.reduce((sum, c) => sum + (c.selfScore ?? 0), 0) / criteria.length;
+  const avgFinal = criteria.reduce((sum, c) => sum + (c.finalScore ?? 0), 0) / criteria.length;
 
   return (
     <div className="bg-white rounded-xl shadow p-6 w-full">
@@ -30,11 +27,9 @@ const EvaluationComparisonForm = ({ title, criteria }: EvaluationComparisonFormP
             key={idx}
             index={idx + 1}
             title={c.title}
-            selfScore={selfScores[idx]}
-            finalScore={finalScores[idx]}
-            justification={justifications[idx]}
-            setSelfScore={() => {}}
-            setJustification={() => {}}
+            selfScore={c.selfScore}
+            finalScore={c.finalScore}
+            justification={c.justification}
           />
         ))}
       </div>
