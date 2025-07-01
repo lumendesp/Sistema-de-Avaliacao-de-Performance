@@ -2,7 +2,7 @@ import CollaboratorsSearchBar from "../../../components/CollaboratorsSearchBar";
 import PeerEvaluationForm from "../../../components/PeerEvaluationForm/PeerEvaluationForm";
 import { useState, useEffect } from "react";
 import type { Collaborator } from "../../../types/reference";
-import { fetchMyPeerEvaluations } from "../../../services/api";
+import { fetchActiveEvaluationCycle, fetchMyPeerEvaluations } from "../../../services/api";
 import type { PeerEvaluation } from "../../../types/peerEvaluation";
 import { useAuth } from "../../../context/AuthContext";
 
@@ -11,17 +11,29 @@ const PeerEvaluation = () => {
     Collaborator[]
   >([]); // lista temporária de colaboradores que o usuário está selecionando para avaliar
   const [myEvaluations, setMyEvaluations] = useState<PeerEvaluation[]>([]); // lista de avaliações já enviadas do usuário logado
+  const [activeCycleId, setActiveCycleId] = useState<number | null>(null);
   const { user } = useAuth();
-
-  const cycleId = 1; // fixo por enquanto
 
   // busca as referências já enviadas do usuário logado
   useEffect(() => {
-    if (!user) return;
-
-    const loadInitialEvaluations = async () => {
+    const loadActiveCycle = async () => {
       try {
-        const data = await fetchMyPeerEvaluations(cycleId);
+        const cycle = await fetchActiveEvaluationCycle();
+        setActiveCycleId(cycle.id);
+      } catch (err) {
+        console.error("Erro ao carregar ciclo ativo:", err);
+      }
+    };
+
+    loadActiveCycle();
+  }, []);
+
+  useEffect(() => {
+    if (!user || !activeCycleId) return;
+
+    const loadEvaluations = async () => {
+      try {
+        const data = await fetchMyPeerEvaluations(activeCycleId);
         setMyEvaluations(data);
       } catch (err) {
         console.error("Erro ao carregar avaliações:", err);
@@ -29,8 +41,8 @@ const PeerEvaluation = () => {
       }
     };
 
-    loadInitialEvaluations();
-  }, [cycleId, user]);
+    loadEvaluations();
+  }, [user, activeCycleId]);
 
   // adiciona um colaborador à lista temporária (somente se ainda não estiver na lista)
   const handleAddCollaborator = (collaborator: Collaborator) => {
@@ -69,6 +81,7 @@ const PeerEvaluation = () => {
         onRemoveCollaborator={handleRemoveCollaborator}
         myEvaluations={myEvaluations}
         setMyEvaluations={setMyEvaluations}
+        cycleId={activeCycleId!}
       />
     </div>
   );
