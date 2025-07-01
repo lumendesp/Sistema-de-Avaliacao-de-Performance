@@ -291,6 +291,44 @@ export class SelfEvaluationService {
     return result.sort((a, b) => a.groupName.localeCompare(b.groupName));
   }
 
+  async getByUserId(userId: number) {
+    const evaluations = await this.prisma.selfEvaluation.findMany({
+      where: { userId },
+      include: {
+        cycle: true,
+        items: {
+          include: {
+            criterion: true,
+            configuredCriterion: {
+              include: {
+                group: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        cycle: { startDate: 'desc' },
+      },
+    });
+
+    return evaluations.map(evaluation => ({
+      evaluationId: evaluation.id,
+      cycle: {
+        id: evaluation.cycle.id,
+        name: evaluation.cycle.name,
+        startDate: evaluation.cycle.startDate,
+        endDate: evaluation.cycle.endDate,
+      },
+      items: evaluation.items.map(item => ({
+        criterionId: item.criterion.id,
+        title: item.criterion.name,
+        group: item.configuredCriterion?.group?.name ?? null,
+        score: item.score,
+        justification: item.justification,
+      })),
+    }));
+  }
 
 
 
