@@ -69,9 +69,9 @@ export default function CollaboratorEvaluation() {
           ),
         }));
         setGroups(filteredGroups);
-        // Busca respostas do self evaluation do colaborador
+        // Busca respostas do self evaluation do colaborador usando o endpoint correto
         const selfEvalRes = await axios.get(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/self-evaluation?cycleId=${cycleId}&userId=${collaboratorId}`,
+          `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/self-evaluation/user/${collaboratorId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         // Pega a avaliação do ciclo atual
@@ -95,7 +95,7 @@ export default function CollaboratorEvaluation() {
             }
             return {
               id: cc.criterion.id,
-              title: cc.criterion.displayName,
+              title: cc.criterion.name,
               selfRating,
               selfJustification,
               managerRating: undefined,
