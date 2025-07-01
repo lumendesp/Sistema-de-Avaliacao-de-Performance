@@ -13,4 +13,9 @@ export class EvaluationCycleController {
   async getActiveCycle() {
     return this.evaluationCycleService.findActiveCycle();
   }
+
+  @Get('closed')
+  getClosedCycles() {
+    return this.evaluationCycleService.getClosedCycles();
+  }
 }

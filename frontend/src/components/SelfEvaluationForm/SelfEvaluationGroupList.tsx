@@ -54,7 +54,6 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
   };
 
   useEffect(() => {
-    // Verificar se já existe avaliação para esse ciclo
     const fetch = async () => {
       try {
         const response = await axios.get(`http://localhost:3000/self-evaluation?cycleId=${cycleId}`, {
@@ -65,6 +64,27 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
         if (current) {
           setSelfEvaluationId(current.id);
           setIsUpdate(true);
+
+          const groupedRatings: Record<number, number[]> = {};
+          const groupedJustifications: Record<number, string[]> = {};
+
+          trackData.CriterionGroup.forEach((group) => {
+            groupedRatings[group.id] = [];
+            groupedJustifications[group.id] = [];
+
+            group.configuredCriteria.forEach((cc) => {
+              const answer = current.items.find(
+                (item: any) =>
+                  item.criterionId === cc.criterion.id && item.group?.id === group.id
+              );
+
+              groupedRatings[group.id].push(answer?.score ?? 0);
+              groupedJustifications[group.id].push(answer?.justification ?? "");
+            });
+          });
+
+          setRatings(groupedRatings);
+          setJustifications(groupedJustifications);
         }
       } catch (e) {
         console.error("Erro ao verificar avaliação existente:", e);
@@ -72,7 +92,8 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
     };
 
     fetch();
-  }, [token, cycleId]);
+  }, [token, cycleId, trackData]);
+
 
   useEffect(() => {
     const submitSelfEvaluation = async () => {
