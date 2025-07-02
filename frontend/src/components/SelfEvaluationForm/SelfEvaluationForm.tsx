@@ -7,25 +7,24 @@ const SelfEvaluationForm = ({
   title,
   cycleId,
   criteria,
+  averageScore,
   readOnly = false,
   onRatingChange,
   onJustificationChange,
 }: SelfEvaluationFormProps & {
+  averageScore?: number;
   onRatingChange?: (index: number, value: number) => void;
   onJustificationChange?: (index: number, value: string) => void;
 }) => {
   const totalCount = criteria.length;
   const answeredCount = criteria.filter((c) => c.score && c.justification?.trim()).length;
-  const averageScore = totalCount > 0
-    ? criteria.reduce((sum, c) => sum + (c.score || 0), 0) / totalCount
-    : 0;
 
   return (
     <div className="bg-white rounded-xl shadow p-6 w-full mb-6">
       <div className="flex justify-between items-center mb-4 pb-3">
         <h3 className="text-bg font-semibold text-green-main">{title}</h3>
         <div className="flex items-center gap-4">
-          <ScoreBox score={averageScore} />
+          <ScoreBox score={averageScore ?? 0} />
           <span className="bg-green-confirm bg-opacity-25 text-green-secondary font-bold text-sm px-3 py-1 rounded-md">
             {answeredCount}/{totalCount} preenchidos
           </span>

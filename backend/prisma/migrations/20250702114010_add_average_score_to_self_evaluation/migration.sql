@@ -1,3 +1,6 @@
+-- AlterTable
+ALTER TABLE "SelfEvaluation" ADD COLUMN "averageScore" REAL;
+
 -- RedefineTables
 PRAGMA defer_foreign_keys=ON;
 PRAGMA foreign_keys=OFF;

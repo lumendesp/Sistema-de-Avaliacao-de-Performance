@@ -69,6 +69,7 @@ export class SelfEvaluationService {
       data: {
         userId,
         cycleId: dto.cycleId,
+        averageScore: dto.averageScore,
         items: {
           createMany: {
             data: itemsToCreate,
@@ -120,6 +121,7 @@ export class SelfEvaluationService {
       return {
         ...evaluation,
         isEditable,
+        averageScore: evaluation.averageScore,
         items: itemsWithGroup,
       };
     });
@@ -167,6 +169,7 @@ export class SelfEvaluationService {
     return this.prisma.selfEvaluation.update({
       where: { id },
       data: {
+        averageScore: dto.averageScore,
         items: {
           deleteMany: {},
           create: itemsToCreate,
@@ -176,8 +179,8 @@ export class SelfEvaluationService {
         items: true,
       },
     });
-    
   }
+
   async delete(id: number) {
     try {
       const deletedItems = await this.prisma.selfEvaluationItem.deleteMany({
@@ -202,12 +205,7 @@ export class SelfEvaluationService {
       where: { id: userId },
     });
 
-    if (
-      !user ||
-      user.positionId === null ||
-      user.unitId === null ||
-      user.trackId === null
-    ) {
+    if (!user || user.positionId === null || user.unitId === null || user.trackId === null) {
       throw new Error('Usuário incompleto: faltam positionId, unitId ou trackId');
     }
 
@@ -314,6 +312,7 @@ export class SelfEvaluationService {
 
     return evaluations.map(evaluation => ({
       evaluationId: evaluation.id,
+      averageScore: evaluation.averageScore,
       cycle: {
         id: evaluation.cycle.id,
         name: evaluation.cycle.name,
@@ -330,9 +329,28 @@ export class SelfEvaluationService {
     }));
   }
 
+  async getAverage(userId: number, cycleId: number) {
+    const evaluation = await this.prisma.selfEvaluation.findFirst({
+      where: {
+        userId,
+        cycleId,
+      },
+      include: {
+        cycle: true,
+      },
+    });
 
+    if (!evaluation) {
+      throw new Error('Avaliação não encontrada.');
+    }
 
-  
-
+    return {
+      averageScore: evaluation.averageScore,
+      cycle: {
+        id: evaluation.cycle.id,
+        name: evaluation.cycle.name,
+      },
+    };
+  }
 
 }
