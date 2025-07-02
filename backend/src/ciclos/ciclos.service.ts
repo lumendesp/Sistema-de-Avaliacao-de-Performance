@@ -158,7 +158,7 @@ export class CiclosService {
 
     let evaluationTrend = "0% este mês";
     let collaboratorTrend = "0% este mês";
-    let scoreTrend = "0.0 este mês";
+    let scoreTrend: string | undefined = undefined;
 
     if (previousCycle.length > 0) {
       const prevCycle = previousCycle[0];
@@ -397,13 +397,50 @@ export class CiclosService {
     const topPerformers = collaboratorsList.filter(c => parseFloat(c.nota) >= 4.5).length;
     const totalEvaluated = collaboratorsList.length;
     
-    let insights = "";
-    if (topPerformers === 0) {
-      insights = "No employees achieved top performer status (4.5+). This indicates either grade inflation avoidance or a fundamental talent acquisition/development problem.";
-    } else if (topPerformers === totalEvaluated) {
-      insights = "All employees achieved top performer status (4.5+). This might indicate grade inflation and requires attention.";
-    } else {
-      insights = `${topPerformers} out of ${totalEvaluated} employees achieved top performer status (4.5+).`;
+    // NOVO: Gerar insight com Gemini
+    let insights = '';
+    try {
+      const { generateGeminiText } = await import('../utils/gemini');
+      const prompt = `Você é um analista de RH. Analise os dados de desempenho abaixo do ciclo "${lastCompletedCycle.name}" e gere um resumo e insights práticos para a equipe:\n\nNotas finais dos colaboradores: ${collaboratorsList.map(c => `${c.nome} (${c.cargo}): ${c.nota}`).join(', ')}\nMédia Autoavaliação: ${averageAuto}/5\nMédia Gestor: ${averageManager}/5\nMédia 360: ${averagePeer}/5\nMédia Final: ${averageFinal}/5\nTotal avaliados: ${totalEvaluated}\nTop performers (nota >= 4.5): ${topPerformers}\n\nSeja sucinto, objetivo e traga sugestões de melhoria.`;
+      insights = await generateGeminiText(prompt);
+    } catch (e) {
+      // fallback para insight antigo
+        if (topPerformers === 0) {
+          insights = "Nenhum colaborador atingiu o status de top performer (nota >= 4.5). Isso pode indicar ausência de inflação de notas ou um problema fundamental de aquisição/desenvolvimento de talentos.";
+        } else if (topPerformers === totalEvaluated) {
+          insights = "Todos os colaboradores atingiram o status de top performer (nota >= 4.5). Isso pode indicar inflação de notas e requer atenção.";
+        } else {
+          insights = `${topPerformers} de ${totalEvaluated} colaboradores atingiram o status de top performer (nota >= 4.5).`;
+        }
+    }
+
+    // Calcular aumento em relação ao ciclo anterior (scoreTrend)
+    let scoreTrend: string | undefined = undefined;
+    // Buscar ciclo anterior ao último concluído
+    const previousCycle = await prisma.evaluationCycle.findMany({
+      where: {
+        status: {
+          in: ['CLOSED', 'PUBLISHED']
+        },
+        id: { not: lastCompletedCycle.id }
+      },
+      orderBy: { startDate: 'desc' },
+      take: 1
+    });
+    if (previousCycle.length > 0) {
+      const prevCycle = previousCycle[0];
+      // Buscar notas finais do ciclo anterior
+      const prevScores = await prisma.finalScore.findMany({
+        where: {
+          cycleId: prevCycle.id,
+          finalScore: { not: null }
+        },
+        select: { finalScore: true }
+      });
+      const prevAverageFinal = prevScores.length > 0
+        ? prevScores.reduce((sum, score) => sum + score.finalScore!, 0) / prevScores.length
+        : 0;
+      scoreTrend = (parseFloat(averageFinal) - prevAverageFinal).toFixed(1).toString();
     }
 
     return {
@@ -416,7 +453,8 @@ export class CiclosService {
       averageAuto: `${averageAuto}/5`,
       averageManager: `${averageManager}/5`,
       averagePeer: `${averagePeer}/5`,
-      averageFinal: `${averageFinal}/5`
+      averageFinal: `${averageFinal}/5`,
+      scoreTrend: scoreTrend ? `${scoreTrend} este ciclo` : undefined
     };
   }
 }

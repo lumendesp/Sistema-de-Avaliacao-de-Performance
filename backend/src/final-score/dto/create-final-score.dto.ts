@@ -1,7 +1,7 @@
 import { IsInt, IsOptional, IsNumber, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateNotaDto {
+export class CreateFinalScoreDto {
   @ApiProperty({ example: 1 })
   @IsInt()
   userId: number;
@@ -10,17 +10,17 @@ export class CreateNotaDto {
   @IsInt()
   cycleId: number;
 
-  @ApiProperty({ example: 8.5, required: false })
+  @ApiProperty({ example: 4.5, required: false })
   @IsOptional()
   @IsNumber()
   executionScore?: number;
 
-  @ApiProperty({ example: 7.0, required: false })
+  @ApiProperty({ example: 4.0, required: false })
   @IsOptional()
   @IsNumber()
   postureScore?: number;
 
-  @ApiProperty({ example: 7.75, required: false })
+  @ApiProperty({ example: 4.25, required: false })
   @IsOptional()
   @IsNumber()
   finalScore?: number;
