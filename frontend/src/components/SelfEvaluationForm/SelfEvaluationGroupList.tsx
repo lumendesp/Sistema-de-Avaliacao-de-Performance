@@ -18,6 +18,35 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
   const [justifications, setJustifications] = useState<Record<number, string[]>>({});
   const [selfEvaluationId, setSelfEvaluationId] = useState<number | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [weights, setWeights] = useState<Record<number, number>>({});
+
+  useEffect(() => {
+    const fetchWeights = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/rh-criteria/tracks/with-criteria", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const weightMap: Record<number, number> = {};
+        response.data.forEach((track: any) => {
+          track.CriterionGroup.forEach((group: any) => {
+            group.configuredCriteria.forEach((cc: any) => {
+              const criterion = cc.criterion;
+              if (criterion && criterion.id) {
+                weightMap[criterion.id] = criterion.weight;
+              }
+            });
+          });
+        });
+
+        setWeights(weightMap);
+      } catch (err) {
+        console.error("Erro ao buscar pesos dos critérios:", err);
+      }
+    };
+
+    fetchWeights();
+  }, [token]);
 
   useEffect(() => {
     const initialRatings: Record<number, number[]> = {};
@@ -94,6 +123,18 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
     fetch();
   }, [token, cycleId, trackData]);
 
+  const calculateGroupAverage = (groupId: number, criteria: { id: number }[], scores: number[]) => {
+    let weightedSum = 0;
+    let totalWeight = 0;
+
+    criteria.forEach((c, i) => {
+      const weight = weights[c.id] ?? 1;
+      weightedSum += (scores[i] || 0) * weight;
+      totalWeight += weight;
+    });
+
+    return totalWeight > 0 ? parseFloat((weightedSum / totalWeight).toFixed(1)) : 0;
+  };
 
   useEffect(() => {
     const submitSelfEvaluation = async () => {
@@ -111,9 +152,16 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
         return;
       }
 
-      const totalScore = items.reduce((sum, item) => sum + item.score, 0);
-      const averageScore = parseFloat((totalScore / items.length).toFixed(1));
+      let totalWeightedScore = 0;
+      let totalWeight = 0;
 
+      items.forEach((item) => {
+        const weight = weights[item.criterionId] ?? 1;
+        totalWeightedScore += item.score * weight;
+        totalWeight += weight;
+      });
+
+      const averageScore = totalWeight > 0 ? parseFloat((totalWeightedScore / totalWeight).toFixed(1)) : 0;
       const payload = { cycleId, items, averageScore };
 
       setIsSending(true);
@@ -138,8 +186,7 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
     };
 
     registerSubmitHandler("self-evaluation", submitSelfEvaluation);
-  }, [ratings, justifications, selfEvaluationId, cycleId]);
-
+  }, [ratings, justifications, selfEvaluationId, cycleId, weights]);
 
   return (
     <div className="pb-24">
@@ -148,6 +195,11 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
           key={group.id}
           title={group.name}
           cycleId={cycleId}
+          averageScore={calculateGroupAverage(
+            group.id,
+            group.configuredCriteria.map((cc) => cc.criterion),
+            ratings[group.id] ?? []
+          )}
           criteria={group.configuredCriteria.map((cc, i) => ({
             id: cc.criterion.id,
             title: cc.criterion.displayName,
