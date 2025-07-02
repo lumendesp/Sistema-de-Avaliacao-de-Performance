@@ -20,9 +20,13 @@ import { PositionModule } from './position/position.module';
 import { CollaboratorsSearchBarModule } from './collaborator/collaborators-search-bar/collaborators-search-bar.module';
 import { ReferenceModule } from './reference/reference.module';
 import { PeerEvaluationModule } from './collaborator/peer-evaluation/peer-evaluation.module';
+import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
+import { ManagerModule } from './manager/manager.module';
 
 @Module({
-  imports: [CiclosModule, NotasModule,
+  imports: [
+    CiclosModule,
+    NotasModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -40,6 +44,8 @@ import { PeerEvaluationModule } from './collaborator/peer-evaluation/peer-evalua
     CollaboratorsSearchBarModule,
     ReferenceModule,
     PeerEvaluationModule,
+    ManagerEvaluationModule,
+    ManagerModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
