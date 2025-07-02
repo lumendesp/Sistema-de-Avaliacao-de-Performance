@@ -329,7 +329,7 @@ export class SelfEvaluationService {
     }));
   }
 
-  async getSummary(userId: number, cycleId: number) {
+  async getAverage(userId: number, cycleId: number) {
     const evaluation = await this.prisma.selfEvaluation.findFirst({
       where: {
         userId,
@@ -345,15 +345,12 @@ export class SelfEvaluationService {
     }
 
     return {
-      evaluationId: evaluation.id,
       averageScore: evaluation.averageScore,
-      createdAt: evaluation.createdAt,
       cycle: {
         id: evaluation.cycle.id,
         name: evaluation.cycle.name,
-        startDate: evaluation.cycle.startDate,
-        endDate: evaluation.cycle.endDate,
       },
     };
   }
+
 }

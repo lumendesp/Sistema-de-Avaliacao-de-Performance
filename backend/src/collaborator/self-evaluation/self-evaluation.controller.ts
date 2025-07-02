@@ -80,14 +80,17 @@ export class SelfEvaluationController {
     return this.selfEvaluationService.getByUserId(userId);
   }
 
-  @Get('avg-score')
+  @Get(':userId/avg-score')
   @ApiOperation({
-    summary: 'Retorna apenas a média da autoavaliação e dados básicos do ciclo',
+    summary: 'Retorna apenas a média da autoavaliação e dados básicos do ciclo de um usuário específico',
   })
-  @ApiQuery({ name: 'cycleId', required: true })
-  async getAverageScore(@Req() req, @Query('cycleId', ParseIntPipe) cycleId: number) {
-    const userId = req.user.userId;
-    return this.selfEvaluationService.getSummary(userId, cycleId);
+  @ApiParam({ name: 'userId', type: Number })
+  @ApiQuery({ name: 'cycleId', required: true, type: Number })
+  async getAverageScoreByUser(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query('cycleId', ParseIntPipe) cycleId: number
+  ) {
+    return this.selfEvaluationService.getAverage(userId, cycleId);
   }
 
 }
