@@ -9,6 +9,15 @@ interface Props {
   onChange?: (updated: Partial<EvaluationCriterion>) => void;
 }
 
+// Função utilitária para formatar nomes de critérios
+function formatCriterionName(name: string) {
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
 export default function EvaluationCard({ criterion, index, onChange }: Props) {
   const [open, setOpen] = useState(true);
   // Considera preenchido se managerRating > 0 e há justificativa
@@ -37,7 +46,9 @@ export default function EvaluationCard({ criterion, index, onChange }: Props) {
             {index + 1}
           </span>
         )}
-        <h3 className="font-semibold text-gray-700">{criterion.title}</h3>
+        <h3 className="font-semibold text-gray-700">
+          {formatCriterionName(criterion.title)}
+        </h3>
         <span className="ml-auto font-semibold text-gray-700">
           {criterion.selfRating?.toFixed(1) ?? "-"}
         </span>
