@@ -376,6 +376,8 @@ model AISummary {
 
   user  User            @relation(fields: [userId], references: [id])
   cycle EvaluationCycle @relation(fields: [cycleId], references: [id])
+
+  @@unique([userId, cycleId])
 }
 
 model CommitteeNote {
