@@ -2,61 +2,63 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import EvaluationComparisonForm from "./ComparisonEvaluationForm";
 import { useAuth } from "../../context/AuthContext";
-import type { TrackWithGroups } from "../../types/selfEvaluation";
-import type { SubmittedSelfEvaluationItem } from "../../types/evaluationComparison";
 
 interface Props {
-  trackData: TrackWithGroups;
   cycleId: number;
 }
 
-const EvaluationComparisonGroupList = ({ trackData, cycleId }: Props) => {
+interface GroupedResponse {
+  groupId: number;
+  groupName: string;
+  criteria: {
+    criterionId: number;
+    title: string;
+    description: string;
+    score: number;
+    justification: string;
+  }[];
+}
+
+const EvaluationComparisonGroupList = ({ cycleId }: Props) => {
   const { token } = useAuth();
-  const [answers, setAnswers] = useState<SubmittedSelfEvaluationItem[]>([]);
+  const [groupedData, setGroupedData] = useState<GroupedResponse[]>([]);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchGrouped = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/self-evaluation?cycleId=${cycleId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const current = response.data.find((e: any) => e.cycle.id === cycleId);
-        if (current) {
-          setAnswers(current.items);
-        }
+        const res = await axios.get(
+          `http://localhost:3000/self-evaluation/grouped/${cycleId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setGroupedData(res.data);
       } catch (err) {
-        console.error("Erro ao buscar ciclo antigo:", err);
+        console.error("Erro ao buscar autoavaliação agrupada:", err);
       }
     };
 
-    fetch();
-  }, [token, cycleId]);
+    fetchGrouped();
+  }, [cycleId, token]);
 
-  const grouped = trackData.CriterionGroup.map((group) => {
-    const items = group.configuredCriteria.map((cc) => {
-      const item = answers.find(
-        (i) => i.criterionId === cc.criterion.id && i.group?.id === group.id
-      );
+  if (!groupedData.length) return <div>Nenhuma resposta para este ciclo.</div>;
 
-      return {
-        title: cc.criterion.displayName,
-        selfScore: item?.score ?? 0,
-        finalScore: 0,
-        justification: item?.justification ?? "",
-      };
-    });
-
-    return (
-      <EvaluationComparisonForm
-        key={group.id}
-        title={group.name}
-        criteria={items}
-      />
-    );
-  });
-
-  return <div className="p-3 bg-[#f1f1f1] space-y-6">{grouped}</div>;
+  return (
+    <div className="p-3 bg-[#f1f1f1] space-y-6">
+      {groupedData.map((group) => (
+        <EvaluationComparisonForm
+          key={group.groupId}
+          title={group.groupName}
+          criteria={group.criteria.map((c) => ({
+            title: c.title,
+            selfScore: c.score,
+            finalScore: 0, // ou substitua se você tiver essa informação
+            justification: c.justification,
+          }))}
+        />
+      ))}
+    </div>
+  );
 };
 
 export default EvaluationComparisonGroupList;
