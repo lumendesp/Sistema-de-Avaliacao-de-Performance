@@ -1,58 +1,48 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import searchIcon from "../../assets/search.png";
 import CollaboratorCard from "../../components/manager/CollaboratorCard";
 import type { Collaborator } from "../../types/collaboratorStatus.tsx";
-import { useState } from "react";
-
-export const collaborators: Collaborator[] = [
-  {
-    id: 1,
-    name: "Colaborador 1",
-    role: "Product Design",
-    status: "Em andamento",
-    selfScore: 4.0,
-    managerScore: null,
-  },
-  {
-    id: 2,
-    name: "Colaborador 2",
-    role: "Product Design",
-    status: "Em andamento",
-    selfScore: 4.0,
-    managerScore: null,
-  },
-  {
-    id: 3,
-    name: "Colaborador 3",
-    role: "Desenvolvedor",
-    status: "Em andamento",
-    selfScore: 4.0,
-    managerScore: null,
-  },
-  {
-    id: 4,
-    name: "Colaborador 4",
-    role: "Product Owner",
-    status: "Finalizado",
-    selfScore: 4.0,
-    managerScore: 4.5,
-  },
-  {
-    id: 5,
-    name: "Colaborador 5",
-    role: "Scrum Master",
-    status: "Finalizado",
-    selfScore: 4.0,
-    managerScore: 4.5,
-  },
-];
+import { API_URL } from '../../services/api';
 
 export default function Collaborators() {
   const [search, setSearch] = useState("");
+  const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filtered = collaborators.filter((collab) =>
+  useEffect(() => {
+    const fetchColaboradores = async () => {
+      try {
+        const res = await fetch(`${API_URL}/users`);
+        if (!res.ok) throw new Error('Erro ao buscar colaboradores');
+        const users = await res.json();
+        // Filtra apenas usuários com role COLLABORATOR
+        const colaboradores = users.filter((user: any) =>
+          user.roles.some((role: any) => role.role === 'COLLABORATOR')
+        ).map((user: any) => ({
+          id: user.id,
+          name: user.name,
+          role: user.position?.name || 'Colaborador',
+          status: 'Em andamento',
+          selfScore: null,
+          managerScore: null,
+        }));
+        setColaboradores(colaboradores);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchColaboradores();
+  }, []);
+
+  const filtered = colaboradores.filter((collab) =>
     collab.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (loading) return <div>Carregando colaboradores...</div>;
+  if (error) return <div>Erro: {error}</div>;
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-[#F5F6FA]">
@@ -76,20 +66,14 @@ export default function Collaborators() {
       </div>
 
       {/* Lista dos colaboradores com mais espaçamento */}
-      <div
-        className={
-          search.trim() !== ""
-            ? "absolute top-full mt-2 w-full bg-white rounded-xl shadow-md px-2 py-3 flex flex-col gap-4 z-10"
-            : "flex flex-col gap-4 w-full"
-        }
-      >
+      <div className="flex flex-col gap-4 w-full">
         {search.trim() !== "" && (
           <p className="ml-2 text-sm font-semibold text-[#334155]">
             Resultados
           </p>
         )}
-        {(search.trim() !== "" ? filtered : collaborators).length > 0 ? (
-          (search.trim() !== "" ? filtered : collaborators).map(
+        {(search.trim() !== "" ? filtered : colaboradores).length > 0 ? (
+          (search.trim() !== "" ? filtered : colaboradores).map(
             (collaborator) => (
               <CollaboratorCard
                 key={collaborator.id}

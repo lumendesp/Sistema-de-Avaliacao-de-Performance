@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import SelfEvaluationForm from "../../../components/SelfEvaluationForm/SelfEvaluationForm";
 import { useAuth } from "../../../context/AuthContext";
-import type { Criterion } from "../../../types/selfEvaluation";
+import type { TrackWithGroups } from "../../../types/selfEvaluation";
+import SelfEvaluationGroupList from "../../../components/SelfEvaluationForm/SelfEvaluationGroupList";
 
 export default function SelfEvaluationPage() {
-  const { token } = useAuth();
-  const [criteria, setCriteria] = useState<Criterion[]>([]);
-  const [readOnly, setReadOnly] = useState(false);
+  const { token, user } = useAuth();
+  const [trackGroups, setTrackGroups] = useState<TrackWithGroups | null>(null);
   const [loading, setLoading] = useState(true);
 
   const currentCycleId = 1;
@@ -15,63 +14,34 @@ export default function SelfEvaluationPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [availableRes, answeredRes] = await Promise.all([
-          axios.get("http://localhost:3000/self-evaluation/available", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get("http://localhost:3000/self-evaluation", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-
-        const available = availableRes.data.map((c: any) => ({
-          id: c.id,
-          title: c.title,
-          description: c.description,
-        }));
-
-        const evaluations = answeredRes.data;
-
-        // Filtra avaliação do ciclo atual
-        const currentEvaluation = evaluations.find(
-          (evaluation: any) => evaluation.cycle.id === currentCycleId
-        );
-
-        const answeredItems = currentEvaluation?.items ?? [];
-
-        const combined = available.map((c: any) => {
-          const response = answeredItems.find((a: any) => a.criterionId === c.id);
-          return {
-            ...c,
-            score: response?.score ?? 0,
-            justification: response?.justification ?? "",
-          };
+        const res = await axios.get("http://localhost:3000/rh-criteria/tracks/with-criteria", {
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        setCriteria(combined);
-        setReadOnly(!!currentEvaluation); // se já respondeu, readOnly true
+        const userTrack = user?.trackId;
+        const trackData = res.data.find((t: any) => t.id === userTrack);
+        setTrackGroups(trackData || null);
       } catch (err) {
-        console.error("Erro ao carregar critérios:", err);
+        console.error("Erro ao carregar critérios agrupados:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [token]);
+  }, [token, user]);
+
+  if (loading) {
+    return <p className="text-center text-gray-500 mt-10">Carregando critérios...</p>;
+  }
+
+  if (!trackGroups) {
+    return <p className="text-center text-gray-500 mt-10">Nenhum critério encontrado.</p>;
+  }
 
   return (
     <div className="p-3 bg-[#f1f1f1] mt-0">
-      {loading ? (
-        <p className="text-center text-gray-500 mt-10">Carregando critérios...</p>
-      ) : (
-        <SelfEvaluationForm
-          title="Critérios de Postura"
-          criteria={criteria}
-          readOnly={false}
-          cycleId={currentCycleId}
-        />
-      )}
+      <SelfEvaluationGroupList trackData={trackGroups} cycleId={currentCycleId} />
     </div>
   );
 }

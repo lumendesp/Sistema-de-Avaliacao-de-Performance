@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000";
+export const API_URL = 'http://localhost:3000';
 
 // Função auxiliar para obter o token do localStorage
 const getAuthToken = () => localStorage.getItem("token");
@@ -126,6 +126,72 @@ export const fetchMyReferences = async (cycleId: number) => {
   return res.json();
 };
 
+export const createPeerEvaluation = async (evaluationData: {
+  evaluateeId: number;
+  cycleId: number;
+  strengths: string;
+  improvements: string;
+  motivation: string; // CONCORDO_TOTALMENTE etc.
+  score: number;
+  projects: { name: string; period: number }[];
+}) => {
+  const res = await fetch(`${API_URL}/peer-evaluations`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(evaluationData),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao criar avaliação por pares");
+  }
+
+  return res.json();
+};
+
+export const fetchMyPeerEvaluations = async (cycleId: number) => {
+  const res = await fetch(`${API_URL}/peer-evaluations/me?cycleId=${cycleId}`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar avaliações por pares");
+  }
+
+  return res.json(); // retorna array de avaliações
+};
+
+// Fetches all users with their associated evaluations
+
+export const getUsersWithEvaluationsForCommittee = async () => {
+  const response = await fetch(`${API_URL}/users/evaluations`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch users');
+  }
+  return response.json();
+};
+
+// Creates a new final evaluation
+export const createFinalEvaluation = async (data: { score: number; justification: string; evaluateeId: number; evaluatorId: number }) => {
+  const response = await fetch(`${API_URL}/committee/evaluations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    console.log(data.score);
+    console.log(data.justification);
+    console.log(data.evaluateeId);
+    console.log(data.evaluatorId);
+    throw new Error('Failed to create final evaluation');
+  }
+  return response.json();
+};
 
 // This function seems unused in the committee context, but I'll leave it.
 // To use it, you would need a corresponding backend endpoint.
@@ -458,9 +524,16 @@ export const createFinalScore = async (data: {
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    console.error('Error response:', errorText);
-    throw new Error('Erro ao criar avaliação final');
+    let errorMsg = 'Erro ao criar avaliação final';
+    try {
+      const errorJson = await res.json();
+      errorMsg = errorJson.message || errorMsg;
+    } catch {
+      const errorText = await res.text();
+      if (errorText) errorMsg = errorText;
+    }
+    console.error('Error response:', errorMsg);
+    throw new Error(errorMsg);
   }
   return res.json();
 };

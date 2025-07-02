@@ -61,9 +61,9 @@ const ReferenceEvaluationForm = ({
       setSuccess(true);
 
       // atualiza lista de referências
-      const updatedRefs = await fetchMyReferences(1);
+      const updatedRefs = await fetchMyReferences(cycleId);
       setMyReferences(updatedRefs);
-    } catch (err: unknown) {
+    } catch (err: unknown) { // unknown pode ser qualquer coisa, assim como any, mas é mais seguro por conta da verificação posterior com instanceof Error
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao enviar referências";
       setError(errorMessage);

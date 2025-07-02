@@ -1,14 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { getUsersWithEvaluations } from '../../services/api';
+import { getUsersWithEvaluationsForCommittee } from '../../services/api';
 import { exportEvaluationToExcel, exportEvaluationToCSV, transformBackendDataToExport } from '../../services/export.service';
-
 import InfoCard from "../../components/Committee/CommitteeHome/InfoCard";
 import CircularProgress from "../../components/Committee/CirculaProgress";
 import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import persons from "../../assets/committee/two-persons.png";
 import { UserIcon } from '../../components/UserIcon';
-import { FaDownload } from 'react-icons/fa';
 
 interface Collaborator {
     id: number;
@@ -18,6 +16,7 @@ interface Collaborator {
     state: 'pendente' | 'finalizado' | 'expirado';
     autoAvaliacao: number;
     avaliacao360: number;
+    notaMentor: number;
     notaGestor: number;
     notaFinal?: number;
     hasAllEvaluations?: boolean;
@@ -29,7 +28,7 @@ function Committee(){
 
     const fetchCollaborators = async () => {
         try {
-            const users = await getUsersWithEvaluations();
+            const users = await getUsersWithEvaluationsForCommittee();
             const formattedCollaborators = users.map((user: any) => {
                 const evaluations = user.evaluationsEvaluated || [];
                 
@@ -41,10 +40,11 @@ function Committee(){
                 const finalEval = evaluations.find((e: any) => e.type === 'FINAL');
 
                 // Determine state based on having all 4 required evaluation types
-                const requiredTypes = ['SELF', 'PEER', 'MANAGER', 'FINAL'];
+                const requiredTypes = ['SELF', 'PEER', 'MENTOR', 'MANAGER', 'FINAL'];
                 const typesPresent = evaluations.map((e: any) => e.type);
                 const hasAllEvaluations = requiredTypes.every(type => typesPresent.includes(type));
                 const state = hasAllEvaluations ? 'finalizado' : 'pendente';
+
 
                 return {
                     id: user.id,
@@ -54,6 +54,7 @@ function Committee(){
                     state: state,
                     autoAvaliacao: getScore('SELF'),
                     avaliacao360: getScore('PEER'),
+                    notaMentor: getScore('MENTOR'),
                     notaGestor: getScore('MANAGER'),
                     notaFinal: finalEval ? finalEval.score : undefined,
                     hasAllEvaluations: hasAllEvaluations,
@@ -90,23 +91,23 @@ function Committee(){
 
     const remainingDays = getRemainingDays();
 
-    const handleBulkExport = (type: 'csv' | 'xlsx') => {
-        // Export all collaborators' data
-        collaborators.forEach((collab, index) => {
-            setTimeout(() => {
-                // Find the full user object from the original users array
-                const user = users.find((u: any) => u.id === collab.id);
-                if (!user) return;
-                const evaluationData = transformBackendDataToExport(user);
-                const fileName = `${collab.name.replace(/\s+/g, '_')}_${type === 'xlsx' ? 'xlsx' : 'csv'}`;
-                if (type === 'csv') {
-                    exportEvaluationToCSV(evaluationData, fileName);
-                } else {
-                    exportEvaluationToExcel(evaluationData, fileName);
-                }
-            }, index * 100); // 100ms delay between each export
-        });
-    };
+
+    // // CASO PRECISE DE TODOS OS USUARIOS EXPORTADOS
+    // const handleBulkExport = (type: 'csv' | 'xlsx') => {
+    //     collaborators.forEach((collab, index) => {
+    //         setTimeout(() => {
+    //             const user = users.find((u: any) => u.id === collab.id);
+    //             if (!user) return;
+    //             const evaluationData = transformBackendDataToExport(user);
+    //             const fileName = `${collab.name.replace(/\s+/g, '_')}_${type === 'xlsx' ? 'xlsx' : 'csv'}`;
+    //             if (type === 'csv') {
+    //                 exportEvaluationToCSV(evaluationData, fileName);
+    //             } else {
+    //                 exportEvaluationToExcel(evaluationData, fileName);
+    //             }
+    //         }, index * 100); // 100ms delay 
+    //     });
+    // };
 
     return(
         <div className="w-full min-h-screen bg-gray-300">
@@ -115,6 +116,7 @@ function Committee(){
                     <span className="font-bold">Olá,</span> comite
                 </h1>
                 <div className="flex items-center gap-4">
+                    {/*
                     <div className="relative">
                         <button
                             onClick={() => setShowBulkExportOptions(!showBulkExportOptions)}
@@ -154,7 +156,7 @@ function Committee(){
                                 </div>
                             </>
                         )}
-                    </div>
+                    </div>*/}
                     <UserIcon initials="CN" size={40} />
                 </div>
             </div>
@@ -191,19 +193,23 @@ function Committee(){
                     </Link>
                 </div>
                 <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
-                    {collaborators.slice(0, 5).map((collab) => (
-                        <Colaborators 
-                            key={collab.id}
-                            name={collab.name} 
-                            role={collab.role} 
-                            initials={collab.initials} 
-                            state={collab.state}
-                            autoAvaliacao={collab.autoAvaliacao}
-                            avaliacao360={collab.avaliacao360}
-                            notaGestor={collab.notaGestor}
-                            notaFinal={collab.notaFinal}
-                        />
-                    ))}
+                    {collaborators.slice(0, 5).map((collab) => {
+                        console.log('Colab:', collab);
+                        return (
+                            <Colaborators 
+                                key={collab.id}
+                                name={collab.name} 
+                                role={collab.role} 
+                                initials={collab.initials} 
+                                state={collab.state}
+                                autoAvaliacao={collab.autoAvaliacao}
+                                avaliacao360={collab.avaliacao360}
+                                notaMentor={collab.notaMentor}
+                                notaGestor={collab.notaGestor}
+                                notaFinal={collab.notaFinal}
+                            />
+                        );
+                    })}
                     {collaborators.length === 0 && (
                         <div className="text-center text-gray-500 py-8">
                             Nenhum colaborador encontrado

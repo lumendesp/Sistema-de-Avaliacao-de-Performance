@@ -14,6 +14,7 @@ interface ColaboratorsCommitteeProps {
     avaliacao360?: number;
     notaGestor?: number;
     notaFinal?: number;
+    notaMentor: number;
 }
 
 function ColaboratorsCommitte({
@@ -24,7 +25,8 @@ function ColaboratorsCommitte({
     autoAvaliacao,
     avaliacao360,
     notaGestor,
-    notaFinal
+    notaFinal,
+    notaMentor
 }: ColaboratorsCommitteeProps) {
     return(
         <div className="border border-gray-300 rounded-md bg-white p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
@@ -42,6 +44,7 @@ function ColaboratorsCommitte({
                     autoAvaliacao={autoAvaliacao}
                     avaliacao360={avaliacao360}
                     notaGestor={notaGestor}
+                    notaMentor={notaMentor}
                     notaFinal={notaFinal}
                 />
             </div>

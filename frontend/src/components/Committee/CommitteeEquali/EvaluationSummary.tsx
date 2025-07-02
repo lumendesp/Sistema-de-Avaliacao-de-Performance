@@ -47,6 +47,7 @@ interface EvaluationSummaryProps {
     role: string;
     autoAvaliacao: number;
     avaliacao360: number;
+    notaMentor: number;
     notaGestor: number;
     notaFinal?: number;
     onEdit?: () => void;
@@ -59,6 +60,7 @@ interface EvaluationSummaryProps {
     isEditing?: boolean;
     id?: string;
     justificativaAutoAvaliacao?: string;
+    justificativaMentor?: string;
     justificativaGestor?: string;
     justificativa360?: string;
     backendData?: any;
@@ -69,6 +71,7 @@ function EvaluationSummary({
     role,
     autoAvaliacao, 
     avaliacao360, 
+    notaMentor,
     notaGestor, 
     notaFinal,
     onEdit,
@@ -78,8 +81,8 @@ function EvaluationSummary({
     currentScore = 0,
     currentJustification = '',
     isEditing = false,
-    id,
     justificativaAutoAvaliacao = '',
+    justificativaMentor = '',
     justificativaGestor = '',
     justificativa360 = '',
     backendData
@@ -88,6 +91,7 @@ function EvaluationSummary({
     const hasAllGrades =
         typeof autoAvaliacao === 'number' &&
         typeof avaliacao360 === 'number' &&
+        typeof notaMentor === 'number' &&
         typeof notaGestor === 'number' &&
         typeof notaFinal === 'number';
       
@@ -147,6 +151,12 @@ function EvaluationSummary({
                     </div>
                 </div>
                 <div style="text-align: center; width: 23%;">
+                    <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Nota Gestor</h3>
+                    <div style="font-size: 24px; font-weight: bold; color: ${notaMentor >= 4 ? '#16a34a' : notaMentor >= 3 ? '#ca8a04' : '#dc2626'}">
+                        ${notaMentor.toFixed(1)}
+                    </div>
+                </div>
+                <div style="text-align: center; width: 23%;">
                     <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Avaliação 360</h3>
                     <div style="font-size: 24px; font-weight: bold; color: ${avaliacao360 >= 4 ? '#16a34a' : avaliacao360 >= 3 ? '#ca8a04' : '#dc2626'}">
                         ${avaliacao360.toFixed(1)}
@@ -168,6 +178,12 @@ function EvaluationSummary({
                     <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Autoavaliação (${autoAvaliacao.toFixed(1)})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
                         ${justificativaAutoAvaliacao || 'Justificativa não disponível'}
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Gestor (${notaGestor.toFixed(1)})</h4>
+                    <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
+                        ${justificativaMentor || 'Justificativa não disponível'}
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
@@ -311,8 +327,9 @@ function EvaluationSummary({
             <div ref={printRef} className="space-y-6">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                     <Criterion name="Autoavaliação" score={autoAvaliacao} />
-                    <Criterion name="Nota Gestor" score={notaGestor} />
                     <Criterion name="Avaliação 360" score={avaliacao360} />
+                    <Criterion name="Nota Gestor" score={notaGestor} />
+                    <Criterion name="Nota Mentor" score={notaMentor} />
                     {typeof notaFinal === 'number' && (
                         <Criterion name="Nota Final" score={notaFinal} />
                     )}

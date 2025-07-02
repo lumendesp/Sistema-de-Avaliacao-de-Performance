@@ -3,7 +3,7 @@ export interface Collaborator {
   name: string;
   role: string;
   status: "Em andamento" | "Finalizado";
-  selfScore: number;
+  selfScore: number | null;
   managerScore: number | null;
 }
 

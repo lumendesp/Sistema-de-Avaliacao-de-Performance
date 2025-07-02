@@ -8,10 +8,6 @@ import PdfPreview from "./pages/pdf-preview";
 const router = createBrowserRouter([
     {
         path: "/",
-        element: <Home />
-    },
-    {
-        path: "/login",
         element: <Login />
     },
     {

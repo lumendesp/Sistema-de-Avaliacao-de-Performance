@@ -32,7 +32,41 @@ export class UsersService {
   // função que retorna todos os usuários
   async findAll() {
     return this.prisma.user.findMany({
-      include: { roles: true },
+      include: { roles: true, unit: true, position: true, track: true },
+    });
+  }
+
+  // função que retorna colaboradores com dados de avaliação para o dashboard
+  async findCollaboratorsForDashboard() {
+    return this.prisma.user.findMany({
+      where: {
+        roles: {
+          some: {
+            role: 'COLLABORATOR'
+          }
+        }
+      },
+      include: { 
+        roles: true, 
+        unit: true, 
+        position: true, 
+        track: true,
+        finalScores: {
+          include: {
+            cycle: true
+          }
+        },
+        selfEvaluations: {
+          include: {
+            items: true
+          }
+        },
+        managerEvaluationsReceived: {
+          include: {
+            items: true
+          }
+        }
+      },
     });
   }
 
@@ -40,7 +74,7 @@ export class UsersService {
   async findOne(id: number) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: { roles: true },
+      include: { roles: true, unit: true, position: true, track: true },
     });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
@@ -135,6 +169,12 @@ export class UsersService {
             },
           },
         },
+        mentorEvaluationsReceived: {
+          include: {
+            evaluator: { select: { id: true, name: true } },
+            cycle: true,
+          },
+        },
         finalScores: {
           include: {
             cycle: true,
@@ -169,6 +209,15 @@ export class UsersService {
           type: 'PEER',
           score: evaluation.score,
           justification: `${evaluation.strengths} ${evaluation.improvements}`,
+          evaluator: evaluation.evaluator,
+          cycle: evaluation.cycle,
+        })),
+        // Mentor evaluations
+        ...user.mentorEvaluationsReceived.map(evaluation => ({
+          id: evaluation.id,
+          type: 'MENTOR',
+          score: evaluation.score,
+          justification: evaluation.justification,
           evaluator: evaluation.evaluator,
           cycle: evaluation.cycle,
         })),

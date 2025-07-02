@@ -30,6 +30,12 @@ export class UsersController {
     return await this.usersService.findAll();
   }
 
+  // retorna colaboradores com dados de avaliação para o dashboard
+  @Get('collaborators/dashboard')
+  async findCollaboratorsForDashboard() {
+    return await this.usersService.findCollaboratorsForDashboard();
+  }
+
   // retorna usuários com suas avaliações (para o comitê)
   @Get('evaluations')
   @UseGuards(JwtAuthGuard)

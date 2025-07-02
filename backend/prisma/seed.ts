@@ -4,6 +4,17 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
+  // Clean up all data (order matters due to foreign keys)
+  await prisma.finalScore.deleteMany();
+  await prisma.managerEvaluationItem.deleteMany();
+  await prisma.managerEvaluation.deleteMany();
+  await prisma.mentorEvaluation.deleteMany();
+  await prisma.peerEvaluation.deleteMany();
+  await prisma.selfEvaluationItem.deleteMany();
+  await prisma.selfEvaluation.deleteMany();
+  await prisma.userRole.deleteMany();
+  await prisma.user.deleteMany();
+
   // Cria posições
   const position1 = await prisma.position.create({ data: { name: 'Developer' } });
   const position2 = await prisma.position.create({ data: { name: 'Manager' } });
@@ -238,6 +249,7 @@ async function main() {
   }
 
   // Hash simples para senha (exemplo)
+  // Hash simples para senha (exemplo)
   const passwordHash1 = await bcrypt.hash('password123', 10);
   const passwordHash2 = await bcrypt.hash('adminpass', 10);
   const passwordHash3 = await bcrypt.hash('comite123', 10);
@@ -295,11 +307,86 @@ async function main() {
   // Cria ciclo
   await prisma.evaluationCycle.create({
     data: {
-      name: '2025 Mid-Year Cycle',
-      startDate: new Date('2025-06-01T00:00:00Z'),
-      endDate: new Date('2025-07-31T23:59:59Z'),
+      name: 'Ciclo 2025.1',
+      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 dias atrás
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),   // 7 dias à frente
       status: 'IN_PROGRESS',
     },
+  });
+
+  // Cria usuário com todas as avaliações (menos a final)
+  const passwordHash4 = await bcrypt.hash('user4pass', 10);
+  const user4 = await prisma.user.create({
+    data: {
+      name: 'Diana Avaliada',
+      username: 'diana.a',
+      email: 'diana@example.com',
+      password: passwordHash4,
+      active: true,
+      positionId: position1.id,
+      unitId: unit1.id,
+      trackId: track1.id,
+      roles: {
+        create: [{ role: 'COLLABORATOR' }],
+      },
+    },
+  });
+
+  // Recupera ciclo ativo
+  const ciclo = await prisma.evaluationCycle.findFirst({ where: { status: 'IN_PROGRESS' } });
+  if (!ciclo) throw new Error('No active evaluation cycle found for seeding user4 evaluations');
+
+  // Self evaluation para user4
+  const selfEval = await prisma.selfEvaluation.create({
+    data: {
+      userId: user4.id,
+      cycleId: ciclo.id,
+      items: {
+        create: [
+          { criterionId: criteria[0].id, score: 4, justification: 'Organizada' },
+          { criterionId: criteria[1].id, score: 5, justification: 'Cumpre prazos' },
+        ],
+      },
+    },
+  });
+
+  // Peer evaluation para user4 (avaliada por Alice)
+  await prisma.peerEvaluation.create({
+    data: {
+      evaluatorId: user1.id,
+      evaluateeId: user4.id,
+      cycleId: ciclo.id,
+      score: 4.5,
+      strengths: 'Trabalha bem em equipe',
+      improvements: 'Pode melhorar comunicação',
+      motivation: 'CONCORDO_TOTALMENTE',
+    },
+  });
+
+  // Mentor evaluation para user4 (avaliada por Bob)
+  await prisma.mentorEvaluation.create({
+    data: {
+      evaluatorId: user2.id,
+      evaluateeId: user4.id,
+      cycleId: ciclo.id,
+      score: 5,
+      justification: 'Ótima mentorada',
+    },
+  });
+
+  // Manager evaluation para user4 (avaliada por Bob)
+  const managerEval = await prisma.managerEvaluation.create({
+    data: {
+      evaluatorId: user2.id,
+      evaluateeId: user4.id,
+      cycleId: ciclo.id,
+    },
+  });
+  await prisma.managerEvaluationItem.createMany({
+    data: [
+      { evaluationId: managerEval.id, criterionId: criteria[0].id, score: 4, justification: 'Boa organização', scoreDescription: 'Ótimo' },
+      { evaluationId: managerEval.id, criterionId: criteria[1].id, score: 5, justification: 'Excelente prazo', scoreDescription: 'Excelente' },
+    ],
   });
 
   // Cria alguns projetos para peer evaluation

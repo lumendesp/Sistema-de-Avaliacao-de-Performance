@@ -4,21 +4,9 @@ import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import EvaluationSummary from "../../components/Committee/CommitteeEquali/EvaluationSummary";
 import FilterIcon from '../../assets/committee/filter-icon.png';
-import { getUsersWithEvaluations, createFinalScore, updateFinalScore } from '../../services/api';
+import { createFinalScore, updateFinalScore, getUsersWithEvaluationsForCommittee } from '../../services/api';
 
-// Enums manually mirrored from backend
-const EvaluationStatus = {
-    PENDING: 'PENDING',
-    FINALIZED: 'FINALIZED',
-    EXPIRED: 'EXPIRED',
-} as const;
 
-const EvaluationType = {
-    SELF: 'SELF',
-    MANAGER: 'MANAGER',
-    PEER: 'PEER',
-    FINAL: 'FINAL',
-} as const;
 
 interface Collaborator {
     id: number;
@@ -29,10 +17,12 @@ interface Collaborator {
     autoAvaliacao: number;
     avaliacao360: number;
     notaGestor: number;
+    notaMentor: number;
     notaFinal?: number;
     finalEvaluationId?: number;
     justification?: string;
     justificativaAutoAvaliacao?: string;
+    justificativaMentor?: string;
     justificativaGestor?: string;
     justificativa360?: string;
 }
@@ -61,7 +51,7 @@ function Equalization(){
 
     const fetchCollaborators = async () => {
         try {
-            const users = await getUsersWithEvaluations();
+            const users = await getUsersWithEvaluationsForCommittee();
             const formattedCollaborators = users.map((user: any) => {
                 const evaluations = user.evaluationsEvaluated || [];
                 
@@ -91,11 +81,13 @@ function Equalization(){
                     state: state,
                     autoAvaliacao: getScore('SELF'),
                     avaliacao360: getScore('PEER'),
+                    notaMentor: getScore('MENTOR'),
                     notaGestor: getScore('MANAGER'),
                     notaFinal: finalEval ? finalEval.score : undefined,
                     finalEvaluationId: finalEval ? finalEval.id : undefined,
                     justification: finalEval ? finalEval.justification : '',
                     justificativaAutoAvaliacao: getJustification('SELF'),
+                    justificativaMentor: getJustification('MENTOR'),
                     justificativaGestor: getJustification('MANAGER'),
                     justificativa360: getJustification('PEER'),
                 };
@@ -166,7 +158,7 @@ function Equalization(){
 
         } catch (error) {
             console.error('Error saving final evaluation:', error);
-            alert('Erro ao salvar avaliação final');
+            alert(error instanceof Error ? error.message : 'Erro ao salvar avaliação final');
         }
     };
 
@@ -231,6 +223,7 @@ function Equalization(){
                                                 autoAvaliacao={collab.autoAvaliacao}
                                                 avaliacao360={collab.avaliacao360}
                                                 notaGestor={collab.notaGestor}
+                                                notaMentor={collab.notaMentor}
                                                 notaFinal={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal}
                                             />
                                         </div>
@@ -252,6 +245,7 @@ function Equalization(){
                                                 role={collab.role}                                                
                                                 autoAvaliacao={collab.autoAvaliacao}
                                                 avaliacao360={collab.avaliacao360}
+                                                notaMentor={collab.notaMentor}
                                                 notaGestor={collab.notaGestor}
                                                 notaFinal={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal}
                                                 onEdit={() => handleEdit(collab.id)}
@@ -263,6 +257,7 @@ function Equalization(){
                                                 currentJustification={evaluationState[collab.id]?.justification ?? collab.justification ?? ''}
                                                 isEditing={evaluationState[collab.id]?.isEditing || false}
                                                 justificativaAutoAvaliacao={collab.justificativaAutoAvaliacao}
+                                                justificativaMentor={collab.justificativaMentor}
                                                 justificativaGestor={collab.justificativaGestor}
                                                 justificativa360={collab.justificativa360}
                                                 backendData={collab}
