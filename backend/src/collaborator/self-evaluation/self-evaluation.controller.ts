@@ -14,7 +14,7 @@ import {
 import { SelfEvaluationService } from './self-evaluation.service';
 import { CreateSelfEvaluationDto } from './dto/create-self-evaluation.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam} from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiQuery} from '@nestjs/swagger';
 import { UpdateSelfEvaluationDto } from './dto/update-self-evaluation.dto';
 
 @ApiTags('Self Evaluation')
@@ -78,6 +78,16 @@ export class SelfEvaluationController {
   @ApiParam({ name: 'userId', type: Number })
   getByUserId(@Param('userId', ParseIntPipe) userId: number) {
     return this.selfEvaluationService.getByUserId(userId);
+  }
+
+  @Get('avg-score')
+  @ApiOperation({
+    summary: 'Retorna apenas a média da autoavaliação e dados básicos do ciclo',
+  })
+  @ApiQuery({ name: 'cycleId', required: true })
+  async getAverageScore(@Req() req, @Query('cycleId', ParseIntPipe) cycleId: number) {
+    const userId = req.user.userId;
+    return this.selfEvaluationService.getSummary(userId, cycleId);
   }
 
 }

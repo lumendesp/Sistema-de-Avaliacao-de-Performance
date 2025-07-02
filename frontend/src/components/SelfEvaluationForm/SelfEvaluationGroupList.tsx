@@ -111,10 +111,13 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
         return;
       }
 
+      const totalScore = items.reduce((sum, item) => sum + item.score, 0);
+      const averageScore = parseFloat((totalScore / items.length).toFixed(1));
+
+      const payload = { cycleId, items, averageScore };
+
       setIsSending(true);
       try {
-        const payload = { cycleId, items };
-
         if (selfEvaluationId) {
           await axios.patch(`http://localhost:3000/self-evaluation/${selfEvaluationId}`, payload, {
             headers: { Authorization: `Bearer ${token}` },
@@ -136,6 +139,7 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
 
     registerSubmitHandler("self-evaluation", submitSelfEvaluation);
   }, [ratings, justifications, selfEvaluationId, cycleId]);
+
 
   return (
     <div className="pb-24">
