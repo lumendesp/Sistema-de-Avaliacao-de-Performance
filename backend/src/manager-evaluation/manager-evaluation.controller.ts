@@ -1,4 +1,15 @@
-import { Controller, Post, Patch, Get, Param, Body, Req, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Patch,
+  Get,
+  Param,
+  Body,
+  Req,
+  ParseIntPipe,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ManagerEvaluationService } from './manager-evaluation.service';
 import { CreateManagerEvaluationDto } from './dto/create-manager-evaluation.dto';
@@ -26,14 +37,14 @@ export class ManagerEvaluationController {
               {
                 criterionId: 1,
                 score: 4,
-                justification: 'Demonstra postura profissional exemplar.'
+                justification: 'Demonstra postura profissional exemplar.',
               },
               {
                 criterionId: 2,
                 score: 3,
-                justification: 'Atende às expectativas de ética.'
-              }
-            ]
+                justification: 'Atende às expectativas de ética.',
+              },
+            ],
           },
           {
             groupId: 2,
@@ -42,13 +53,13 @@ export class ManagerEvaluationController {
               {
                 criterionId: 3,
                 score: 5,
-                justification: 'Entrega acima do esperado.'
-              }
-            ]
-          }
-        ]
-      }
-    }
+                justification: 'Entrega acima do esperado.',
+              },
+            ],
+          },
+        ],
+      },
+    },
   })
   async create(@Body() dto: CreateManagerEvaluationDto, @Request() req) {
     const evaluatorId = req.user.userId;
@@ -68,27 +79,30 @@ export class ManagerEvaluationController {
               {
                 criterionId: 1,
                 score: 5,
-                justification: 'Melhorou ainda mais a postura.'
+                justification: 'Melhorou ainda mais a postura.',
               },
               {
                 criterionId: 2,
                 score: 4,
-                justification: 'Superou as expectativas em ética.'
-              }
-            ]
-          }
-        ]
-      }
-    }
+                justification: 'Superou as expectativas em ética.',
+              },
+            ],
+          },
+        ],
+      },
+    },
   })
   async updateByEvaluatee(
     @Param('evaluateeId', ParseIntPipe) evaluateeId: number,
     @Body() dto: UpdateManagerEvaluationDto,
-    @Request() req
+    @Request() req,
   ) {
     const evaluatorId = req.user.userId;
     // Busca a avaliação do gestor logado para o colaborador
-    const evaluation = await this.service.findByEvaluatorAndEvaluatee(evaluatorId, evaluateeId);
+    const evaluation = await this.service.findByEvaluatorAndEvaluatee(
+      evaluatorId,
+      evaluateeId,
+    );
     if (!evaluation) throw new Error('Avaliação não encontrada');
     return this.service.update(evaluation.id, dto);
   }
@@ -96,7 +110,7 @@ export class ManagerEvaluationController {
   @Get('by-evaluatee/:evaluateeId')
   async findByEvaluatorAndEvaluatee(
     @Param('evaluateeId', ParseIntPipe) evaluateeId: number,
-    @Request() req
+    @Request() req,
   ) {
     const evaluatorId = req.user.userId;
     return this.service.findByEvaluatorAndEvaluatee(evaluatorId, evaluateeId);
@@ -110,5 +124,16 @@ export class ManagerEvaluationController {
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
+  }
+
+  @Get('average-score/:collaboratorId/:cycleId')
+  async getAverageScoreByCollaboratorAndCycle(
+    @Param('collaboratorId', ParseIntPipe) collaboratorId: number,
+    @Param('cycleId', ParseIntPipe) cycleId: number,
+  ) {
+    return this.service.getAverageScoreByCollaboratorAndCycle(
+      collaboratorId,
+      cycleId,
+    );
   }
 }

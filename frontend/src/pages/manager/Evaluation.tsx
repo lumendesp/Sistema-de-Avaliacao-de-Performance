@@ -188,6 +188,53 @@ export default function CollaboratorEvaluation() {
     });
   };
 
+  // Função para montar o payload e enviar avaliação do gestor
+  useEffect(() => {
+    if (!outletContext?.setSubmit) return;
+    outletContext.setSubmit(async () => {
+      if (!collaboratorId) return false;
+      // Monta o payload no formato esperado pela API
+      const groupsPayload = groups.map((group) => ({
+        groupId: group.id,
+        groupName: group.name,
+        items: (criteriaState[group.id] || []).map((crit) => ({
+          criterionId: crit.id,
+          score: crit.managerRating,
+          justification: crit.managerJustification,
+        })),
+      }));
+      // Validação: todos os critérios precisam de nota e justificativa
+      const hasEmpty = groupsPayload.some((g) =>
+        g.items.some((item) =>
+          !item.score || item.score < 1 || !item.justification || item.justification.trim() === ""
+        )
+      );
+      if (hasEmpty) {
+        alert("Preencha todos os critérios antes de enviar.");
+        return false;
+      }
+      try {
+        if (evaluationId) {
+          // Update
+          await updateManagerEvaluation(Number(collaboratorId), {
+            groups: groupsPayload,
+          });
+        } else {
+          // Create
+          await createManagerEvaluation({
+            evaluateeId: Number(collaboratorId),
+            cycleId,
+            groups: groupsPayload,
+          });
+        }
+        return true;
+      } catch (e: any) {
+        alert(e?.response?.data?.message || "Erro ao enviar avaliação");
+        return false;
+      }
+    }, !!evaluationId);
+  }, [criteriaState, groups, collaboratorId, evaluationId, outletContext, cycleId]);
+
   // LOG: antes do return
   console.log("groups (render):", groups);
   console.log("criteriaState (render):", criteriaState);
