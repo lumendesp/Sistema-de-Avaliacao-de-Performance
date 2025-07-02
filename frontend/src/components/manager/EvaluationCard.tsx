@@ -90,12 +90,14 @@ export default function EvaluationCard({ criterion, index, onChange }: Props) {
               Autoavaliação
             </span>
             <RatingStars value={criterion.selfRating} readOnly size={28} />
-            <span className="text-xs text-gray-500 font-medium mt-1 mb-1">
-              {criterion.selfScoreDescription && (
+            <span className="text-xs text-gray-500 font-medium mt-1 mb-1 min-h-[20px]">
+              {criterion.selfScoreDescription ? (
                 <span className="italic">{criterion.selfScoreDescription}</span>
+              ) : (
+                <span className="invisible">placeholder</span>
               )}
             </span>
-            <span className="text-sm text-gray-500 font-medium mt-2 mb-1">
+            <span className="text-sm text-gray-500 font-medium mb-1 mt-[2px]">
               Justificativa
             </span>
             <textarea
@@ -114,7 +116,11 @@ export default function EvaluationCard({ criterion, index, onChange }: Props) {
               onChange={(val: number) => onChange?.({ managerRating: val })}
               size={28}
             />
-            <span className="text-sm text-gray-500 font-medium mt-2 mb-1">
+            {/* Espaço reservado para alinhar com a descrição da nota da autoavaliação */}
+            <span className="text-xs text-gray-500 font-medium mt-1 mb-1 min-h-[20px]">
+              <span className="invisible">placeholder</span>
+            </span>
+            <span className="text-sm text-gray-500 font-medium mb-1 mt-[1px]">
               Justificativa
             </span>
             <textarea
