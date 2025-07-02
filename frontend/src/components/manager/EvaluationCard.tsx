@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import RatingStars from "./RatingStars.tsx";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { FaInfoCircle } from "react-icons/fa";
+import { Tooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
 import type { EvaluationCriterion } from "../../types/EvaluationManager.tsx";
 
 interface Props {
@@ -46,8 +49,22 @@ export default function EvaluationCard({ criterion, index, onChange }: Props) {
             {index + 1}
           </span>
         )}
-        <h3 className="font-semibold text-gray-700">
+        <h3 className="font-semibold text-gray-700 flex items-center gap-2">
           {formatCriterionName(criterion.title)}
+          {criterion.description && (
+            <>
+              <FaInfoCircle
+                data-tooltip-id={`tooltip-crit-${index}`}
+                data-tooltip-content={criterion.description}
+                className="text-green-main hover:text-gray-600 cursor-pointer w-4.5 h-4.5"
+              />
+              <Tooltip
+                id={`tooltip-crit-${index}`}
+                place="top"
+                className="bg-gray-800 text-white px-2 py-1 rounded text-sm"
+              />
+            </>
+          )}
         </h3>
         <span className="ml-auto font-semibold text-gray-700">
           {criterion.selfRating?.toFixed(1) ?? "-"}
@@ -73,6 +90,11 @@ export default function EvaluationCard({ criterion, index, onChange }: Props) {
               Autoavaliação
             </span>
             <RatingStars value={criterion.selfRating} readOnly size={28} />
+            <span className="text-xs text-gray-500 font-medium mt-1 mb-1">
+              {criterion.selfScoreDescription && (
+                <span className="italic">{criterion.selfScoreDescription}</span>
+              )}
+            </span>
             <span className="text-sm text-gray-500 font-medium mt-2 mb-1">
               Justificativa
             </span>

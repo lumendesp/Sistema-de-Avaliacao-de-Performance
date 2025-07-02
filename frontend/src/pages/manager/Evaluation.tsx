@@ -86,18 +86,22 @@ export default function CollaboratorEvaluation() {
             // Busca resposta do self evaluation para este critério
             let selfRating = 0;
             let selfJustification = "";
+            let selfScoreDescription = "";
             if (selfEval && selfEval.items) {
               const found = selfEval.items.find((item: any) => item.criterionId === cc.criterion.id);
               if (found) {
                 selfRating = found.score;
                 selfJustification = found.justification;
+                selfScoreDescription = found.scoreDescription || "";
               }
             }
             return {
               id: cc.criterion.id,
               title: cc.criterion.name,
+              description: cc.criterion.generalDescription || "", // adiciona descrição
               selfRating,
               selfJustification,
+              selfScoreDescription,
               managerRating: undefined,
               managerJustification: "",
             };
