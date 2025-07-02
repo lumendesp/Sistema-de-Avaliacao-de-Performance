@@ -21,6 +21,7 @@ import { CollaboratorsSearchBarModule } from './collaborator/collaborators-searc
 import { ReferenceModule } from './reference/reference.module';
 import { PeerEvaluationModule } from './collaborator/peer-evaluation/peer-evaluation.module';
 import { RHDashboardModule } from './rh/dashboard/dashboard.module';
+import { ImportModule } from './rh/import/import.module';
 
 @Module({
   imports: [CiclosModule, NotasModule,
@@ -42,6 +43,7 @@ import { RHDashboardModule } from './rh/dashboard/dashboard.module';
     ReferenceModule,
     PeerEvaluationModule,
     RHDashboardModule,
+    ImportModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
