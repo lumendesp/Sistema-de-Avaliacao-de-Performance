@@ -1,12 +1,24 @@
 import React, { useState } from "react";
 import RatingStars from "./RatingStars.tsx";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { FaInfoCircle } from "react-icons/fa";
+import { Tooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
 import type { EvaluationCriterion } from "../../types/EvaluationManager.tsx";
 
 interface Props {
   criterion: EvaluationCriterion;
   index: number;
   onChange?: (updated: Partial<EvaluationCriterion>) => void;
+}
+
+// Função utilitária para formatar nomes de critérios
+function formatCriterionName(name: string) {
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
 export default function EvaluationCard({ criterion, index, onChange }: Props) {
@@ -37,7 +49,23 @@ export default function EvaluationCard({ criterion, index, onChange }: Props) {
             {index + 1}
           </span>
         )}
-        <h3 className="font-semibold text-gray-700">{criterion.title}</h3>
+        <h3 className="font-semibold text-gray-700 flex items-center gap-2">
+          {formatCriterionName(criterion.title)}
+          {criterion.description && (
+            <>
+              <FaInfoCircle
+                data-tooltip-id={`tooltip-crit-${index}`}
+                data-tooltip-content={criterion.description}
+                className="text-green-main hover:text-gray-600 cursor-pointer w-4.5 h-4.5"
+              />
+              <Tooltip
+                id={`tooltip-crit-${index}`}
+                place="top"
+                className="bg-gray-800 text-white px-2 py-1 rounded text-sm"
+              />
+            </>
+          )}
+        </h3>
         <span className="ml-auto font-semibold text-gray-700">
           {criterion.selfRating?.toFixed(1) ?? "-"}
         </span>
@@ -62,7 +90,14 @@ export default function EvaluationCard({ criterion, index, onChange }: Props) {
               Autoavaliação
             </span>
             <RatingStars value={criterion.selfRating} readOnly size={28} />
-            <span className="text-sm text-gray-500 font-medium mt-2 mb-1">
+            <span className="text-xs text-gray-500 font-medium mt-1 mb-1 min-h-[20px]">
+              {criterion.selfScoreDescription ? (
+                <span className="italic">{criterion.selfScoreDescription}</span>
+              ) : (
+                <span className="invisible">placeholder</span>
+              )}
+            </span>
+            <span className="text-sm text-gray-500 font-medium mb-1 mt-[2px]">
               Justificativa
             </span>
             <textarea
@@ -81,7 +116,11 @@ export default function EvaluationCard({ criterion, index, onChange }: Props) {
               onChange={(val: number) => onChange?.({ managerRating: val })}
               size={28}
             />
-            <span className="text-sm text-gray-500 font-medium mt-2 mb-1">
+            {/* Espaço reservado para alinhar com a descrição da nota da autoavaliação */}
+            <span className="text-xs text-gray-500 font-medium mt-1 mb-1 min-h-[20px]">
+              <span className="invisible">placeholder</span>
+            </span>
+            <span className="text-sm text-gray-500 font-medium mb-1 mt-[1px]">
               Justificativa
             </span>
             <textarea
