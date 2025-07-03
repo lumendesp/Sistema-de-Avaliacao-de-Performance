@@ -42,30 +42,30 @@ export class UsersService {
       where: {
         roles: {
           some: {
-            role: 'COLLABORATOR'
-          }
-        }
+            role: 'COLLABORATOR',
+          },
+        },
       },
-      include: { 
-        roles: true, 
-        unit: true, 
-        position: true, 
+      include: {
+        roles: true,
+        unit: true,
+        position: true,
         track: true,
         finalScores: {
           include: {
-            cycle: true
-          }
+            cycle: true,
+          },
         },
         selfEvaluations: {
           include: {
-            items: true
-          }
+            items: true,
+          },
         },
         managerEvaluationsReceived: {
           include: {
-            items: true
-          }
-        }
+            items: true,
+          },
+        },
       },
     });
   }

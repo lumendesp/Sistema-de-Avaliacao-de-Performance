@@ -3,7 +3,7 @@ import React from "react";
 interface ProfileCardProps {
   name: string;
   role: string;
-  department: string;
+  unity: string;
   email: string;
   accounts: string[];
   onSwitchAccount: (account: string) => void;
@@ -13,7 +13,7 @@ interface ProfileCardProps {
 const ProfileCard: React.FC<ProfileCardProps> = ({
   name,
   role,
-  department,
+  unity,
   email,
   accounts,
   onSwitchAccount,
@@ -46,6 +46,18 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     }
   }
 
+  // Mapeamento de roles para português
+  const roleMap: Record<string, string> = {
+    ADMIN: "Administrador",
+    MANAGER: "Gestor",
+    COLLABORATOR: "Colaborador",
+    MENTOR: "Mentor",
+    RH: "RH",
+    COMMITTEE: "Comitê",
+    HR: "RH",
+    // Adicione outros papéis conforme necessário
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl p-9 mt-12 flex flex-col items-center relative">
       {/* Avatar com iniciais ou imagem */}
@@ -73,17 +85,22 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         <h2 className="text-2xl font-extrabold text-gray-800 mb-1 tracking-tight">
           {name}
         </h2>
-        <p className="text-[#08605F] font-semibold text-base mb-2">{role}</p>
+        {/* Exibe apenas o cargo/role atual selecionado */}
+        <p className="text-[#08605F] font-semibold text-lg mb-2">
+          {roleMap[role] || role}
+        </p>
         <div className="flex flex-col md:flex-row gap-5 w-full justify-center mt-3 mb-5">
-          <div className="flex flex-col items-center bg-[#E6F4F4] rounded-xl px-6 py-3 shadow">
-            <span className="text-gray-500 text-xs">Departamento</span>
+          <div className="flex flex-col flex-1 items-center bg-[#E6F4F4] rounded-xl px-6 py-3 shadow">
+            <span className="text-gray-500 text-xs">Unidade</span>
             <span className="text-[#08605F] font-medium text-base">
-              {department}
+              {unity || "-"}
             </span>
           </div>
-          <div className="flex flex-col items-center bg-[#E6F4F4] rounded-xl px-6 py-3 shadow">
+          <div className="flex flex-col flex-1 items-center bg-[#E6F4F4] rounded-xl px-6 py-3 shadow">
             <span className="text-gray-500 text-xs">E-mail</span>
-            <span className="text-[#08605F] font-medium text-base">{email}</span>
+            <span className="text-[#08605F] font-medium text-base">
+              {email}
+            </span>
           </div>
         </div>
         {accounts.length > 1 && (
@@ -92,13 +109,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               Trocar de conta:
             </label>
             <select
-              className="border border-[#08605F] rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#08605F] bg-white text-[#08605F] font-semibold text-sm"
+              className="border border-[#08605F] rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#08605F] bg-white text-[#08605F] font-semibold text-base"
               value={currentAccount}
               onChange={(e) => onSwitchAccount(e.target.value)}
             >
               {accounts.map((acc) => (
                 <option key={acc} value={acc}>
-                  {acc}
+                  {roleMap[acc] || acc}
                 </option>
               ))}
             </select>

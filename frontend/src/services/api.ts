@@ -221,6 +221,17 @@ export const updateEvaluation = async (id: number, data: any) => {
   return response.json();
 };
 
+// Busca os dados do usuário pelo id
+export const getUserById = async (id: number) => {
+  const response = await fetch(`${API_URL}/users/${id}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error("Não foi possível obter o usuário");
+  }
+  return response.json();
+};
+
 // Gestor (avaliações)
 
 export const fetchManagerCollaborators = async (managerId: number) => {
