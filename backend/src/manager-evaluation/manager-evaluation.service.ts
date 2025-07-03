@@ -6,6 +6,38 @@ import {
 import { PrismaService } from '../prisma.service';
 import { CreateManagerEvaluationDto } from './dto/create-manager-evaluation.dto';
 import { UpdateManagerEvaluationDto } from './dto/update-manager-evaluation.dto';
+import * as crypto from 'crypto';
+
+const ENCRYPTION_KEY =
+  process.env.EVAL_ENCRYPT_KEY?.padEnd(32, '0').slice(0, 32) ||
+  '12345678901234567890123456789012'; // 32 bytes
+const IV_LENGTH = 16;
+
+function encrypt(text: string): string {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv(
+    'aes-256-cbc',
+    Buffer.from(ENCRYPTION_KEY),
+    iv,
+  );
+  let encrypted = cipher.update(text, 'utf8', 'base64');
+  encrypted += cipher.final('base64');
+  return iv.toString('base64') + ':' + encrypted;
+}
+
+function decrypt(text: string): string {
+  if (!text) return '';
+  const [ivStr, encrypted] = text.split(':');
+  const iv = Buffer.from(ivStr, 'base64');
+  const decipher = crypto.createDecipheriv(
+    'aes-256-cbc',
+    Buffer.from(ENCRYPTION_KEY),
+    iv,
+  );
+  let decrypted = decipher.update(encrypted, 'base64', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+}
 
 @Injectable()
 export class ManagerEvaluationService {
@@ -55,7 +87,7 @@ export class ManagerEvaluationService {
             group.items.map((item) => ({
               criterion: { connect: { id: item.criterionId } },
               score: item.score,
-              justification: item.justification || '',
+              justification: encrypt(item.justification || ''), // justification criptografada
               scoreDescription: this.getScoreDescription(item.score),
               groupId: group.groupId,
             })),
@@ -77,8 +109,8 @@ export class ManagerEvaluationService {
             create: groups.flatMap((group) =>
               group.items.map((item) => ({
                 criterion: { connect: { id: item.criterionId } },
-                score: item.score,
-                justification: item.justification || '',
+                score: item.score, // score como number
+                justification: encrypt(item.justification || ''), // justification criptografada
                 scoreDescription: this.getScoreDescription(item.score),
                 groupId: group.groupId,
               })),
@@ -92,6 +124,7 @@ export class ManagerEvaluationService {
 
   // Agrupa os itens por groupId ao retornar avaliações
   private groupItems(items: any[]) {
+    // Descriptografa justification, mas score permanece number
     const groups: any = {};
     for (const item of items) {
       if (!groups[item.groupId]) {
@@ -100,7 +133,10 @@ export class ManagerEvaluationService {
           items: [],
         };
       }
-      groups[item.groupId].items.push(item);
+      groups[item.groupId].items.push({
+        ...item,
+        justification: decrypt(item.justification),
+      });
     }
     return Object.values(groups);
   }
