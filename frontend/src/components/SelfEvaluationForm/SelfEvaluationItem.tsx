@@ -1,16 +1,20 @@
 import { useState } from "react";
-import { FaChevronUp, FaChevronDown, FaCheckCircle } from "react-icons/fa";
+import { FaChevronUp, FaChevronDown, FaCheckCircle, FaInfoCircle } from "react-icons/fa";
 import type { SelfEvaluationItemProps } from "../../types/selfEvaluation";
 import StarRating from "../StarRating";
 import ScoreBox from "../ScoreBox";
+import { Tooltip } from "react-tooltip";
+import 'react-tooltip/dist/react-tooltip.css';
 
 const SelfEvaluationItem = ({
   index,
   title,
+  description,
   score,
-  setScore,
   justification,
+  setScore,
   setJustification,
+  readOnly = false,
 }: SelfEvaluationItemProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const isComplete = score > 0 && justification.trim().length > 0;
@@ -29,7 +33,24 @@ const SelfEvaluationItem = ({
               {index}
             </div>
           )}
-          <p className="font-semibold">{title}</p>
+
+          <div className="flex items-center gap-3 font-semibold">
+            <span>{title}</span>
+            {description && (
+              <>
+                <FaInfoCircle
+                  data-tooltip-id={`tooltip-${index}`}
+                  data-tooltip-content={description}
+                  className="text-green-main hover:text-gray-600 cursor-pointer w-4.5 h-4.5"
+                />
+                <Tooltip
+                  id={`tooltip-${index}`}
+                  place="top"
+                  className="bg-gray-800 text-white px-2 py-1 rounded text-sm"
+                />
+              </>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <ScoreBox score={score} />
@@ -42,10 +63,17 @@ const SelfEvaluationItem = ({
       {isOpen && (
         <div className="space-y-4">
           <p className="text-sm text-gray-500">
-            Dê uma avaliação de 1 a 5 com base no critério
+            {readOnly
+              ? "Nota atribuída ao critério:"
+              : "Dê uma avaliação de 1 a 5 com base no critério"}
           </p>
 
-          <StarRating score={score} onChange={setScore} />
+          <StarRating
+            score={score}
+            onChange={(newScore) => {
+              if (!readOnly) setScore(newScore);
+            }}
+          />
 
           <div>
             <label
@@ -60,7 +88,10 @@ const SelfEvaluationItem = ({
               rows={3}
               placeholder="Justifique sua nota"
               value={justification}
-              onChange={(e) => setJustification(e.target.value)}
+              onChange={(e) => {
+                if (!readOnly) setJustification(e.target.value);
+              }}
+              disabled={readOnly}
             />
           </div>
         </div>
@@ -70,3 +101,4 @@ const SelfEvaluationItem = ({
 };
 
 export default SelfEvaluationItem;
+  

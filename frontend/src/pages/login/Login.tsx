@@ -21,6 +21,12 @@ const Login = () => {
     else setError("Invalid credentials");
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleLogin();
+    }
+  };
+
   return (
     <div className="bg-[#08605F1F] h-screen w-full flex items-center justify-center select-none">
       <div className="bg-white flex w-full max-w-4xl rounded-3xl shadow-xl">
@@ -31,7 +37,7 @@ const Login = () => {
               Access your performance dashboard
             </p>
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4" onKeyDown={handleKeyDown}>
             <div className="flex flex-col gap-1">
               <label htmlFor="email" className="text-sm text-gray-700 mb-1">
                 Email
