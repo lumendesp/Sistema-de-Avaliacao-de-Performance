@@ -179,7 +179,7 @@ function Equalization(){
 
     return(
         <div className="w-full min-h-screen">
-            <div className="w-full bg-gray-300 min-h-full">
+            <div className="w-full bg-[#f1f1f1] min-h-full">
                 <div className="bg-white w-full min-h-[15%] p-4 box-border border border-gray-300">
                     <h1 className="text-left mb-4 mt-4 ml-2 sm:ml-4 text-xl sm:text-2xl font-semibold text-gray-800">
                         Equalizações
