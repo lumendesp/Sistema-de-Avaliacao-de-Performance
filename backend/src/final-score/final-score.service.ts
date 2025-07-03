@@ -182,4 +182,12 @@ export class FinalScoreService {
       },
     });
   }
+
+  async getFinalScoreGradeByUserAndCycle(userId: number, cycleId: number) {
+    const score = await this.prisma.finalScore.findFirst({
+      where: { userId, cycleId },
+      select: { finalScore: true, id: true, userId: true, cycleId: true },
+    });
+    return score;
+  }
 } 
