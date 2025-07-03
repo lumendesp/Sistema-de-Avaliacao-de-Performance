@@ -7,6 +7,7 @@ import CircularProgress from "../../components/Committee/CirculaProgress";
 import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import persons from "../../assets/committee/two-persons.png";
 import { UserIcon } from '../../components/UserIcon';
+import { FaDownload } from 'react-icons/fa';
 
 interface Collaborator {
     id: number;
@@ -25,10 +26,13 @@ interface Collaborator {
 function Committee(){
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
     const [showBulkExportOptions, setShowBulkExportOptions] = useState(false);
+    const [fullUserData, setFullUserData] = useState<any[]>([]);
 
     const fetchCollaborators = async () => {
         try {
             const users = await getUsersWithEvaluationsForCommittee();
+            setFullUserData(users); // Store full data for export
+            
             const formattedCollaborators = users.map((user: any) => {
                 const evaluations = user.evaluationsEvaluated || [];
                 
@@ -91,23 +95,24 @@ function Committee(){
 
     const remainingDays = getRemainingDays();
 
-
-    // // CASO PRECISE DE TODOS OS USUARIOS EXPORTADOS
-    // const handleBulkExport = (type: 'csv' | 'xlsx') => {
-    //     collaborators.forEach((collab, index) => {
-    //         setTimeout(() => {
-    //             const user = users.find((u: any) => u.id === collab.id);
-    //             if (!user) return;
-    //             const evaluationData = transformBackendDataToExport(user);
-    //             const fileName = `${collab.name.replace(/\s+/g, '_')}_${type === 'xlsx' ? 'xlsx' : 'csv'}`;
-    //             if (type === 'csv') {
-    //                 exportEvaluationToCSV(evaluationData, fileName);
-    //             } else {
-    //                 exportEvaluationToExcel(evaluationData, fileName);
-    //             }
-    //         }, index * 100); // 100ms delay 
-    //     });
-    // };
+    // Export functionality for all users
+    const handleBulkExport = (type: 'csv' | 'xlsx') => {
+        fullUserData.forEach((user, index) => {
+            setTimeout(() => {
+                try {
+                    const evaluationData = transformBackendDataToExport(user);
+                    const fileName = `${user.name.replace(/\s+/g, '_')}_${type === 'xlsx' ? 'xlsx' : 'csv'}`;
+                    if (type === 'csv') {
+                        exportEvaluationToCSV(evaluationData, fileName);
+                    } else {
+                        exportEvaluationToExcel(evaluationData, fileName);
+                    }
+                } catch (error) {
+                    console.error(`Error exporting ${user.name}:`, error);
+                }
+            }, index * 100); // 100ms delay 
+        });
+    };
 
     return(
         <div className="w-full min-h-screen bg-gray-300">
@@ -116,7 +121,6 @@ function Committee(){
                     <span className="font-bold">Olá,</span> comite
                 </h1>
                 <div className="flex items-center gap-4">
-                    {/*
                     <div className="relative">
                         <button
                             onClick={() => setShowBulkExportOptions(!showBulkExportOptions)}
@@ -156,7 +160,7 @@ function Committee(){
                                 </div>
                             </>
                         )}
-                    </div>*/}
+                    </div>
                     <UserIcon initials="CN" size={40} />
                 </div>
             </div>

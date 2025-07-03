@@ -28,6 +28,29 @@ interface PeerEvaluation {
   strengths: string;
 }
 
+interface MentorEvaluation {
+  evaluatorEmail: string;
+  evaluatorName: string;
+  score: number;
+  scoreDescription: string;
+  justification: string;
+}
+
+interface ManagerEvaluationItem {
+  criterion: string;
+  generalDescription: string;
+  score: number;
+  scoreDescription: string;
+  justification: string;
+}
+
+interface ManagerEvaluation {
+  evaluatorEmail: string;
+  evaluatorName: string;
+  items: ManagerEvaluationItem[];
+  overallScore?: number;
+}
+
 interface Reference {
   referenceEmail: string;
   referenceName: string;
@@ -38,6 +61,8 @@ interface EvaluationData {
   userProfile: UserProfile;
   selfEvaluation: SelfEvaluationItem[];
   peerEvaluations: PeerEvaluation[];
+  mentorEvaluations: MentorEvaluation[];
+  managerEvaluations: ManagerEvaluation[];
   references: Reference[];
   cycle: string;
 }
@@ -51,10 +76,14 @@ export const exportEvaluationToExcel = (data: EvaluationData, fileName?: string)
       'Nome': data.userProfile.name,
       'Email': data.userProfile.email,
       'Ciclo em que a avaliação foi realizada (ano.semestre)': data.cycle,
-      'Unidade': data.userProfile.unit
+      'Unidade': data.userProfile.unit,
+      'Cargo': data.userProfile.position,
+      'Trilha': data.userProfile.track
     }
   ];
   
+  console.log("TESTE DO EXPORT", data);
+
   const profileSheet = XLSX.utils.json_to_sheet(profileData);
   XLSX.utils.book_append_sheet(wb, profileSheet, 'Perfil do Usuário');
   
@@ -72,7 +101,8 @@ export const exportEvaluationToExcel = (data: EvaluationData, fileName?: string)
   
   // Sheet 3: 360 Evaluation (Avaliação 360)
   const peerEvaluationData = data.peerEvaluations.map(item => ({
-    'Email do avaliado (primeiro.último)': item.evaluatorEmail,
+    'Email do avaliador (primeiro.último)': item.evaluatorEmail,
+    'Nome do Avaliador': item.evaluatorName,
     'Projetos que trabalharam juntos': item.projects,
     'Período': item.period,
     'Motivado a trabalhar novamente': item.motivatedToWorkAgain,
@@ -84,9 +114,54 @@ export const exportEvaluationToExcel = (data: EvaluationData, fileName?: string)
   const peerEvaluationSheet = XLSX.utils.json_to_sheet(peerEvaluationData);
   XLSX.utils.book_append_sheet(wb, peerEvaluationSheet, 'Avaliação 360');
   
-  // Sheet 4: Reference Search (Pesquisa de Referência)
+  // Sheet 4: Mentor Evaluation (Avaliação do Mentor)
+  const mentorEvaluationData = data.mentorEvaluations.map(item => ({
+    'Email do Mentor': item.evaluatorEmail,
+    'Nome do Mentor': item.evaluatorName,
+    'Nota': item.score,
+    'Descrição da Nota': item.scoreDescription,
+    'Justificativa': item.justification
+  }));
+  
+  const mentorEvaluationSheet = XLSX.utils.json_to_sheet(mentorEvaluationData);
+  XLSX.utils.book_append_sheet(wb, mentorEvaluationSheet, 'Avaliação do Mentor');
+  
+  // Sheet 5: Manager Evaluation (Avaliação do Gestor)
+  const managerEvaluationData: any[] = [];
+  data.managerEvaluations.forEach(managerEval => {
+    if (managerEval.items && managerEval.items.length > 0) {
+      managerEval.items.forEach(item => {
+        managerEvaluationData.push({
+          'Email do Gestor': managerEval.evaluatorEmail,
+          'Nome do Gestor': managerEval.evaluatorName,
+          'Critério': item.criterion,
+          'Descrição Geral': item.generalDescription,
+          'Nota': item.score,
+          'Descrição da Nota': item.scoreDescription,
+          'Justificativa': item.justification
+        });
+      });
+    } else {
+      // If no items, add a row with overall score
+      managerEvaluationData.push({
+        'Email do Gestor': managerEval.evaluatorEmail,
+        'Nome do Gestor': managerEval.evaluatorName,
+        'Critério': 'Avaliação Geral',
+        'Descrição Geral': 'Avaliação geral do gestor',
+        'Nota': managerEval.overallScore || 0,
+        'Descrição da Nota': getScoreDescription(managerEval.overallScore || 0),
+        'Justificativa': 'Avaliação geral do gestor'
+      });
+    }
+  });
+  
+  const managerEvaluationSheet = XLSX.utils.json_to_sheet(managerEvaluationData);
+  XLSX.utils.book_append_sheet(wb, managerEvaluationSheet, 'Avaliação do Gestor');
+  
+  // Sheet 6: Reference Search (Pesquisa de Referência)
   const referenceData = data.references.map(item => ({
     'Email da referência (primeiro.último)': item.referenceEmail,
+    'Nome da Referência': item.referenceName,
     'Justificativa': item.justification
   }));
   
@@ -125,8 +200,8 @@ export const exportEvaluationToCSV = (data: EvaluationData, fileName?: string) =
   
   // Sheet 1: User Profile
   csvContent += '=== PERFIL DO USUÁRIO ===\n';
-  csvContent += 'Nome,Email,Ciclo em que a avaliação foi realizada (ano.semestre),Unidade\n';
-  csvContent += `${data.userProfile.name},${data.userProfile.email},${data.cycle},${data.userProfile.unit}\n\n`;
+  csvContent += 'Nome,Email,Ciclo em que a avaliação foi realizada (ano.semestre),Unidade,Cargo,Trilha\n';
+  csvContent += `${data.userProfile.name},${data.userProfile.email},${data.cycle},${data.userProfile.unit},${data.userProfile.position},${data.userProfile.track}\n\n`;
   
   // Sheet 2: Self Evaluation
   csvContent += '=== AUTOAVALIAÇÃO ===\n';
@@ -138,17 +213,39 @@ export const exportEvaluationToCSV = (data: EvaluationData, fileName?: string) =
   
   // Sheet 3: 360 Evaluation
   csvContent += '=== AVALIAÇÃO 360 ===\n';
-  csvContent += 'Email do avaliado (primeiro.último),Projetos que trabalharam juntos,Período,Motivado a trabalhar novamente,Nota geral para o funcionário,Pontos para melhoria,Pontos fortes e que podem ser explorados\n';
+  csvContent += 'Email do avaliador (primeiro.último),Nome do Avaliador,Projetos que trabalharam juntos,Período,Motivado a trabalhar novamente,Nota geral para o funcionário,Pontos para melhoria,Pontos fortes e que podem ser explorados\n';
   data.peerEvaluations.forEach(item => {
-    csvContent += `"${item.evaluatorEmail}","${item.projects}","${item.period}","${item.motivatedToWorkAgain}",${item.overallGrade},"${item.improvementPoints}","${item.strengths}"\n`;
+    csvContent += `"${item.evaluatorEmail}","${item.evaluatorName}","${item.projects}","${item.period}","${item.motivatedToWorkAgain}",${item.overallGrade},"${item.improvementPoints}","${item.strengths}"\n`;
   });
   csvContent += '\n';
   
-  // Sheet 4: Reference Search
+  // Sheet 4: Mentor Evaluation
+  csvContent += '=== AVALIAÇÃO DO MENTOR ===\n';
+  csvContent += 'Email do Mentor,Nome do Mentor,Nota,Descrição da Nota,Justificativa\n';
+  data.mentorEvaluations.forEach(item => {
+    csvContent += `"${item.evaluatorEmail}","${item.evaluatorName}",${item.score},"${item.scoreDescription}","${item.justification}"\n`;
+  });
+  csvContent += '\n';
+  
+  // Sheet 5: Manager Evaluation
+  csvContent += '=== AVALIAÇÃO DO GESTOR ===\n';
+  csvContent += 'Email do Gestor,Nome do Gestor,Critério,Descrição Geral,Nota,Descrição da Nota,Justificativa\n';
+  data.managerEvaluations.forEach(managerEval => {
+    if (managerEval.items && managerEval.items.length > 0) {
+      managerEval.items.forEach(item => {
+        csvContent += `"${managerEval.evaluatorEmail}","${managerEval.evaluatorName}","${item.criterion}","${item.generalDescription}",${item.score},"${item.scoreDescription}","${item.justification}"\n`;
+      });
+    } else {
+      csvContent += `"${managerEval.evaluatorEmail}","${managerEval.evaluatorName}","Avaliação Geral","Avaliação geral do gestor",${managerEval.overallScore || 0},"${getScoreDescription(managerEval.overallScore || 0)}","Avaliação geral do gestor"\n`;
+    }
+  });
+  csvContent += '\n';
+  
+  // Sheet 6: Reference Search
   csvContent += '=== PESQUISA DE REFERÊNCIA ===\n';
-  csvContent += 'Email da referência (primeiro.último),Justificativa\n';
+  csvContent += 'Email da referência (primeiro.último),Nome da Referência,Justificativa\n';
   data.references.forEach(item => {
-    csvContent += `"${item.referenceEmail}","${item.justification}"\n`;
+    csvContent += `"${item.referenceEmail}","${item.referenceName}","${item.justification}"\n`;
   });
   
   // Create and download the file
@@ -230,26 +327,38 @@ export const createSampleEvaluationData = (userName: string, userEmail: string):
         overallGrade: 4.0,
         improvementPoints: 'Às vezes demora para responder mensagens e poderia ser mais assertivo em reuniões',
         strengths: 'Muito técnico, resolve problemas complexos rapidamente, tem conhecimento profundo das tecnologias, é confiável'
-      },
+      }
+    ],
+    mentorEvaluations: [
       {
-        evaluatorEmail: 'pedro.oliveira@empresa.com',
-        evaluatorName: 'Pedro Oliveira',
-        projects: 'Sistema de Notificações, Cache Distribuído, Monitoramento',
-        period: '4 meses',
-        motivatedToWorkAgain: 'Sim',
-        overallGrade: 4.2,
-        improvementPoints: 'Poderia melhorar a apresentação de ideias em reuniões e ser mais paciente com desenvolvedores júnior',
-        strengths: 'Muito experiente, compartilha conhecimento, tem boa visão de produto, é um bom mentor'
-      },
+        evaluatorEmail: 'carlos.mentor@empresa.com',
+        evaluatorName: 'Carlos Mentor',
+        score: 4.5,
+        scoreDescription: 'Excelente',
+        justification: 'Excelente mentorado, sempre demonstrou interesse em aprender e crescer. Muito proativo e dedicado ao desenvolvimento pessoal e profissional.'
+      }
+    ],
+    managerEvaluations: [
       {
-        evaluatorEmail: 'ana.costa@empresa.com',
-        evaluatorName: 'Ana Costa',
-        projects: 'Sistema de Usuários, Autenticação OAuth, Logs Centralizados',
-        period: '5 meses',
-        motivatedToWorkAgain: 'Sim',
-        overallGrade: 4.1,
-        improvementPoints: 'Poderia ser mais direto na comunicação e melhorar a gestão de tempo em projetos complexos',
-        strengths: 'Muito organizado, entrega sempre no prazo, tem boa qualidade de código, é confiável'
+        evaluatorEmail: 'ana.gestora@empresa.com',
+        evaluatorName: 'Ana Gestora',
+        items: [
+          {
+            criterion: 'Organização no Trabalho',
+            generalDescription: 'Capacidade de manter o ambiente organizado e cumprir prazos estabelecidos',
+            score: 4.2,
+            scoreDescription: 'Muito Bom',
+            justification: 'Mantém excelente organização e sempre cumpre os prazos estabelecidos. Comunica claramente o progresso dos projetos.'
+          },
+          {
+            criterion: 'Team Player',
+            generalDescription: 'Capacidade de trabalhar em equipe e colaborar efetivamente',
+            score: 4.4,
+            scoreDescription: 'Muito Bom',
+            justification: 'Excelente colaborador, sempre disponível para ajudar a equipe e compartilhar conhecimento.'
+          }
+        ],
+        overallScore: 4.3
       }
     ],
     references: [
@@ -262,16 +371,6 @@ export const createSampleEvaluationData = (userName: string, userEmail: string):
         referenceEmail: 'julia.ferreira@empresa.com',
         referenceName: 'Júlia Ferreira',
         justification: 'Muito competente tecnicamente e sempre busca aprender novas tecnologias. É um ótimo colega de trabalho, sempre disponível para ajudar e compartilhar conhecimento.'
-      },
-      {
-        referenceEmail: 'roberto.almeida@empresa.com',
-        referenceName: 'Roberto Almeida',
-        justification: 'Profissional dedicado e comprometido com a qualidade. Sempre busca a excelência em suas entregas e contribui positivamente para o ambiente de trabalho.'
-      },
-      {
-        referenceEmail: 'fernanda.lima@empresa.com',
-        referenceName: 'Fernanda Lima',
-        justification: 'Muito responsável e organizado. Sempre cumpre os prazos e mantém boa comunicação com a equipe. É um profissional confiável e competente.'
       }
     ]
   };
@@ -279,58 +378,93 @@ export const createSampleEvaluationData = (userName: string, userEmail: string):
 
 // Function to transform backend data to export format
 export const transformBackendDataToExport = (backendData: any): EvaluationData => {
-  // Extract user profile
+  console.log('Backend data for export:', backendData);
+
   const userProfile: UserProfile = {
     id: backendData.id,
     name: backendData.name,
     email: backendData.email || `${backendData.name.toLowerCase().replace(/\s+/g, '.')}@empresa.com`,
-    unit: backendData.unit?.name || 'Engenharia',
-    position: backendData.position?.name || 'Desenvolvedor',
-    track: backendData.track?.name || 'Backend'
+    unit: backendData.unit || 'Não informado',
+    position: backendData.position || 'Não informado',
+    track: backendData.track || 'Não informado',
   };
 
-  // Extract self evaluation data
-  const selfEvaluation: SelfEvaluationItem[] = backendData.selfEvaluations?.[0]?.items?.map((item: any) => ({
-    criterion: item.criterion?.name || 'Critério não informado',
-    generalDescription: item.criterion?.generalDescription || 'Descrição não disponível',
-    selfEvaluation: item.score || 0,
-    scoreDescription: getScoreDescription(item.score),
-    justification: item.justification || 'Justificativa não disponível'
-  })) || [];
+  const selfEvaluation: SelfEvaluationItem[] = backendData.autoAvaliacao
+    ? [
+        {
+          criterion: 'Nota da Autoavaliação',
+          generalDescription: 'Autoavaliação geral do colaborador',
+          selfEvaluation: backendData.autoAvaliacao,
+          scoreDescription: getScoreDescription(backendData.autoAvaliacao),
+          justification: backendData.justificativaAutoAvaliacao || 'Sem justificativa',
+        },
+      ]
+    : [];
 
-  // Extract peer evaluation data
-  const peerEvaluations: PeerEvaluation[] = backendData.peerEvaluationsReceived?.map((evaluation: any) => ({
-    evaluatorEmail: evaluation.evaluator?.email || `${evaluation.evaluator?.name?.toLowerCase().replace(/\s+/g, '.') || 'avaliador'}@empresa.com`,
-    evaluatorName: evaluation.evaluator?.name || 'Avaliador não informado',
-    projects: evaluation.projects?.map((p: any) => p.project?.name).join(', ') || 'Projetos não especificados',
-    period: evaluation.projects?.map((p: any) => `${p.period} meses`).join(', ') || 'Período não especificado',
-    motivatedToWorkAgain: evaluation.motivation || 'Não informado', // This should be mapped from backend if available
-    overallGrade: evaluation.score || 0,
-    improvementPoints: evaluation.improvements || 'Pontos de melhoria não especificados',
-    strengths: evaluation.strengths || 'Pontos fortes não especificados'
-  })) || [];
+  const peerEvaluations: PeerEvaluation[] = backendData.avaliacao360
+    ? [
+        {
+          evaluatorEmail: 'avaliador360@empresa.com',
+          evaluatorName: 'Avaliador 360',
+          projects: 'Não informado',
+          period: 'Não informado',
+          motivatedToWorkAgain: 'Não informado',
+          overallGrade: backendData.avaliacao360,
+          improvementPoints: 'Não informado',
+          strengths: backendData.justificativa360 || 'Sem justificativa',
+        },
+      ]
+    : [];
 
-  // Extract references data
-  const references: Reference[] = backendData.referencesReceived?.map((reference: any) => ({
-    referenceEmail: reference.provider?.email || `${reference.provider?.name?.toLowerCase().replace(/\s+/g, '.') || 'referencia'}@empresa.com`,
-    referenceName: reference.provider?.name || 'Referência não informada',
-    justification: reference.justification || 'Justificativa não disponível'
-  })) || [];
+  const mentorEvaluations: MentorEvaluation[] = backendData.notaMentor
+    ? [
+        {
+          evaluatorEmail: 'mentor@empresa.com',
+          evaluatorName: 'Mentor Padrão',
+          score: backendData.notaMentor,
+          scoreDescription: getScoreDescription(backendData.notaMentor),
+          justification: backendData.justificativaMentor || 'Sem justificativa',
+        },
+      ]
+    : [];
 
-  // Get cycle information
-  const cycle = backendData.finalScores?.[0]?.cycle?.name || 
-                backendData.selfEvaluations?.[0]?.cycle?.name || 
-                backendData.peerEvaluationsReceived?.[0]?.cycle?.name || 
-                '2024.2';
+  const managerEvaluations: ManagerEvaluation[] = backendData.notaGestor
+    ? [
+        {
+          evaluatorEmail: 'gestor@empresa.com',
+          evaluatorName: 'Gestor Padrão',
+          items: [
+            {
+              criterion: 'Nota da Avaliação do Gestor',
+              generalDescription: 'Avaliação geral do gestor',
+              score: backendData.notaGestor,
+              scoreDescription: getScoreDescription(backendData.notaGestor),
+              justification: backendData.justificativaGestor || 'Sem justificativa',
+            },
+          ],
+          overallScore: backendData.notaGestor,
+        },
+      ]
+    : [];
 
-  return {
+  const references: Reference[] = []; // Pode ser adicionado posteriormente se necessário.
+
+  const cycle = backendData.cycle || '2024.2';
+
+  const result: EvaluationData = {
     userProfile,
     selfEvaluation,
     peerEvaluations,
+    mentorEvaluations,
+    managerEvaluations,
     references,
-    cycle
+    cycle,
   };
+
+  console.log('Transformed data for export:', result);
+  return result;
 };
+
 
 // Helper function to get score description
 function getScoreDescription(score: number): string {
@@ -347,5 +481,21 @@ function getScoreDescription(score: number): string {
       return 'Supera as expectativas';
     default:
       return 'Nota inválida';
+  }
+}
+
+// Helper function to map motivation level
+function mapMotivationLevel(motivation: string): string {
+  switch (motivation) {
+    case 'CONCORDO_TOTALMENTE':
+      return 'Sim';
+    case 'CONCORDO_PARCIALMENTE':
+      return 'Sim, com ressalvas';
+    case 'DISCORDO_PARCIALMENTE':
+      return 'Não, com ressalvas';
+    case 'DISCORDO_TOTALMENTE':
+      return 'Não';
+    default:
+      return 'Não informado';
   }
 } 

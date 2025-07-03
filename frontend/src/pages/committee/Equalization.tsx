@@ -6,8 +6,6 @@ import EvaluationSummary from "../../components/Committee/CommitteeEquali/Evalua
 import FilterIcon from '../../assets/committee/filter-icon.png';
 import { createFinalScore, updateFinalScore, getUsersWithEvaluationsForCommittee } from '../../services/api';
 
-
-
 interface Collaborator {
     id: number;
     name: string;
@@ -52,6 +50,7 @@ function Equalization(){
     const fetchCollaborators = async () => {
         try {
             const users = await getUsersWithEvaluationsForCommittee();
+            
             const formattedCollaborators = users.map((user: any) => {
                 const evaluations = user.evaluationsEvaluated || [];
                 
@@ -214,7 +213,7 @@ function Equalization(){
                             <div key={collab.id} className="bg-white rounded-lg shadow-md">
                                 <div className="p-4">
                                     <div className="flex items-center">
-                                        <div className="w-[90%] sm:w-[95%]">
+                                        <div className="w-[95%] sm:w-[98%]">
                                             <Colaborators 
                                                 name={collab.name}
                                                 role={collab.role}
@@ -227,7 +226,7 @@ function Equalization(){
                                                 notaFinal={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal}
                                             />
                                         </div>
-                                        <div className="w-[10%] sm:w-[5%] flex justify-center">
+                                        <div className="w-[5%] sm:w-[2%] flex justify-center">
                                             <button 
                                                 onClick={() => setExpandedId(expandedId === collab.id ? null : collab.id)}
                                                 className="p-2 hover:bg-gray-100 rounded-full"
