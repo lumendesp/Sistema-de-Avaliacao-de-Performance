@@ -20,6 +20,7 @@ interface AvailableCriterion {
     name: string;
     displayName: string;
     generalDescription: string;
+    active: boolean;
     weight: number;
 }
 

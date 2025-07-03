@@ -107,6 +107,7 @@ CREATE TABLE "SelfEvaluation" (
     "userId" INTEGER NOT NULL,
     "cycleId" INTEGER NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "averageScore" REAL,
     CONSTRAINT "SelfEvaluation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "SelfEvaluation_cycleId_fkey" FOREIGN KEY ("cycleId") REFERENCES "EvaluationCycle" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
@@ -116,11 +117,13 @@ CREATE TABLE "SelfEvaluationItem" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "evaluationId" INTEGER NOT NULL,
     "criterionId" INTEGER NOT NULL,
+    "configuredCriterionId" INTEGER,
     "score" INTEGER NOT NULL,
     "justification" TEXT NOT NULL,
     "scoreDescription" TEXT,
     CONSTRAINT "SelfEvaluationItem_evaluationId_fkey" FOREIGN KEY ("evaluationId") REFERENCES "SelfEvaluation" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "SelfEvaluationItem_criterionId_fkey" FOREIGN KEY ("criterionId") REFERENCES "Criterion" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "SelfEvaluationItem_criterionId_fkey" FOREIGN KEY ("criterionId") REFERENCES "Criterion" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "SelfEvaluationItem_configuredCriterionId_fkey" FOREIGN KEY ("configuredCriterionId") REFERENCES "ConfiguredCriterion" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -236,6 +239,7 @@ CREATE TABLE "FinalScore" (
     "summary" TEXT,
     "adjustedBy" INTEGER,
     "justification" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "FinalScore_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "FinalScore_cycleId_fkey" FOREIGN KEY ("cycleId") REFERENCES "EvaluationCycle" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "FinalScore_adjustedBy_fkey" FOREIGN KEY ("adjustedBy") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE

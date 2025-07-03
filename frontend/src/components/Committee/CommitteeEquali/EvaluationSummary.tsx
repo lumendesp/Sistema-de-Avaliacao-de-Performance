@@ -4,7 +4,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from "jspdf";
 import downloadIcon from '../../../assets/committee/pdf-download.png';
 import GenAITextBox from "./GenAITextBox";
-import * as XLSX from 'xlsx';
+import { exportEvaluationToExcel, exportEvaluationToCSV, createSampleEvaluationData, transformBackendDataToExport } from '../../../services/export.service';
 
 interface CriterionProps {
     name: string;
@@ -47,6 +47,7 @@ interface EvaluationSummaryProps {
     role: string;
     autoAvaliacao: number;
     avaliacao360: number;
+    notaMentor: number;
     notaGestor: number;
     notaFinal?: number;
     onEdit?: () => void;
@@ -59,8 +60,10 @@ interface EvaluationSummaryProps {
     isEditing?: boolean;
     id?: string;
     justificativaAutoAvaliacao?: string;
+    justificativaMentor?: string;
     justificativaGestor?: string;
     justificativa360?: string;
+    backendData?: any;
 }
 
 function EvaluationSummary({ 
@@ -68,6 +71,7 @@ function EvaluationSummary({
     role,
     autoAvaliacao, 
     avaliacao360, 
+    notaMentor,
     notaGestor, 
     notaFinal,
     onEdit,
@@ -77,15 +81,17 @@ function EvaluationSummary({
     currentScore = 0,
     currentJustification = '',
     isEditing = false,
-    id,
     justificativaAutoAvaliacao = '',
+    justificativaMentor = '',
     justificativaGestor = '',
-    justificativa360 = ''
+    justificativa360 = '',
+    backendData
 }: EvaluationSummaryProps) {
     
     const hasAllGrades =
         typeof autoAvaliacao === 'number' &&
         typeof avaliacao360 === 'number' &&
+        typeof notaMentor === 'number' &&
         typeof notaGestor === 'number' &&
         typeof notaFinal === 'number';
       
@@ -145,6 +151,12 @@ function EvaluationSummary({
                     </div>
                 </div>
                 <div style="text-align: center; width: 23%;">
+                    <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Nota Gestor</h3>
+                    <div style="font-size: 24px; font-weight: bold; color: ${notaMentor >= 4 ? '#16a34a' : notaMentor >= 3 ? '#ca8a04' : '#dc2626'}">
+                        ${notaMentor.toFixed(1)}
+                    </div>
+                </div>
+                <div style="text-align: center; width: 23%;">
                     <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Avaliação 360</h3>
                     <div style="font-size: 24px; font-weight: bold; color: ${avaliacao360 >= 4 ? '#16a34a' : avaliacao360 >= 3 ? '#ca8a04' : '#dc2626'}">
                         ${avaliacao360.toFixed(1)}
@@ -166,6 +178,12 @@ function EvaluationSummary({
                     <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Autoavaliação (${autoAvaliacao.toFixed(1)})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
                         ${justificativaAutoAvaliacao || 'Justificativa não disponível'}
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Gestor (${notaGestor.toFixed(1)})</h4>
+                    <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
+                        ${justificativaMentor || 'Justificativa não disponível'}
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
@@ -222,55 +240,15 @@ function EvaluationSummary({
 
     // CSV/Excel download logic
     const handleDownloadSpreadsheet = (type: 'csv' | 'xlsx') => {
-        const data = [
-            {
-                'ID': id || '',
-                'Nome': name,
-                'Cargo': role,
-                'Autoavaliação': autoAvaliacao,
-                'Justificativa Autoavaliação': justificativaAutoAvaliacao || 'Não disponível',
-                'Avaliação 360°': avaliacao360,
-                'Justificativa 360°': justificativa360 || 'Não disponível',
-                'Nota do Gestor': notaGestor,
-                'Justificativa do Gestor': justificativaGestor || 'Não disponível',
-                'Nota Final': notaFinal ?? '',
-                'Justificativa Final': currentJustification || 'Não disponível'
-            }
-        ];
-
-        const filename = generateFilename(type);
-
+        // Use real backend data if available, otherwise use sample data
+        const evaluationData = backendData 
+            ? transformBackendDataToExport(backendData)
+            : createSampleEvaluationData(name, `${name.toLowerCase().replace(/\s+/g, '.')}@empresa.com`);
+        
         if (type === 'csv') {
-            const csvRows = [
-                Object.keys(data[0]).join(','),
-                ...data.map(row => Object.values(row).map(value => 
-                    typeof value === 'string' && value.includes(',') ? `"${value}"` : value
-                ).join(','))
-            ];
-            const csvContent = csvRows.join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-            URL.revokeObjectURL(url);
+            exportEvaluationToCSV(evaluationData);
         } else {
-            const wb = XLSX.utils.book_new();
-            
-            // Create sheets
-            const profileSheet = XLSX.utils.json_to_sheet(data);
-            const selfAssessmentSheet = XLSX.utils.json_to_sheet(data);
-            const assessment360Sheet = XLSX.utils.json_to_sheet(data);
-            const referenceSheet = XLSX.utils.json_to_sheet(data);
-
-            // Append sheets with specified names
-            XLSX.utils.book_append_sheet(wb, profileSheet, 'Perfil');
-            XLSX.utils.book_append_sheet(wb, selfAssessmentSheet, 'Autoavaliação');
-            XLSX.utils.book_append_sheet(wb, assessment360Sheet, 'Avaliação 360');
-            XLSX.utils.book_append_sheet(wb, referenceSheet, 'Pesquisa de Referência');
-            
-            XLSX.writeFile(wb, filename);
+            exportEvaluationToExcel(evaluationData);
         }
         
         // Close modals
@@ -349,8 +327,9 @@ function EvaluationSummary({
             <div ref={printRef} className="space-y-6">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                     <Criterion name="Autoavaliação" score={autoAvaliacao} />
-                    <Criterion name="Nota Gestor" score={notaGestor} />
                     <Criterion name="Avaliação 360" score={avaliacao360} />
+                    <Criterion name="Nota Gestor" score={notaGestor} />
+                    <Criterion name="Nota Mentor" score={notaMentor} />
                     {typeof notaFinal === 'number' && (
                         <Criterion name="Nota Final" score={notaFinal} />
                     )}
