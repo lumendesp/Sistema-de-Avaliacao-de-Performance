@@ -1,29 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SelfEvaluationItem from "./SelfEvaluationItem";
-import type { SelfEvaluationFormProps } from "../../types/selfEvaluation"
+import type { SelfEvaluationFormProps } from "../../types/selfEvaluation";
 import ScoreBox from "../ScoreBox";
 
-const SelfEvaluationForm = ({ title, criteria }: SelfEvaluationFormProps) => {
-  const [ratings, setRatings] = useState<number[]>(Array(criteria.length).fill(0));
-  const [justifications, setJustifications] = useState<string[]>(Array(criteria.length).fill(""));
-
-  const handleRatingChange = (index: number, value: number) => {
-    const newRatings = [...ratings];
-    newRatings[index] = value;
-    setRatings(newRatings);
-  };
-
-  const handleJustificationChange = (index: number, value: string) => {
-    const newJustifications = [...justifications];
-    newJustifications[index] = value;
-    setJustifications(newJustifications);
-  };
-
-  const answeredCount = ratings.filter((r, i) => r > 0 && justifications[i].trim().length > 0).length;
+const SelfEvaluationForm = ({
+  title,
+  cycleId,
+  criteria,
+  readOnly = false,
+  onRatingChange,
+  onJustificationChange,
+}: SelfEvaluationFormProps & {
+  onRatingChange?: (index: number, value: number) => void;
+  onJustificationChange?: (index: number, value: string) => void;
+}) => {
   const totalCount = criteria.length;
-
-  const averageScore =
-    ratings.reduce((sum, score) => sum + score, 0) / totalCount;
+  const answeredCount = criteria.filter((c) => c.score && c.justification?.trim()).length;
+  const averageScore = totalCount > 0
+    ? criteria.reduce((sum, c) => sum + (c.score || 0), 0) / totalCount
+    : 0;
 
   return (
     <div className="bg-white rounded-xl shadow p-6 w-full mb-6">
@@ -36,16 +31,23 @@ const SelfEvaluationForm = ({ title, criteria }: SelfEvaluationFormProps) => {
           </span>
         </div>
       </div>
+
       <div className="space-y-6">
         {criteria.map((criterion, index) => (
           <SelfEvaluationItem
-            key={index}
+            key={criterion.id}
             index={index + 1}
             title={criterion.title}
-            score={ratings[index]}
-            justification={justifications[index]}
-            setScore={(value) => handleRatingChange(index, value)}
-            setJustification={(value) => handleJustificationChange(index, value)}
+            description={criterion.description}
+            score={criterion.score ?? 0}
+            justification={criterion.justification ?? ""}
+            setScore={(value) =>
+              onRatingChange ? onRatingChange(index, value) : null
+            }
+            setJustification={(value) =>
+              onJustificationChange ? onJustificationChange(index, value) : null
+            }
+            readOnly={readOnly}
           />
         ))}
       </div>
