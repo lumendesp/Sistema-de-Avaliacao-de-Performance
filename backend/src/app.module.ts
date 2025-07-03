@@ -21,9 +21,12 @@ import { ReferenceModule } from './reference/reference.module';
 import { PeerEvaluationModule } from './collaborator/peer-evaluation/peer-evaluation.module';
 import { FinalScoreModule } from './final-score/final-score.module';
 import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
+import { ManagerModule } from './manager/manager.module';
 
 @Module({
-  imports: [CiclosModule, NotasModule,
+  imports: [
+    CiclosModule,
+    NotasModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -47,6 +50,7 @@ import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation
     PeerEvaluationModule,
     FinalScoreModule,
     ManagerEvaluationModule,
+    ManagerModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

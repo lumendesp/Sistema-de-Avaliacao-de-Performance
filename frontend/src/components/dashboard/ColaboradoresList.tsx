@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 const statusStyles: Record<string, string> = {
   "Em andamento": "bg-yellow-100 text-yellow-800",
   "Finalizado": "bg-green-100 text-green-800",
-  "Pendente": "bg-yellow-100 text-yellow-800",
+  "Pendente": "bg-red-100 text-red-700",
 };
 
 interface Collaborator {
@@ -41,13 +41,21 @@ const ColaboradoresList: React.FC = () => {
   }, []);
 
   const getCollaboratorStatus = (collaborator: Collaborator) => {
-    if (collaborator.finalScores && collaborator.finalScores.length > 0) {
-      return "Finalizado";
-    }
-    if (collaborator.selfEvaluations && collaborator.selfEvaluations.length > 0) {
-      return "Em andamento";
-    }
-    return "Pendente";
+    const managerEvals = collaborator.managerEvaluationsReceived || [];
+    if (managerEvals.length === 0) return "Pendente";
+    // Pega a avaliação do gestor mais recente
+    const latestManagerEval = managerEvals[managerEvals.length - 1];
+    const allCriteria = (latestManagerEval.items || []);
+    if (allCriteria.length === 0) return "Pendente";
+    // Critérios com nota preenchida
+    const withScore = allCriteria.filter((c: any) => c.score !== null && c.score !== undefined);
+    // Critérios com nota E justificativa preenchidas
+    const filled = allCriteria.filter((c: any) =>
+      c.score !== null && c.score !== undefined && c.justification && c.justification.trim() !== ""
+    );
+    if (withScore.length === 0) return "Pendente";
+    if (filled.length < allCriteria.length) return "Em andamento";
+    return "Finalizado";
   };
 
   const getSelfScore = (collaborator: Collaborator) => {

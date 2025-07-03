@@ -20,4 +20,5 @@ export interface ReferenceEvaluationFormProps {
   onRemoveCollaborator: (collaboratorId: number) => void;
   myReferences: Reference[];
   setMyReferences: React.Dispatch<React.SetStateAction<Reference[]>>;
+  cycleId: number;
 }

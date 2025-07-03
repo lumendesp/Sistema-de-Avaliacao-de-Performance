@@ -1,216 +1,16 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateManagerEvaluationDto } from './dto/create-manager-evaluation.dto';
 import { UpdateManagerEvaluationDto } from './dto/update-manager-evaluation.dto';
-import { EvaluationCycleService } from '../evaluation-cycle/evaluation-cycle.service';
+import { encrypt, decrypt } from '../utils/encryption';
 
 @Injectable()
 export class ManagerEvaluationService {
-  constructor(
-    private prisma: PrismaService,
-    private cycleService: EvaluationCycleService,
-  ) {}
-
-  async create(evaluatorId: number, dto: CreateManagerEvaluationDto) {
-    // Check if the evaluator has manager role
-    const evaluator = await this.prisma.user.findUnique({
-      where: { id: evaluatorId },
-      include: { roles: true },
-    });
-
-    const isManager = evaluator?.roles.some((r) => r.role === 'MANAGER');
-    if (!isManager) {
-      throw new ForbiddenException('Only managers can create manager evaluations.');
-    }
-
-    // Get active cycle
-    const activeCycle = await this.cycleService.findActiveCycle();
-    if (!activeCycle) {
-      throw new Error('No active evaluation cycle found');
-    }
-
-    // Check if evaluation already exists for this user in this cycle
-    const existing = await this.prisma.managerEvaluation.findFirst({
-      where: {
-        evaluatorId,
-        evaluateeId: dto.evaluateeId,
-        cycleId: activeCycle.id,
-      },
-    });
-
-    if (existing) {
-      throw new ForbiddenException('Manager evaluation already exists for this user in this cycle.');
-    }
-
-    // Create the evaluation
-    const evaluation = await this.prisma.managerEvaluation.create({
-      data: {
-        evaluatorId,
-        evaluateeId: dto.evaluateeId,
-        cycleId: activeCycle.id,
-      },
-    });
-
-    // Create evaluation items
-    if (dto.items && dto.items.length > 0) {
-      await this.prisma.managerEvaluationItem.createMany({
-        data: dto.items.map(item => ({
-          evaluationId: evaluation.id,
-          criterionId: item.criterionId,
-          score: item.score,
-          justification: item.justification,
-          scoreDescription: this.getScoreDescription(item.score),
-        })),
-      });
-    }
-
-    return this.prisma.managerEvaluation.findUnique({
-      where: { id: evaluation.id },
-      include: {
-        evaluator: { select: { id: true, name: true } },
-        evaluatee: { select: { id: true, name: true } },
-        items: {
-          include: {
-            criterion: true,
-          },
-        },
-        cycle: true,
-      },
-    });
-  }
-
-  async findAll(cycleId?: number) {
-    const where: any = {};
-    if (cycleId) {
-      where.cycleId = cycleId;
-    }
-
-    return this.prisma.managerEvaluation.findMany({
-      where,
-      include: {
-        evaluator: { select: { id: true, name: true } },
-        evaluatee: { select: { id: true, name: true } },
-        items: {
-          include: {
-            criterion: true,
-          },
-        },
-        cycle: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  async findOne(id: number) {
-    const evaluation = await this.prisma.managerEvaluation.findUnique({
-      where: { id },
-      include: {
-        evaluator: { select: { id: true, name: true } },
-        evaluatee: { select: { id: true, name: true } },
-        items: {
-          include: {
-            criterion: true,
-          },
-        },
-        cycle: true,
-      },
-    });
-
-    if (!evaluation) {
-      throw new NotFoundException('Manager evaluation not found');
-    }
-
-    return evaluation;
-  }
-
-  async findByUser(userId: number, cycleId?: number) {
-    const where: any = { evaluateeId: userId };
-    if (cycleId) {
-      where.cycleId = cycleId;
-    }
-
-    return this.prisma.managerEvaluation.findMany({
-      where,
-      include: {
-        evaluator: { select: { id: true, name: true } },
-        items: {
-          include: {
-            criterion: true,
-          },
-        },
-        cycle: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  async findByEvaluator(evaluatorId: number, cycleId?: number) {
-    const where: any = { evaluatorId };
-    if (cycleId) {
-      where.cycleId = cycleId;
-    }
-
-    return this.prisma.managerEvaluation.findMany({
-      where,
-      include: {
-        evaluatee: { select: { id: true, name: true } },
-        items: {
-          include: {
-            criterion: true,
-          },
-        },
-        cycle: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  async update(id: number, evaluatorId: number, dto: UpdateManagerEvaluationDto) {
-    const evaluation = await this.prisma.managerEvaluation.findUnique({
-      where: { id },
-    });
-
-    if (!evaluation) {
-      throw new NotFoundException('Manager evaluation not found');
-    }
-
-    if (evaluation.evaluatorId !== evaluatorId) {
-      throw new ForbiddenException('You can only update your own evaluations.');
-    }
-
-    // Update evaluation items if provided
-    if (dto.items && dto.items.length > 0) {
-      // Delete existing items
-      await this.prisma.managerEvaluationItem.deleteMany({
-        where: { evaluationId: id },
-      });
-
-      // Create new items
-      await this.prisma.managerEvaluationItem.createMany({
-        data: dto.items.map(item => ({
-          evaluationId: id,
-          criterionId: item.criterionId,
-          score: item.score,
-          justification: item.justification,
-          scoreDescription: this.getScoreDescription(item.score),
-        })),
-      });
-    }
-
-    return this.prisma.managerEvaluation.findUnique({
-      where: { id },
-      include: {
-        evaluator: { select: { id: true, name: true } },
-        evaluatee: { select: { id: true, name: true } },
-        items: {
-          include: {
-            criterion: true,
-          },
-        },
-        cycle: true,
-      },
-    });
-  }
+  constructor(private prisma: PrismaService) {}
 
   private getScoreDescription(score: number): string {
     switch (score) {
@@ -228,4 +28,191 @@ export class ManagerEvaluationService {
         return 'Nota inválida';
     }
   }
-} 
+
+  async create(evaluatorId: number, dto: CreateManagerEvaluationDto) {
+    if (evaluatorId === dto.evaluateeId) {
+      throw new ConflictException('O gestor não pode se autoavaliar.');
+    }
+    const existing = await this.prisma.managerEvaluation.findFirst({
+      where: {
+        evaluatorId,
+        evaluateeId: dto.evaluateeId,
+        cycleId: dto.cycleId,
+      },
+    });
+    if (existing) {
+      throw new ConflictException(
+        'Já existe avaliação deste gestor para este colaborador neste ciclo',
+      );
+    }
+    // Salva o groupId em cada item
+    return this.prisma.managerEvaluation.create({
+      data: {
+        evaluatorId,
+        evaluateeId: dto.evaluateeId,
+        cycleId: dto.cycleId,
+        items: {
+          create: dto.groups.flatMap((group) =>
+            group.items.map((item) => ({
+              criterion: { connect: { id: item.criterionId } },
+              score: item.score,
+              justification: encrypt(item.justification || ''), // justification criptografada
+              scoreDescription: this.getScoreDescription(item.score),
+              groupId: group.groupId,
+            })),
+          ),
+        },
+      },
+      include: { items: true },
+    });
+  }
+
+  async update(id: number, dto: UpdateManagerEvaluationDto) {
+    const groups = (dto as any).groups;
+    return this.prisma.managerEvaluation.update({
+      where: { id },
+      data: {
+        ...(groups && {
+          items: {
+            deleteMany: {},
+            create: groups.flatMap((group) =>
+              group.items.map((item) => ({
+                criterion: { connect: { id: item.criterionId } },
+                score: item.score, // score como number
+                justification: encrypt(item.justification || ''), // justification criptografada
+                scoreDescription: this.getScoreDescription(item.score),
+                groupId: group.groupId,
+              })),
+            ),
+          },
+        }),
+      },
+      include: { items: true },
+    });
+  }
+
+  // Agrupa os itens por groupId ao retornar avaliações
+  private groupItems(items: any[]) {
+    // Descriptografa justification, mas score permanece number
+    const groups: any = {};
+    for (const item of items) {
+      if (!groups[item.groupId]) {
+        groups[item.groupId] = {
+          groupId: item.groupId,
+          items: [],
+        };
+      }
+      groups[item.groupId].items.push({
+        ...item,
+        justification: decrypt(item.justification),
+      });
+    }
+    return Object.values(groups);
+  }
+
+  async findByManager(evaluatorId: number) {
+    const evaluations = await this.prisma.managerEvaluation.findMany({
+      where: { evaluatorId },
+      include: {
+        items: true,
+        evaluatee: { select: { name: true, email: true } },
+        cycle: true,
+      },
+    });
+    return evaluations.map((ev) => ({
+      ...ev,
+      groups: this.groupItems(ev.items),
+    }));
+  }
+
+  async findByEvaluatee(evaluateeId: number) {
+    const evaluations = await this.prisma.managerEvaluation.findMany({
+      where: { evaluateeId },
+      include: {
+        items: true,
+        evaluator: { select: { name: true, email: true } },
+        cycle: true,
+      },
+    });
+    return evaluations.map((ev) => ({
+      ...ev,
+      groups: this.groupItems(ev.items),
+    }));
+  }
+
+  async findOne(id: number) {
+    const evaluation = await this.prisma.managerEvaluation.findUnique({
+      where: { id },
+      include: {
+        items: true,
+        evaluator: { select: { name: true, email: true } },
+        evaluatee: { select: { name: true, email: true } },
+        cycle: true,
+      },
+    });
+    if (!evaluation) throw new NotFoundException('Avaliação não encontrada');
+    return { ...evaluation, groups: this.groupItems(evaluation.items) };
+  }
+
+  async findByEvaluatorAndEvaluatee(evaluatorId: number, evaluateeId: number) {
+    const evaluation = await this.prisma.managerEvaluation.findFirst({
+      where: { evaluatorId, evaluateeId },
+      include: {
+        items: true,
+        evaluator: { select: { name: true, email: true } },
+        evaluatee: { select: { name: true, email: true } },
+        cycle: true,
+      },
+    });
+    if (!evaluation) return null;
+    return { ...evaluation, groups: this.groupItems(evaluation.items) };
+  }
+
+  async getAverageScoreByCollaboratorAndCycle(
+    collaboratorId: number,
+    cycleId: number,
+  ) {
+    // Busca todas as avaliações de gestor recebidas pelo colaborador no ciclo
+    const evaluations = await this.prisma.managerEvaluation.findMany({
+      where: {
+        evaluateeId: collaboratorId,
+        cycleId: cycleId,
+      },
+      include: {
+        items: true,
+        cycle: true,
+      },
+    });
+
+    // Coleta todos os scores dos itens das avaliações
+    const allScores: number[] = [];
+    let cycleInfo: { id: number; name: string } | null = null;
+    for (const evaluation of evaluations) {
+      if (!cycleInfo && evaluation.cycle) {
+        cycleInfo = {
+          id: evaluation.cycle.id,
+          name: evaluation.cycle.name,
+        };
+      }
+      for (const item of evaluation.items) {
+        if (typeof item.score === 'number') {
+          allScores.push(item.score);
+        }
+      }
+    }
+
+    if (allScores.length === 0) {
+      return {
+        averageScore: null,
+        cycle: cycleInfo,
+      };
+    }
+
+    const averageScore =
+      allScores.reduce((sum, s) => sum + s, 0) / allScores.length;
+    return {
+      averageScore: parseFloat(averageScore.toFixed(1)),
+      cycle: cycleInfo,
+    };
+  }
+}

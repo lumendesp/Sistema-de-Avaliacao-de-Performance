@@ -12,15 +12,10 @@ import { getCriterionDisplayName } from 'src/utils/criterion-formatter';
 @Injectable()
 export class RhCriteriaService {
   constructor(private prisma: PrismaService) {}
-
+  
   // CRUD Criterion
   async createCriterion(data: CreateCriterionDto) {
-    return this.prisma.criterion.create({ 
-      data: {
-        ...data,
-        displayName: data.displayName || getCriterionDisplayName(data.name)
-      }
-    });
+    return this.prisma.criterion.create({ data });
   }
 
   async getAllCriteria() {

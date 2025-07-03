@@ -1,63 +1,105 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, CriterionName } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clean up all data (order matters due to foreign keys)
-  await prisma.finalScore.deleteMany();
-  await prisma.managerEvaluationItem.deleteMany();
-  await prisma.managerEvaluation.deleteMany();
-  await prisma.mentorEvaluation.deleteMany();
-  await prisma.peerEvaluation.deleteMany();
-  await prisma.selfEvaluationItem.deleteMany();
-  await prisma.selfEvaluation.deleteMany();
-  await prisma.userRole.deleteMany();
-  await prisma.user.deleteMany();
-
   // Cria posições
-  const position1 = await prisma.position.create({ data: { name: 'Developer' } });
+  const position1 = await prisma.position.create({
+    data: { name: 'Developer' },
+  });
   const position2 = await prisma.position.create({ data: { name: 'Manager' } });
 
   // Cria unidades
-  const unit1 = await prisma.unit.create({ data: { name: 'Engineering' } });
-  const unit2 = await prisma.unit.create({ data: { name: 'HR' } });
+  const unit1 = await prisma.unit.create({ data: { name: 'Rio de Janeiro' } });
+  const unit2 = await prisma.unit.create({ data: { name: 'Recife' } });
 
   // Cria trilhas
   const track1 = await prisma.track.create({ data: { name: 'Backend' } });
   const track2 = await prisma.track.create({ data: { name: 'Frontend' } });
-  const track3 = await prisma.track.create({ data: { name: 'Trilha de Liderança' } });
+  const track3 = await prisma.track.create({
+    data: { name: 'Trilha de Liderança' },
+  });
 
   // Adicionando todos os tipos de criterios no bd
-  const criteriaData: Array<{ name: string; displayName: string; generalDescription: string; weight: number }> = [
-    { name: 'ORGANIZACAO_NO_TRABALHO', displayName: 'Organização no Trabalho', generalDescription: 'Capacidade de manter o ambiente organizado', weight: 10 },
-    { name: 'ATENDER_AOS_PRAZOS', displayName: 'Atender aos Prazos', generalDescription: 'Capacidade de cumprir prazos estabelecidos', weight: 10 },
-    { name: 'SENTIMENTO_DE_DONO', displayName: 'Sentimento de Dono', generalDescription: 'Demonstra responsabilidade e compromisso com os resultados', weight: 10 },
-    { name: 'RESILIENCIA_NAS_ADVERSIDADES', displayName: 'Resiliência nas Adversidades', generalDescription: 'Capacidade de se adaptar e superar desafios', weight: 10 },
-    { name: 'CAPACIDADE_DE_APRENDER', displayName: 'Capacidade de Aprender', generalDescription: 'Disposição para aprender e se desenvolver continuamente', weight: 10 },
-    { name: 'TEAM_PLAYER', displayName: 'Team Player', generalDescription: 'Capacidade de trabalhar em equipe e colaborar', weight: 10 },
-    { name: 'FAZER_MAIS_COM_MENOS', displayName: 'Fazer Mais com Menos', generalDescription: 'Eficiência na utilização de recursos', weight: 10 },
-    { name: 'ENTREGAR_COM_QUALIDADE', displayName: 'Entregar com Qualidade', generalDescription: 'Compromisso com a qualidade das entregas', weight: 10 },
-    { name: 'PENSAR_FORA_DA_CAIXA', displayName: 'Pensar Fora da Caixa', generalDescription: 'Criatividade e inovação na resolução de problemas', weight: 10 },
-    { name: 'GENTE', displayName: 'Gente', generalDescription: 'Habilidades de relacionamento e liderança', weight: 10 },
-    { name: 'RESULTADOS', displayName: 'Resultados', generalDescription: 'Foco em resultados e performance', weight: 10 },
-    { name: 'EVOLUCAO_DA_ROCKET_COR', displayName: 'Evolução da Rocket Cor', generalDescription: 'Contribuição para o crescimento da empresa', weight: 10 },
+  const criteriaData: Array<{
+    name: CriterionName;
+    generalDescription: string;
+    weight: number;
+  }> = [
+    {
+      name: CriterionName.ORGANIZACAO_NO_TRABALHO,
+      generalDescription: 'Capacidade de manter o ambiente organizado',
+      weight: 10,
+    },
+    {
+      name: CriterionName.ATENDER_AOS_PRAZOS,
+      generalDescription: 'Capacidade de cumprir prazos estabelecidos',
+      weight: 10,
+    },
+    {
+      name: CriterionName.SENTIMENTO_DE_DONO,
+      generalDescription:
+        'Demonstra responsabilidade e compromisso com os resultados',
+      weight: 10,
+    },
+    {
+      name: CriterionName.RESILIENCIA_NAS_ADVERSIDADES,
+      generalDescription: 'Capacidade de se adaptar e superar desafios',
+      weight: 10,
+    },
+    {
+      name: CriterionName.CAPACIDADE_DE_APRENDER,
+      generalDescription:
+        'Disposição para aprender e se desenvolver continuamente',
+      weight: 10,
+    },
+    {
+      name: CriterionName.TEAM_PLAYER,
+      generalDescription: 'Capacidade de trabalhar em equipe e colaborar',
+      weight: 10,
+    },
+    {
+      name: CriterionName.FAZER_MAIS_COM_MENOS,
+      generalDescription: 'Eficiência na utilização de recursos',
+      weight: 10,
+    },
+    {
+      name: CriterionName.ENTREGAR_COM_QUALIDADE,
+      generalDescription: 'Compromisso com a qualidade das entregas',
+      weight: 10,
+    },
+    {
+      name: CriterionName.PENSAR_FORA_DA_CAIXA,
+      generalDescription: 'Criatividade e inovação na resolução de problemas',
+      weight: 10,
+    },
+    {
+      name: CriterionName.GENTE,
+      generalDescription: 'Habilidades de relacionamento e liderança',
+      weight: 10,
+    },
+    {
+      name: CriterionName.RESULTADOS,
+      generalDescription: 'Foco em resultados e performance',
+      weight: 10,
+    },
+    {
+      name: CriterionName.EVOLUCAO_DA_ROCKET_COR,
+      generalDescription: 'Contribuição para o crescimento da empresa',
+      weight: 10,
+    },
   ];
 
   const criteria: any[] = [];
   for (const criterionData of criteriaData) {
     const existing = await prisma.criterion.findFirst({
-      where: { name: criterionData.name as any }
+      where: { name: criterionData.name },
     });
-    
+
     if (!existing) {
       const criterion = await prisma.criterion.create({
-        data: {
-          name: criterionData.name as any,
-          displayName: criterionData.displayName,
-          generalDescription: criterionData.generalDescription,
-          weight: criterionData.weight
-        }
+        data: criterionData,
       });
       criteria.push(criterion);
     } else {
@@ -134,7 +176,9 @@ async function main() {
   // Criação das configuração de criterios para Backend
   const backendConfigs = [
     {
-      criterionId: criteria.find(c => c.name === 'ORGANIZACAO_NO_TRABALHO')?.id,
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.ORGANIZACAO_NO_TRABALHO,
+      )?.id,
       groupId: backendGroup1.id,
       trackId: track1.id,
       unitId: unit1.id,
@@ -142,7 +186,8 @@ async function main() {
       mandatory: true,
     },
     {
-      criterionId: criteria.find(c => c.name === 'TEAM_PLAYER')?.id,
+      criterionId: criteria.find((c) => c.name === CriterionName.TEAM_PLAYER)
+        ?.id,
       groupId: backendGroup2.id,
       trackId: track1.id,
       unitId: unit1.id,
@@ -150,7 +195,9 @@ async function main() {
       mandatory: true,
     },
     {
-      criterionId: criteria.find(c => c.name === 'ENTREGAR_COM_QUALIDADE')?.id,
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.ENTREGAR_COM_QUALIDADE,
+      )?.id,
       groupId: backendGroup2.id,
       trackId: track1.id,
       unitId: unit1.id,
@@ -162,7 +209,9 @@ async function main() {
   // Criação das configuração de criterios para Frontend
   const frontendConfigs = [
     {
-      criterionId: criteria.find(c => c.name === 'ORGANIZACAO_NO_TRABALHO')?.id,
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.ORGANIZACAO_NO_TRABALHO,
+      )?.id,
       groupId: frontendGroup1.id,
       trackId: track2.id,
       unitId: unit1.id,
@@ -170,7 +219,9 @@ async function main() {
       mandatory: true,
     },
     {
-      criterionId: criteria.find(c => c.name === 'SENTIMENTO_DE_DONO')?.id,
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.SENTIMENTO_DE_DONO,
+      )?.id,
       groupId: frontendGroup1.id,
       trackId: track2.id,
       unitId: unit1.id,
@@ -178,7 +229,8 @@ async function main() {
       mandatory: true,
     },
     {
-      criterionId: criteria.find(c => c.name === 'TEAM_PLAYER')?.id,
+      criterionId: criteria.find((c) => c.name === CriterionName.TEAM_PLAYER)
+        ?.id,
       groupId: frontendGroup2.id,
       trackId: track2.id,
       unitId: unit1.id,
@@ -190,7 +242,7 @@ async function main() {
   // Criação das configuração de criterios para Trilha de Liderança
   const leadershipConfigs = [
     {
-      criterionId: criteria.find(c => c.name === 'GENTE')?.id,
+      criterionId: criteria.find((c) => c.name === CriterionName.GENTE)?.id,
       groupId: leadershipGroup1.id,
       trackId: track3.id,
       unitId: unit1.id,
@@ -198,7 +250,8 @@ async function main() {
       mandatory: true,
     },
     {
-      criterionId: criteria.find(c => c.name === 'RESULTADOS')?.id,
+      criterionId: criteria.find((c) => c.name === CriterionName.RESULTADOS)
+        ?.id,
       groupId: leadershipGroup1.id,
       trackId: track3.id,
       unitId: unit1.id,
@@ -206,7 +259,8 @@ async function main() {
       mandatory: true,
     },
     {
-      criterionId: criteria.find(c => c.name === 'TEAM_PLAYER')?.id,
+      criterionId: criteria.find((c) => c.name === CriterionName.TEAM_PLAYER)
+        ?.id,
       groupId: leadershipGroup2.id,
       trackId: track3.id,
       unitId: unit1.id,
@@ -214,7 +268,9 @@ async function main() {
       mandatory: true,
     },
     {
-      criterionId: criteria.find(c => c.name === 'SENTIMENTO_DE_DONO')?.id,
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.SENTIMENTO_DE_DONO,
+      )?.id,
       groupId: leadershipGroup2.id,
       trackId: track3.id,
       unitId: unit1.id,
@@ -222,7 +278,9 @@ async function main() {
       mandatory: true,
     },
     {
-      criterionId: criteria.find(c => c.name === 'EVOLUCAO_DA_ROCKET_COR')?.id,
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.EVOLUCAO_DA_ROCKET_COR,
+      )?.id,
       groupId: leadershipGroup3.id,
       trackId: track3.id,
       unitId: unit1.id,
@@ -230,7 +288,9 @@ async function main() {
       mandatory: true,
     },
     {
-      criterionId: criteria.find(c => c.name === 'FAZER_MAIS_COM_MENOS')?.id,
+      criterionId: criteria.find(
+        (c) => c.name === CriterionName.FAZER_MAIS_COM_MENOS,
+      )?.id,
       groupId: leadershipGroup3.id,
       trackId: track3.id,
       unitId: unit1.id,
@@ -239,20 +299,22 @@ async function main() {
     },
   ];
 
-  const allConfigs = [...backendConfigs, ...frontendConfigs, ...leadershipConfigs];
+  const allConfigs = [
+    ...backendConfigs,
+    ...frontendConfigs,
+    ...leadershipConfigs,
+  ];
   for (const config of allConfigs) {
     if (config.criterionId) {
       await prisma.configuredCriterion.create({
-        data: config
+        data: config,
       });
     }
   }
 
   // Hash simples para senha (exemplo)
-  // Hash simples para senha (exemplo)
   const passwordHash1 = await bcrypt.hash('password123', 10);
   const passwordHash2 = await bcrypt.hash('adminpass', 10);
-  const passwordHash3 = await bcrypt.hash('comite123', 10);
 
   // Cria usuários
   const user1 = await prisma.user.create({
@@ -282,111 +344,30 @@ async function main() {
       unitId: unit2.id,
       trackId: track2.id,
       roles: {
-        create: [{ role: 'MANAGER' }, { role: 'ADMIN' }, { role: 'COMMITTEE' }],
-      },
-    },
-  });
-
-  // Cria usuário do comitê
-  const user3 = await prisma.user.create({
-    data: {
-      name: 'Carlos Nogueira',
-      username: 'carlos.n',
-      email: 'carlos@rocketcorp.com',
-      password: passwordHash3,
-      active: true,
-      positionId: position2.id,
-      unitId: unit1.id,
-      trackId: track3.id,
-      roles: {
-        create: [{ role: 'COMMITTEE' }, { role: 'COLLABORATOR' }],
-      },
-    },
-  });
-
-  // Cria ciclo
-  await prisma.evaluationCycle.create({
-    data: {
-      name: 'Ciclo 2025.1',
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 dias atrás
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),   // 7 dias à frente
-      status: 'IN_PROGRESS',
-    },
-  });
-
-  // Cria usuário com todas as avaliações (menos a final)
-  const passwordHash4 = await bcrypt.hash('user4pass', 10);
-  const user4 = await prisma.user.create({
-    data: {
-      name: 'Diana Avaliada',
-      username: 'diana.a',
-      email: 'diana@example.com',
-      password: passwordHash4,
-      active: true,
-      positionId: position1.id,
-      unitId: unit1.id,
-      trackId: track1.id,
-      roles: {
-        create: [{ role: 'COLLABORATOR' }],
-      },
-    },
-  });
-
-  // Recupera ciclo ativo
-  const ciclo = await prisma.evaluationCycle.findFirst({ where: { status: 'IN_PROGRESS' } });
-  if (!ciclo) throw new Error('No active evaluation cycle found for seeding user4 evaluations');
-
-  // Self evaluation para user4
-  const selfEval = await prisma.selfEvaluation.create({
-    data: {
-      userId: user4.id,
-      cycleId: ciclo.id,
-      items: {
         create: [
-          { criterionId: criteria[0].id, score: 4, justification: 'Organizada' },
-          { criterionId: criteria[1].id, score: 5, justification: 'Cumpre prazos' },
+          { role: 'MANAGER' },
+          { role: 'COLLABORATOR' },
+          { role: 'ADMIN' },
         ],
       },
     },
   });
 
-  // Peer evaluation para user4 (avaliada por Alice)
-  await prisma.peerEvaluation.create({
+  // Relacionar Alice como colaboradora gerenciada por Bob
+  await prisma.managerCollaborator.create({
     data: {
-      evaluatorId: user1.id,
-      evaluateeId: user4.id,
-      cycleId: ciclo.id,
-      score: 4.5,
-      strengths: 'Trabalha bem em equipe',
-      improvements: 'Pode melhorar comunicação',
-      motivation: 'CONCORDO_TOTALMENTE',
+      managerId: user2.id, // Bob
+      collaboratorId: user1.id, // Alice
     },
   });
 
-  // Mentor evaluation para user4 (avaliada por Bob)
-  await prisma.mentorEvaluation.create({
+  const cycle = await prisma.evaluationCycle.create({
     data: {
-      evaluatorId: user2.id,
-      evaluateeId: user4.id,
-      cycleId: ciclo.id,
-      score: 5,
-      justification: 'Ótima mentorada',
+      name: 'Ciclo 2025.1',
+      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 dias atrás
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias à frente
+      status: 'IN_PROGRESS',
     },
-  });
-
-  // Manager evaluation para user4 (avaliada por Bob)
-  const managerEval = await prisma.managerEvaluation.create({
-    data: {
-      evaluatorId: user2.id,
-      evaluateeId: user4.id,
-      cycleId: ciclo.id,
-    },
-  });
-  await prisma.managerEvaluationItem.createMany({
-    data: [
-      { evaluationId: managerEval.id, criterionId: criteria[0].id, score: 4, justification: 'Boa organização', scoreDescription: 'Ótimo' },
-      { evaluationId: managerEval.id, criterionId: criteria[1].id, score: 5, justification: 'Excelente prazo', scoreDescription: 'Excelente' },
-    ],
   });
 
   // Cria alguns projetos para peer evaluation
@@ -411,7 +392,8 @@ async function main() {
     });
   }
 
-  console.log('✅ Seed com critérios relacionados executada com sucesso!');
+  console.log('Seed completed!');
+  console.log('Cycle ID criado:', cycle.id);
 }
 
 main()

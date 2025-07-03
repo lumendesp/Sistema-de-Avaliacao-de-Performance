@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { CreatePeerEvaluationDto } from './dto/create-peer-evaluation.dto';
+import { encrypt, decrypt } from '../../utils/encryption';
 
 @Injectable()
 export class PeerEvaluationService {
@@ -73,6 +74,9 @@ export class PeerEvaluationService {
     const evaluation = await this.prisma.peerEvaluation.create({
       data: {
         ...evaluationData,
+        strengths: encrypt(evaluationData.strengths),
+        improvements: encrypt(evaluationData.improvements),
+        motivation: evaluationData.motivation,
         evaluatorId,
         evaluateeId,
         cycleId,
@@ -108,53 +112,105 @@ export class PeerEvaluationService {
   }
 
   findByEvaluatorInCycle(evaluatorId: number, cycleId: number) {
-    return this.prisma.peerEvaluation.findMany({
-      where: {
-        evaluatorId,
-        cycleId,
-      },
-      include: {
-        evaluatee: true,
-        projects: {
-          include: {
-            project: true,
+    return this.prisma.peerEvaluation
+      .findMany({
+        where: {
+          evaluatorId,
+          cycleId,
+        },
+        include: {
+          evaluatee: true,
+          projects: {
+            include: {
+              project: true,
+            },
           },
         },
-      },
-    });
+      })
+      .then((evals) =>
+        evals.map((ev) => ({
+          ...ev,
+          strengths: decrypt(ev.strengths),
+          improvements: decrypt(ev.improvements),
+          motivation: ev.motivation,
+        })),
+      );
   }
 
   findByEvaluateeInCycle(cycleId: number, evaluateeId: number) {
-    return this.prisma.peerEvaluation.findMany({
-      where: {
-        evaluateeId,
-        cycleId,
-      },
-      include: {
-        evaluator: true,
-        projects: {
-          include: {
-            project: true,
+    return this.prisma.peerEvaluation
+      .findMany({
+        where: {
+          evaluateeId,
+          cycleId,
+        },
+        include: {
+          evaluator: true,
+          projects: {
+            include: {
+              project: true,
+            },
           },
         },
+      })
+      .then((evals) =>
+        evals.map((ev) => ({
+          ...ev,
+          strengths: decrypt(ev.strengths),
+          improvements: decrypt(ev.improvements),
+          motivation: ev.motivation,
+        })),
+      );
+  }
+
+  async getAverageScoreForUserInCycle(
+    userId: number,
+    cycleId: number,
+  ): Promise<{ average: number }> {
+    // aggregate é uma função do prisma que permite fazer operações como avg, sum, count
+    const result = await this.prisma.peerEvaluation.aggregate({
+      where: {
+        evaluateeId: userId,
+        cycleId: cycleId,
+      },
+      // Calcular a média do campo score
+      _avg: {
+        score: true,
       },
     });
+
+    const average = result._avg.score ?? 0;
+
+    return {
+      average: parseFloat(average.toFixed(1)), 
+    };
   }
 
   findOne(id: number) {
-    return this.prisma.peerEvaluation.findUnique({
-      where: { id },
-      include: {
-        evaluator: true,
-        evaluatee: true,
-        projects: {
-          include: {
-            project: true,
+    return this.prisma.peerEvaluation
+      .findUnique({
+        where: { id },
+        include: {
+          evaluator: true,
+          evaluatee: true,
+          projects: {
+            include: {
+              project: true,
+            },
           },
+          cycle: true,
         },
-        cycle: true,
-      },
-    });
+      })
+      .then((ev) =>
+        ev
+          ? {
+              ...ev,
+              strengths: decrypt(ev.strengths),
+              improvements: decrypt(ev.improvements),
+              motivation: ev.motivation,
+            }
+          : null,
+      );
   }
 
   remove(id: number) {
