@@ -112,6 +112,18 @@ const Profile: React.FC = () => {
   // Extrai cargos (roles) como string
   const roles = profile.roles.map((r) => r.role);
 
+  // Mapeamento de roles para português
+  const roleMap: Record<string, string> = {
+    ADMIN: "Administrador",
+    MANAGER: "Gestor",
+    COLLABORATOR: "Colaborador",
+    MENTOR: "Mentor",
+    RH: "RH",
+    COMMITTEE: "Comitê",
+    HR: "RH",
+    // Adicione outros papéis conforme necessário
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-100 to-white py-10 relative">
       <button
@@ -141,6 +153,7 @@ const Profile: React.FC = () => {
         accounts={roles}
         onSwitchAccount={handleSwitchAccount}
         currentAccount={currentAccount}
+        role={roleMap[currentAccount] || currentAccount}
       />
     </div>
   );
