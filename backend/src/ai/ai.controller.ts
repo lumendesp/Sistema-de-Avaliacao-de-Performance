@@ -13,7 +13,6 @@ import { GenerateCustomDto } from './dto/generateCustomDto.dto';
 export class GeminiController {
   constructor(private readonly geminiService: GeminiService) {}
 
-  // GET /gemini?prompt=...
   @Get()
   async generateGet(@Query('prompt') prompt: string) {
     if (!prompt) {
@@ -24,7 +23,6 @@ export class GeminiController {
     return { result };
   }
 
-  // POST /gemini/custom
   @Post('custom')
   async generateCustom(@Body() body: GenerateCustomDto){
     const { prompt, temperature = 0.7 } = body;

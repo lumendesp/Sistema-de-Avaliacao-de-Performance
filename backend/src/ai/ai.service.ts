@@ -22,7 +22,7 @@ export class GeminiService {
     return response.text();
   }
 
-  // Prompt com configuração personalizada (ex: temperature)
+  // Prompt com configuração personalizada
   async generateWithConfig(
     prompt: string,
     temperature: number,

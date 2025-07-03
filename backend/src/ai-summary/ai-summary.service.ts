@@ -9,6 +9,34 @@ import {
 } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import { GeminiService } from 'src/ai/ai.service';
+import * as crypto from 'crypto';
+
+const ENCRYPTION_KEY =
+  process.env.EVAL_ENCRYPT_KEY?.padEnd(32, '0').slice(0, 32) ||
+  '12345678901234567890123456789012';
+
+function decrypt(text: string): string {
+  if (!text || typeof text !== 'string') return '';
+
+  try {
+    const [ivStr, encrypted] = text.split(':');
+    if (!ivStr || !encrypted) return '';
+
+    const iv = Buffer.from(ivStr, 'base64');
+    const decipher = crypto.createDecipheriv(
+      'aes-256-cbc',
+      Buffer.from(ENCRYPTION_KEY),
+      iv,
+    );
+    let decrypted = decipher.update(encrypted, 'base64', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (error) {
+    console.warn('Falha ao descriptografar:', error.message);
+    return '[ERRO DE DESCRIPTOGRAFIA]'; 
+  }
+}
+
 
 type SelfWithItems = {
   items: {
@@ -88,13 +116,13 @@ export class AiSummaryService {
     manager: (ManagerEvaluation & ManagerWithItems)[],
     references: Reference[],
   ): string {
-    let prompt = `Você é um sistema de RH. Com base nas avaliações a seguir, gere um resumo profissional do desempenho do colaborador durante o ciclo.\n\n`;
+    let prompt = `Você é um sistema de RH. Abaixo estão avaliações de desempenho de um colaborador. Analise e gere um resumo objetivo (máximo 5 linhas), focando apenas nos principais pontos fortes, pontos de desenvolvimento e recomendações mais relevantes.\n Sua resposta deve ser apenas o resumo, sem introduções como "Com base nas avaliações..." ou "Resumo:".\n\n`;
 
     if (self.length) {
       prompt += `Autoavaliação:\n`;
       for (const ev of self) {
         for (const item of ev.items) {
-          prompt += `- Critério: ${item.criterionId}, Justificativa: ${item.justification}, Nota: ${item.score}\n`;
+          prompt += `- Critério: ${item.criterionId}, Justificativa: ${decrypt(item.justification)}, Nota: ${item.score}\n`;
         }
       }
     }
@@ -102,7 +130,7 @@ export class AiSummaryService {
     if (peer.length) {
       prompt += `\nAvaliações por Pares:\n`;
       for (const p of peer) {
-        prompt += `- Pontos fortes: ${p.strengths}, Melhorias: ${p.improvements}, Nota: ${p.score}\n`;
+        prompt += `- Pontos fortes: ${decrypt(p.strengths)}, Melhorias: ${decrypt(p.improvements)}, Nota: ${p.score}\n`;
       }
     }
 
@@ -110,7 +138,7 @@ export class AiSummaryService {
       prompt += `\nAvaliação do mentor:\n`;
       for (const m of mentor) {
         for (const item of m.items) {
-          prompt += `- Critério: ${item.criterionId}, Justificativa: ${item.justification}, Nota: ${item.score}\n`;
+          prompt += `- Critério: ${item.criterionId}, Justificativa: ${decrypt(item.justification)}, Nota: ${item.score}\n`;
         }
       }
     }
@@ -119,7 +147,7 @@ export class AiSummaryService {
       prompt += `\nAvaliação do gestor:\n`;
       for (const m of manager) {
         for (const item of m.items) {
-          prompt += `- Critério: ${item.criterionId}, Justificativa: ${item.justification}, Nota: ${item.score}\n`;
+          prompt += `- Critério: ${item.criterionId}, Justificativa: ${decrypt(item.justification)}, Nota: ${item.score}\n`;
         }
       }
     }
@@ -127,7 +155,7 @@ export class AiSummaryService {
     if (references.length) {
       prompt += `\nReferências recebidas:\n`;
       for (const r of references) {
-        prompt += `- ${r.justification}\n`;
+        prompt += `- ${decrypt(r.justification)}\n`;
       }
     }
 
