@@ -22,6 +22,8 @@ import { ReferenceModule } from './reference/reference.module';
 import { PeerEvaluationModule } from './collaborator/peer-evaluation/peer-evaluation.module';
 import { AiSummaryModule } from './ai-summary/ai-summary.module';
 import { GeminiModule } from './ai/ai.module';
+import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
+import { ManagerModule } from './manager/manager.module';
 
 @Module({
   imports: [
@@ -46,6 +48,8 @@ import { GeminiModule } from './ai/ai.module';
     PeerEvaluationModule,
     AiSummaryModule,
     GeminiModule,
+    ManagerEvaluationModule,
+    ManagerModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

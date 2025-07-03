@@ -1,7 +1,43 @@
+import * as crypto from 'crypto';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { EvaluationCycleService } from '../evaluation-cycle/evaluation-cycle.service';
 import { CreateMentorEvaluationDto } from './dto/create-mentor-evaluation.dto';
+
+const ENCRYPTION_KEY = (
+  process.env.EVAL_ENCRYPT_KEY || '12345678901234567890123456789012'
+)
+  .padEnd(32, '0')
+  .slice(0, 32);
+const IV_LENGTH = 16;
+
+function encrypt(text: string): string {
+  if (!text) return text;
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv(
+    'aes-256-cbc',
+    Buffer.from(ENCRYPTION_KEY),
+    iv,
+  );
+  let encrypted = cipher.update(text, 'utf8', 'base64');
+  encrypted += cipher.final('base64');
+  return iv.toString('base64') + ':' + encrypted;
+}
+
+function decrypt(text: string): string {
+  if (!text) return text;
+  const [ivBase64, encrypted] = text.split(':');
+  if (!ivBase64 || !encrypted) return text;
+  const iv = Buffer.from(ivBase64, 'base64');
+  const decipher = crypto.createDecipheriv(
+    'aes-256-cbc',
+    Buffer.from(ENCRYPTION_KEY),
+    iv,
+  );
+  let decrypted = decipher.update(encrypted, 'base64', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+}
 
 @Injectable()
 export class MentorEvaluationService {
@@ -55,14 +91,14 @@ export class MentorEvaluationService {
         evaluateeId: dto.evaluateeId,
         cycleId: activeCycle.id,
         score: dto.score,
-        justification: dto.justification,
+        justification: encrypt(dto.justification),
       },
     });
   }
 
   // busca todas as avaliações recebidas por um mentor, por ciclo ou não (por enquanto, não temos a lógica de ciclos certinha)
   async findEvaluationsForMentor(mentorId: number, cycleId?: number) {
-    return this.prisma.mentorEvaluation.findMany({
+    const results = await this.prisma.mentorEvaluation.findMany({
       where: {
         evaluateeId: mentorId,
         ...(cycleId ? { cycleId } : {}), // adiciona filtro por cycleId se existir
@@ -73,11 +109,15 @@ export class MentorEvaluationService {
       },
       orderBy: { createdAt: 'desc' },
     });
+    return results.map((ev) => ({
+      ...ev,
+      justification: decrypt(ev.justification),
+    }));
   }
 
   // busca todas as avaliações enviadas por um usuário, por ciclo ou não (por enquanto, não temos a lógica de ciclos certinha)
   async findEvaluationsByUser(userId: number, cycleId?: number) {
-    return this.prisma.mentorEvaluation.findMany({
+    const results = await this.prisma.mentorEvaluation.findMany({
       where: {
         evaluatorId: userId,
         ...(cycleId ? { cycleId } : {}),
@@ -88,6 +128,10 @@ export class MentorEvaluationService {
       },
       orderBy: { createdAt: 'desc' },
     });
+    return results.map((ev) => ({
+      ...ev,
+      justification: decrypt(ev.justification),
+    }));
   }
 
   // função para verificar se já existe alguma avaliação feita por um usuário para um mentor específico
@@ -96,7 +140,7 @@ export class MentorEvaluationService {
     evaluateeId: number,
     cycleId?: number,
   ) {
-    return this.prisma.mentorEvaluation.findFirst({
+    const result = await this.prisma.mentorEvaluation.findFirst({
       where: {
         evaluatorId,
         evaluateeId,
@@ -106,5 +150,7 @@ export class MentorEvaluationService {
         cycle: true,
       },
     });
+    if (!result) return null;
+    return { ...result, justification: decrypt(result.justification) };
   }
 }

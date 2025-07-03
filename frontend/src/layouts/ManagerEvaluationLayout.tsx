@@ -1,42 +1,58 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Outlet, NavLink, useParams } from "react-router-dom";
 import type { Collaborator } from "../types/collaboratorStatus";
-import { API_URL } from '../services/api';
+import { useAuth } from "../context/AuthContext";
+
+const API_URL = "http://localhost:3000";
 
 export default function ManagerEvaluationLayout() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [collaborator, setCollaborator] = useState<Collaborator | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isUpdate, setIsUpdate] = useState(false);
+  // Ref para acessar a função de submit do filho
+  const submitRef = useRef<(() => Promise<boolean>) | null>(null);
 
   useEffect(() => {
-    const fetchCollaborator = async () => {
-      try {
-        const res = await fetch(`${API_URL}/users/${id}`);
-        if (!res.ok) throw new Error('Erro ao buscar colaborador');
-        const user = await res.json();
-        // Verifica se é colaborador
-        const isCollaborator = user.roles?.some((role: any) => role.role === 'COLLABORATOR');
-        if (!isCollaborator) throw new Error('Usuário não é colaborador');
-        setCollaborator({
-          id: user.id,
-          name: user.name,
-          role: user.position?.name || 'Colaborador',
-          status: 'Em andamento',
-          selfScore: null,
-          managerScore: null,
-        });
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCollaborator();
-  }, [id]);
+    if (user && user.id && id) {
+      fetch(`${API_URL}/managers/${user.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          const parsed = (data.collaborators || []).map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            role: c.roles?.[0]?.role || "Colaborador",
+            status: c.status || "Em andamento",
+            selfScore: c.selfScore ?? 0,
+            managerScore: c.managerScore ?? null,
+          }));
+          const found = parsed.find((c: Collaborator) => c.id === Number(id));
+          setCollaborator(found || null);
+        })
+        .catch(() => setCollaborator(null));
+    }
+  }, [user, id]);
 
-  if (loading) return <div>Carregando colaborador...</div>;
-  if (error || !collaborator) return <div>Colaborador não encontrado</div>;
+  // Recebe do filho se é update ou create
+  const handleSetSubmit = (fn: () => Promise<boolean>, updateFlag: boolean) => {
+    submitRef.current = fn;
+    setIsUpdate(updateFlag);
+  };
+
+  const handleSend = async () => {
+    if (submitRef.current) {
+      const ok = await submitRef.current();
+      if (ok) {
+        window.alert("Avaliação enviada com sucesso!");
+      } else {
+        window.alert("Erro ao enviar avaliação.");
+      }
+    }
+  };
+
+  if (!collaborator) {
+    return <div>Colaborador não encontrado</div>;
+  }
 
   const { name, role } = collaborator;
   const initials = name
@@ -58,11 +74,14 @@ export default function ManagerEvaluationLayout() {
                 <h1 className="text-xl font-bold text-gray-900 leading-tight truncate">
                   {name}
                 </h1>
-                <p className="text-sm text-gray-500 truncate">{role}</p>
+                <p className="text-sm text-gray-500 truncate">COLABORADOR</p>
               </div>
             </div>
-            <button className="bg-[#8CB7B7] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap">
-              Concluir e enviar
+            <button
+              className="bg-[#8CB7B7] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap"
+              onClick={handleSend}
+            >
+              {isUpdate ? "Atualizar" : "Concluir e enviar"}
             </button>
           </div>
           <nav className="bg-white border-b border-gray-100">
@@ -111,7 +130,7 @@ export default function ManagerEvaluationLayout() {
         {/* Espaço para não cobrir o conteúdo pelo bloco fixo */}
         <main className="flex-1 flex justify-center items-start p-2 sm:p-4">
           <div className="w-full max-w-7xl">
-            <Outlet />
+            <Outlet context={{ setSubmit: handleSetSubmit }} />
           </div>
         </main>
       </div>

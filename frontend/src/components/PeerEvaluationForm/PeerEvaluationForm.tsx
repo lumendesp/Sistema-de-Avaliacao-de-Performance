@@ -287,7 +287,7 @@ const PeerEvaluationForm = ({
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <div className="flex flex-col gap-1 flex-1">
+                  <div className="flex flex-col gap-1">
                     <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
                       Projeto em que atuaram juntos (obrigatório terem atuado
                       juntos)
@@ -307,26 +307,7 @@ const PeerEvaluationForm = ({
                       required
                     />
                   </div>
-                  <div className="flex flex-col gap-1 flex-1">
-                    <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-                      Período (em meses)
-                    </p>
-                    <input
-                      type="text"
-                      className="w-full max-w-28 h-9 p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
-                      placeholder="Insira apenas o número de meses"
-                      value={data.projectPeriod}
-                      onChange={(e) =>
-                        handleInputChange(
-                          collaborator.id,
-                          "projectPeriod",
-                          e.target.value
-                        )
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1 flex-1">
+                  <div className="flex flex-col gap-1">
                     <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
                       Você ficaria motivado em trabalhar novamente com este
                       colaborador?
@@ -387,6 +368,25 @@ const PeerEvaluationForm = ({
                           height: "36px",
                         }),
                       }}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
+                      Período (em meses)
+                    </p>
+                    <input
+                      type="text"
+                      className="w-full max-w-40 h-9 p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
+                      placeholder="Insira apenas o número"
+                      value={data.projectPeriod}
+                      onChange={(e) =>
+                        handleInputChange(
+                          collaborator.id,
+                          "projectPeriod",
+                          e.target.value
+                        )
+                      }
+                      required
                     />
                   </div>
                 </div>
