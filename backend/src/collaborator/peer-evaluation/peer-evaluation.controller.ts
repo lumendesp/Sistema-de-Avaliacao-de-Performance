@@ -56,6 +56,16 @@ export class PeerEvaluationController {
     return this.service.findByEvaluatorInCycle(evaluatorId, cycleId);
   }
 
+  // retorna a média das notas da avaliação 360 recebidas por um usuário em um ciclo
+  @Get('average/cycle/:cycleId/user/:userId')
+  @ApiOperation({ summary: 'Get average score received by user in a cycle' })
+  getAverageScore(
+    @Param('cycleId') cycleId: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.service.getAverageScoreForUserInCycle(+userId, +cycleId);
+  }
+
   // retorna uma avalição de pares específica
   @Get(':id')
   @ApiOperation({ summary: 'Get a peer evaluation by id' })

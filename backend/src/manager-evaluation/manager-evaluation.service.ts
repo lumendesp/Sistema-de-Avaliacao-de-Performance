@@ -1,7 +1,43 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { CreateManagerEvaluationDto, ManagerEvaluationItemDto } from './dto/create-manager-evaluation.dto';
+import { CreateManagerEvaluationDto } from './dto/create-manager-evaluation.dto';
 import { UpdateManagerEvaluationDto } from './dto/update-manager-evaluation.dto';
+import * as crypto from 'crypto';
+
+const ENCRYPTION_KEY =
+  process.env.EVAL_ENCRYPT_KEY?.padEnd(32, '0').slice(0, 32) ||
+  '12345678901234567890123456789012'; // 32 bytes
+const IV_LENGTH = 16;
+
+function encrypt(text: string): string {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv(
+    'aes-256-cbc',
+    Buffer.from(ENCRYPTION_KEY),
+    iv,
+  );
+  let encrypted = cipher.update(text, 'utf8', 'base64');
+  encrypted += cipher.final('base64');
+  return iv.toString('base64') + ':' + encrypted;
+}
+
+function decrypt(text: string): string {
+  if (!text) return '';
+  const [ivStr, encrypted] = text.split(':');
+  const iv = Buffer.from(ivStr, 'base64');
+  const decipher = crypto.createDecipheriv(
+    'aes-256-cbc',
+    Buffer.from(ENCRYPTION_KEY),
+    iv,
+  );
+  let decrypted = decipher.update(encrypted, 'base64', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+}
 
 @Injectable()
 export class ManagerEvaluationService {
@@ -36,7 +72,9 @@ export class ManagerEvaluationService {
       },
     });
     if (existing) {
-      throw new ConflictException('Já existe avaliação deste gestor para este colaborador neste ciclo');
+      throw new ConflictException(
+        'Já existe avaliação deste gestor para este colaborador neste ciclo',
+      );
     }
     // Salva o groupId em cada item
     return this.prisma.managerEvaluation.create({
@@ -45,14 +83,14 @@ export class ManagerEvaluationService {
         evaluateeId: dto.evaluateeId,
         cycleId: dto.cycleId,
         items: {
-          create: dto.groups.flatMap(group =>
-            group.items.map(item => ({
+          create: dto.groups.flatMap((group) =>
+            group.items.map((item) => ({
               criterion: { connect: { id: item.criterionId } },
               score: item.score,
-              justification: item.justification || '',
+              justification: encrypt(item.justification || ''), // justification criptografada
               scoreDescription: this.getScoreDescription(item.score),
               groupId: group.groupId,
-            }))
+            })),
           ),
         },
       },
@@ -68,14 +106,14 @@ export class ManagerEvaluationService {
         ...(groups && {
           items: {
             deleteMany: {},
-            create: groups.flatMap(group =>
-              group.items.map(item => ({
+            create: groups.flatMap((group) =>
+              group.items.map((item) => ({
                 criterion: { connect: { id: item.criterionId } },
-                score: item.score,
-                justification: item.justification || '',
+                score: item.score, // score como number
+                justification: encrypt(item.justification || ''), // justification criptografada
                 scoreDescription: this.getScoreDescription(item.score),
                 groupId: group.groupId,
-              }))
+              })),
             ),
           },
         }),
@@ -86,6 +124,7 @@ export class ManagerEvaluationService {
 
   // Agrupa os itens por groupId ao retornar avaliações
   private groupItems(items: any[]) {
+    // Descriptografa justification, mas score permanece number
     const groups: any = {};
     for (const item of items) {
       if (!groups[item.groupId]) {
@@ -94,7 +133,10 @@ export class ManagerEvaluationService {
           items: [],
         };
       }
-      groups[item.groupId].items.push(item);
+      groups[item.groupId].items.push({
+        ...item,
+        justification: decrypt(item.justification),
+      });
     }
     return Object.values(groups);
   }
@@ -108,7 +150,10 @@ export class ManagerEvaluationService {
         cycle: true,
       },
     });
-    return evaluations.map(ev => ({ ...ev, groups: this.groupItems(ev.items) }));
+    return evaluations.map((ev) => ({
+      ...ev,
+      groups: this.groupItems(ev.items),
+    }));
   }
 
   async findByEvaluatee(evaluateeId: number) {
@@ -120,7 +165,10 @@ export class ManagerEvaluationService {
         cycle: true,
       },
     });
-    return evaluations.map(ev => ({ ...ev, groups: this.groupItems(ev.items) }));
+    return evaluations.map((ev) => ({
+      ...ev,
+      groups: this.groupItems(ev.items),
+    }));
   }
 
   async findOne(id: number) {
@@ -149,5 +197,53 @@ export class ManagerEvaluationService {
     });
     if (!evaluation) return null;
     return { ...evaluation, groups: this.groupItems(evaluation.items) };
+  }
+
+  async getAverageScoreByCollaboratorAndCycle(
+    collaboratorId: number,
+    cycleId: number,
+  ) {
+    // Busca todas as avaliações de gestor recebidas pelo colaborador no ciclo
+    const evaluations = await this.prisma.managerEvaluation.findMany({
+      where: {
+        evaluateeId: collaboratorId,
+        cycleId: cycleId,
+      },
+      include: {
+        items: true,
+        cycle: true,
+      },
+    });
+
+    // Coleta todos os scores dos itens das avaliações
+    const allScores: number[] = [];
+    let cycleInfo: { id: number; name: string } | null = null;
+    for (const evaluation of evaluations) {
+      if (!cycleInfo && evaluation.cycle) {
+        cycleInfo = {
+          id: evaluation.cycle.id,
+          name: evaluation.cycle.name,
+        };
+      }
+      for (const item of evaluation.items) {
+        if (typeof item.score === 'number') {
+          allScores.push(item.score);
+        }
+      }
+    }
+
+    if (allScores.length === 0) {
+      return {
+        averageScore: null,
+        cycle: cycleInfo,
+      };
+    }
+
+    const averageScore =
+      allScores.reduce((sum, s) => sum + s, 0) / allScores.length;
+    return {
+      averageScore: parseFloat(averageScore.toFixed(1)),
+      cycle: cycleInfo,
+    };
   }
 }

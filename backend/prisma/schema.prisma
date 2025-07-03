@@ -216,6 +216,8 @@ model SelfEvaluation {
   cycleId   Int
   createdAt DateTime @default(now())
 
+  averageScore Float?
+
   user  User                 @relation(fields: [userId], references: [id])
   cycle EvaluationCycle      @relation(fields: [cycleId], references: [id])
   items SelfEvaluationItem[]
