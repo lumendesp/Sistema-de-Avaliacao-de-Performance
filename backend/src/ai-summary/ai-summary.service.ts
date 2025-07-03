@@ -69,6 +69,14 @@ export class AiSummaryService {
     private geminiService: GeminiService,
   ) {}
 
+  async getSummary(userId: number, cycleId: number): Promise<string | null> {
+    const summary = await this.prisma.aISummary.findUnique({
+      where: { userId_cycleId: { userId, cycleId } },
+    });
+
+    return summary?.text || null;
+  }
+
   async generateSummary({
     userId,
     cycleId,
