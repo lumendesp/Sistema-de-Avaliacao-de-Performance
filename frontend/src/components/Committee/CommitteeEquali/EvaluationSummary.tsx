@@ -43,6 +43,7 @@ const Criterion = ({ name, score }: CriterionProps) => {
 };
 
 interface EvaluationSummaryProps {
+    userId: number;
     name: string;
     role: string;
     autoAvaliacao: number;
@@ -58,15 +59,16 @@ interface EvaluationSummaryProps {
     currentScore?: number;
     currentJustification?: string;
     isEditing?: boolean;
-    id?: string;
     justificativaAutoAvaliacao?: string;
     justificativaMentor?: string;
     justificativaGestor?: string;
     justificativa360?: string;
     backendData?: any;
+    cycleId: number;
 }
 
 function EvaluationSummary({ 
+    userId,
     name,
     role,
     autoAvaliacao, 
@@ -85,7 +87,8 @@ function EvaluationSummary({
     justificativaMentor = '',
     justificativaGestor = '',
     justificativa360 = '',
-    backendData
+    backendData,
+    cycleId
 }: EvaluationSummaryProps) {
     
     const hasAllGrades =
@@ -335,7 +338,7 @@ function EvaluationSummary({
                     )}
                 </div>
 
-                <GenAITextBox/>
+                <GenAITextBox userId={userId} cycleId={cycleId}/>
 
             </div>
 
