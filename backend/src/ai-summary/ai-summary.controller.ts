@@ -12,7 +12,10 @@ export class AiSummaryController {
   }
 
   @Get()
-  getSummary(@Query('userId') userId: string, @Query('cycleId') cycleId: string) {
+  getSummary(
+    @Query('userId') userId: string,
+    @Query('cycleId') cycleId: string,
+  ) {
     return this.aiSummaryService.getSummary(Number(userId), Number(cycleId));
   }
 }
