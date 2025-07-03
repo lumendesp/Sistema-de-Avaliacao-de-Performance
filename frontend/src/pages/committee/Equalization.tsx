@@ -4,7 +4,7 @@ import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import EvaluationSummary from "../../components/Committee/CommitteeEquali/EvaluationSummary";
 import FilterIcon from '../../assets/committee/filter-icon.png';
-import { createFinalScore, updateFinalScore, getUsersWithEvaluationsForCommittee } from '../../services/api';
+import { createFinalScore, updateFinalScore, getUsersWithEvaluationsForCommittee, fetchActiveEvaluationCycle } from '../../services/api';
 
 interface Collaborator {
     id: number;
@@ -23,6 +23,7 @@ interface Collaborator {
     justificativaMentor?: string;
     justificativaGestor?: string;
     justificativa360?: string;
+    cycleId: number;
 }
 
 function Equalization(){
@@ -37,6 +38,7 @@ function Equalization(){
 
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
+    const [activeCycle, setActiveCycle] = useState<any>(null);
 
     const filteredCollaborators = useMemo(() => {
         if (!searchTerm) {
@@ -89,6 +91,7 @@ function Equalization(){
                     justificativaMentor: getJustification('MENTOR'),
                     justificativaGestor: getJustification('MANAGER'),
                     justificativa360: getJustification('PEER'),
+                    cycleId: activeCycle?.id || 0,
                 };
             });
             
@@ -98,9 +101,24 @@ function Equalization(){
         }
     };
 
+    const fetchActiveCycle = async () => {
+        try {
+            const cycle = await fetchActiveEvaluationCycle();
+            setActiveCycle(cycle);
+        } catch (error) {
+            console.error("Failed to fetch active cycle:", error);
+        }
+    };
+
     useEffect(() => {
-        fetchCollaborators();
+        fetchActiveCycle();
     }, []);
+
+    useEffect(() => {
+        if (activeCycle) {
+            fetchCollaborators();
+        }
+    }, [activeCycle]);
 
     const handleStarRating = (collabId: number, score: number) => {
         setEvaluationState(prev => ({
@@ -239,7 +257,7 @@ function Equalization(){
                                     {expandedId === collab.id && (
                                         <div className="mt-4 p-4 border-t border-gray-200">
                                             <EvaluationSummary 
-                                                id={String(collab.id)}
+                                                userId={collab.id}
                                                 name={collab.name}
                                                 role={collab.role}                                                
                                                 autoAvaliacao={collab.autoAvaliacao}
@@ -260,6 +278,7 @@ function Equalization(){
                                                 justificativaGestor={collab.justificativaGestor}
                                                 justificativa360={collab.justificativa360}
                                                 backendData={collab}
+                                                cycleId={collab.cycleId}
                                             />
                                         </div>
                                     )}
