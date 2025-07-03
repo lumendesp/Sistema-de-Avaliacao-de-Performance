@@ -141,6 +141,29 @@ export class PeerEvaluationService {
     });
   }
 
+  async getAverageScoreForUserInCycle(
+    userId: number,
+    cycleId: number,
+  ): Promise<{ average: number }> {
+    // aggregate é uma função do prisma que permite fazer operações como avg, sum, count
+    const result = await this.prisma.peerEvaluation.aggregate({
+      where: {
+        evaluateeId: userId,
+        cycleId: cycleId,
+      },
+      // Calcular a média do campo score
+      _avg: {
+        score: true,
+      },
+    });
+
+    const average = result._avg.score ?? 0;
+
+    return {
+      average: parseFloat(average.toFixed(1)), 
+    };
+  }
+
   findOne(id: number) {
     return this.prisma.peerEvaluation.findUnique({
       where: { id },
