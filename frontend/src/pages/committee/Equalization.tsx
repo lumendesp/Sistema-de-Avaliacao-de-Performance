@@ -1,23 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
-import SearchBar from "../../components/CollaboratorsSearchBar";
+import { IoIosSearch } from "react-icons/io";
 import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import EvaluationSummary from "../../components/Committee/CommitteeEquali/EvaluationSummary";
 import FilterIcon from '../../assets/committee/filter-icon.png';
-
-// Enums manually mirrored from backend
-const EvaluationStatus = {
-    PENDING: 'PENDING',
-    FINALIZED: 'FINALIZED',
-    EXPIRED: 'EXPIRED',
-} as const;
-
-const EvaluationType = {
-    SELF: 'SELF',
-    MANAGER: 'MANAGER',
-    PEER: 'PEER',
-    FINAL: 'FINAL',
-} as const;
+import { createFinalScore, updateFinalScore, getUsersWithEvaluationsForCommittee } from '../../services/api';
 
 interface Collaborator {
     id: number;
@@ -28,10 +15,12 @@ interface Collaborator {
     autoAvaliacao: number;
     avaliacao360: number;
     notaGestor: number;
+    notaMentor: number;
     notaFinal?: number;
     finalEvaluationId?: number;
     justification?: string;
     justificativaAutoAvaliacao?: string;
+    justificativaMentor?: string;
     justificativaGestor?: string;
     justificativa360?: string;
 }
@@ -60,7 +49,8 @@ function Equalization(){
 
     const fetchCollaborators = async () => {
         try {
-            const users = await getUsersWithEvaluations();
+            const users = await getUsersWithEvaluationsForCommittee();
+            
             const formattedCollaborators = users.map((user: any) => {
                 const evaluations = user.evaluationsEvaluated || [];
                 
@@ -76,9 +66,10 @@ function Equalization(){
 
                 const finalEval = evaluations.find((e: any) => e.type === 'FINAL');
 
-                // Determine state based on having all 3 evaluations (PEER, MANAGER, FINAL)
-                // Note: SELF evaluation is not in the current schema
-                const hasAllEvaluations = user.hasAllEvaluations || evaluations.length >= 3;
+                // Determine state based on having all 4 required evaluation types
+                const requiredTypes = ['SELF', 'PEER', 'MANAGER', 'FINAL'];
+                const typesPresent = evaluations.map((e: any) => e.type);
+                const hasAllEvaluations = requiredTypes.every(type => typesPresent.includes(type));
                 const state = hasAllEvaluations ? 'finalizado' : 'pendente';
 
                 return {
@@ -87,17 +78,20 @@ function Equalization(){
                     role: user.roles.map((r: any) => r.role).join(', ') || 'N/A',
                     initials: user.name.split(' ').map((n: string) => n[0]).join(''),
                     state: state,
-                    autoAvaliacao: 0, // SELF evaluation not available in current schema
+                    autoAvaliacao: getScore('SELF'),
                     avaliacao360: getScore('PEER'),
+                    notaMentor: getScore('MENTOR'),
                     notaGestor: getScore('MANAGER'),
                     notaFinal: finalEval ? finalEval.score : undefined,
                     finalEvaluationId: finalEval ? finalEval.id : undefined,
                     justification: finalEval ? finalEval.justification : '',
-                    justificativaAutoAvaliacao: '', // SELF evaluation not available in current schema
+                    justificativaAutoAvaliacao: getJustification('SELF'),
+                    justificativaMentor: getJustification('MENTOR'),
                     justificativaGestor: getJustification('MANAGER'),
                     justificativa360: getJustification('PEER'),
                 };
             });
+            
             setCollaborators(formattedCollaborators);
         } catch (error) {
             console.error("Failed to fetch collaborators:", error);
@@ -136,31 +130,34 @@ function Equalization(){
 
         if (!collaborator || currentEvaluation?.notaFinal === undefined) return;
 
-        // The evaluatorId should come from the logged-in user context in a real app
-        // For now, we'll use the committee member ID from the seed data
-        const evaluatorId = 5; // Eve is the committee member (ID 5)
-
-        const evaluationData = {
-            score: currentEvaluation.notaFinal,
-            justification: currentEvaluation.justification || '',
-            evaluateeId: collabId,
-            evaluatorId: evaluatorId,
-        };
-
         try {
-            // For this page, we are always creating a *new* final evaluation
-            const newFinalEvaluation = await createFinalEvaluation(evaluationData);
-            
-            // Refresh the data to get updated status
+            if (collaborator.finalEvaluationId) {
+                // Update existing final evaluation
+                await updateFinalScore(collaborator.finalEvaluationId, {
+                    finalScore: currentEvaluation.notaFinal,
+                    justification: currentEvaluation.justification || '',
+                });
+            } else {
+                // Create new final evaluation
+                await createFinalScore({
+                    userId: collabId,
+                    finalScore: currentEvaluation.notaFinal,
+                    justification: currentEvaluation.justification || '',
+                });
+            }
+
+            // Refresh data
             await fetchCollaborators();
             
+            // Update local state
             setEvaluationState(prev => ({
                 ...prev,
                 [collabId]: { ...prev[collabId], isEditing: false }
             }));
 
         } catch (error) {
-            console.error("Failed to save evaluation:", error);
+            console.error('Error saving final evaluation:', error);
+            alert(error instanceof Error ? error.message : 'Erro ao salvar avaliação final');
         }
     };
 
@@ -191,7 +188,16 @@ function Equalization(){
                 <div className="p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-6 gap-4">
                         <div className="flex-1">
-                            <SearchBar onSearch={setSearchTerm} />
+                            <div className="flex items-center gap-2 rounded-xl py-4 px-7 w-full bg-white">
+                                <IoIosSearch size={16} className="text-[#1D1D1D]/75" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por colaboradores"
+                                    className="flex-1 outline-none text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
                         </div>
                         <div className="w-12 h-12 bg-[#08605F] rounded-lg flex items-center justify-center self-center sm:self-auto">
                             <img 
@@ -207,7 +213,7 @@ function Equalization(){
                             <div key={collab.id} className="bg-white rounded-lg shadow-md">
                                 <div className="p-4">
                                     <div className="flex items-center">
-                                        <div className="w-[90%] sm:w-[95%]">
+                                        <div className="w-[95%] sm:w-[98%]">
                                             <Colaborators 
                                                 name={collab.name}
                                                 role={collab.role}
@@ -216,10 +222,11 @@ function Equalization(){
                                                 autoAvaliacao={collab.autoAvaliacao}
                                                 avaliacao360={collab.avaliacao360}
                                                 notaGestor={collab.notaGestor}
+                                                notaMentor={collab.notaMentor}
                                                 notaFinal={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal}
                                             />
                                         </div>
-                                        <div className="w-[10%] sm:w-[5%] flex justify-center">
+                                        <div className="w-[5%] sm:w-[2%] flex justify-center">
                                             <button 
                                                 onClick={() => setExpandedId(expandedId === collab.id ? null : collab.id)}
                                                 className="p-2 hover:bg-gray-100 rounded-full"
@@ -237,6 +244,7 @@ function Equalization(){
                                                 role={collab.role}                                                
                                                 autoAvaliacao={collab.autoAvaliacao}
                                                 avaliacao360={collab.avaliacao360}
+                                                notaMentor={collab.notaMentor}
                                                 notaGestor={collab.notaGestor}
                                                 notaFinal={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal}
                                                 onEdit={() => handleEdit(collab.id)}
@@ -248,8 +256,10 @@ function Equalization(){
                                                 currentJustification={evaluationState[collab.id]?.justification ?? collab.justification ?? ''}
                                                 isEditing={evaluationState[collab.id]?.isEditing || false}
                                                 justificativaAutoAvaliacao={collab.justificativaAutoAvaliacao}
+                                                justificativaMentor={collab.justificativaMentor}
                                                 justificativaGestor={collab.justificativaGestor}
                                                 justificativa360={collab.justificativa360}
+                                                backendData={collab}
                                             />
                                         </div>
                                     )}

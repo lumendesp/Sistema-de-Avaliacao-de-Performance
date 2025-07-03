@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-
+import { getUsersWithEvaluationsForCommittee } from '../../services/api';
+import { exportEvaluationToExcel, exportEvaluationToCSV, transformBackendDataToExport } from '../../services/export.service';
 import InfoCard from "../../components/Committee/CommitteeHome/InfoCard";
 import CircularProgress from "../../components/Committee/CirculaProgress";
 import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import persons from "../../assets/committee/two-persons.png";
 import { UserIcon } from '../../components/UserIcon';
+import { FaDownload } from 'react-icons/fa';
 
 interface Collaborator {
     id: number;
@@ -15,6 +17,7 @@ interface Collaborator {
     state: 'pendente' | 'finalizado' | 'expirado';
     autoAvaliacao: number;
     avaliacao360: number;
+    notaMentor: number;
     notaGestor: number;
     notaFinal?: number;
     hasAllEvaluations?: boolean;
@@ -22,9 +25,14 @@ interface Collaborator {
 
 function Committee(){
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+    const [showBulkExportOptions, setShowBulkExportOptions] = useState(false);
+    const [fullUserData, setFullUserData] = useState<any[]>([]);
 
     const fetchCollaborators = async () => {
         try {
+            const users = await getUsersWithEvaluationsForCommittee();
+            setFullUserData(users); // Store full data for export
+            
             const formattedCollaborators = users.map((user: any) => {
                 const evaluations = user.evaluationsEvaluated || [];
                 
@@ -35,10 +43,12 @@ function Committee(){
 
                 const finalEval = evaluations.find((e: any) => e.type === 'FINAL');
 
-                // Determine state based on having all 3 evaluations (PEER, MANAGER, FINAL)
-                // Note: SELF evaluation is not in the current schema
-                const hasAllEvaluations = user.hasAllEvaluations || evaluations.length >= 3;
+                // Determine state based on having all 4 required evaluation types
+                const requiredTypes = ['SELF', 'PEER', 'MENTOR', 'MANAGER', 'FINAL'];
+                const typesPresent = evaluations.map((e: any) => e.type);
+                const hasAllEvaluations = requiredTypes.every(type => typesPresent.includes(type));
                 const state = hasAllEvaluations ? 'finalizado' : 'pendente';
+
 
                 return {
                     id: user.id,
@@ -46,8 +56,9 @@ function Committee(){
                     role: user.roles.map((r: any) => r.role).join(', ') || 'N/A',
                     initials: user.name.split(' ').map((n: string) => n[0]).join(''),
                     state: state,
-                    autoAvaliacao: 0, // SELF evaluation not available in current schema
+                    autoAvaliacao: getScore('SELF'),
                     avaliacao360: getScore('PEER'),
+                    notaMentor: getScore('MENTOR'),
                     notaGestor: getScore('MANAGER'),
                     notaFinal: finalEval ? finalEval.score : undefined,
                     hasAllEvaluations: hasAllEvaluations,
@@ -84,13 +95,74 @@ function Committee(){
 
     const remainingDays = getRemainingDays();
 
+    // Export functionality for all users
+    const handleBulkExport = (type: 'csv' | 'xlsx') => {
+        fullUserData.forEach((user, index) => {
+            setTimeout(() => {
+                try {
+                    const evaluationData = transformBackendDataToExport(user);
+                    const fileName = `${user.name.replace(/\s+/g, '_')}_${type === 'xlsx' ? 'xlsx' : 'csv'}`;
+                    if (type === 'csv') {
+                        exportEvaluationToCSV(evaluationData, fileName);
+                    } else {
+                        exportEvaluationToExcel(evaluationData, fileName);
+                    }
+                } catch (error) {
+                    console.error(`Error exporting ${user.name}:`, error);
+                }
+            }, index * 100); // 100ms delay 
+        });
+    };
+
     return(
         <div className="w-full min-h-screen bg-gray-300">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 gap-4">
                 <h1 className="text-xl sm:text-2xl">
                     <span className="font-bold">Olá,</span> comite
                 </h1>
-                <UserIcon initials="CN" size={40} />
+                <div className="flex items-center gap-4">
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowBulkExportOptions(!showBulkExportOptions)}
+                            className="px-3 py-1.5 bg-[#08605F] text-white rounded-md hover:bg-[#064a49] transition-colors flex items-center gap-1.5 text-sm"
+                        >
+                            <FaDownload className="w-3 h-3" />
+                            Exportar tudo
+                        </button>
+                        
+                        {showBulkExportOptions && (
+                            <>
+                                <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowBulkExportOptions(false)}
+                                />
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+                                    <div className="py-1">
+                                        <button
+                                            onClick={() => {
+                                                handleBulkExport('xlsx');
+                                                setShowBulkExportOptions(false);
+                                            }}
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            Exportar Excel (.xlsx)
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                handleBulkExport('csv');
+                                                setShowBulkExportOptions(false);
+                                            }}
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            Exportar CSV (.csv)
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                    <UserIcon initials="CN" size={40} />
+                </div>
             </div>
 
             <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 m-4 sm:m-5">
@@ -125,19 +197,23 @@ function Committee(){
                     </Link>
                 </div>
                 <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
-                    {collaborators.slice(0, 5).map((collab) => (
-                        <Colaborators 
-                            key={collab.id}
-                            name={collab.name} 
-                            role={collab.role} 
-                            initials={collab.initials} 
-                            state={collab.state}
-                            autoAvaliacao={collab.autoAvaliacao}
-                            avaliacao360={collab.avaliacao360}
-                            notaGestor={collab.notaGestor}
-                            notaFinal={collab.notaFinal}
-                        />
-                    ))}
+                    {collaborators.slice(0, 5).map((collab) => {
+                        console.log('Colab:', collab);
+                        return (
+                            <Colaborators 
+                                key={collab.id}
+                                name={collab.name} 
+                                role={collab.role} 
+                                initials={collab.initials} 
+                                state={collab.state}
+                                autoAvaliacao={collab.autoAvaliacao}
+                                avaliacao360={collab.avaliacao360}
+                                notaMentor={collab.notaMentor}
+                                notaGestor={collab.notaGestor}
+                                notaFinal={collab.notaFinal}
+                            />
+                        );
+                    })}
                     {collaborators.length === 0 && (
                         <div className="text-center text-gray-500 py-8">
                             Nenhum colaborador encontrado
