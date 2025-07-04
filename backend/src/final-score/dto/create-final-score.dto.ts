@@ -1,57 +1,41 @@
-import { IsInt, IsNumber, IsString, IsOptional, Min, Max } from 'class-validator';
+import { IsInt, IsOptional, IsNumber, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateFinalScoreDto {
-  @ApiProperty({ example: 1, description: 'ID of the user being evaluated' })
+  @ApiProperty({ example: 1 })
   @IsInt()
   userId: number;
 
-  @ApiProperty({ 
-    example: 4.2, 
-    description: 'Execution score (0-5)',
-    required: false 
-  })
+  @ApiProperty({ example: 1 })
+  @IsInt()
+  cycleId: number;
+
+  @ApiProperty({ example: 8.5, required: false })
   @IsOptional()
   @IsNumber()
-  @Min(0)
-  @Max(5)
   executionScore?: number;
 
-  @ApiProperty({ 
-    example: 4.5, 
-    description: 'Posture score (0-5)',
-    required: false 
-  })
+  @ApiProperty({ example: 7.0, required: false })
   @IsOptional()
   @IsNumber()
-  @Min(0)
-  @Max(5)
   postureScore?: number;
 
-  @ApiProperty({ 
-    example: 4.3, 
-    description: 'Final consolidated score (0-5)',
-    required: false 
-  })
+  @ApiProperty({ example: 7.75, required: false })
   @IsOptional()
   @IsNumber()
-  @Min(0)
-  @Max(5)
   finalScore?: number;
 
-  @ApiProperty({ 
-    example: 'Excelente desempenho durante o ciclo...', 
-    description: 'Summary text for the user',
-    required: false 
-  })
+  @ApiProperty({ example: 'Ótima performance no semestre', required: false })
   @IsOptional()
   @IsString()
   summary?: string;
 
-  @ApiProperty({ 
-    example: 'Justificativa detalhada da nota final...', 
-    description: 'Justification for the final score' 
-  })
+  @ApiProperty({ example: 2, required: false })
+  @IsOptional()
+  @IsInt()
+  adjustedBy?: number;
+
+  @ApiProperty({ example: 'Justificativa detalhada da nota.' })
   @IsString()
   justification: string;
-} 
+}

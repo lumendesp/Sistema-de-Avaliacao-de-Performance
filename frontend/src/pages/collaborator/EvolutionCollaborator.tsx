@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import EvolutionLayout from '../../layouts/EvolutionLayout';
 import { API_URL } from '../../services/api';
 
 const CollaboratorHistory = () => {
-  const { id } = useParams();
+  const { id: paramId } = useParams();
+  const { user } = useAuth();
+  const id = paramId || user?.id;
   const [loading, setLoading] = useState(true);
   const [cycles, setCycles] = useState<any[]>([]);
   const [performance, setPerformance] = useState<any[]>([]);

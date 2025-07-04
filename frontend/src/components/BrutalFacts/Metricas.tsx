@@ -3,7 +3,7 @@ import { API_URL } from "../../services/api";
 
 interface BrutalFactsStats {
   averageScore: string;
-  scoreTrend: string;
+  scoreTrend?: string;
   evaluatedCollaborators: string;
   totalEvaluated?: string;
   averageFinal?: string;
@@ -29,15 +29,15 @@ const Metricas: React.FC = () => {
         
         setStats({
           averageScore: data.averageScore || '0.0/5',
-          scoreTrend: '+0.3 este mês', // Placeholder - pode ser calculado comparando com ciclo anterior
+          scoreTrend: data.scoreTrend,
           evaluatedCollaborators: data.totalEvaluated || '0',
-
+          averageFinal: data.averageFinal || data.averageScore || '0.0/5',
           cycleName: data.cycleName || ''
         });
       } catch (err: any) {
         setStats({
           averageScore: "4.14/5",
-          scoreTrend: "+0.3 este mês",
+          scoreTrend: undefined,
           evaluatedCollaborators: "10",
           averageFinal: "4.14/5",
           cycleName: ''
@@ -48,6 +48,22 @@ const Metricas: React.FC = () => {
     };
     fetchStats();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-7xl flex justify-center items-center h-48">
+        <svg className="animate-spin h-10 w-10 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+      </div>
+    );
+  }
+
+  const showScoreTrend = stats && typeof stats.scoreTrend === 'string' &&
+    stats.scoreTrend.trim() !== '' &&
+    stats.scoreTrend !== 'undefined' &&
+    stats.scoreTrend !== 'null';
 
   const metrics = stats ? [
     {
@@ -62,10 +78,10 @@ const Metricas: React.FC = () => {
       extra: <span className="text-green-600 font-semibold">Great</span>
     },
     {
-      title: "Desempenho de liderados",
-      value: stats.scoreTrend?.replace(' este mês', '') || '-',
+      title: "Variação da média final",
+      value: showScoreTrend && stats.scoreTrend ? stats.scoreTrend.replace(' este ciclo', '') : '-',
       icon: <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100"><svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg></span>,
-      subtitle: `Crescimento de ${stats.scoreTrend?.replace(' este mês', '') || '-'} comparado ao ciclo ${stats.cycleName || ''}`
+      subtitle: showScoreTrend && stats.scoreTrend ? `Variação em relação ao ciclo anterior: ${stats.scoreTrend}` : 'Não há ciclo anterior para comparar crescimento'
     },
     {
       title: "Liderados avaliados",
@@ -89,16 +105,6 @@ const Metricas: React.FC = () => {
       <span className="text-xs text-gray-400 mt-1 text-center">{subtitle}</span>
     </div>
   );
-
-  if (loading) {
-    return (
-      <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse h-32" />
-        ))}
-      </div>
-    );
-  }
 
   return (
     <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
