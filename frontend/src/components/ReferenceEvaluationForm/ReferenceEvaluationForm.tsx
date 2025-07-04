@@ -1,9 +1,10 @@
 import { UserIcon } from "../UserIcon";
 import { FaTrash } from "react-icons/fa";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createReference, fetchMyReferences } from "../../services/api";
 import type { ReferenceEvaluationFormProps } from "../../types/reference";
+import { useEvaluation } from "../../context/EvaluationsContext";
 
 const ReferenceEvaluationForm = ({
   selectedCollaborators,
@@ -12,13 +13,17 @@ const ReferenceEvaluationForm = ({
   setMyReferences,
   cycleId
 }: ReferenceEvaluationFormProps) => {
-
-  const [formData, setFormData] = useState<{ [key: number]: string }>({}); 
+  const [formData, setFormData] = useState<{ [key: number]: string }>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // função para atualizar o estado do formulário quando o usuário digita no textarea
+  const { registerSubmitHandler } = useEvaluation();
+
+  useEffect(() => {
+    registerSubmitHandler("reference-evaluation", handleSubmitAll);
+  }, [formData, selectedCollaborators]);
+
   const handleInputChange = (collaboratorId: number, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -26,11 +31,7 @@ const ReferenceEvaluationForm = ({
     }));
   };
 
-  // função para enviar todas as referências
-  const handleSubmitAll = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // verifica se todos os formulários foram preenchidos
+  const handleSubmitAll = async () => {
     const emptyForms = selectedCollaborators.filter(
       (c) => !formData[c.id]?.trim()
     );
@@ -45,25 +46,20 @@ const ReferenceEvaluationForm = ({
     setError(null);
     setSuccess(false);
 
-    // remove forms antes de enviar
     const collaboratorsToRemove = [...selectedCollaborators];
     collaboratorsToRemove.forEach((c) => onRemoveCollaborator(c.id));
     setFormData({});
 
     try {
-      // envia todas as referências, em paralelo
       const promises = selectedCollaborators.map((collaborator) =>
         createReference(collaborator.id, cycleId, formData[collaborator.id])
       );
-
       await Promise.all(promises);
 
       setSuccess(true);
-
-      // atualiza lista de referências
       const updatedRefs = await fetchMyReferences(cycleId);
       setMyReferences(updatedRefs);
-    } catch (err: unknown) { // unknown pode ser qualquer coisa, assim como any, mas é mais seguro por conta da verificação posterior com instanceof Error
+    } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao enviar referências";
       setError(errorMessage);
@@ -72,7 +68,6 @@ const ReferenceEvaluationForm = ({
     }
   };
 
-  // função para pegar as iniciais 
   function getInitials(name: string) {
     return name
       .split(" ")
@@ -83,7 +78,6 @@ const ReferenceEvaluationForm = ({
 
   return (
     <div className="flex flex-col gap-4 w-full">
-      {/* lista de cards com referências já existentes */}
       {myReferences.length > 0 ? (
         <div className="flex flex-col gap-4">
           {myReferences.map((ref, idx) => (
@@ -128,9 +122,8 @@ const ReferenceEvaluationForm = ({
         </p>
       ) : null}
 
-      {/* permite selecionar vários colaboradores e enviar de uma só vez */}
       {selectedCollaborators.length > 0 && (
-        <form onSubmit={handleSubmitAll} className="flex flex-col gap-4">
+        <form className="flex flex-col gap-4">
           {selectedCollaborators.map((collaborator) => (
             <div
               key={collaborator.id}
@@ -173,20 +166,6 @@ const ReferenceEvaluationForm = ({
               </div>
             </div>
           ))}
-
-          {/* botão de envio (depois vai ser removido) */}
-          <button
-            type="submit"
-            className="bg-[#08605E] text-white rounded px-4 py-2 mt-2 disabled:opacity-50 w-full"
-            disabled={loading}
-          >
-            {loading
-              ? "Enviando..."
-              : `Enviar ${selectedCollaborators.length} referência${
-                  selectedCollaborators.length > 1 ? "s" : ""
-                }`}
-          </button>
-
           {error && <p className="text-red-500 text-xs">{error}</p>}
           {success && (
             <p className="text-green-600 text-xs">
