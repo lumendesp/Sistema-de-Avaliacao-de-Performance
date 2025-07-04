@@ -22,7 +22,6 @@ export class ImportController {
             type: 'object',
             properties: {
                 cycleId: { type: 'number' },
-                dePara: { type: 'string' },
                 file: { type: 'string', format: 'binary' },
             },
         },
@@ -31,7 +30,6 @@ export class ImportController {
         @UploadedFile() file: Express.Multer.File,
         @Body() importDto: ImportDto,
     ) {
-        const deParaRules = JSON.parse(importDto.dePara);
-        return this.importService.importHistory(file, importDto.cycleId, deParaRules);
+        return this.importService.importHistory(file, importDto.cycleId);
     }
 }
