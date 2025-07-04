@@ -175,6 +175,28 @@ export const fetchMyPeerEvaluations = async (cycleId: number) => {
   return res.json(); // retorna array de avaliações
 };
 
+export const fetchAISummary = async (
+  userId: number,
+  cycleId: number
+): Promise<string> => {
+  console.log(userId, cycleId)
+  const res = await fetch(
+    `${API_URL}/ai-summary?userId=${userId}&cycleId=${cycleId}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar resumo da IA");
+  }
+
+  return res.text(); // o backend já retorna só o texto do resumo
+};
+
+
 // Fetches all users with their associated evaluations
 
 export const getUsersWithEvaluationsForCommittee = async () => {

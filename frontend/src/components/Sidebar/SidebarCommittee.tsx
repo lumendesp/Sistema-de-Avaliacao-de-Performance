@@ -52,7 +52,7 @@ const SidebarCommittee = () => {
                   {icon}
                   <span className="flex items-center gap-1">
                     {label}
-                    {badge && <span className="w-2 h-2 bg-red-500 rounded-full" />}
+                    {badge}
                   </span>
                 </NavLink>
               </li>
