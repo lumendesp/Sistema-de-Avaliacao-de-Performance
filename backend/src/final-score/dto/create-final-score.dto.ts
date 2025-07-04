@@ -10,17 +10,17 @@ export class CreateFinalScoreDto {
   @IsInt()
   cycleId: number;
 
-  @ApiProperty({ example: 4.5, required: false })
+  @ApiProperty({ example: 8.5, required: false })
   @IsOptional()
   @IsNumber()
   executionScore?: number;
 
-  @ApiProperty({ example: 4.0, required: false })
+  @ApiProperty({ example: 7.0, required: false })
   @IsOptional()
   @IsNumber()
   postureScore?: number;
 
-  @ApiProperty({ example: 4.25, required: false })
+  @ApiProperty({ example: 7.75, required: false })
   @IsOptional()
   @IsNumber()
   finalScore?: number;

@@ -12,6 +12,11 @@ export class CreateCriterionDto {
   @IsNotEmpty()
   name: CriterionName;
 
+  @ApiProperty({ description: 'Nome de exibição do critério', example: 'Organização no Trabalho' })
+  @IsString()
+  @IsNotEmpty()
+  displayName: string;
+
   @ApiProperty({ description: 'Descrição geral do critério', example: 'Capacidade de manter o ambiente organizado.' })
   @IsString()
   @IsNotEmpty()
