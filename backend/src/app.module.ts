@@ -21,7 +21,6 @@ import { ReferenceModule } from './reference/reference.module';
 import { PeerEvaluationModule } from './collaborator/peer-evaluation/peer-evaluation.module';
 import { AiSummaryModule } from './ai-summary/ai-summary.module';
 import { GeminiModule } from './ai/ai.module';
-import { FinalScoreModule } from './final-score/final-score.module';
 import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
 import { ManagerModule } from './manager/manager.module';
 
@@ -52,7 +51,6 @@ import { ManagerModule } from './manager/manager.module';
     PeerEvaluationModule,
     AiSummaryModule,
     GeminiModule,
-    FinalScoreModule,
     ManagerEvaluationModule,
     ManagerModule,
   ],

@@ -73,7 +73,7 @@ export class CiclosService {
     });
   }
 
-  async getManagerDashboardStats() {
+  async getManagerDashboardStats(managerId: number) {
     // Buscar o ciclo atual (mais recente)
     const currentCycle = await prisma.evaluationCycle.findFirst({
       orderBy: { startDate: 'desc' }
@@ -92,50 +92,52 @@ export class CiclosService {
       };
     }
 
-    // Buscar todos os usuários colaboradores
-    const collaborators = await prisma.user.findMany({
-      where: {
-        roles: {
-          some: {
-            role: 'COLLABORATOR'
-          }
-        },
-        active: true
-      },
+    // Buscar o gestor e seus colaboradores
+    const manager = await prisma.user.findUnique({
+      where: { id: managerId },
       include: {
-        roles: true,
-        unit: true,
-        position: true,
-        finalScores: {
-          where: {
-            cycleId: currentCycle.id
-          }
-        },
-        selfEvaluations: {
-          where: {
-            cycleId: currentCycle.id
-          }
-        },
-        managerEvaluationsReceived: {
-          where: {
-            cycleId: currentCycle.id
+        manages: {
+          include: {
+            collaborator: {
+              include: {
+                roles: true,
+                finalScores: {
+                  where: { cycleId: currentCycle.id }
+                },
+                selfEvaluations: {
+                  where: { cycleId: currentCycle.id }
+                },
+                managerEvaluationsReceived: {
+                  where: { cycleId: currentCycle.id }
+                }
+              }
+            }
           }
         }
       }
     });
 
-    // Calcular estatísticas para o ciclo atual
+    if (!manager) {
+      return {
+        totalEvaluations: "0",
+        evaluatedCollaborators: "0",
+        pendingCollaborators: "0",
+        averageScore: "0.0/5",
+        evaluationTrend: "0% este mês",
+        collaboratorTrend: "0% este mês",
+        scoreTrend: "0.0 este mês",
+        totalCollaborators: "0"
+      };
+    }
+
+    // Lista de colaboradores do gestor, exceto ele mesmo e apenas ativos
+    const collaborators = manager.manages
+      .map(m => m.collaborator)
+      .filter(c => c.id !== managerId && c.active);
+
     const totalCollaborators = collaborators.length;
-    
-    // Total de avaliações = total de colaboradores (todas as avaliações que deveriam ser feitas)
     const totalEvaluations = totalCollaborators;
-
-    // Colaboradores com pelo menos uma avaliação final no ciclo atual
-    const evaluatedCollaborators = collaborators.filter(collab => 
-      collab.finalScores.length > 0
-    ).length;
-
-    // Colaboradores pendentes (sem avaliação final no ciclo atual)
+    const evaluatedCollaborators = collaborators.filter(collab => collab.finalScores.length > 0).length;
     const pendingCollaborators = totalCollaborators - evaluatedCollaborators;
 
     // Calcular média de desempenho - nota do ciclo atual
@@ -148,7 +150,7 @@ export class CiclosService {
       ? (currentCycleScores.reduce((sum, score) => sum + score, 0) / currentCycleScores.length).toFixed(1)
       : '0.0';
 
-    // Calcular tendências baseadas em dados reais
+    // Calcular tendências baseadas em dados reais (opcional: pode ser ajustado para comparar só entre colaboradores do gestor)
     // Buscar ciclo anterior para comparação
     const previousCycle = await prisma.evaluationCycle.findMany({
       orderBy: { startDate: 'desc' },
@@ -162,52 +164,48 @@ export class CiclosService {
 
     if (previousCycle.length > 0) {
       const prevCycle = previousCycle[0];
-      
-      // Comparar com ciclo anterior
-      const prevTotalCollaborators = await prisma.user.count({
-        where: {
-          roles: {
-            some: {
-              role: 'COLLABORATOR'
+      // Buscar colaboradores do gestor no ciclo anterior
+      const prevManager = await prisma.user.findUnique({
+        where: { id: managerId },
+        include: {
+          manages: {
+            include: {
+              collaborator: {
+                include: {
+                  roles: true,
+                  finalScores: {
+                    where: { cycleId: prevCycle.id }
+                  }
+                }
+              }
             }
-          },
-          active: true
+          }
         }
       });
-
-      const prevEvaluatedCollabs = await prisma.finalScore.count({
-        where: { cycleId: prevCycle.id }
-      });
-
-      const prevScores = await prisma.finalScore.findMany({
-        where: { 
-          cycleId: prevCycle.id,
-          finalScore: { not: null }
-        },
-        select: { finalScore: true }
-      });
-
+      const prevCollaborators = prevManager ? prevManager.manages.map(m => m.collaborator).filter(c => c.id !== managerId && c.active) : [];
+      const prevTotalCollaborators = prevCollaborators.length;
+      const prevEvaluatedCollabs = prevCollaborators.filter(collab => collab.finalScores.length > 0).length;
+      const prevScores = prevCollaborators
+        .filter(collab => collab.finalScores.length > 0)
+        .map(collab => collab.finalScores[0].finalScore!)
+        .filter(score => score !== null && score !== undefined);
       const prevAverageScore = prevScores.length > 0 
-        ? prevScores.reduce((sum, score) => sum + score.finalScore!, 0) / prevScores.length
+        ? prevScores.reduce((sum, score) => sum + score, 0) / prevScores.length
         : 0;
-
       // Calcular tendências
       if (prevTotalCollaborators > 0) {
         const evalChange = ((totalEvaluations - prevTotalCollaborators) / prevTotalCollaborators * 100).toFixed(0);
         evaluationTrend = `${evalChange}% este mês`;
       }
-
       if (prevEvaluatedCollabs > 0) {
         const collabChange = ((evaluatedCollaborators - prevEvaluatedCollabs) / prevEvaluatedCollabs * 100).toFixed(0);
         collaboratorTrend = `${collabChange}% este mês`;
       }
-
       if (prevAverageScore > 0) {
         const scoreChange = (parseFloat(averageScore) - prevAverageScore).toFixed(1);
         scoreTrend = `${scoreChange} este mês`;
       }
     } else {
-      // Se não há ciclo anterior, usar valores padrão positivos
       evaluationTrend = "+12% este mês";
       collaboratorTrend = "+5% este mês";
       scoreTrend = "+0.3 este mês";
