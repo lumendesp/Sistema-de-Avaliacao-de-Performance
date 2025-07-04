@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma.service';
 import { CreateSelfEvaluationDto } from './dto/create-self-evaluation.dto';
 import { UpdateSelfEvaluationDto } from './dto/update-self-evaluation.dto';
 import { ConflictException } from '@nestjs/common/exceptions/conflict.exception';
+import { encrypt, decrypt } from '../../utils/encryption';
 
 @Injectable()
 export class SelfEvaluationService {
@@ -29,7 +30,7 @@ export class SelfEvaluationService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!user || !user.positionId || !user.unitId || !user.trackId) {
-      throw new Error("Usuário incompleto");
+      throw new Error('Usuário incompleto');
     }
 
     const existing = await this.prisma.selfEvaluation.findFirst({
@@ -37,7 +38,7 @@ export class SelfEvaluationService {
     });
 
     if (existing) {
-      throw new ConflictException("Autoavaliação já existe para este ciclo");
+      throw new ConflictException('Autoavaliação já existe para este ciclo');
     }
 
     const itemsToCreate = await Promise.all(
@@ -52,23 +53,26 @@ export class SelfEvaluationService {
         });
 
         if (!configured) {
-          throw new Error(`Critério ${item.criterionId} não configurado para esse usuário`);
+          throw new Error(
+            `Critério ${item.criterionId} não configurado para esse usuário`,
+          );
         }
 
         return {
           criterionId: item.criterionId,
           configuredCriterionId: configured.id,
           score: item.score,
-          justification: item.justification,
+          justification: encrypt(item.justification),
           scoreDescription: this.getScoreDescription(item.score),
         };
-      })
+      }),
     );
 
     return await this.prisma.selfEvaluation.create({
       data: {
         userId,
         cycleId: dto.cycleId,
+        averageScore: dto.averageScore,
         items: {
           createMany: {
             data: itemsToCreate,
@@ -107,7 +111,7 @@ export class SelfEvaluationService {
         id: item.id,
         criterionId: item.criterionId,
         score: item.score,
-        justification: item.justification,
+        justification: decrypt(item.justification),
         scoreDescription: item.scoreDescription,
         group: item.configuredCriterion?.group
           ? {
@@ -120,6 +124,7 @@ export class SelfEvaluationService {
       return {
         ...evaluation,
         isEditable,
+        averageScore: evaluation.averageScore,
         items: itemsWithGroup,
       };
     });
@@ -127,7 +132,7 @@ export class SelfEvaluationService {
 
   async update(id: number, dto: UpdateSelfEvaluationDto) {
     if (!dto.items || dto.items.length === 0) {
-      throw new Error("Nenhum item de avaliação recebido.");
+      throw new Error('Nenhum item de avaliação recebido.');
     }
 
     const evaluation = await this.prisma.selfEvaluation.findUnique({
@@ -135,8 +140,13 @@ export class SelfEvaluationService {
       include: { user: true },
     });
 
-    if (!evaluation || !evaluation.user?.positionId || !evaluation.user?.unitId || !evaluation.user?.trackId) {
-      throw new Error("Usuário incompleto ou avaliação inexistente");
+    if (
+      !evaluation ||
+      !evaluation.user?.positionId ||
+      !evaluation.user?.unitId ||
+      !evaluation.user?.trackId
+    ) {
+      throw new Error('Usuário incompleto ou avaliação inexistente');
     }
 
     const itemsToCreate = await Promise.all(
@@ -158,15 +168,16 @@ export class SelfEvaluationService {
           criterionId: item.criterionId,
           configuredCriterionId: configured.id,
           score: item.score,
-          justification: item.justification,
+          justification: encrypt(item.justification),
           scoreDescription: this.getScoreDescription(item.score),
         };
-      })
+      }),
     );
 
     return this.prisma.selfEvaluation.update({
       where: { id },
       data: {
+        averageScore: dto.averageScore,
         items: {
           deleteMany: {},
           create: itemsToCreate,
@@ -176,8 +187,8 @@ export class SelfEvaluationService {
         items: true,
       },
     });
-    
   }
+
   async delete(id: number) {
     try {
       const deletedItems = await this.prisma.selfEvaluationItem.deleteMany({
@@ -208,7 +219,9 @@ export class SelfEvaluationService {
       user.unitId === null ||
       user.trackId === null
     ) {
-      throw new Error('Usuário incompleto: faltam positionId, unitId ou trackId');
+      throw new Error(
+        'Usuário incompleto: faltam positionId, unitId ou trackId',
+      );
     }
 
     const configuredCriteria = await this.prisma.configuredCriterion.findMany({
@@ -250,17 +263,20 @@ export class SelfEvaluationService {
       throw new Error('Avaliação não encontrada para esse ciclo e usuário.');
     }
 
-    const grouped: Record<number, {
-      groupId: number;
-      groupName: string;
-      criteria: {
-        criterionId: number;
-        title: string;
-        description: string;
-        score: number;
-        justification: string;
-      }[];
-    }> = {};
+    const grouped: Record<
+      number,
+      {
+        groupId: number;
+        groupName: string;
+        criteria: {
+          criterionId: number;
+          title: string;
+          description: string;
+          score: number;
+          justification: string;
+        }[];
+      }
+    > = {};
 
     for (const item of evaluation.items) {
       const configured = item.configuredCriterion;
@@ -283,7 +299,7 @@ export class SelfEvaluationService {
         title: criterion.name,
         description: criterion.generalDescription,
         score: item.score,
-        justification: item.justification,
+        justification: decrypt(item.justification),
       });
     }
 
@@ -312,27 +328,46 @@ export class SelfEvaluationService {
       },
     });
 
-    return evaluations.map(evaluation => ({
+    return evaluations.map((evaluation) => ({
       evaluationId: evaluation.id,
+      averageScore: evaluation.averageScore,
       cycle: {
         id: evaluation.cycle.id,
         name: evaluation.cycle.name,
         startDate: evaluation.cycle.startDate,
         endDate: evaluation.cycle.endDate,
       },
-      items: evaluation.items.map(item => ({
+      items: evaluation.items.map((item) => ({
         criterionId: item.criterion.id,
         title: item.criterion.name,
         group: item.configuredCriterion?.group?.name ?? null,
         score: item.score,
-        justification: item.justification,
+        justification: decrypt(item.justification),
       })),
     }));
   }
 
+  async getAverage(userId: number, cycleId: number) {
+    const evaluation = await this.prisma.selfEvaluation.findFirst({
+      where: {
+        userId,
+        cycleId,
+      },
+      include: {
+        cycle: true,
+      },
+    });
 
+    if (!evaluation) {
+      throw new Error('Avaliação não encontrada.');
+    }
 
-  
-
-
+    return {
+      averageScore: evaluation.averageScore,
+      cycle: {
+        id: evaluation.cycle.id,
+        name: evaluation.cycle.name,
+      },
+    };
+  }
 }

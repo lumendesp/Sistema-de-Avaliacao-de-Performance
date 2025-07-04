@@ -33,6 +33,7 @@ export interface EvaluationComparisonItemProps {
 }
 
 export interface EvaluationComparisonItemData {
+  criterionId: number;
   title: string;
   selfScore: number;
   finalScore: number;

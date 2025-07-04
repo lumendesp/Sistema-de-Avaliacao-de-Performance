@@ -42,30 +42,30 @@ export class UsersService {
       where: {
         roles: {
           some: {
-            role: 'COLLABORATOR'
-          }
-        }
+            role: 'COLLABORATOR',
+          },
+        },
       },
-      include: { 
-        roles: true, 
-        unit: true, 
-        position: true, 
+      include: {
+        roles: true,
+        unit: true,
+        position: true,
         track: true,
         finalScores: {
           include: {
-            cycle: true
-          }
+            cycle: true,
+          },
         },
         selfEvaluations: {
           include: {
-            items: true
-          }
+            items: true,
+          },
         },
         managerEvaluationsReceived: {
           include: {
-            items: true
-          }
-        }
+            items: true,
+          },
+        },
       },
     });
   }
@@ -132,5 +132,127 @@ export class UsersService {
       where: { id },
     });
     return { message: `User ${id} deleted` };
+  }
+
+  // função para buscar usuários com suas avaliações (para o comitê)
+  async findUsersWithEvaluations() {
+    const users = await this.prisma.user.findMany({
+      include: {
+        roles: true,
+        unit: true,
+        position: true,
+        track: true,
+        selfEvaluations: {
+          include: {
+            items: {
+              include: {
+                criterion: true,
+              },
+            },
+            cycle: true,
+          },
+        },
+        peerEvaluationsReceived: {
+          include: {
+            evaluator: { select: { id: true, name: true } },
+            cycle: true,
+          },
+        },
+        managerEvaluationsReceived: {
+          include: {
+            evaluator: { select: { id: true, name: true } },
+            cycle: true,
+            items: {
+              include: {
+                criterion: true,
+              },
+            },
+          },
+        },
+        mentorEvaluationsReceived: {
+          include: {
+            evaluator: { select: { id: true, name: true } },
+            cycle: true,
+          },
+        },
+        finalScores: {
+          include: {
+            cycle: true,
+            adjuster: { select: { id: true, name: true } },
+          },
+        },
+        referencesReceived: {
+          include: {
+            provider: { select: { id: true, name: true, email: true } },
+            cycle: true,
+          },
+        },
+      },
+    });
+
+    // Transform the data to match the frontend expectations
+    return users.map(user => {
+      const evaluationsEvaluated = [
+        // Self evaluations
+        ...user.selfEvaluations.map(evaluation => ({
+          id: evaluation.id,
+          type: 'SELF',
+          score: evaluation.items.reduce((sum, item) => sum + item.score, 0) / evaluation.items.length || 0,
+          justification: evaluation.items.map(item => item.justification).join(' '),
+          evaluator: { id: user.id, name: user.name },
+          cycle: evaluation.cycle,
+          items: evaluation.items,
+        })),
+        // Peer evaluations
+        ...user.peerEvaluationsReceived.map(evaluation => ({
+          id: evaluation.id,
+          type: 'PEER',
+          score: evaluation.score,
+          justification: `${evaluation.strengths} ${evaluation.improvements}`,
+          evaluator: evaluation.evaluator,
+          cycle: evaluation.cycle,
+        })),
+        // Mentor evaluations
+        ...user.mentorEvaluationsReceived.map(evaluation => ({
+          id: evaluation.id,
+          type: 'MENTOR',
+          score: evaluation.score,
+          justification: evaluation.justification,
+          evaluator: evaluation.evaluator,
+          cycle: evaluation.cycle,
+        })),
+        // Manager evaluations
+        ...user.managerEvaluationsReceived.map(evaluation => ({
+          id: evaluation.id,
+          type: 'MANAGER',
+          score: evaluation.items.reduce((sum, item) => sum + item.score, 0) / evaluation.items.length || 0,
+          justification: evaluation.items.map(item => item.justification).join(' '),
+          evaluator: evaluation.evaluator,
+          cycle: evaluation.cycle,
+          items: evaluation.items,
+        })),
+        // Final evaluations
+        ...user.finalScores.map(evaluation => ({
+          id: evaluation.id,
+          type: 'FINAL',
+          score: evaluation.finalScore || 0,
+          justification: evaluation.justification,
+          evaluator: evaluation.adjuster,
+          cycle: evaluation.cycle,
+        })),
+      ];
+
+      const hasAllEvaluations = user.selfEvaluations.length > 0 && 
+                               user.peerEvaluationsReceived.length > 0 && 
+                               user.managerEvaluationsReceived.length > 0 && 
+                               user.finalScores.length > 0;
+
+      return {
+        ...user,
+        evaluationsEvaluated,
+        hasAllEvaluations,
+        referencesReceived: user.referencesReceived || [],
+      };
+    });
   }
 }

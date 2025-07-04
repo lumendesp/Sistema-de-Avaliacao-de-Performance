@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateReferenceDto } from './dto/create-reference.dto';
+import { encrypt, decrypt } from '../utils/encryption';
 
 @Injectable()
 export class ReferenceService {
@@ -8,7 +9,6 @@ export class ReferenceService {
 
   async createReference(providerId: number, dto: CreateReferenceDto) {
     const { receiverId, cycleId, justification } = dto;
-
     const existing = await this.prisma.reference.findFirst({
       where: {
         providerId,
@@ -16,25 +16,23 @@ export class ReferenceService {
         cycleId,
       },
     });
-
     if (existing) {
       throw new BadRequestException(
         'You have already added a reference to this person in this cycle.',
       );
     }
-
     return this.prisma.reference.create({
       data: {
         providerId,
         receiverId,
         cycleId,
-        justification,
+        justification: encrypt(justification),
       },
     });
   }
 
   async getReferencesByCycle(cycleId: number) {
-    return this.prisma.reference.findMany({
+    const refs = await this.prisma.reference.findMany({
       where: { cycleId },
       include: {
         provider: {
@@ -55,10 +53,14 @@ export class ReferenceService {
         },
       },
     });
+    return refs.map((ref) => ({
+      ...ref,
+      justification: decrypt(ref.justification),
+    }));
   }
 
   async getSentReferencesByCycle(cycleId: number, userId: number) {
-    return this.prisma.reference.findMany({
+    const refs = await this.prisma.reference.findMany({
       where: {
         cycleId,
         providerId: userId,
@@ -74,10 +76,14 @@ export class ReferenceService {
         },
       },
     });
+    return refs.map((ref) => ({
+      ...ref,
+      justification: decrypt(ref.justification),
+    }));
   }
 
   async getReceivedReferencesByCycle(cycleId: number, userId: number) {
-    return this.prisma.reference.findMany({
+    const refs = await this.prisma.reference.findMany({
       where: {
         cycleId,
         receiverId: userId,
@@ -93,14 +99,22 @@ export class ReferenceService {
         },
       },
     });
+    return refs.map((ref) => ({
+      ...ref,
+      justification: decrypt(ref.justification),
+    }));
   }
 
   async findAllByProviderAndCycle(providerId: number, cycleId: number) {
-    return this.prisma.reference.findMany({
+    const refs = await this.prisma.reference.findMany({
       where: { providerId, cycleId },
       include: {
         receiver: true, // traz dados do colaborador que recebeu a referência
       },
     });
+    return refs.map((ref) => ({
+      ...ref,
+      justification: decrypt(ref.justification),
+    }));
   }
 }
