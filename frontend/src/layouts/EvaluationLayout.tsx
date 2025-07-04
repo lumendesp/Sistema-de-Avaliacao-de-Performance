@@ -21,6 +21,7 @@ const EvaluationLayout = () => {
   const isSelfEvaluation = location.pathname.endsWith("/self-evaluation");
   const isPeerEvaluation = location.pathname.endsWith("/peer-evaluation");
   const isReferenceEvaluation = location.pathname.endsWith("/reference-evaluation");
+  const isMentorEvaluation = location.pathname.endsWith("/mentor-evaluation");
 
   return (
     <div className="pt-6">
@@ -48,6 +49,13 @@ const EvaluationLayout = () => {
               className="bg-green-main text-white rounded px-4 py-2 text-sm hover:opacity-90 transition"
             >
               Enviar referências
+            </button>
+          ) : isMentorEvaluation ? (
+            <button
+              onClick={submitAll}
+              className="bg-green-main text-white rounded px-4 py-2 text-sm hover:opacity-90 transition"
+            >
+              Enviar avaliação de mentoria
             </button>
           ) : null}
         </header>
