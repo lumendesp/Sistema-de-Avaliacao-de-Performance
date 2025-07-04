@@ -1,20 +1,24 @@
+import { useEffect, useState } from "react";
 import CollaboratorsSearchBar from "../../../components/CollaboratorsSearchBar";
 import PeerEvaluationForm from "../../../components/PeerEvaluationForm/PeerEvaluationForm";
-import { useState, useEffect } from "react";
 import type { Collaborator } from "../../../types/reference";
-import { fetchActiveEvaluationCycle, fetchMyPeerEvaluations } from "../../../services/api";
-import type { PeerEvaluation } from "../../../types/peerEvaluation";
+import type { PeerEvaluation, PeerEvaluationFormData } from "../../../types/peerEvaluation";
+import {
+  createPeerEvaluation,
+  fetchActiveEvaluationCycle,
+  fetchMyPeerEvaluations,
+} from "../../../services/api";
 import { useAuth } from "../../../context/AuthContext";
+import { useEvaluation } from "../../../context/EvaluationsContext";
 
 const PeerEvaluation = () => {
-  const [selectedCollaborators, setSelectedCollaborators] = useState<
-    Collaborator[]
-  >([]); // lista temporária de colaboradores que o usuário está selecionando para avaliar
-  const [myEvaluations, setMyEvaluations] = useState<PeerEvaluation[]>([]); // lista de avaliações já enviadas do usuário logado
+  const [selectedCollaborators, setSelectedCollaborators] = useState<Collaborator[]>([]);
+  const [myEvaluations, setMyEvaluations] = useState<PeerEvaluation[]>([]);
   const [activeCycleId, setActiveCycleId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<PeerEvaluationFormData>({});
   const { user } = useAuth();
+  const { setSubmitPeerEvaluations } = useEvaluation();
 
-  // busca as referências já enviadas do usuário logado
   useEffect(() => {
     const loadActiveCycle = async () => {
       try {
@@ -44,21 +48,106 @@ const PeerEvaluation = () => {
     loadEvaluations();
   }, [user, activeCycleId]);
 
-  // adiciona um colaborador à lista temporária (somente se ainda não estiver na lista)
+  const handleSubmitAll = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const emptyForms = selectedCollaborators.filter((c) => {
+      const data = formData[c.id];
+      return (
+        !data?.score ||
+        !data?.strengths?.trim() ||
+        !data?.improvements?.trim() ||
+        !data?.projectName?.trim() ||
+        !data?.projectPeriod?.trim() ||
+        !data?.motivation
+      );
+    });
+
+    if (emptyForms.length > 0) {
+      alert(
+        `Preencha todos os campos obrigatórios para: ${emptyForms
+          .map((c) => c.name)
+          .join(", ")}`
+      );
+      return;
+    }
+
+    const invalidPeriodForms = selectedCollaborators.filter((c) => {
+      const period = formData[c.id]?.projectPeriod;
+      return isNaN(Number(period)) || Number(period) <= 0;
+    });
+
+    if (invalidPeriodForms.length > 0) {
+      alert(
+        `O campo de período deve ser um número válido para: ${invalidPeriodForms
+          .map((c) => c.name)
+          .join(", ")}`
+      );
+      return;
+    }
+
+    try {
+      for (const collaborator of selectedCollaborators) {
+        const data = formData[collaborator.id];
+        const payload = {
+          evaluateeId: collaborator.id,
+          cycleId: activeCycleId!,
+          strengths: data.strengths,
+          improvements: data.improvements,
+          motivation: data.motivation,
+          score: data.score!,
+          projects: [
+            {
+              name: data.projectName,
+              period: parseInt(data.projectPeriod),
+            },
+          ],
+        };
+        await createPeerEvaluation(payload);
+      }
+
+      setFormData({});
+      setSelectedCollaborators([]);
+      const updated = await fetchMyPeerEvaluations(activeCycleId!);
+      setMyEvaluations(updated);
+
+      alert("Avaliações enviadas com sucesso!");
+    } catch (err: any) {
+      alert(
+        err?.response?.data?.message ||
+          err.message ||
+          "Erro ao enviar uma ou mais avaliações"
+      );
+    }
+  };
+
+  useEffect(() => {
+    setSubmitPeerEvaluations(() => () =>
+      document.querySelector("form")?.dispatchEvent(
+        new Event("submit", { cancelable: true, bubbles: true })
+      )
+    );
+
+    return () => setSubmitPeerEvaluations(null);
+  }, [setSubmitPeerEvaluations]);
+
   const handleAddCollaborator = (collaborator: Collaborator) => {
     if (!selectedCollaborators.some((c) => c.id === collaborator.id)) {
       setSelectedCollaborators((prev) => [...prev, collaborator]);
     }
   };
 
-  // remove um colaborador da lista temporária
   const handleRemoveCollaborator = (collaboratorId: number) => {
     setSelectedCollaborators((prev) =>
       prev.filter((c) => c.id !== collaboratorId)
     );
+    setFormData((prev) => {
+      const copy = { ...prev };
+      delete copy[collaboratorId];
+      return copy;
+    });
   };
 
-  // pega os IDs dos colaboradores que já receberam avaliação OU estão selecionados, evitando que o usuário selecione um colaborador que já tenha recebido avaliação sua ou que já esteja na lista temporária
   const excludeIds = [
     ...myEvaluations.map((ev) => ev.evaluateeId),
     ...selectedCollaborators.map((c) => c.id),
@@ -82,6 +171,9 @@ const PeerEvaluation = () => {
         myEvaluations={myEvaluations}
         setMyEvaluations={setMyEvaluations}
         cycleId={activeCycleId!}
+        onSubmit={handleSubmitAll}
+        formData={formData}
+        setFormData={setFormData}
       />
     </div>
   );

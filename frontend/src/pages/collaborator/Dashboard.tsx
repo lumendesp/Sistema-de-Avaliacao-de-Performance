@@ -22,22 +22,19 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchCycle = async () => {
       try {
-        const response = await axios.get<Cycle[]>('http://localhost:3000/ciclos', {
+        const response = await axios.get<Cycle>('http://localhost:3000/evaluation-cycle/recent', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const cicloAtivo = response.data.find(c => c.status === 'IN_PROGRESS');
+        const cicloMaisRecente = response.data;
+        setCycle(cicloMaisRecente);
 
-        if (cicloAtivo) {
-          setCycle(cicloAtivo);
-
-          const endDate = new Date(cicloAtivo.endDate);
-          const hoje = new Date();
-          const diff = Math.ceil((endDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-          setDiasRestantes(diff > 0 ? diff : 0);
-        }
+        const endDate = new Date(cicloMaisRecente.endDate);
+        const hoje = new Date();
+        const diff = Math.ceil((endDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        setDiasRestantes(diff > 0 ? diff : 0);
       } catch (error) {
-        console.error('Erro ao buscar ciclos:', error);
+        console.error('Erro ao buscar ciclo mais recente:', error);
       }
     };
 

@@ -2,24 +2,20 @@ import ScoreBox from "../ScoreBox";
 import StarRating from "../StarRating";
 import StarRatingReadOnly from "../StarRatingReadOnly";
 import type { MentorEvaluationProps } from "../../types/mentor-evaluation";
-
 import { UserIcon } from "../UserIcon";
 
 import { useState, useEffect } from "react";
+import { submitMentorEvaluation, fetchMentorEvaluation } from "../../services/api";
+import { useEvaluation } from "../../context/EvaluationsContext";
 
-import { submitMentorEvaluation } from "../../services/api";
-import { fetchMentorEvaluation } from "../../services/api";
-
-const MentorEvaluationForm = ({
-  evaluateeId,
-  mentor,
-}: MentorEvaluationProps) => {
+const MentorEvaluationForm = ({ evaluateeId, mentor }: MentorEvaluationProps) => {
   const [score, setScore] = useState<number | undefined>(undefined);
   const [feedback, setFeedback] = useState("");
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { registerSubmitHandler } = useEvaluation();
 
   // função auxiliar para pegar as iniciais
   const getInitials = (name: string) => {
@@ -30,7 +26,6 @@ const MentorEvaluationForm = ({
       .toUpperCase();
   };
 
-  // envia os dados para o backend, verificando se todos os campos estão preenchidos
   const handleSubmit = async () => {
     if (!score || !feedback.trim()) {
       setError("Preencha todos os campos");
@@ -49,7 +44,6 @@ const MentorEvaluationForm = ({
     }
   };
 
-  // se já tiver avaliação registrada, carrega na tela
   useEffect(() => {
     const loadEvaluation = async () => {
       try {
@@ -67,14 +61,16 @@ const MentorEvaluationForm = ({
     loadEvaluation();
   }, [evaluateeId]);
 
-  // para fazer sumir a mensagem de erro, ao começar a escrever ou ao selecionar as estrelaas
+  useEffect(() => {
+    registerSubmitHandler("mentor-evaluation", handleSubmit);
+  }, [score, feedback]);
+
   useEffect(() => {
     if (error && (score || feedback.trim())) {
       setError(null);
     }
   }, [score, feedback]);
 
-  // se já existe uma avaliação ou foi enviada com sucesso, mostra como avaliação enviada, apenas para visualização
   if (success) {
     return (
       <div className="bg-white w-full flex flex-col px-6 py-9 rounded-xl opacity-80">
@@ -112,7 +108,6 @@ const MentorEvaluationForm = ({
     );
   }
 
-  // criação de uma nova avaliação
   return (
     <div className="bg-white w-full flex flex-col px-6 py-9 rounded-xl">
       <div className="flex justify-between items-center mb-5">
@@ -151,15 +146,6 @@ const MentorEvaluationForm = ({
       </div>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
-
-      {/* botão, que será removido depois */}
-      <button
-        className="mt-4 px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 transition"
-        disabled={isSubmitting}
-        onClick={handleSubmit}
-      >
-        {isSubmitting ? "Enviando..." : "Enviar Avaliação"}
-      </button>
     </div>
   );
 };
