@@ -30,6 +30,71 @@ export class ReferenceService {
       },
     });
   }
+  async updateReference(
+    referenceId: number,
+    providerId: number,
+    dto: CreateReferenceDto,
+  ) {
+    const reference = await this.prisma.reference.findUnique({
+      where: { id: referenceId },
+      include: {
+        cycle: true,
+      },
+    });
+
+    if (!reference) {
+      throw new BadRequestException('Referência não encontrada.');
+    }
+
+    if (reference.providerId !== providerId) {
+      throw new BadRequestException(
+        'Você não tem permissão para editar esta referência.',
+      );
+    }
+
+    const now = new Date();
+    const endDate = new Date(reference.cycle.endDate);
+    if (now > endDate) {
+      throw new BadRequestException(
+        'O ciclo está finalizado. Não é possível editar esta referência.',
+      );
+    }
+
+    return this.prisma.reference.update({
+      where: { id: referenceId },
+      data: {
+        justification: encrypt(dto.justification),
+      },
+    });
+  }
+
+  async deleteReference(referenceId: number, providerId: number) {
+    const reference = await this.prisma.reference.findUnique({
+      where: { id: referenceId },
+      include: { cycle: true },
+    });
+
+    if (!reference) {
+      throw new BadRequestException('Referência não encontrada.');
+    }
+
+    if (reference.providerId !== providerId) {
+      throw new BadRequestException(
+        'Você não tem permissão para deletar esta referência.',
+      );
+    }
+
+    const now = new Date();
+    if (new Date(reference.cycle.endDate) < now) {
+      throw new BadRequestException(
+        'Ciclo finalizado. Não é possível apagar esta referência.',
+      );
+    }
+
+    return this.prisma.reference.delete({
+      where: { id: referenceId },
+    });
+  }
 
   async getReferencesByCycle(cycleId: number) {
     const refs = await this.prisma.reference.findMany({

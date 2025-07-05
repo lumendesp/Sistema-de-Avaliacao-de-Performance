@@ -138,6 +138,39 @@ export const fetchMyReferences = async (cycleId: number) => {
   return res.json();
 };
 
+export async function updateReference(id: number, newJustification: string) {
+  const res = await fetch(`${API_URL}/references/${id}`, {
+    method: "PATCH",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ justification: newJustification }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao editar referência");
+  }
+
+  return res.json();
+}
+
+export async function deleteReference(id: number) {
+  const res = await fetch(`${API_URL}/references/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao deletar referência");
+  }
+
+  return res.json();
+}
+
+
 export const createPeerEvaluation = async (evaluationData: {
   evaluateeId: number;
   cycleId: number;
