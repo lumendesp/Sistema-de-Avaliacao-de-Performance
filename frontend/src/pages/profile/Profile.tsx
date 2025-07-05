@@ -41,7 +41,22 @@ const Profile: React.FC = () => {
     if (!profile) return "";
     const lastAccount = sessionStorage.getItem("lastProfileAccount");
     const roleNames = profile.roles.map((r) => r.role);
-    if (lastAccount && roleNames.includes(lastAccount as Role)) {
+    const isAdmin = roleNames.includes("ADMIN");
+    const allRoles = [
+      "ADMIN",
+      "MANAGER",
+      "COLLABORATOR",
+      "MENTOR",
+      "RH",
+      "COMMITTEE",
+      "HR",
+    ];
+    if (
+      lastAccount &&
+      (isAdmin
+        ? allRoles.includes(lastAccount)
+        : roleNames.includes(lastAccount as Role))
+    ) {
       return lastAccount;
     }
     const previousPath =
@@ -58,12 +73,12 @@ const Profile: React.FC = () => {
       );
     if (previousPath.includes("rh"))
       return (
-        profile.roles.find((a) => a.role.toLowerCase().includes("rh"))?.role ||
+        profile.roles.find((a) => a.role.toLowerCase().includes("hr"))?.role ||
         roleNames[0]
       );
     if (previousPath.includes("committee"))
       return (
-        profile.roles.find((a) => a.role.toLowerCase().includes("comit"))
+        profile.roles.find((a) => a.role.toLowerCase().includes("committee"))
           ?.role || roleNames[0]
       );
     return roleNames[0];
@@ -86,8 +101,8 @@ const Profile: React.FC = () => {
     const acc = account?.toLowerCase?.() || "";
     if (acc.includes("manager") || acc.includes("gestor")) return "/manager";
     if (acc.includes("mentor")) return "/mentor";
-    if (acc.includes("rh")) return "/rh";
-    if (acc.includes("comit")) return "/committee";
+    if (acc.includes("hr")) return "/rh";
+    if (acc.includes("committee")) return "/committee";
     if (acc.includes("colaborador") || acc.includes("collaborator"))
       return "/collaborator";
     // fallback: volta para dashboard do colaborador se não identificar
