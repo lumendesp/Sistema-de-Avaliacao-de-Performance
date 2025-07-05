@@ -76,7 +76,7 @@ export class ImportService {
             const position = await tx.position.findFirst({ where: { name: positionName } });
             if (!position) throw new NotFoundException(`Posição "${positionName}" não encontrada.`);
 
-            const unitName = userDataFromExcel['UNIDADE'] || 'Engineering';
+            const unitName = userDataFromExcel['UNIDADE'] || 'Recife';
             const unit = await tx.unit.findFirst({ where: { name: unitName } });
             if (!unit) throw new NotFoundException(`Unidade "${unitName}" não encontrada.`);
 
