@@ -674,6 +674,7 @@ export const createFinalScore = async (data: {
   finalScore?: number;
   summary?: string;
   justification: string;
+  cycleId?: number;
 }) => {
   console.log('Creating final score with data:', data);
   const res = await fetch(`${API_URL}/final-scores`, {

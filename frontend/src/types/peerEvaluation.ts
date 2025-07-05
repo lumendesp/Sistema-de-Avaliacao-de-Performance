@@ -19,3 +19,15 @@ export interface PeerEvaluation {
     email: string;
   };
 }
+
+
+export interface PeerEvaluationFormData {
+  [collaboratorId: number]: {
+    score?: number;
+    strengths: string;
+    improvements: string;
+    motivation: string;
+    projectName: string;
+    projectPeriod: string;
+  };
+}

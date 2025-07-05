@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CiclosModule } from './ciclos/ciclos.module';
-import { NotasModule } from './notas/notas.module';
+import { FinalScoreModule } from './final-score/final-score.module';
 import { PrismaService } from './prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma.module';
@@ -21,7 +21,6 @@ import { ReferenceModule } from './reference/reference.module';
 import { PeerEvaluationModule } from './collaborator/peer-evaluation/peer-evaluation.module';
 import { AiSummaryModule } from './ai-summary/ai-summary.module';
 import { GeminiModule } from './ai/ai.module';
-import { FinalScoreModule } from './final-score/final-score.module';
 import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
 import { ManagerModule } from './manager/manager.module';
 import { RHDashboardModule } from './rh/dashboard/dashboard.module';
@@ -30,7 +29,7 @@ import { ImportModule } from './rh/import/import.module';
 @Module({
   imports: [
     CiclosModule,
-    NotasModule,
+    FinalScoreModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -54,7 +53,6 @@ import { ImportModule } from './rh/import/import.module';
     PeerEvaluationModule,
     AiSummaryModule,
     GeminiModule,
-    FinalScoreModule,
     ManagerEvaluationModule,
     ManagerModule,
     RHDashboardModule,

@@ -18,4 +18,10 @@ export class EvaluationCycleController {
   getClosedCycles() {
     return this.evaluationCycleService.getClosedCycles();
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('recent')
+  getMostRecentCycle() {
+    return this.evaluationCycleService.getMostRecentCycle();
+  }
 }

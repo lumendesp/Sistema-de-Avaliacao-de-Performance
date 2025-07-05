@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { API_URL } from '../../services/api';
+import * as XLSX from 'xlsx';
 
 interface Collaborator {
   nome: string;
@@ -43,6 +44,21 @@ const BrutalFactsEqualizationList: React.FC = () => {
     colab.cargo.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleExport = () => {
+    const exportData = filteredCollaborators.map(colab => ({
+      Nome: colab.nome,
+      Cargo: colab.cargo,
+      'Nota Autoavaliação': colab.autoNota || '-',
+      'Nota Gestor': colab.managerNota || '-',
+      'Nota 360': colab.peerNota || '-',
+      'Nota Final': colab.finalNota || '-',
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Colaboradores');
+    XLSX.writeFile(workbook, 'brutal-facts-colaboradores.xlsx');
+  };
+
   if (loading) {
     return (
       <div className="w-full max-w-5xl bg-white rounded-lg shadow p-6 mb-6">
@@ -60,13 +76,21 @@ const BrutalFactsEqualizationList: React.FC = () => {
     <div className="w-full max-w-5xl bg-white rounded-lg shadow p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
         <span className="font-semibold text-gray-700">Resumo de equalizações</span>
-        <input
-          type="text"
-          placeholder="Buscar por colaboradores"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border border-gray-300 rounded px-2 py-1 text-sm"
-        />
+        <div className="flex gap-2 items-center">
+          <input
+            type="text"
+            placeholder="Buscar por colaboradores"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+          />
+          <button
+            onClick={handleExport}
+            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm shadow"
+          >
+            Exportar Planilha
+          </button>
+        </div>
       </div>
       <div>
         {filteredCollaborators.length === 0 ? (

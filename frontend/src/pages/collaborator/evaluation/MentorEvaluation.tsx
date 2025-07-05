@@ -3,20 +3,38 @@ import { useState, useEffect } from "react";
 
 import type { Mentor } from "../../../types/mentor";
 import { useAuth } from "../../../context/AuthContext";
-import { fetchMentors } from "../../../services/api";
+import {
+  fetchMentors,
+  fetchActiveEvaluationCycle,
+} from "../../../services/api";
 
 const MentorEvaluation = () => {
   const { user } = useAuth();
   const [mentor, setMentor] = useState<Mentor | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeCycleId, setActiveCycleId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!user || !user.mentorId) {
-      setLoading(false);
-      return;
-    }
+    const loadActiveCycle = async () => {
+      try {
+        const cycle = await fetchActiveEvaluationCycle();
+        setActiveCycleId(cycle.id);
+      } catch (err) {
+        console.error("Erro ao carregar ciclo ativo:", err);
+        setActiveCycleId(null);
+      }
+    };
 
+    loadActiveCycle();
+  }, []); // só uma vez no início
+
+  useEffect(() => {
     const loadMentor = async () => {
+      if (!user || !user.mentorId || !activeCycleId) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
         const mentors: Mentor[] = await fetchMentors();
@@ -30,9 +48,18 @@ const MentorEvaluation = () => {
     };
 
     loadMentor();
-  }, [user]);
+  }, [user, activeCycleId]);
 
   if (loading) return <div className="bg-[#f1f1f1] h-screen w-full"></div>;
+
+  if (!activeCycleId) {
+    return (
+      <p className="text-center text-gray-500 mt-10">
+        Nenhum ciclo ativo encontrado.
+      </p>
+    );
+  }
+
   if (!mentor)
     return (
       <div className="bg-[#f1f1f1] h-screen w-full p-3">
