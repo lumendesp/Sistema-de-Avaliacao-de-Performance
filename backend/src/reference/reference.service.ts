@@ -1,3 +1,4 @@
+import { UpdateReferenceDto } from './dto/update-reference.dto';
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateReferenceDto } from './dto/create-reference.dto';
@@ -33,8 +34,10 @@ export class ReferenceService {
   async updateReference(
     referenceId: number,
     providerId: number,
-    dto: CreateReferenceDto,
+    dto: UpdateReferenceDto,
   ) {
+    console.log(referenceId);
+    console.log(providerId);
     const reference = await this.prisma.reference.findUnique({
       where: { id: referenceId },
       include: {
@@ -54,6 +57,7 @@ export class ReferenceService {
 
     const now = new Date();
     const endDate = new Date(reference.cycle.endDate);
+    
     if (now > endDate) {
       throw new BadRequestException(
         'O ciclo está finalizado. Não é possível editar esta referência.',

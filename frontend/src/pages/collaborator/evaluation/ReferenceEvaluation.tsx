@@ -4,14 +4,15 @@ import { useState, useEffect } from "react";
 import {
   fetchMyReferences,
   fetchActiveEvaluationCycle,
+  createReference,
 } from "../../../services/api";
 import { useAuth } from "../../../context/AuthContext";
 import type { Collaborator, Reference } from "../../../types/reference";
 
 const ReferenceEvaluation = () => {
-  const [selectedCollaborators, setSelectedCollaborators] = useState<
-    Collaborator[]
-  >([]); // lista temporária de colaboradores que o usuário está selecionando para avaliar
+  // const [selectedCollaborators, setSelectedCollaborators] = useState<
+  //   Collaborator[]
+  // >([]); // lista temporária de colaboradores que o usuário está selecionando para avaliar
   const [myReferences, setMyReferences] = useState<Reference[]>([]); // lista de referências já enviadas do usuário logado
   const [activeCycleId, setActiveCycleId] = useState<number | null>(null);
   const { user } = useAuth();
@@ -47,28 +48,41 @@ const ReferenceEvaluation = () => {
   }, [user, activeCycleId]);
 
   // adiciona um colaborador à lista temporária (somente se ainda não estiver na lista)
-  const handleAddCollaborator = (collaborator: Collaborator) => {
-    // Verificar se o colaborador já não foi selecionado
-    if (!selectedCollaborators.find((c) => c.id === collaborator.id)) {
-      setSelectedCollaborators((prev) => [...prev, collaborator]);
+  const handleAddCollaborator = async (collaborator: Collaborator) => {
+    if (!activeCycleId) return;
+
+    // Evita duplicidade se já foi criada
+    const alreadyExists = myReferences.some(
+      (ref) => ref.receiverId === collaborator.id
+    );
+    if (alreadyExists) return;
+
+    try {
+      const newReference = await createReference(
+        collaborator.id,
+        activeCycleId,
+        ""
+      );
+
+      const newReferenceWithReceiver = {
+        ...newReference,
+        receiver: collaborator,
+      };
+
+      setMyReferences((prev) => [...prev, newReferenceWithReceiver]);
+    } catch (error) {
+      console.error("Erro ao criar referência:", error);
     }
   };
 
-  // remove um colaborador da lista temporária
-  const handleRemoveCollaborator = (collaboratorId: number) => {
-    setSelectedCollaborators((prev) =>
-      prev.filter((c) => c.id !== collaboratorId)
-    );
-  };
-
-  // pega os IDs dos colaboradores que já receberam referência OU estão selecionados, evitando que o usuário selecione um colaborador que já tenha recebido referência sua ou que já esteja na lista temporária
-  const excludeIds = [
-    ...myReferences.map((ref) => ref.receiverId),
-    ...selectedCollaborators.map((c) => c.id),
-  ];
+  const excludeIds = myReferences.map((ref) => ref.receiverId);
 
   if (!activeCycleId) {
-    return <p className="text-center text-gray-500 mt-10">Nenhum ciclo ativo encontrado.</p>;
+    return (
+      <p className="text-center text-gray-500 mt-10">
+        Nenhum ciclo ativo encontrado.
+      </p>
+    );
   }
 
   return (
@@ -78,8 +92,6 @@ const ReferenceEvaluation = () => {
         excludeIds={excludeIds}
       />
       <ReferenceEvaluationForm
-        selectedCollaborators={selectedCollaborators}
-        onRemoveCollaborator={handleRemoveCollaborator}
         myReferences={myReferences}
         setMyReferences={setMyReferences}
         cycleId={activeCycleId!}
