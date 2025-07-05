@@ -161,6 +161,7 @@ function Equalization(){
                     userId: collabId,
                     finalScore: currentEvaluation.notaFinal,
                     justification: currentEvaluation.justification || '',
+                    cycleId: collaborator.cycleId
                 });
             }
 
