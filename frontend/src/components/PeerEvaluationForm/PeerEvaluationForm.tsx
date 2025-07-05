@@ -1,61 +1,122 @@
-import { UserIcon } from "../UserIcon";
+import { useState, useEffect, useRef } from "react";
 import { FaTrash } from "react-icons/fa";
-import StarRating from "../StarRating";
-
 import Select from "react-select";
-import {
-  fetchMyPeerEvaluations,
-} from "../../services/api";
-import type { Collaborator } from "../../types/reference";
-import type { PeerEvaluation, PeerEvaluationFormData } from "../../types/peerEvaluation";
 
-import PeerEvaluationReadOnlyForm from "./PeerEvaluationReadOnlyForm";
+import { UserIcon } from "../UserIcon";
+import StarRating from "../StarRating";
+import StarRatingReadOnly from "../StarRatingReadOnly";
+import { updatePeerEvaluation, deletePeerEvaluation } from "../../services/api";
+import { useEvaluation } from "../../context/EvaluationsContext";
+
+import type { PeerEvaluationFormProps } from "../../types/peerEvaluation";
 
 type MotivationOption = {
   value: string;
   label: string;
 };
 
-interface PeerEvaluationFormProps {
-  selectedCollaborators: Collaborator[];
-  onRemoveCollaborator: (collaboratorId: number) => void;
-  myEvaluations: PeerEvaluation[];
-  setMyEvaluations: (evaluations: PeerEvaluation[]) => void;
-  cycleId: number;
-  onSubmit: (e: React.FormEvent) => void;
-  formData: PeerEvaluationFormData;
-  setFormData: React.Dispatch<React.SetStateAction<PeerEvaluationFormData>>;
-}
+const motivationOptions: MotivationOption[] = [
+  { value: "CONCORDO_TOTALMENTE", label: "Concordo Totalmente" },
+  { value: "CONCORDO_PARCIALMENTE", label: "Concordo Parcialmente" },
+  { value: "DISCORDO_PARCIALMENTE", label: "Discordo Parcialmente" },
+  { value: "DISCORDO_TOTALMENTE", label: "Discordo Totalmente" },
+];
 
-const PeerEvaluationForm = ({
-  selectedCollaborators,
-  onRemoveCollaborator,
+export default function PeerEvaluationForm({
   myEvaluations,
   setMyEvaluations,
-  cycleId,
-  onSubmit,
-  formData,
-  setFormData,
-}: PeerEvaluationFormProps) => {
-  const motivationOptions: MotivationOption[] = [
-    { value: "CONCORDO_TOTALMENTE", label: "Concordo Totalmente" },
-    { value: "CONCORDO_PARCIALMENTE", label: "Concordo Parcialmente" },
-    { value: "DISCORDO_PARCIALMENTE", label: "Discordo Parcialmente" },
-    { value: "DISCORDO_TOTALMENTE", label: "Discordo Totalmente" },
-  ];
+  isCycleFinished = false,
+}: PeerEvaluationFormProps) {
+  const [formData, setFormData] = useState<{ [key: number]: any }>({});
+  const [error, setError] = useState<string | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { registerSubmitHandler } = useEvaluation();
+
+  useEffect(() => {
+    registerSubmitHandler("peer-evaluation", handleSubmitAll);
+  }, [formData, myEvaluations]);
+
+  useEffect(() => {
+    const initialData: { [key: number]: any } = {};
+    myEvaluations.forEach((evaluation) => {
+      initialData[evaluation.id] = {
+        score: evaluation.score ?? 0,
+        strengths: evaluation.strengths || "",
+        improvements: evaluation.improvements || "",
+        motivation: evaluation.motivation || "",
+        projectName: evaluation.projects[0]?.project.name || "",
+        projectPeriod: evaluation.projects[0]?.period?.toString() || "",
+      };
+    });
+    setFormData(initialData);
+  }, [myEvaluations]);
+
+  const debouncedSave = (evaluationId: number, data: any) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(async () => {
+      try {
+        const updated = await updatePeerEvaluation(evaluationId, data);
+        setMyEvaluations((prev) =>
+          prev.map((e) => (e.id === evaluationId ? { ...e, ...updated } : e))
+        );
+      } catch (err) {
+        console.error("Erro ao salvar:", err);
+        setError("Erro ao salvar avaliação.");
+      }
+    }, 500);
+  };
 
   const handleInputChange = (
-    collaboratorId: number,
-    field: keyof (typeof formData)[number],
-    value: string | number
+    evaluationId: number,
+    field: string,
+    value: any
   ) => {
     setFormData((prev) => ({
       ...prev,
-      [collaboratorId]: {
-        ...prev[collaboratorId],
+      [evaluationId]: {
+        ...prev[evaluationId],
         [field]: value,
       },
     }));
+    debouncedSave(evaluationId, { [field]: value });
+  };
+
+  const handleRemoveEvaluation = async (evaluationId: number) => {
+    try {
+      await deletePeerEvaluation(evaluationId);
+      setMyEvaluations((prev) =>
+        prev.filter((evaluation) => evaluation.id !== evaluationId)
+      );
+      setError(null);
+    } catch (err) {
+      console.error("Erro ao excluir avaliação", err);
+      setError("Erro ao excluir avaliação");
+    }
+  };
+
+  const handleSubmitAll = async () => {
+    const incomplete = myEvaluations.filter((evaluation) => {
+      const data = formData[evaluation.id];
+      return (
+        !data?.score ||
+        !data?.strengths?.trim() ||
+        !data?.improvements?.trim() ||
+        !data?.motivation ||
+        !data?.projectName?.trim() ||
+        !data?.projectPeriod?.trim()
+      );
+    });
+
+    if (incomplete.length > 0) {
+      setError(
+        `Preencha todos os campos para: ${incomplete
+          .map((e) => e.evaluatee?.name || "Desconhecido")
+          .join(", ")}`
+      );
+      return;
+    }
+
+    setError(null); // todas já foram salvas automaticamente
   };
 
   const getInitials = (name: string) =>
@@ -67,146 +128,124 @@ const PeerEvaluationForm = ({
 
   return (
     <div className="flex flex-col gap-4 w-full">
-      {myEvaluations.length > 0 && (
-        <div className="flex flex-col gap-4">
-          {myEvaluations.map((evaluation) => (
-            <PeerEvaluationReadOnlyForm
-              key={evaluation.evaluatee.id}
-              collaboratorName={evaluation.evaluatee.name}
-              collaboratorEmail={evaluation.evaluatee.email}
-              initials={getInitials(evaluation.evaluatee.name)}
-              score={evaluation.score}
-              strengths={evaluation.strengths}
-              improvements={evaluation.improvements}
-              motivationLabel={
-                motivationOptions.find(
-                  (opt) => opt.value === evaluation.motivation
-                )?.label || evaluation.motivation
-              }
-              projects={evaluation.projects.map((p) => ({
-                name: p.project.name,
-                period: p.period,
-              }))}
-            />
-          ))}
-        </div>
-      )}
-
-      {selectedCollaborators.length > 0 && (
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          {selectedCollaborators.map((collaborator) => {
-            const data = formData[collaborator.id] || {
-              score: undefined,
-              strengths: "",
-              improvements: "",
-              motivation: "",
-              projectName: "",
-              projectPeriod: "",
-            };
+      {myEvaluations.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-8">
+          Você ainda não possui colaboradores para avaliação.
+        </p>
+      ) : (
+        <form className="flex flex-col gap-4">
+          {myEvaluations.map((evaluation) => {
+            const data = formData[evaluation.id] || {};
+            const readonly = isCycleFinished;
 
             return (
               <div
-                key={collaborator.id}
-                className="bg-white w-full flex flex-col px-6 py-9 rounded-xl"
+                key={evaluation.id}
+                className={`bg-white w-full flex flex-col px-6 py-9 rounded-xl ${
+                  readonly ? "opacity-80" : ""
+                }`}
               >
                 <div className="flex justify-between items-center mb-5">
-                  <div className="flex justify-center items-center gap-3">
+                  <div className="flex items-center gap-3">
                     <UserIcon
-                      initials={getInitials(collaborator.name)}
+                      initials={getInitials(evaluation.evaluatee.name)}
                       size={40}
                     />
                     <div className="flex flex-col">
-                      <p className="text-sm font-bold">{collaborator.name}</p>
-                      <p className="text-xs font-normal text-opacity-75 text-[#1D1D1D]">
-                        {collaborator.email}
+                      <p className="text-sm font-bold">
+                        {evaluation.evaluatee.name}
+                      </p>
+                      <p className="text-xs text-opacity-75 text-[#1D1D1D]">
+                        {evaluation.evaluatee.email}
                       </p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveCollaborator(collaborator.id)}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <FaTrash className="text-[#F33E3E]" />
-                  </button>
+                  {!readonly && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveEvaluation(evaluation.id)}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <FaTrash className="text-[#F33E3E]" />
+                    </button>
+                  )}
                 </div>
-
                 <div className="flex flex-col mb-4 gap-3">
                   <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
                     Dê uma avaliação de 1 a 5 ao colaborador
                   </p>
-                  <div>
+                  {readonly ? (
+                    <StarRatingReadOnly score={evaluation.score} dimmed />
+                  ) : (
                     <StarRating
                       score={data.score ?? 0}
-                      onChange={(score) =>
-                        handleInputChange(collaborator.id, "score", score)
+                      onChange={(s) =>
+                        handleInputChange(evaluation.id, "score", s)
                       }
                     />
-                  </div>
+                  )}
                 </div>
-
                 <div className="flex gap-2 mb-4">
-                  <div className="flex flex-col gap-1 flex-1">
-                    <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-                      Pontos fortes
-                    </p>
-                    <textarea
-                      className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
-                      placeholder="Justifique sua nota..."
-                      value={data.strengths}
-                      onChange={(e) =>
-                        handleInputChange(
-                          collaborator.id,
-                          "strengths",
-                          e.target.value
-                        )
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1 flex-1">
-                    <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-                      Pontos de melhoria
-                    </p>
-                    <textarea
-                      className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
-                      placeholder="Justifique sua nota..."
-                      value={data.improvements}
-                      onChange={(e) =>
-                        handleInputChange(
-                          collaborator.id,
-                          "improvements",
-                          e.target.value
-                        )
-                      }
-                      required
-                    />
-                  </div>
+                  {["strengths", "improvements"].map((field) => (
+                    <div className="flex flex-col gap-1 flex-1" key={field}>
+                      <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
+                        {field === "strengths"
+                          ? "Pontos fortes"
+                          : "Pontos de melhoria"}
+                      </p>
+                      <textarea
+                        className={`w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm ${
+                          readonly
+                            ? "bg-gray-100 text-[#1D1D1D]"
+                            : "focus:outline-[#08605e4a]"
+                        }`}
+                        placeholder={
+                          field === "strengths"
+                            ? "Descreva os pontos fortes..."
+                            : "Descreva os pontos de melhoria..."
+                        }
+                        value={data[field]}
+                        onChange={(e) =>
+                          handleInputChange(
+                            evaluation.id,
+                            field,
+                            e.target.value
+                          )
+                        }
+                        disabled={readonly}
+                        required
+                      />
+                    </div>
+                  ))}
                 </div>
-
                 <div className="flex flex-wrap gap-2">
                   <div className="flex flex-col gap-1">
                     <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-                      Projeto em que atuaram juntos (obrigatório terem atuado juntos)
+                      Projeto em que atuaram juntos
                     </p>
                     <input
                       type="text"
-                      className="w-full h-9 p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
+                      className={`w-full h-9 p-2 rounded border border-gray-300 text-sm ${
+                        readonly
+                          ? "bg-gray-100 text-[#1D1D1D]"
+                          : "focus:outline-[#08605e4a]"
+                      }`}
                       placeholder="Nome do Projeto"
                       value={data.projectName}
                       onChange={(e) =>
                         handleInputChange(
-                          collaborator.id,
+                          evaluation.id,
                           "projectName",
                           e.target.value
                         )
                       }
+                      disabled={readonly}
                       required
                     />
                   </div>
                   <div className="flex flex-col gap-1">
                     <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-                      Você ficaria motivado em trabalhar novamente com este colaborador?
+                      Você ficaria motivado em trabalhar novamente?
                     </p>
                     <Select
                       options={motivationOptions}
@@ -217,7 +256,7 @@ const PeerEvaluationForm = ({
                       }
                       onChange={(selected) =>
                         handleInputChange(
-                          collaborator.id,
+                          evaluation.id,
                           "motivation",
                           selected ? selected.value : ""
                         )
@@ -272,16 +311,21 @@ const PeerEvaluationForm = ({
                     </p>
                     <input
                       type="text"
-                      className="w-full max-w-40 h-9 p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
+                      className={`w-full max-w-44 h-9 p-2 rounded border border-gray-300 text-sm ${
+                        readonly
+                          ? "bg-gray-100 text-[#1D1D1D]"
+                          : "focus:outline-[#08605e4a]"
+                      }`}
                       placeholder="Insira apenas o número"
                       value={data.projectPeriod}
                       onChange={(e) =>
                         handleInputChange(
-                          collaborator.id,
+                          evaluation.id,
                           "projectPeriod",
                           e.target.value
                         )
                       }
+                      disabled={readonly}
                       required
                     />
                   </div>
@@ -289,10 +333,9 @@ const PeerEvaluationForm = ({
               </div>
             );
           })}
+          {error && <p className="text-red-500 text-xs">{error}</p>}
         </form>
       )}
     </div>
   );
-};
-
-export default PeerEvaluationForm;
+}

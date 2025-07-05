@@ -36,9 +36,9 @@ const EvaluationLayout = () => {
               onClick={submitAll}
               disabled={!isComplete}
             />
-          ) : isPeerEvaluation && submitPeerEvaluations ? (
+          ) : isPeerEvaluation ? (
             <button
-              onClick={submitPeerEvaluations}
+              onClick={submitAll}
               className="bg-green-main text-white rounded px-4 py-2 text-sm hover:opacity-90 transition"
             >
               Enviar avaliações 360°

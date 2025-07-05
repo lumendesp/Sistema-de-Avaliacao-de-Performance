@@ -7,19 +7,15 @@ import { UserIcon } from "../UserIcon";
 import { useState, useEffect, useRef } from "react";
 import { updateMentorEvaluation } from "../../services/api";
 import { useEvaluation } from "../../context/EvaluationsContext";
-import { debounce } from "../../utils/debounce";
 
 const MentorEvaluationForm = ({
-  evaluateeId,
   mentor,
   mentorEvaluation,
   setMentorEvaluation,
-  cycleId,
   isCycleFinished = false,
 }: MentorEvaluationProps) => {
   const [score, setScore] = useState<number | undefined>(undefined);
   const [feedback, setFeedback] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -80,7 +76,6 @@ const MentorEvaluationForm = ({
       return;
     }
 
-    setLoading(true);
     setError(null);
 
     try {
@@ -94,8 +89,6 @@ const MentorEvaluationForm = ({
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao enviar avaliação";
       setError(errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 

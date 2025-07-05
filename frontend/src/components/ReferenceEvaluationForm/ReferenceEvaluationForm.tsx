@@ -1,7 +1,7 @@
 import { UserIcon } from "../UserIcon";
 import { FaTrash } from "react-icons/fa";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   updateReference,
   fetchMyReferences,
@@ -9,7 +9,6 @@ import {
 } from "../../services/api";
 import type { ReferenceEvaluationFormProps } from "../../types/reference";
 import { useEvaluation } from "../../context/EvaluationsContext";
-import { debounce } from "../../utils/debounce";
 
 const ReferenceEvaluationForm = ({
   myReferences,
@@ -123,7 +122,6 @@ const ReferenceEvaluationForm = ({
                 key={ref.id}
                 className="bg-white w-full flex flex-col px-6 py-9 rounded-xl opacity-80"
               >
-                {/* Cabeçalho */}
                 <div className="flex justify-between items-center mb-5">
                   <div className="flex items-center gap-3">
                     <UserIcon
@@ -140,7 +138,6 @@ const ReferenceEvaluationForm = ({
                     </div>
                   </div>
                 </div>
-                {/* Justificativa readonly */}
                 <div className="flex flex-col gap-1">
                   <p className="font-medium text-xs text-[#1D1D1D] text-opacity-75">
                     Justificativa enviada
