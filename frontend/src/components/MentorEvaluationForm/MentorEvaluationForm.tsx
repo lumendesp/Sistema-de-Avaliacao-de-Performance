@@ -4,16 +4,25 @@ import StarRatingReadOnly from "../StarRatingReadOnly";
 import type { MentorEvaluationProps } from "../../types/mentor-evaluation";
 import { UserIcon } from "../UserIcon";
 
-import { useState, useEffect } from "react";
-import { submitMentorEvaluation, fetchMentorEvaluation } from "../../services/api";
+import { useState, useEffect, useRef } from "react";
+import { updateMentorEvaluation } from "../../services/api";
 import { useEvaluation } from "../../context/EvaluationsContext";
+import { debounce } from "../../utils/debounce";
 
-const MentorEvaluationForm = ({ evaluateeId, mentor }: MentorEvaluationProps) => {
+const MentorEvaluationForm = ({
+  evaluateeId,
+  mentor,
+  mentorEvaluation,
+  setMentorEvaluation,
+  cycleId,
+  isCycleFinished = false,
+}: MentorEvaluationProps) => {
   const [score, setScore] = useState<number | undefined>(undefined);
   const [feedback, setFeedback] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { registerSubmitHandler } = useEvaluation();
 
@@ -26,44 +35,73 @@ const MentorEvaluationForm = ({ evaluateeId, mentor }: MentorEvaluationProps) =>
       .toUpperCase();
   };
 
-  const handleSubmit = async () => {
+  // Carrega dados da avaliação existente
+  useEffect(() => {
+    if (mentorEvaluation) {
+      setScore(mentorEvaluation.score || undefined);
+      setFeedback(mentorEvaluation.justification || "");
+    }
+  }, [mentorEvaluation]);
+
+  const debouncedSave = (data: { score?: number; justification?: string }) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    timeoutRef.current = setTimeout(async () => {
+      if (!mentorEvaluation?.id) return;
+
+      try {
+        const updatedEvaluation = await updateMentorEvaluation(
+          mentorEvaluation.id,
+          data
+        );
+        if (setMentorEvaluation) {
+          setMentorEvaluation(updatedEvaluation);
+        }
+      } catch (err) {
+        console.error("Erro ao salvar avaliação:", err);
+        setError("Erro ao salvar avaliação.");
+      }
+    }, 500);
+  };
+
+  const handleScoreChange = (newScore: number) => {
+    setScore(newScore);
+    debouncedSave({ score: newScore });
+  };
+
+  const handleFeedbackChange = (value: string) => {
+    setFeedback(value);
+    debouncedSave({ justification: value });
+  };
+
+  const handleSubmitAll = async () => {
     if (!score || !feedback.trim()) {
       setError("Preencha todos os campos");
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     try {
-      setIsSubmitting(true);
-      await submitMentorEvaluation(evaluateeId, score, feedback);
-      setSuccess(true);
-      setError(null);
-    } catch (err: any) {
-      setError(err.message);
+      if (mentorEvaluation?.id) {
+        await updateMentorEvaluation(mentorEvaluation.id, {
+          score,
+          justification: feedback,
+        });
+      }
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao enviar avaliação";
+      setError(errorMessage);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    const loadEvaluation = async () => {
-      try {
-        const data = await fetchMentorEvaluation(evaluateeId);
-        if (data) {
-          setScore(data.score);
-          setFeedback(data.justification);
-          setSuccess(true);
-        }
-      } catch (err) {
-        console.error("Erro ao buscar avaliação existente", err);
-      }
-    };
-
-    loadEvaluation();
-  }, [evaluateeId]);
-
-  useEffect(() => {
-    registerSubmitHandler("mentor-evaluation", handleSubmit);
-  }, [score, feedback]);
+    registerSubmitHandler("mentor-evaluation", handleSubmitAll);
+  }, [score, feedback, mentorEvaluation]);
 
   useEffect(() => {
     if (error && (score || feedback.trim())) {
@@ -71,7 +109,8 @@ const MentorEvaluationForm = ({ evaluateeId, mentor }: MentorEvaluationProps) =>
     }
   }, [score, feedback]);
 
-  if (success) {
+  // Mostra readonly se o ciclo estiver finalizado
+  if (isCycleFinished) {
     return (
       <div className="bg-white w-full flex flex-col px-6 py-9 rounded-xl opacity-80">
         <div className="flex justify-between items-center mb-5">
@@ -127,10 +166,7 @@ const MentorEvaluationForm = ({ evaluateeId, mentor }: MentorEvaluationProps) =>
           Dê uma avaliação de 1 a 5 ao colaborador
         </p>
         <div>
-          <StarRating
-            score={score ?? 0}
-            onChange={(newScore) => setScore(newScore)}
-          />
+          <StarRating score={score ?? 0} onChange={handleScoreChange} />
         </div>
       </div>
       <div className="flex flex-col gap-1 flex-1">
@@ -141,7 +177,7 @@ const MentorEvaluationForm = ({ evaluateeId, mentor }: MentorEvaluationProps) =>
           className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
           placeholder="Justifique sua nota..."
           value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
+          onChange={(e) => handleFeedbackChange(e.target.value)}
         ></textarea>
       </div>
 

@@ -88,6 +88,41 @@ export const fetchMentorEvaluation = async (evaluateeId: number) => {
   return res.json();
 };
 
+export const findOrCreateEmptyMentorEvaluation = async (evaluateeId: number) => {
+  const res = await fetch(`${API_URL}/mentor-evaluations/find-or-create/${evaluateeId}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error('Erro ao buscar ou criar avaliação vazia');
+  }
+
+  return res.json();
+};
+
+
+export const updateMentorEvaluation = async (
+  evaluationId: number,
+  data: { score?: number; justification?: string }
+) => {
+  const res = await fetch(`${API_URL}/mentor-evaluations/${evaluationId}`, {
+    method: "PATCH",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    throw new Error("Erro ao atualizar avaliação do mentor");
+  }
+
+  return res.json();
+};
+
+
 export const fetchCollaboratorsBySearch = async (searchTerm: string) => {
   const res = await fetch(
     `${API_URL}/collaborators-search-bar?search=${encodeURIComponent(

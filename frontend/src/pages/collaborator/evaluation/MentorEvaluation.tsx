@@ -6,6 +6,7 @@ import { useAuth } from "../../../context/AuthContext";
 import {
   fetchMentors,
   fetchActiveEvaluationCycle,
+  findOrCreateEmptyMentorEvaluation,
 } from "../../../services/api";
 
 const MentorEvaluation = () => {
@@ -13,12 +14,15 @@ const MentorEvaluation = () => {
   const [mentor, setMentor] = useState<Mentor | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeCycleId, setActiveCycleId] = useState<number | null>(null);
+  const [mentorEvaluation, setMentorEvaluation] = useState<any>(null);
+  const [isCycleFinished, setIsCycleFinished] = useState(false);
 
   useEffect(() => {
     const loadActiveCycle = async () => {
       try {
         const cycle = await fetchActiveEvaluationCycle();
         setActiveCycleId(cycle.id);
+        setIsCycleFinished(cycle.status === "FINISHED");
       } catch (err) {
         console.error("Erro ao carregar ciclo ativo:", err);
         setActiveCycleId(null);
@@ -29,7 +33,7 @@ const MentorEvaluation = () => {
   }, []); // só uma vez no início
 
   useEffect(() => {
-    const loadMentor = async () => {
+    const loadMentorAndEvaluation = async () => {
       if (!user || !user.mentorId || !activeCycleId) {
         setLoading(false);
         return;
@@ -40,14 +44,22 @@ const MentorEvaluation = () => {
         const mentors: Mentor[] = await fetchMentors();
         const foundMentor = mentors.find((m) => m.id === user.mentorId) || null;
         setMentor(foundMentor);
+
+        if (foundMentor) {
+          // Busca ou cria uma avaliação vazia
+          const evaluation = await findOrCreateEmptyMentorEvaluation(
+            foundMentor.id
+          );
+          setMentorEvaluation(evaluation);
+        }
       } catch (err) {
-        console.error("Erro ao carregar mentor:", err);
+        console.error("Erro ao carregar mentor ou avaliação:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    loadMentor();
+    loadMentorAndEvaluation();
   }, [user, activeCycleId]);
 
   if (loading) return <div className="bg-[#f1f1f1] h-screen w-full"></div>;
@@ -71,7 +83,14 @@ const MentorEvaluation = () => {
 
   return (
     <div className="bg-[#f1f1f1] h-screen w-full p-3">
-      <MentorEvaluationForm evaluateeId={mentor.id} mentor={mentor} />
+      <MentorEvaluationForm
+        evaluateeId={mentor.id}
+        mentor={mentor}
+        mentorEvaluation={mentorEvaluation}
+        setMentorEvaluation={setMentorEvaluation}
+        cycleId={activeCycleId}
+        isCycleFinished={isCycleFinished}
+      />
     </div>
   );
 };

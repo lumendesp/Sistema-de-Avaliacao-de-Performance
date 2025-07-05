@@ -95,6 +95,7 @@ const ReferenceEvaluation = () => {
         myReferences={myReferences}
         setMyReferences={setMyReferences}
         cycleId={activeCycleId!}
+        isCycleFinished={false}
       />
     </div>
   );
