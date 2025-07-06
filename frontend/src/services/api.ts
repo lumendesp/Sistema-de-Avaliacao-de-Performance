@@ -1,3 +1,5 @@
+import { data } from "react-router-dom";
+
 export const API_URL = "http://localhost:3000";
 
 // Função auxiliar para obter o token do localStorage
@@ -291,7 +293,7 @@ export const deletePeerEvaluation = async (id: number) => {
   const res = await fetch(`${API_URL}/peer-evaluations/${id}`, {
     method: "DELETE",
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
+      ...getAuthHeaders(), // reutiliza a lógica de token
     },
   });
 
@@ -301,6 +303,22 @@ export const deletePeerEvaluation = async (id: number) => {
 
   return true;
 };
+
+export const getProjects = async () => {
+  const res = await fetch(`${API_URL}/projects`, {
+    method: "GET",
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Erro ao buscar projetos");
+  }
+
+  return res.json(); // deve retornar a lista de projetos
+};
+
 
 export const fetchAISummary = async (
   userId: number,

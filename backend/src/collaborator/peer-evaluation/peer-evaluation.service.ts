@@ -225,70 +225,102 @@ export class PeerEvaluationService {
     dto: UpdatePeerEvaluationDto,
   ) {
     // Busca avaliação para garantir que existe e pertence ao avaliador
-    const evaluation = await this.prisma.peerEvaluation.findUnique({
-      where: { id: evaluationId },
-      include: { cycle: true },
-    });
+    try {
+      const evaluation = await this.prisma.peerEvaluation.findUnique({
+        where: { id: evaluationId },
+        include: { cycle: true },
+      });
 
-    if (!evaluation) {
-      throw new NotFoundException('Peer evaluation not found.');
-    }
+      if (!evaluation) {
+        throw new NotFoundException('Peer evaluation not found.');
+      }
 
-    if (evaluation.evaluatorId !== evaluatorId) {
-      throw new ForbiddenException('You can only update your own evaluations.');
-    }
+      if (evaluation.evaluatorId !== evaluatorId) {
+        throw new ForbiddenException(
+          'You can only update your own evaluations.',
+        );
+      }
 
-    // Verifica se o ciclo está ativo para permitir atualização
-    if (evaluation.cycle.status !== 'IN_PROGRESS') {
-      throw new BadRequestException(
-        'Cannot update evaluation after cycle is finished.',
-      );
-    }
+      // Verifica se o ciclo está ativo para permitir atualização
+      if (evaluation.cycle.status !== 'IN_PROGRESS') {
+        throw new BadRequestException(
+          'Cannot update evaluation after cycle is finished.',
+        );
+      }
 
-    // Prepara dados para update
-    const dataToUpdate: any = {};
+      // Prepara dados para update
+      const dataToUpdate: any = {};
 
-    if (dto.score !== undefined) {
-      dataToUpdate.score = dto.score;
-    }
+      if (dto.score !== undefined) {
+        dataToUpdate.score = dto.score;
+      }
 
-    if (dto.strengths !== undefined) {
-      dataToUpdate.strengths = encrypt(dto.strengths);
-    }
+      if (dto.strengths !== undefined) {
+        dataToUpdate.strengths = encrypt(dto.strengths);
+      }
 
-    if (dto.improvements !== undefined) {
-      dataToUpdate.improvements = encrypt(dto.improvements);
-    }
+      if (dto.improvements !== undefined) {
+        dataToUpdate.improvements = encrypt(dto.improvements);
+      }
 
-    if (dto.motivation !== undefined) {
-      dataToUpdate.motivation = dto.motivation;
-    }
+      if (dto.motivation !== undefined) {
+        dataToUpdate.motivation = dto.motivation;
+      }
 
-    if (Object.keys(dataToUpdate).length === 0) {
-      throw new BadRequestException('No valid fields provided for update.');
-    }
-
-    // Atualiza no banco
-    const updatedEvaluation = await this.prisma.peerEvaluation.update({
-      where: { id: evaluationId },
-      data: dataToUpdate,
-      include: {
-        projects: {
-          include: {
-            project: true,
+      // Atualiza os dados básicos
+      const updatedEvaluation = await this.prisma.peerEvaluation.update({
+        where: { id: evaluationId },
+        data: dataToUpdate,
+        include: {
+          evaluatee: true,
+          cycle: true,
+          projects: {
+            include: {
+              project: true,
+            },
           },
         },
-        evaluatee: true,
-        cycle: true,
-      },
-    });
+      });
 
-    // Decriptografa os dados para retornar
-    return {
-      ...updatedEvaluation,
-      strengths: decrypt(updatedEvaluation.strengths),
-      improvements: decrypt(updatedEvaluation.improvements),
-    };
+      // Atualiza os projetos vinculados (se enviados no DTO)
+      if (dto.projects) {
+        // Remove vínculos antigos
+        await this.prisma.peerEvaluationProject.deleteMany({
+          where: { peerEvaluationId: evaluationId },
+        });
+
+        for (const proj of dto.projects) {
+          const projectInDb = await this.prisma.project.findUnique({
+            where: { name: proj.name },
+          });
+
+          if (!projectInDb) {
+            throw new NotFoundException(
+              `Project with name "${proj.name}" not found.`,
+            );
+          }
+
+          await this.prisma.peerEvaluationProject.create({
+            data: {
+              peerEvaluationId: evaluationId,
+              projectId: projectInDb.id,
+              period: proj.period,
+            },
+          });
+        }
+      }
+
+      // Retorna com dados descriptografados
+      return {
+        ...updatedEvaluation,
+        strengths: dto.strengths ?? decrypt(updatedEvaluation.strengths),
+        improvements:
+          dto.improvements ?? decrypt(updatedEvaluation.improvements),
+      };
+    } catch (error) {
+      console.error('Erro ao atualizar avaliação por pares:', error);
+      throw error;
+    }
   }
 
   async remove(id: number, evaluatorId: number) {
@@ -316,7 +348,15 @@ export class PeerEvaluationService {
       }
     }
 
-    return this.prisma.peerEvaluation.delete({ where: { id } });
+    // Remove os vínculos da avaliação com projetos
+    await this.prisma.peerEvaluationProject.deleteMany({
+      where: { peerEvaluationId: id },
+    });
+
+    // Remove a avaliação
+    return this.prisma.peerEvaluation.delete({
+      where: { id },
+    });
   }
 
   async findOrCreateEmptyEvaluation(

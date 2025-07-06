@@ -193,15 +193,15 @@ export class SelfEvaluationService {
       (item): item is NonNullable<typeof item> => item !== null,
     );
 
-    console.log('User info:', {
-      positionId: evaluation.user.positionId,
-      unitId: evaluation.user.unitId,
-      trackId: evaluation.user.trackId,
-    });
-    console.log(
-      'Item criterionIds:',
-      dto.items.map((i) => i.criterionId),
-    );
+    // console.log('User info:', {
+    //   positionId: evaluation.user.positionId,
+    //   unitId: evaluation.user.unitId,
+    //   trackId: evaluation.user.trackId,
+    // });
+    // console.log(
+    //   'Item criterionIds:',
+    //   dto.items.map((i) => i.criterionId),
+    // );
 
     return this.prisma.selfEvaluation.update({
       where: { id },

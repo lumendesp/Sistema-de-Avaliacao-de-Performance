@@ -5,7 +5,11 @@ import Select from "react-select";
 import { UserIcon } from "../UserIcon";
 import StarRating from "../StarRating";
 import StarRatingReadOnly from "../StarRatingReadOnly";
-import { updatePeerEvaluation, deletePeerEvaluation } from "../../services/api";
+import {
+  updatePeerEvaluation,
+  deletePeerEvaluation,
+  getProjects,
+} from "../../services/api";
 import { useEvaluation } from "../../context/EvaluationsContext";
 
 import type { PeerEvaluationFormProps } from "../../types/peerEvaluation";
@@ -14,6 +18,8 @@ type MotivationOption = {
   value: string;
   label: string;
 };
+
+type ProjectOption = { value: string; label: string };
 
 const motivationOptions: MotivationOption[] = [
   { value: "CONCORDO_TOTALMENTE", label: "Concordo Totalmente" },
@@ -29,6 +35,7 @@ export default function PeerEvaluationForm({
 }: PeerEvaluationFormProps) {
   const [formData, setFormData] = useState<{ [key: number]: any }>({});
   const [error, setError] = useState<string | null>(null);
+  const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { registerSubmitHandler } = useEvaluation();
 
@@ -37,18 +44,35 @@ export default function PeerEvaluationForm({
   }, [formData, myEvaluations]);
 
   useEffect(() => {
-    const initialData: { [key: number]: any } = {};
-    myEvaluations.forEach((evaluation) => {
-      initialData[evaluation.id] = {
-        score: evaluation.score ?? 0,
-        strengths: evaluation.strengths || "",
-        improvements: evaluation.improvements || "",
-        motivation: evaluation.motivation || "",
-        projectName: evaluation.projects[0]?.project.name || "",
-        projectPeriod: evaluation.projects[0]?.period?.toString() || "",
-      };
-    });
-    setFormData(initialData);
+    getProjects()
+      .then((projects) => {
+        // projects deve ser um array, ex: [{ id, name, ... }]
+        const options = projects.map((p: any) => ({
+          value: p.name,
+          label: p.name,
+        }));
+        setProjectOptions(options);
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar projetos:", err);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (Object.keys(formData).length === 0 && myEvaluations.length > 0) {
+      const initialData: { [key: number]: any } = {};
+      myEvaluations.forEach((evaluation) => {
+        initialData[evaluation.id] = {
+          score: evaluation.score ?? 0,
+          strengths: evaluation.strengths || "",
+          improvements: evaluation.improvements || "",
+          motivation: evaluation.motivation || "",
+          projectName: evaluation.projects[0]?.project.name || "",
+          projectPeriod: evaluation.projects[0]?.period?.toString() || "",
+        };
+      });
+      setFormData(initialData);
+    }
   }, [myEvaluations]);
 
   const debouncedSave = (evaluationId: number, data: any) => {
@@ -71,14 +95,71 @@ export default function PeerEvaluationForm({
     field: string,
     value: any
   ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [evaluationId]: {
-        ...prev[evaluationId],
-        [field]: value,
-      },
-    }));
-    debouncedSave(evaluationId, { [field]: value });
+    if (error) setError(null);
+
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [evaluationId]: {
+          ...prev[evaluationId],
+          [field]: value,
+        },
+      };
+
+      // Pegamos os valores já atualizados
+      const current = updated[evaluationId];
+
+      if (field === "projectName") {
+        // Quando um projeto é selecionado, define o período como 0 por padrão
+        if (value) {
+          updated[evaluationId].projectPeriod = "0";
+          current.projectPeriod = "0";
+        } else {
+          // Se o projeto for desmarcado, limpa o período
+          updated[evaluationId].projectPeriod = "";
+          current.projectPeriod = "";
+        }
+      }
+
+      if (field === "projectName" || field === "projectPeriod") {
+        const projectName = current.projectName?.trim();
+        const projectPeriod = current.projectPeriod?.trim();
+
+        // Se ambos estiverem vazios, envia array vazio
+        if (!projectName && !projectPeriod) {
+          debouncedSave(evaluationId, { projects: [] });
+        }
+
+        // Se projeto estiver preenchido, sempre envia (período será 0 por padrão se não foi alterado)
+        if (projectName) {
+          debouncedSave(evaluationId, {
+            projects: [
+              {
+                name: projectName,
+                period: Number(projectPeriod) || 0,
+              },
+            ],
+          });
+        }
+      } else {
+        debouncedSave(evaluationId, { [field]: value });
+      }
+
+      // Remove o erro se estiver tudo preenchido
+      const isComplete =
+        current.score &&
+        current.strengths?.trim() &&
+        current.improvements?.trim() &&
+        current.motivation &&
+        current.projectName?.trim() &&
+        current.projectPeriod?.trim();
+
+      if (isComplete) {
+        setError(null);
+      }
+
+      return updated;
+    });
   };
 
   const handleRemoveEvaluation = async (evaluationId: number) => {
@@ -223,24 +304,65 @@ export default function PeerEvaluationForm({
                     <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
                       Projeto em que atuaram juntos
                     </p>
-                    <input
-                      type="text"
-                      className={`w-full h-9 p-2 rounded border border-gray-300 text-sm ${
-                        readonly
-                          ? "bg-gray-100 text-[#1D1D1D]"
-                          : "focus:outline-[#08605e4a]"
-                      }`}
-                      placeholder="Nome do Projeto"
-                      value={data.projectName}
-                      onChange={(e) =>
+                    <Select
+                      menuPortalTarget={document.body}
+                      options={projectOptions}
+                      value={
+                        projectOptions.find(
+                          (opt) => opt.value === data.projectName
+                        ) || null
+                      }
+                      onChange={(selected) =>
                         handleInputChange(
                           evaluation.id,
                           "projectName",
-                          e.target.value
+                          selected ? selected.value : ""
                         )
                       }
-                      disabled={readonly}
-                      required
+                      isDisabled={readonly}
+                      placeholder="Selecione o projeto"
+                      styles={{
+                        control: (base, state) => ({
+                          ...base,
+                          minHeight: "36px",
+                          height: "36px",
+                          borderRadius: "0.25rem",
+                          borderColor: state.isFocused ? "#08605e4a" : "#ccc",
+                          boxShadow: "none",
+                          outline: state.isFocused
+                            ? "1px solid #08605e4a"
+                            : "none",
+                          fontSize: "12px",
+                          padding: 0,
+                          "&:hover": {
+                            borderColor: state.isFocused ? "#08605e4a" : "#ccc",
+                            boxShadow: "none",
+                            outline: state.isFocused
+                              ? "1px solid #08605e4a"
+                              : "none",
+                          },
+                        }),
+                        option: (base, state) => ({
+                          ...base,
+                          backgroundColor: state.isFocused
+                            ? "#08605e4a"
+                            : "white",
+                          color: "#1D1D1D",
+                          cursor: "pointer",
+                          ":active": {
+                            backgroundColor: "#08605e4a",
+                          },
+                        }),
+                        valueContainer: (base) => ({
+                          ...base,
+                          padding: "0 8px",
+                        }),
+                        indicatorsContainer: (base) => ({
+                          ...base,
+                          height: "36px",
+                        }),
+                        menuPortal: (base) => ({ ...base, zIndex: 9999, position: "absolute" }),
+                      }}
                     />
                   </div>
                   <div className="flex flex-col gap-1">
@@ -248,6 +370,7 @@ export default function PeerEvaluationForm({
                       Você ficaria motivado em trabalhar novamente?
                     </p>
                     <Select
+                      menuPortalTarget={document.body}
                       options={motivationOptions}
                       value={
                         motivationOptions.find(
@@ -302,6 +425,7 @@ export default function PeerEvaluationForm({
                           ...base,
                           height: "36px",
                         }),
+                        menuPortal: (base) => ({ ...base, zIndex: 9999, position: "absolute" }),
                       }}
                     />
                   </div>
@@ -312,11 +436,15 @@ export default function PeerEvaluationForm({
                     <input
                       type="text"
                       className={`w-full max-w-44 h-9 p-2 rounded border border-gray-300 text-sm ${
-                        readonly
+                        readonly || !data.projectName
                           ? "bg-gray-100 text-[#1D1D1D]"
                           : "focus:outline-[#08605e4a]"
                       }`}
-                      placeholder="Insira apenas o número"
+                      placeholder={
+                        data.projectName
+                          ? "Insira apenas o número"
+                          : "Selecione um projeto"
+                      }
                       value={data.projectPeriod}
                       onChange={(e) =>
                         handleInputChange(
@@ -325,7 +453,7 @@ export default function PeerEvaluationForm({
                           e.target.value
                         )
                       }
-                      disabled={readonly}
+                      disabled={readonly || !data.projectName}
                       required
                     />
                   </div>

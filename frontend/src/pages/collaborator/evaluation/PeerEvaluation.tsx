@@ -84,7 +84,7 @@ const PeerEvaluation = () => {
   }
 
   return (
-    <div className="bg-[#f1f1f1] h-screen w-full flex flex-col gap-4 p-3">
+    <div className="bg-[#f1f1f1] min-h-screen w-full flex flex-col gap-4 p-3">
       <CollaboratorsSearchBar
         onSelect={handleAddCollaborator}
         excludeIds={excludeIds}

@@ -91,7 +91,7 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
       }))
     );
 
-    // 🚨 Filtra apenas os que têm nota ou justificativa
+    // Filtra apenas os que têm nota ou justificativa
     const items = allItems.filter(
       (item) => item.score > 0 || item.justification.trim().length > 0
     );
@@ -125,7 +125,7 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        console.log("Atualizado.");
+        // console.log("Atualizado.");
       } else {
         const res = await axios.post(
           `http://localhost:3000/self-evaluation`,
@@ -134,7 +134,7 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
         );
         setSelfEvaluationId(res.data.id);
         setIsUpdate(true);
-        console.log("Criado.");
+        // console.log("Criado.");
       }
     } catch (err) {
       console.error("Erro ao salvar autoavaliação:", err);
