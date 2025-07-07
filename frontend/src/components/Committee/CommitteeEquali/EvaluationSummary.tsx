@@ -12,6 +12,8 @@ interface CriterionProps {
 }
 
 const Criterion = ({ name, score }: CriterionProps) => {
+
+
     const getColorClass = (score: number) => {
         if (score >= 4) return 'text-[#419958]';
         if (score >= 3) return 'text-[#F5AA30]';
@@ -24,6 +26,13 @@ const Criterion = ({ name, score }: CriterionProps) => {
         return 'bg-red-600';
     };
 
+    const adjustScoreBar = (score:number) => {
+        if(score > 5){
+            score = 5
+        }
+        return (score / 5) * 100;
+    }
+
     return (
         <div className="flex flex-col items-center gap-2 w-full sm:w-1/3">
             <div className="flex items-center gap-2">
@@ -35,7 +44,7 @@ const Criterion = ({ name, score }: CriterionProps) => {
             <div className="w-full h-2 bg-gray-200 rounded-full">
                 <div 
                     className={`h-full rounded-full ${getBarColorClass(score)}`}
-                    style={{ width: `${(score / 5) * 100}%` }}
+                    style={{ width: `${adjustScoreBar(score)}%` }}
                 />
             </div>
         </div>
@@ -180,25 +189,25 @@ function EvaluationSummary({
                 <div style="margin-bottom: 20px;">
                     <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Autoavaliação (${autoAvaliacao.toFixed(1)})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
-                        ${justificativaAutoAvaliacao || 'Justificativa não disponível'}
+                        ${backendData?.justificativaAutoAvaliacao || justificativaAutoAvaliacao || 'Justificativa não disponível'}
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Mentor (${notaMentor.toFixed(1)})</h4>
+                    <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
+                        ${backendData?.justificativaMentor || justificativaMentor || 'Justificativa não disponível'}
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
                     <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Gestor (${notaGestor.toFixed(1)})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
-                        ${justificativaMentor || 'Justificativa não disponível'}
-                    </div>
-                </div>
-                <div style="margin-bottom: 20px;">
-                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Gestor (${notaGestor.toFixed(1)})</h4>
-                    <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
-                        ${justificativaGestor || 'Justificativa não disponível'}
+                        ${backendData?.justificativaGestor || justificativaGestor || 'Justificativa não disponível'}
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
                     <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação 360° (${avaliacao360.toFixed(1)})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
-                        ${justificativa360 || 'Justificativa não disponível'}
+                        ${backendData?.justificativa360 || justificativa360 || 'Justificativa não disponível'}
                     </div>
                 </div>
                 ${typeof notaFinal === 'number' ? `
@@ -301,16 +310,16 @@ function EvaluationSummary({
                                 <div className="flex flex-col w-full space-y-3">
                                     <h2 className="text-lg font-semibold mb-4 text-center">Escolha o formato da planilha</h2>
                                     <button
-                                        className="mb-3 px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
-                                        onClick={() => handleDownloadSpreadsheet('csv')}
-                                    >
-                                        CSV
-                                    </button>
-                                    <button
-                                        className="px-6 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 w-full"
+                                        className="px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
                                         onClick={() => handleDownloadSpreadsheet('xlsx')}
                                     >
                                         Excel
+                                    </button>
+                                    <button
+                                        className="mb-3 px-6 py-2 bg-gray-800 text-gray-800 rounded hover:bg-gray-300 w-full"
+                                        onClick={() => handleDownloadSpreadsheet('csv')}
+                                    >
+                                        CSV
                                     </button>
                                     <button
                                         className="mt-4 text-sm text-gray-500 hover:underline"
