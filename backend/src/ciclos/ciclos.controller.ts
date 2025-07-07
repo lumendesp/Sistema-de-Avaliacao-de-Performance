@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { CiclosService } from './ciclos.service';
 import { CreateCicloDto } from './dto/create-ciclo.dto';
 import { UpdateCicloDto } from './dto/update-ciclo.dto';
@@ -20,8 +20,8 @@ export class CiclosController {
 
   @UseGuards(JwtAuthGuard)
   @Get('dashboard/manager')
-  getManagerDashboardStats() {
-    return this.ciclosService.getManagerDashboardStats();
+  getManagerDashboardStats(@Request() req) {
+    return this.ciclosService.getManagerDashboardStats(req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard)

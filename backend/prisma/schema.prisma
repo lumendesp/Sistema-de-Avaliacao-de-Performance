@@ -361,6 +361,8 @@ model FinalScore {
   user     User            @relation(fields: [userId], references: [id])
   cycle    EvaluationCycle @relation(fields: [cycleId], references: [id])
   adjuster User?           @relation("CommitteeAdjuster", fields: [adjustedBy], references: [id])
+
+  createdAt      DateTime  @default(now())
 }
 
 model Discrepancy {
@@ -382,6 +384,8 @@ model AISummary {
 
   user  User            @relation(fields: [userId], references: [id])
   cycle EvaluationCycle @relation(fields: [cycleId], references: [id])
+
+  @@unique([userId, cycleId])
 }
 
 model CommitteeNote {

@@ -2,14 +2,12 @@ import { UserIcon } from "../UserIcon";
 import { FaTrash } from "react-icons/fa";
 import StarRating from "../StarRating";
 
-import { useState } from "react";
 import Select from "react-select";
 import {
-  createPeerEvaluation,
   fetchMyPeerEvaluations,
 } from "../../services/api";
 import type { Collaborator } from "../../types/reference";
-import type { PeerEvaluation } from "../../types/peerEvaluation";
+import type { PeerEvaluation, PeerEvaluationFormData } from "../../types/peerEvaluation";
 
 import PeerEvaluationReadOnlyForm from "./PeerEvaluationReadOnlyForm";
 
@@ -24,6 +22,9 @@ interface PeerEvaluationFormProps {
   myEvaluations: PeerEvaluation[];
   setMyEvaluations: (evaluations: PeerEvaluation[]) => void;
   cycleId: number;
+  onSubmit: (e: React.FormEvent) => void;
+  formData: PeerEvaluationFormData;
+  setFormData: React.Dispatch<React.SetStateAction<PeerEvaluationFormData>>;
 }
 
 const PeerEvaluationForm = ({
@@ -31,23 +32,11 @@ const PeerEvaluationForm = ({
   onRemoveCollaborator,
   myEvaluations,
   setMyEvaluations,
-  cycleId
+  cycleId,
+  onSubmit,
+  formData,
+  setFormData,
 }: PeerEvaluationFormProps) => {
-  const [formData, setFormData] = useState<{
-    [key: number]: {
-      score?: number;
-      strengths: string;
-      improvements: string;
-      motivation: string;
-      projectName: string;
-      projectPeriod: string;
-    };
-  }>({});
-
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   const motivationOptions: MotivationOption[] = [
     { value: "CONCORDO_TOTALMENTE", label: "Concordo Totalmente" },
     { value: "CONCORDO_PARCIALMENTE", label: "Concordo Parcialmente" },
@@ -55,7 +44,6 @@ const PeerEvaluationForm = ({
     { value: "DISCORDO_TOTALMENTE", label: "Discordo Totalmente" },
   ];
 
-  // atualiza formData para um campo de um colaborador
   const handleInputChange = (
     collaboratorId: number,
     field: keyof (typeof formData)[number],
@@ -70,104 +58,15 @@ const PeerEvaluationForm = ({
     }));
   };
 
-  // função para submeter todas as avaliações
-  const handleSubmitAll = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    setError(null);
-    setSuccess(false);
-
-    // verifica se todos os campos obrigatórios estão preenchidos
-    const emptyForms = selectedCollaborators.filter((c) => {
-      const data = formData[c.id];
-      return (
-        !data?.score ||
-        !data?.strengths?.trim() ||
-        !data?.improvements?.trim() ||
-        !data?.projectName?.trim() ||
-        !data?.projectPeriod?.trim() ||
-        !data?.motivation
-      );
-    });
-
-    if (emptyForms.length > 0) {
-      setError(
-        `Preencha todos os campos obrigatórios para: ${emptyForms
-          .map((c) => c.name)
-          .join(", ")}`
-      );
-      return;
-    }
-
-    // verifica se o período é um número válido, maior que 0
-    const invalidPeriodForms = selectedCollaborators.filter((c) => {
-      const period = formData[c.id]?.projectPeriod;
-      return isNaN(Number(period)) || Number(period) <= 0;
-    });
-
-    if (invalidPeriodForms.length > 0) {
-      setError(
-        `O campo de período deve ser um número válido para: ${invalidPeriodForms
-          .map((c) => c.name)
-          .join(", ")}`
-      );
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // primeiro, tenta validar todas as avaliações uma a uma
-      for (const collaborator of selectedCollaborators) {
-        const data = formData[collaborator.id];
-        const payload = {
-          evaluateeId: collaborator.id,
-          cycleId,
-          strengths: data.strengths,
-          improvements: data.improvements,
-          motivation: data.motivation,
-          score: data.score!,
-          projects: [
-            {
-              name: data.projectName,
-              period: parseInt(data.projectPeriod),
-            },
-          ],
-        };
-        // se der erro, o fluxo para
-        await createPeerEvaluation(payload);
-      }
-
-      // se deu, limpa o formulário, remove colaboradores avaliados da lista e busca as avaliações atualizadas do backend para atualizar a interface
-      setSuccess(true);
-      selectedCollaborators.forEach((c) => onRemoveCollaborator(c.id));
-      setFormData({});
-
-      const updated = await fetchMyPeerEvaluations(cycleId);
-      setMyEvaluations(updated);
-    } catch (err: any) {
-      const backendError =
-        err?.response?.data?.message ||
-        err.message ||
-        "Erro ao enviar uma ou mais avaliações";
-      setError(backendError);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // função axuliar para pegar as iniciais do nome
-  function getInitials(name: string) {
-    return name
+  const getInitials = (name: string) =>
+    name
       .split(" ")
       .map((n) => n[0])
       .join("")
       .toUpperCase();
-  }
 
   return (
     <div className="flex flex-col gap-4 w-full">
-      {/* avaliações já enviadas */}
       {myEvaluations.length > 0 && (
         <div className="flex flex-col gap-4">
           {myEvaluations.map((evaluation) => (
@@ -193,9 +92,8 @@ const PeerEvaluationForm = ({
         </div>
       )}
 
-      {/* formulário */}
       {selectedCollaborators.length > 0 && (
-        <form onSubmit={handleSubmitAll} className="flex flex-col gap-4">
+        <form onSubmit={onSubmit} className="flex flex-col gap-4">
           {selectedCollaborators.map((collaborator) => {
             const data = formData[collaborator.id] || {
               score: undefined,
@@ -218,7 +116,7 @@ const PeerEvaluationForm = ({
                       size={40}
                     />
                     <div className="flex flex-col">
-                      <p className="text-sm font-bold ">{collaborator.name}</p>
+                      <p className="text-sm font-bold">{collaborator.name}</p>
                       <p className="text-xs font-normal text-opacity-75 text-[#1D1D1D]">
                         {collaborator.email}
                       </p>
@@ -289,8 +187,7 @@ const PeerEvaluationForm = ({
                 <div className="flex flex-wrap gap-2">
                   <div className="flex flex-col gap-1">
                     <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-                      Projeto em que atuaram juntos (obrigatório terem atuado
-                      juntos)
+                      Projeto em que atuaram juntos (obrigatório terem atuado juntos)
                     </p>
                     <input
                       type="text"
@@ -309,8 +206,7 @@ const PeerEvaluationForm = ({
                   </div>
                   <div className="flex flex-col gap-1">
                     <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-                      Você ficaria motivado em trabalhar novamente com este
-                      colaborador?
+                      Você ficaria motivado em trabalhar novamente com este colaborador?
                     </p>
                     <Select
                       options={motivationOptions}
@@ -393,25 +289,6 @@ const PeerEvaluationForm = ({
               </div>
             );
           })}
-
-          <button
-            type="submit"
-            className="bg-[#08605E] text-white rounded px-4 py-2  disabled:opacity-50 w-full"
-            disabled={loading}
-          >
-            {loading
-              ? "Enviando..."
-              : `Enviar ${selectedCollaborators.length} avaliação${
-                  selectedCollaborators.length > 1 ? "es" : ""
-                }`}
-          </button>
-
-          {error && <p className="text-red-500 text-xs">{error}</p>}
-          {success && (
-            <p className="text-green-600 text-xs">
-              Avaliações enviadas com sucesso!
-            </p>
-          )}
         </form>
       )}
     </div>

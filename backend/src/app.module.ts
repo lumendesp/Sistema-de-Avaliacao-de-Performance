@@ -2,38 +2,44 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CiclosModule } from './ciclos/ciclos.module';
-import { NotasModule } from './notas/notas.module';
+import { FinalScoreModule } from './final-score/final-score.module';
 import { PrismaService } from './prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma.module';
-
 import { AuthModule } from './auth/auth.module';
-import { SelfEvaluationModule } from './collaborator/self-evaluation/self-evaluation.module';
-import { UsersModule } from './users/users.module';
-import { MentorEvaluationModule } from './mentor-evaluation/mentor-evaluation.module';
-import { EvaluationCycleModule } from './evaluation-cycle/evaluation-cycle.module';
-import { MentorModule } from './mentor/mentor.module';
 import { RhModule } from './rh/rh.modules';
 import { TrackModule } from './track/track.module';
 import { UnitModule } from './unit/unit.module';
 import { PositionModule } from './position/position.module';
+import { UsersModule } from './users/users.module';
+import { MentorEvaluationModule } from './mentor-evaluation/mentor-evaluation.module';
+import { EvaluationCycleModule } from './evaluation-cycle/evaluation-cycle.module';
+import { MentorModule } from './mentor/mentor.module';
+import { SelfEvaluationModule } from './collaborator/self-evaluation/self-evaluation.module';
 import { CollaboratorsSearchBarModule } from './collaborator/collaborators-search-bar/collaborators-search-bar.module';
 import { ReferenceModule } from './reference/reference.module';
 import { PeerEvaluationModule } from './collaborator/peer-evaluation/peer-evaluation.module';
+import { AiSummaryModule } from './ai-summary/ai-summary.module';
+import { GeminiModule } from './ai/ai.module';
 import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
 import { ManagerModule } from './manager/manager.module';
+import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
 
 @Module({
   imports: [
     CiclosModule,
-    NotasModule,
+    FinalScoreModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
     PrismaModule,
     AuthModule,
-    SelfEvaluationModule,
+    RhModule,
+    TrackModule,
+    UnitModule,
+    PositionModule,
     UsersModule,
+    SelfEvaluationModule,
     MentorEvaluationModule,
     EvaluationCycleModule,
     MentorModule,
@@ -44,8 +50,11 @@ import { ManagerModule } from './manager/manager.module';
     CollaboratorsSearchBarModule,
     ReferenceModule,
     PeerEvaluationModule,
+    AiSummaryModule,
+    GeminiModule,
     ManagerEvaluationModule,
     ManagerModule,
+    AiBrutalFactsModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

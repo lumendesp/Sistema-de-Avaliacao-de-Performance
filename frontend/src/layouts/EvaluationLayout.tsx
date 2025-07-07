@@ -2,7 +2,6 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import SubmitButton from "../components/SubmitButton/SubmitButton";
 import { useEvaluation } from "../context/EvaluationsContext";
 
-// Lista de abas disponíveis na avaliação
 const tabs = [
   { label: "Autoavaliação", path: "self-evaluation" },
   { label: "Avaliação 360", path: "peer-evaluation" },
@@ -11,10 +10,18 @@ const tabs = [
 ];
 
 const EvaluationLayout = () => {
-  const { isComplete, submitAll, isUpdate } = useEvaluation();
+  const {
+    isComplete,
+    isUpdate,
+    submitAll,
+    submitPeerEvaluations,
+  } = useEvaluation();
   const location = useLocation();
 
   const isSelfEvaluation = location.pathname.endsWith("/self-evaluation");
+  const isPeerEvaluation = location.pathname.endsWith("/peer-evaluation");
+  const isReferenceEvaluation = location.pathname.endsWith("/reference-evaluation");
+  const isMentorEvaluation = location.pathname.endsWith("/mentor-evaluation");
 
   return (
     <div className="pt-6">
@@ -22,14 +29,35 @@ const EvaluationLayout = () => {
         <header className="flex justify-between items-center">
           <h1 className="text-xl font-semibold">Ciclo 2025.1</h1>
 
-          {/* Mesmo botão em todas as telas, mas apenas funcional na autoavaliação */}
-          <SubmitButton
-            isComplete={isComplete}
-            isUpdate={isUpdate}
-            onClick={submitAll}
-            disabled={!isSelfEvaluation || !isComplete}
-          />
-
+          {isSelfEvaluation ? (
+            <SubmitButton
+              isComplete={isComplete}
+              isUpdate={isUpdate}
+              onClick={submitAll}
+              disabled={!isComplete}
+            />
+          ) : isPeerEvaluation && submitPeerEvaluations ? (
+            <button
+              onClick={submitPeerEvaluations}
+              className="bg-green-main text-white rounded px-4 py-2 text-sm hover:opacity-90 transition"
+            >
+              Enviar avaliações 360°
+            </button>
+          ) : isReferenceEvaluation ? (
+            <button
+              onClick={submitAll}
+              className="bg-green-main text-white rounded px-4 py-2 text-sm hover:opacity-90 transition"
+            >
+              Enviar referências
+            </button>
+          ) : isMentorEvaluation ? (
+            <button
+              onClick={submitAll}
+              className="bg-green-main text-white rounded px-4 py-2 text-sm hover:opacity-90 transition"
+            >
+              Enviar avaliação de mentoria
+            </button>
+          ) : null}
         </header>
 
         <nav className="flex gap-20 pt-16 m-0 pl-10">

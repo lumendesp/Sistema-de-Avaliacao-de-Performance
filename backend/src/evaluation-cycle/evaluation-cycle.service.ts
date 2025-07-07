@@ -5,7 +5,6 @@ import { PrismaService } from '../prisma.service';
 export class EvaluationCycleService {
   constructor(private prisma: PrismaService) {}
 
-  // função para buscar o ciclo atual (o que está ativo)
   async findActiveCycle() {
     return this.prisma.evaluationCycle.findFirst({
       where: { status: 'IN_PROGRESS' },
@@ -18,12 +17,21 @@ export class EvaluationCycleService {
     return this.prisma.evaluationCycle.findMany({
       where: {
         id: {
-          not: activeCycle?.id, // Exclui o ativo
+          not: activeCycle?.id,
         },
-        startDate: {
-          lt: activeCycle?.startDate, // Só os anteriores
+        status: {
+          in: ['CLOSED', 'PUBLISHED'], // <== AQUI A MÁGICA
         },
       },
+      orderBy: {
+        startDate: 'desc',
+      },
+    });
+  }
+
+
+  async getMostRecentCycle() {
+    return this.prisma.evaluationCycle.findFirst({
       orderBy: {
         startDate: 'desc',
       },

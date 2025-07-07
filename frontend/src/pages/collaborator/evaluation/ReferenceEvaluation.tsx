@@ -67,6 +67,10 @@ const ReferenceEvaluation = () => {
     ...selectedCollaborators.map((c) => c.id),
   ];
 
+  if (!activeCycleId) {
+    return <p className="text-center text-gray-500 mt-10">Nenhum ciclo ativo encontrado.</p>;
+  }
+
   return (
     <div className="bg-[#f1f1f1] w-full flex flex-col gap-4 p-3 min-h-screen">
       <CollaboratorsSearchBar
