@@ -11,6 +11,7 @@ interface ProfileData {
   email: string;
   unit?: { name: string } | null;
   roles: { role: Role }[];
+  photo?: string | null;
 }
 
 const Profile: React.FC = () => {
@@ -173,6 +174,8 @@ const Profile: React.FC = () => {
         onSwitchAccount={handleSwitchAccount}
         currentAccount={currentAccount}
         role={roleMap[currentAccount] || currentAccount}
+        userId={profile.id}
+        photo={profile.photo}
       />
     </div>
   );

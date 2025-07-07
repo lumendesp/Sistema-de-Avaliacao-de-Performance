@@ -49,6 +49,12 @@ export class UsersController {
     return await this.usersService.update(+id, updateUserDto);
   }
 
+  // atualiza a foto do usuário
+  @Patch(':id/photo')
+  async updatePhoto(@Param('id') id: string, @Body('photo') photo: string) {
+    return await this.usersService.update(+id, { photo });
+  }
+
   // remove um usuário do banco
   @Delete(':id')
   async remove(@Param('id') id: string): Promise<{ message: string }> {

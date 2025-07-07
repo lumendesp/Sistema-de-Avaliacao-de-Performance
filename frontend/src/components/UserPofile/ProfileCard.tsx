@@ -8,6 +8,8 @@ interface ProfileCardProps {
   accounts: string[];
   onSwitchAccount: (account: string) => void;
   currentAccount: string;
+  userId: number;
+  photo?: string | null;
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
@@ -18,9 +20,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   accounts,
   onSwitchAccount,
   currentAccount,
+  userId,
+  photo,
 }) => {
-  const [avatar, setAvatar] = React.useState<string | null>(null);
+  const [avatar, setAvatar] = React.useState<string | null>(photo || null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    setAvatar(photo || null);
+  }, [photo]);
 
   // Função para pegar as iniciais do nome
   function getInitials(name: string) {
@@ -35,12 +43,31 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     fileInputRef.current?.click();
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        setAvatar(ev.target?.result as string);
+      reader.onload = async (ev) => {
+        const base64 = ev.target?.result as string;
+        setAvatar(base64);
+        // Envia para o backend
+        try {
+          await fetch(
+            `${
+              import.meta.env.VITE_API_URL || "http://localhost:3000"
+            }/users/${userId}/photo`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+              body: JSON.stringify({ photo: base64 }),
+            }
+          );
+        } catch (err) {
+          alert("Erro ao salvar foto");
+        }
       };
       reader.readAsDataURL(file);
     }
