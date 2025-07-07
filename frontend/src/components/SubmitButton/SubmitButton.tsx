@@ -3,7 +3,6 @@ import type { SubmitEvaluationButtonProps } from "../../types/submitButton";
 const SubmitButton = ({
   isComplete,
   onClick,
-  isUpdate = false,
   disabled = false,
 }: SubmitEvaluationButtonProps) => {
   const isDisabled = disabled || !isComplete;
@@ -19,7 +18,7 @@ const SubmitButton = ({
             : "bg-green-main text-white hover:bg-gray-main"
         }`}
     >
-      {isUpdate ? "Atualizar avaliação" : "Concluir e enviar"}
+      Concluir e enviar
     </button>
   );
 };

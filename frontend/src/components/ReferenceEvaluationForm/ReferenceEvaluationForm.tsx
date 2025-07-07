@@ -23,24 +23,27 @@ const ReferenceEvaluationForm = ({
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { registerSubmitHandler } = useEvaluation();
+  const { updateTabCompletion } = useEvaluation();
 
   useEffect(() => {
-    registerSubmitHandler("reference-evaluation", handleSubmitAll);
-  }, [formData, myReferences]);
+    if (myReferences) {
+      checkIfCompleted(myReferences);
+    }
+  }, []);
 
   const debouncedSave = (referenceId: number, value: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
     timeoutRef.current = setTimeout(async () => {
       try {
-        console.log(referenceId, value);
-        await updateReference(referenceId, value);
-        setMyReferences((prev) =>
-          prev.map((ref) =>
-            ref.id === referenceId ? { ...ref, justification: value } : ref
-          )
+        const updated = await updateReference(referenceId, value);
+
+        const updatedReferences = myReferences.map((ref) =>
+          ref.id === referenceId ? { ...ref, ...updated } : ref
         );
+
+        setMyReferences(updatedReferences);
+        checkIfCompleted(updatedReferences);
       } catch (err) {
         console.error("Erro ao salvar justificativa:", err);
         setError("Erro ao salvar justificativa.");
@@ -67,17 +70,19 @@ const ReferenceEvaluationForm = ({
     }
   };
 
-  const handleSubmitAll = async () => {
-    const refsToSend = myReferences.filter((ref) => !ref.justification?.trim());
+  const checkIfCompleted = async (updatedReferences: any) => {
+    setError(null);
+
+    const refsToSend = updatedReferences.filter((ref) => !ref.justification?.trim());
 
     const emptyRefs = refsToSend.filter((ref) => !formData[ref.id]?.trim());
 
     if (emptyRefs.length > 0) {
-      setError(
-        `Preencha o feedback para: ${emptyRefs
-          .map((r) => r.receiver?.name || "Desconhecido")
-          .join(", ")}`
-      );
+      // setError(
+      //   `Preencha o feedback para: ${emptyRefs
+      //     .map((r) => r.receiver?.name || "Desconhecido")
+      //     .join(", ")}`
+      // );
       return;
     }
 
@@ -94,6 +99,7 @@ const ReferenceEvaluationForm = ({
       setSuccess(true);
       const updatedRefs = await fetchMyReferences(cycleId);
       setMyReferences(updatedRefs);
+      updateTabCompletion("reference", true);
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao enviar referências";
@@ -206,11 +212,6 @@ const ReferenceEvaluationForm = ({
                 </div>
               ))}
               {error && <p className="text-red-500 text-xs">{error}</p>}
-              {success && (
-                <p className="text-green-600 text-xs">
-                  Referências enviadas com sucesso!
-                </p>
-              )}
             </form>
           ) : (
             <p className="text-sm text-gray-400 text-center py-8">

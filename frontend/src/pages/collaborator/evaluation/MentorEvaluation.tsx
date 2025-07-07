@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 
 import type { Mentor } from "../../../types/mentor";
 import { useAuth } from "../../../context/AuthContext";
+import { useEvaluation } from "../../../context/EvaluationsContext";
 import {
   fetchMentors,
   fetchActiveEvaluationCycle,
@@ -16,6 +17,15 @@ const MentorEvaluation = () => {
   const [activeCycleId, setActiveCycleId] = useState<number | null>(null);
   const [mentorEvaluation, setMentorEvaluation] = useState<any>(null);
   const [isCycleFinished, setIsCycleFinished] = useState(false);
+
+  const { updateTabCompletion } = useEvaluation();
+
+  // Se não existe mentor, marca a tab como completa
+  useEffect(() => {
+    if (!mentor) {
+      updateTabCompletion("mentor", true);
+    }
+  }, [mentor]);
 
   useEffect(() => {
     const loadActiveCycle = async () => {
@@ -72,7 +82,7 @@ const MentorEvaluation = () => {
     );
   }
 
-  if (!mentor)
+  if (!mentor) {
     return (
       <div className="bg-[#f1f1f1] h-screen w-full p-3">
         <p className="text-sm text-gray-400 text-center py-8">
@@ -80,6 +90,7 @@ const MentorEvaluation = () => {
         </p>
       </div>
     );
+  }
 
   return (
     <div className="bg-[#f1f1f1] h-screen w-full p-3">

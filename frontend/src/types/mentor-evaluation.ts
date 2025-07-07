@@ -8,3 +8,12 @@ export type MentorEvaluationProps = {
   cycleId: number;
   isCycleFinished?: boolean;
 };
+
+export type MentorEvaluation = {
+  id: number;
+  evaluatorEmail?: string;
+  evaluatorName?: string;
+  score?: number;
+  scoreDescription?: string;
+  justification?: string;
+};

@@ -1,6 +1,10 @@
 import { createContext, useContext, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+export type EvaluationTabKey = "self" | "peer" | "mentor" | "reference";
+
+type TabStateMap<T> = Record<EvaluationTabKey, T>;
+
 interface EvaluationContextProps {
   isComplete: boolean;
   isUpdate: boolean;
@@ -8,16 +12,25 @@ interface EvaluationContextProps {
   setIsUpdate: (value: boolean) => void;
   registerSubmitHandler: (key: string, handler: () => Promise<void>) => void;
   submitAll: () => Promise<void>;
-  submitPeerEvaluations: (() => void) | null;
-  setSubmitPeerEvaluations: (fn: (() => void) | null) => void;
+  tabCompletion: TabStateMap<boolean>;
+  updateTabCompletion: (key: EvaluationTabKey, value: boolean) => void;
 }
 
-const EvaluationContext = createContext<EvaluationContextProps | undefined>(undefined);
+const EvaluationContext = createContext<EvaluationContextProps | undefined>(
+  undefined
+);
 
 export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
+  console.log("a");
   const [isComplete, setIsComplete] = useState(false);
   const [isUpdate, setIsUpdate] = useState(false);
-  const [submitPeerEvaluations, setSubmitPeerEvaluations] = useState<(() => void) | null>(null);
+
+  const [tabCompletion, setTabCompletion] = useState<TabStateMap<boolean>>({
+    self: false,
+    peer: false,
+    mentor: false,
+    reference: false,
+  });
 
   const submitHandlers = useRef<Record<string, () => Promise<void>>>({});
 
@@ -31,6 +44,10 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateTabCompletion = (key: EvaluationTabKey, value: boolean) => {
+    setTabCompletion((prev) => ({ ...prev, [key]: value }));
+  };
+
   return (
     <EvaluationContext.Provider
       value={{
@@ -40,8 +57,8 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
         setIsUpdate,
         registerSubmitHandler,
         submitAll,
-        submitPeerEvaluations,
-        setSubmitPeerEvaluations,
+        tabCompletion,
+        updateTabCompletion,
       }}
     >
       {children}

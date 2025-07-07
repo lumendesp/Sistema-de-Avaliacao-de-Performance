@@ -12,7 +12,7 @@ interface Props {
 
 const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
   const { token } = useAuth();
-  const { setIsComplete, setIsUpdate, registerSubmitHandler } = useEvaluation();
+  const { setIsComplete, setIsUpdate, updateTabCompletion } = useEvaluation();
 
   const [ratings, setRatings] = useState<Record<number, number[]>>({});
   const [justifications, setJustifications] = useState<
@@ -21,6 +21,12 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
   const [selfEvaluationId, setSelfEvaluationId] = useState<number | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [weights, setWeights] = useState<Record<number, number>>({});
+
+  useEffect(() => {
+    const isComplete = filled === total;
+    setIsComplete(isComplete);
+    updateTabCompletion("self", true);
+  }, [ratings, justifications]);
 
   useEffect(() => {
     const fetchWeights = async () => {
@@ -285,7 +291,6 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
       }
     };
 
-    registerSubmitHandler("self-evaluation", submitSelfEvaluation);
   }, [ratings, justifications, selfEvaluationId, cycleId, weights]);
 
   useEffect(() => {

@@ -1,7 +1,10 @@
 import ScoreBox from "../ScoreBox";
 import StarRating from "../StarRating";
 import StarRatingReadOnly from "../StarRatingReadOnly";
-import type { MentorEvaluationProps } from "../../types/mentor-evaluation";
+import type {
+  MentorEvaluation,
+  MentorEvaluationProps,
+} from "../../types/mentor-evaluation";
 import { UserIcon } from "../UserIcon";
 
 import { useState, useEffect, useRef } from "react";
@@ -20,7 +23,13 @@ const MentorEvaluationForm = ({
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { registerSubmitHandler } = useEvaluation();
+  const { updateTabCompletion } = useEvaluation();
+
+  useEffect(() => {
+    if (mentorEvaluation) {
+      checkIfCompleted(mentorEvaluation);
+    }
+  }, [mentorEvaluation]);
 
   // função auxiliar para pegar as iniciais
   const getInitials = (name: string) => {
@@ -52,6 +61,7 @@ const MentorEvaluationForm = ({
         );
         if (setMentorEvaluation) {
           setMentorEvaluation(updatedEvaluation);
+          checkIfCompleted(updatedEvaluation);
         }
       } catch (err) {
         console.error("Erro ao salvar avaliação:", err);
@@ -70,8 +80,17 @@ const MentorEvaluationForm = ({
     debouncedSave({ justification: value });
   };
 
-  const handleSubmitAll = async () => {
-    if (!score || !feedback.trim()) {
+  const checkIfCompleted = async (
+    updatedEvaluation: MentorEvaluation | null,
+    localScore?: number,
+    localFeedback?: string
+  ) => {
+    setError(null);
+    const currentScore = localScore !== undefined ? localScore : score;
+    const currentFeedback =
+      localFeedback !== undefined ? localFeedback : feedback;
+
+    if (!currentScore || !currentFeedback.trim()) {
       setError("Preencha todos os campos");
       return;
     }
@@ -79,10 +98,10 @@ const MentorEvaluationForm = ({
     setError(null);
 
     try {
-      if (mentorEvaluation?.id) {
-        await updateMentorEvaluation(mentorEvaluation.id, {
-          score,
-          justification: feedback,
+      if (updatedEvaluation?.id) {
+        await updateMentorEvaluation(updatedEvaluation.id, {
+          score: currentScore,
+          justification: currentFeedback,
         });
       }
     } catch (err: unknown) {
@@ -90,11 +109,15 @@ const MentorEvaluationForm = ({
         err instanceof Error ? err.message : "Erro ao enviar avaliação";
       setError(errorMessage);
     }
+
+    updateTabCompletion("mentor", true);
   };
 
   useEffect(() => {
-    registerSubmitHandler("mentor-evaluation", handleSubmitAll);
-  }, [score, feedback, mentorEvaluation]);
+    if (!isCycleFinished && mentorEvaluation) {
+      checkIfCompleted(mentorEvaluation, score, feedback);
+    }
+  }, [score, feedback]);
 
   useEffect(() => {
     if (error && (score || feedback.trim())) {

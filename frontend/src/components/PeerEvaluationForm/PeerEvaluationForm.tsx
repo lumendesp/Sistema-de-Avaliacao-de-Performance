@@ -12,7 +12,10 @@ import {
 } from "../../services/api";
 import { useEvaluation } from "../../context/EvaluationsContext";
 
-import type { PeerEvaluationFormProps } from "../../types/peerEvaluation";
+import type {
+  PeerEvaluation,
+  PeerEvaluationFormProps,
+} from "../../types/peerEvaluation";
 
 type MotivationOption = {
   value: string;
@@ -37,10 +40,12 @@ export default function PeerEvaluationForm({
   const [error, setError] = useState<string | null>(null);
   const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { registerSubmitHandler } = useEvaluation();
+  const { updateTabCompletion } = useEvaluation();
 
   useEffect(() => {
-    registerSubmitHandler("peer-evaluation", handleSubmitAll);
+    if (myEvaluations) {
+      checkIfCompleted(myEvaluations);
+    }
   }, [formData, myEvaluations]);
 
   useEffect(() => {
@@ -80,9 +85,13 @@ export default function PeerEvaluationForm({
     timeoutRef.current = setTimeout(async () => {
       try {
         const updated = await updatePeerEvaluation(evaluationId, data);
-        setMyEvaluations((prev) =>
-          prev.map((e) => (e.id === evaluationId ? { ...e, ...updated } : e))
+
+        const updatedEvaluations = myEvaluations.map((e) =>
+          e.id === evaluationId ? { ...e, ...updated } : e
         );
+
+        setMyEvaluations(updatedEvaluations);
+        checkIfCompleted(updatedEvaluations);
       } catch (err) {
         console.error("Erro ao salvar:", err);
         setError("Erro ao salvar avaliação.");
@@ -175,8 +184,10 @@ export default function PeerEvaluationForm({
     }
   };
 
-  const handleSubmitAll = async () => {
-    const incomplete = myEvaluations.filter((evaluation) => {
+  const checkIfCompleted = async (updatedEvaluations: PeerEvaluation[]) => {
+    setError(null);
+
+    const incomplete = updatedEvaluations.filter((evaluation) => {
       const data = formData[evaluation.id];
       return (
         !data?.score ||
@@ -189,14 +200,15 @@ export default function PeerEvaluationForm({
     });
 
     if (incomplete.length > 0) {
-      setError(
-        `Preencha todos os campos para: ${incomplete
-          .map((e) => e.evaluatee?.name || "Desconhecido")
-          .join(", ")}`
-      );
+      // setError(
+      //   `Preencha todos os campos para: ${incomplete
+      //     .map((e) => e.evaluatee?.name || "Desconhecido")
+      //     .join(", ")}`
+      // );
       return;
     }
 
+    updateTabCompletion("peer", true);
     setError(null); // todas já foram salvas automaticamente
   };
 
@@ -361,7 +373,11 @@ export default function PeerEvaluationForm({
                           ...base,
                           height: "36px",
                         }),
-                        menuPortal: (base) => ({ ...base, zIndex: 9999, position: "absolute" }),
+                        menuPortal: (base) => ({
+                          ...base,
+                          zIndex: 9999,
+                          position: "absolute",
+                        }),
                       }}
                     />
                   </div>
@@ -425,7 +441,11 @@ export default function PeerEvaluationForm({
                           ...base,
                           height: "36px",
                         }),
-                        menuPortal: (base) => ({ ...base, zIndex: 9999, position: "absolute" }),
+                        menuPortal: (base) => ({
+                          ...base,
+                          zIndex: 9999,
+                          position: "absolute",
+                        }),
                       }}
                     />
                   </div>
