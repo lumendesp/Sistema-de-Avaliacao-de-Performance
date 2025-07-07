@@ -52,11 +52,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     MANAGER: "Gestor",
     COLLABORATOR: "Colaborador",
     MENTOR: "Mentor",
-    RH: "RH",
     COMMITTEE: "Comitê",
     HR: "RH",
-    // Adicione outros papéis conforme necessário
   };
+
+  // Se o usuário for admin, mostra todos os cargos possíveis
+  const isAdmin = accounts.includes("ADMIN");
+  const allRoles = Object.keys(roleMap);
+  const selectAccounts = isAdmin ? allRoles : accounts;
 
   return (
     <div className="w-full max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl p-9 mt-12 flex flex-col items-center relative">
@@ -103,7 +106,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             </span>
           </div>
         </div>
-        {accounts.length > 1 && (
+        {selectAccounts.length > 1 && (
           <div className="mb-5 w-full flex flex-col items-center">
             <label className="block text-gray-600 text-xs mb-1">
               Trocar de conta:
@@ -113,7 +116,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               value={currentAccount}
               onChange={(e) => onSwitchAccount(e.target.value)}
             >
-              {accounts.map((acc) => (
+              {selectAccounts.map((acc) => (
                 <option key={acc} value={acc}>
                   {roleMap[acc] || acc}
                 </option>
