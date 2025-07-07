@@ -91,6 +91,7 @@ const MentorEvaluationForm = ({
       localFeedback !== undefined ? localFeedback : feedback;
 
     if (!currentScore || !currentFeedback.trim()) {
+      updateTabCompletion("mentor", false);
       setError("Preencha todos os campos");
       return;
     }

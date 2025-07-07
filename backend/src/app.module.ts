@@ -24,6 +24,7 @@ import { GeminiModule } from './ai/ai.module';
 import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
 import { ManagerModule } from './manager/manager.module';
 import { ProjectsModule } from './projects/projects.module';
+import { EvaluationCompletionModule } from './evaluation-completion/evaluation-completion.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { ProjectsModule } from './projects/projects.module';
     ManagerEvaluationModule,
     ManagerModule,
     ProjectsModule,
+    EvaluationCompletionModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

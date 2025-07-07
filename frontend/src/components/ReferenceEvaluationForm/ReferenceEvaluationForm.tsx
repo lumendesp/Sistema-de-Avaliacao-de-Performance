@@ -29,7 +29,7 @@ const ReferenceEvaluationForm = ({
     if (myReferences) {
       checkIfCompleted(myReferences);
     }
-  }, []);
+  }, [formData, myReferences]);
 
   const debouncedSave = (referenceId: number, value: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -70,25 +70,30 @@ const ReferenceEvaluationForm = ({
     }
   };
 
-  const checkIfCompleted = async (updatedReferences: any) => {
+  const checkIfCompleted = (references: any[]) => {
     setError(null);
 
-    const refsToSend = updatedReferences.filter((ref) => !ref.justification?.trim());
+    // Verifica se alguma referência (localmente ou no backend) está sem justificativa
+    const hasEmpty = references.some((ref) => {
+      const localJustification = formData[ref.id];
+      const justification =
+        localJustification !== undefined
+          ? localJustification
+          : ref.justification;
+      return !justification?.trim();
+    });
 
-    const emptyRefs = refsToSend.filter((ref) => !formData[ref.id]?.trim());
+    updateTabCompletion("reference", !hasEmpty);
+  };
 
-    if (emptyRefs.length > 0) {
-      // setError(
-      //   `Preencha o feedback para: ${emptyRefs
-      //     .map((r) => r.receiver?.name || "Desconhecido")
-      //     .join(", ")}`
-      // );
-      return;
-    }
-
+  const savePendingReferences = async (references: any[]) => {
     setLoading(true);
     setError(null);
     setSuccess(false);
+
+    const refsToSend = references.filter((ref) => !ref.justification?.trim());
+
+    // Também pode garantir aqui que formData[ref.id] está preenchido, se quiser
 
     try {
       const promises = refsToSend.map((ref) =>
@@ -97,9 +102,11 @@ const ReferenceEvaluationForm = ({
       await Promise.all(promises);
 
       setSuccess(true);
+
       const updatedRefs = await fetchMyReferences(cycleId);
       setMyReferences(updatedRefs);
-      updateTabCompletion("reference", true);
+
+      checkIfCompleted(updatedRefs); // atualiza completude após salvar
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao enviar referências";

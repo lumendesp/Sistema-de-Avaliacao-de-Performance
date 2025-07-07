@@ -77,6 +77,23 @@ export const fetchActiveEvaluationCycle = async () => {
   return res.json();
 };
 
+export const fetchEvaluationCompletionStatus = async (cycleId: number) => {
+  const res = await fetch(`http://localhost:3000/evaluation-completion/status?cycleId=${cycleId}`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error("Erro ao buscar status da avaliação");
+  }
+
+  return (await res.json()) as {
+    self: boolean;
+    peer: boolean;
+    mentor: boolean;
+    reference: boolean;
+  };
+};
+
 export const fetchMentorEvaluation = async (evaluateeId: number) => {
   const res = await fetch(`${API_URL}/mentor-evaluations/me/${evaluateeId}`, {
     method: "GET",

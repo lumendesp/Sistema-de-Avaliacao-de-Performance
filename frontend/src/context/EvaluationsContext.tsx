@@ -1,4 +1,7 @@
 import { createContext, useContext, useRef, useState } from "react";
+import { fetchEvaluationCompletionStatus } from "../services/api";
+import { useAuth } from "./AuthContext";
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 
 export type EvaluationTabKey = "self" | "peer" | "mentor" | "reference";
@@ -21,9 +24,19 @@ const EvaluationContext = createContext<EvaluationContextProps | undefined>(
 );
 
 export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
-  console.log("a");
+  const { token } = useAuth(); // pega o token do usuário logado
+
   const [isComplete, setIsComplete] = useState(false);
   const [isUpdate, setIsUpdate] = useState(false);
+
+  const [initialTabCompletion, setInitialTabCompletion] = useState<
+    TabStateMap<boolean>
+  >({
+    self: false,
+    peer: false,
+    mentor: false,
+    reference: false,
+  });
 
   const [tabCompletion, setTabCompletion] = useState<TabStateMap<boolean>>({
     self: false,
@@ -47,6 +60,25 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
   const updateTabCompletion = (key: EvaluationTabKey, value: boolean) => {
     setTabCompletion((prev) => ({ ...prev, [key]: value }));
   };
+
+  useEffect(() => {
+    if (!token) return;
+
+    const cycleId = /* pega ciclo ativo */ 1;
+
+    const loadCompletionStatus = async () => {
+      try {
+        const status = await fetchEvaluationCompletionStatus(cycleId);
+        setInitialTabCompletion(status); // salva o que veio do backend
+        setTabCompletion(status); // inicia o estado editável com esse valor
+        setIsComplete(Object.values(status).every(Boolean));
+      } catch (error) {
+        console.error("Erro ao carregar status da avaliação:", error);
+      }
+    };
+
+    loadCompletionStatus();
+  }, [token]);
 
   return (
     <EvaluationContext.Provider

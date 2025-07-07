@@ -25,7 +25,7 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
   useEffect(() => {
     const isComplete = filled === total;
     setIsComplete(isComplete);
-    updateTabCompletion("self", true);
+    updateTabCompletion("self", isComplete);
   }, [ratings, justifications]);
 
   useEffect(() => {

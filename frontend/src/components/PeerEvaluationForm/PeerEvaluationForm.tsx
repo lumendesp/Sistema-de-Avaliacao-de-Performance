@@ -200,6 +200,7 @@ export default function PeerEvaluationForm({
     });
 
     if (incomplete.length > 0) {
+      updateTabCompletion("peer", false);
       // setError(
       //   `Preencha todos os campos para: ${incomplete
       //     .map((e) => e.evaluatee?.name || "Desconhecido")
