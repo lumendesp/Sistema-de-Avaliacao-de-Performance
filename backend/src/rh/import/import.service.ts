@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import * as xlsx from 'xlsx';
-import { CriterionName, Role } from '@prisma/client';
+import { CriterionName, Role, SelfEvaluation, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -46,7 +46,7 @@ export class ImportService {
             throw new BadRequestException('Nenhum arquivo enviado.');
         }
 
-        // 1. Inicia uma transação. Todas as operações dentro dela ou funcionam ou são revertidas.
+        // Inicia uma transação. Todas as operações dentro dela ou funcionam ou são revertidas.
         return this.prisma.$transaction(async (tx) => {
             // 2. Valida o ciclo de avaliação
             const cycle = await tx.evaluationCycle.findUnique({ where: { id: cycleId } });
@@ -54,10 +54,10 @@ export class ImportService {
                 throw new NotFoundException(`Ciclo com ID ${cycleId} não encontrado.`);
             }
 
-            // 4. Processa cada aba do Excel (começando pela Autoavaliação)
+            // Processa cada aba do Excel (começando pela Autoavaliação)
             const workbook = xlsx.read(file.buffer, { type: 'buffer' });
 
-            // 1. Lendo a aba "Perfil" para pegar todos os dados do usuário
+            // Lendo a aba "Perfil" para pegar todos os dados do usuário
             const perfilSheet = workbook.Sheets['Perfil'];
             if (!perfilSheet) {
                 throw new BadRequestException('Aba "Perfil" não encontrada no arquivo.');
@@ -69,49 +69,73 @@ export class ImportService {
                 throw new BadRequestException('Dados de perfil ou Email não encontrados no arquivo.');
             }
 
-            // 2. Lógica "Find or Create" (Upsert)
-            // -------------------------------------------------------------------------
+            // Lógica "Find or Create" (Upsert)
+            let user: User;
 
-            const positionName = userDataFromExcel['CARGO'] || 'Developer';
-            const position = await tx.position.findFirst({ where: { name: positionName } });
-            if (!position) throw new NotFoundException(`Posição "${positionName}" não encontrada.`);
-
-            const unitName = userDataFromExcel['UNIDADE'] || 'Recife';
-            const unit = await tx.unit.findFirst({ where: { name: unitName } });
-            if (!unit) throw new NotFoundException(`Unidade "${unitName}" não encontrada.`);
-
-            const trackName = userDataFromExcel['TRILHA'] || 'Backend';
-            const track = await tx.track.findFirst({ where: { name: trackName } });
-            if (!track) throw new NotFoundException(`Trilha "${trackName}" não encontrada.`);
-
-            // ---------------------------------------------------------------------------
-
-            const tempPassword = Math.random().toString(36).slice(-10); // Gera uma senha aleatória
-            const hashedPassword = await bcrypt.hash(tempPassword, 10);
-
-            // Prisma Upsert: Tenta encontrar pelo Email, se não encontrar, cria.
-            const user = await tx.user.upsert({
+            // Tenta encontrar o usuário que já existe
+            const existingUser = await tx.user.findUnique({
                 where: { email: userDataFromExcel['Email'] },
-                // O que fazer se o usuário NÃO for encontrado (CREATE)
-                create: {
-                    email: userDataFromExcel['Email'],
-                    name: this.formatUserNameFromSheet(userDataFromExcel['Nome ( nome.sobrenome )']),
-                    username: userDataFromExcel['Email'].split('@')[0], // Gera um username a partir do email
-                    password: hashedPassword,
-                    active: true,
-                    // Aqui você buscaria os IDs de position, unit, track...
-                    // Exemplo simplificado:
-                    position: { connect: { id: position.id } },
-                    unit: { connect: { id: unit.id } },
-                    track: { connect: { id: track.id } },
-                    roles: { create: [{ role: Role.COLLABORATOR }] },
-                },
-                // O que fazer se o usuário JÁ for encontrado (UPDATE)
-                // Neste caso, não precisamos atualizar nada, apenas usá-lo.
-                update: {},
             });
 
-            console.log(`Usuário processado: ${user.name} (ID: ${user.id}). Senha temporária: ${tempPassword}`);
+            if (existingUser) {
+                // Se encontrou, apenas usa o usuário existente
+                user = existingUser;
+                console.log(`Usuário existente encontrado: ${user.name} (ID: ${user.id}).`);
+            } else {
+                // Se NÃO encontrou, SÓ ENTÃO executa a lógica de criação
+                console.log(`Usuário com email ${userDataFromExcel['Email']} não encontrado. Criando novo usuário...`);
+
+                const tempPassword = Math.random().toString(36).slice(-10);
+                const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+                const positionName = userDataFromExcel['CARGO'] || 'Developer';
+                const position = await tx.position.findFirst({ where: { name: positionName } });
+                if (!position) throw new NotFoundException(`Posição "${positionName}" não encontrada.`);
+
+                const unitName = userDataFromExcel['UNIDADE'] || 'Recife';
+                const unit = await tx.unit.findFirst({ where: { name: unitName } });
+                if (!unit) throw new NotFoundException(`Unidade "${unitName}" não encontrada.`);
+
+                const trackName = userDataFromExcel['TRILHA'] || 'Backend';
+                const track = await tx.track.findFirst({ where: { name: trackName } });
+                if (!track) throw new NotFoundException(`Trilha "${trackName}" não encontrada.`);
+
+                user = await tx.user.create({
+                    data: {
+                        email: userDataFromExcel['Email'],
+                        name: this.formatUserNameFromSheet(userDataFromExcel['Nome ( nome.sobrenome )']),
+                        username: userDataFromExcel['Email'].split('@')[0],
+                        password: hashedPassword,
+                        active: true,
+                        position: { connect: { id: position.id } },
+                        unit: { connect: { id: unit.id } },
+                        track: { connect: { id: track.id } },
+                        roles: { create: [{ role: Role.COLLABORATOR }] },
+                    },
+                });
+
+                console.log(`Novo usuário criado: ${user.name} (ID: ${user.id}). Senha temporária: ${tempPassword}`);
+            }
+
+            let selfEvaluation: SelfEvaluation;
+            const existingEvaluation = await tx.selfEvaluation.findFirst({
+                where: { userId: user.id, cycleId: cycle.id },
+            });
+
+            if (existingEvaluation) {
+                console.log(`Avaliação existente encontrada (ID: ${existingEvaluation.id}). Apagando itens antigos para atualização...`);
+                // Se já existe, apaga TODOS os itens antigos para substituí-los.
+                await tx.selfEvaluationItem.deleteMany({
+                    where: { evaluationId: existingEvaluation.id },
+                });
+                selfEvaluation = existingEvaluation; // Usaremos esta avaliação para os novos itens.
+            } else {
+                console.log(`Nenhuma avaliação existente para ${user.name} neste ciclo. Criando uma nova...`);
+                // Se não existe, cria um novo registro de autoavaliação.
+                selfEvaluation = await tx.selfEvaluation.create({
+                    data: { userId: user.id, cycleId: cycle.id },
+                });
+            }
 
             // --- Processando a Aba "Autoavaliação" ---
             const autoAvaliacaoSheet = workbook.Sheets['Autoavaliação'];
@@ -120,7 +144,7 @@ export class ImportService {
             }
             const autoAvaliacaoData: any[] = xlsx.utils.sheet_to_json(autoAvaliacaoSheet);
 
-            // 2. Agrupar os dados pelo NOVO critério
+            // Agrupar os dados pelo NOVO critério
             const groupedData = new Map<CriterionName, { scores: number[]; justifications: string[] }>();
 
             for (const row of autoAvaliacaoData) {
@@ -147,10 +171,7 @@ export class ImportService {
                 group.justifications.push(justification);
             }
 
-            // 3. Agora, iterar sobre os DADOS AGRUPADOS para salvar no banco
-            const selfEvaluation = await tx.selfEvaluation.create({
-                data: { userId: user.id, cycleId: cycle.id },
-            });
+            const allAverageScores: number[] = [];
 
             for (const [criterionName, data] of groupedData.entries()) {
                 // Busca o ID do critério no banco
@@ -167,6 +188,9 @@ export class ImportService {
 
                 const scoreDescription = this.scoreDescriptionMap[averageScore] || null;
 
+                // Guardamos a nota média de cada critério
+                allAverageScores.push(averageScore);
+
                 // Cria um ÚNICO item de avaliação para o critério agrupado
                 await tx.selfEvaluationItem.create({
                     data: {
@@ -179,8 +203,19 @@ export class ImportService {
                 });
             }
 
+            // Calculamos a média geral e atualizamos o registro
+            if (allAverageScores.length > 0) {
+                const overallAverage = allAverageScores.reduce((a, b) => a + b, 0) / allAverageScores.length;
+                await tx.selfEvaluation.update({
+                    where: { id: selfEvaluation.id },
+                    data: {
+                        averageScore: parseFloat(overallAverage.toFixed(1)), // Salva a média com 1 casa decimal
+                    },
+                });
+            }
+
             return {
-                message: `Histórico de ${user.name} importado e consolidado com sucesso!`,
+                message: `Histórico de ${user.name} importado e ${existingEvaluation ? 'ATUALIZADO' : 'CRIADO'} com sucesso!`,
                 criteriaProcessed: groupedData.size,
             };
         });
