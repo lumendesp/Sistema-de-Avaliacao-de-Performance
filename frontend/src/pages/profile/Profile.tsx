@@ -59,6 +59,10 @@ const Profile: React.FC = () => {
     ) {
       return lastAccount;
     }
+
+    if (isAdmin && roleNames.includes("COLLABORATOR")) {
+      return "COLLABORATOR";
+    }
     const previousPath =
       window.history.state?.usr?.pathname || document.referrer;
     if (previousPath.includes("manager"))
