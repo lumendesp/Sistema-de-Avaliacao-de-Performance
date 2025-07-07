@@ -23,6 +23,7 @@ import { AiSummaryModule } from './ai-summary/ai-summary.module';
 import { GeminiModule } from './ai/ai.module';
 import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
 import { ManagerModule } from './manager/manager.module';
+import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { ManagerModule } from './manager/manager.module';
     GeminiModule,
     ManagerEvaluationModule,
     ManagerModule,
+    AiBrutalFactsModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

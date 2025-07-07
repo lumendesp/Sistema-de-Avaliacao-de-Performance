@@ -2,11 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { CreateCicloDto } from './dto/create-ciclo.dto';
 import { UpdateCicloDto } from './dto/update-ciclo.dto';
 import { PrismaClient } from '@prisma/client';
+import { GeminiService } from '../ai/ai.service';
+import { AiBrutalFactsService } from '../ai-brutal-facts/ai-brutal-facts.service';
 
 const prisma = new PrismaClient();
 
 @Injectable()
 export class CiclosService {
+  constructor(
+    private readonly geminiService: GeminiService,
+    private readonly aiBrutalFactsService: AiBrutalFactsService,
+  ) {}
+
   async create(createCicloDto: CreateCicloDto) {
     return prisma.evaluationCycle.create({
       data: {
@@ -395,22 +402,7 @@ export class CiclosService {
     const topPerformers = collaboratorsList.filter(c => parseFloat(c.nota) >= 4.5).length;
     const totalEvaluated = collaboratorsList.length;
     
-    // NOVO: Gerar insight com Gemini
-    let insights = '';
-    try {
-      const { generateGeminiText } = await import('../utils/gemini');
-      const prompt = `Você é um analista de RH. Analise os dados de desempenho abaixo do ciclo "${lastCompletedCycle.name}" e gere um resumo e insights práticos para a equipe:\n\nNotas finais dos colaboradores: ${collaboratorsList.map(c => `${c.nome} (${c.cargo}): ${c.nota}`).join(', ')}\nMédia Autoavaliação: ${averageAuto}/5\nMédia Gestor: ${averageManager}/5\nMédia 360: ${averagePeer}/5\nMédia Final: ${averageFinal}/5\nTotal avaliados: ${totalEvaluated}\nTop performers (nota >= 4.5): ${topPerformers}\n\nSeja sucinto, objetivo e traga sugestões de melhoria.`;
-      insights = await generateGeminiText(prompt);
-    } catch (e) {
-      // fallback para insight antigo
-        if (topPerformers === 0) {
-          insights = "Nenhum colaborador atingiu o status de top performer (nota >= 4.5). Isso pode indicar ausência de inflação de notas ou um problema fundamental de aquisição/desenvolvimento de talentos.";
-        } else if (topPerformers === totalEvaluated) {
-          insights = "Todos os colaboradores atingiram o status de top performer (nota >= 4.5). Isso pode indicar inflação de notas e requer atenção.";
-        } else {
-          insights = `${topPerformers} de ${totalEvaluated} colaboradores atingiram o status de top performer (nota >= 4.5).`;
-        }
-    }
+    const insights = await this.aiBrutalFactsService.getInsightForLastCompletedCycle();
 
     // Calcular aumento em relação ao ciclo anterior (scoreTrend)
     let scoreTrend: string | undefined = undefined;
