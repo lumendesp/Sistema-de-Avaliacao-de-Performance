@@ -94,8 +94,12 @@ export const fetchEvaluationCompletionStatus = async (cycleId: number) => {
   };
 };
 
-export const fetchMentorEvaluation = async (evaluateeId: number) => {
-  const res = await fetch(`${API_URL}/mentor-evaluations/me/${evaluateeId}`, {
+export const fetchMentorEvaluation = async (evaluateeId: number, cycleId?: number) => {
+  let url = `${API_URL}/mentor-evaluations/me/${evaluateeId}`;
+  if (cycleId) {
+    url += `?cycleId=${cycleId}`;
+  }
+  const res = await fetch(url, {
     method: "GET",
     headers: getAuthHeaders(),
   });

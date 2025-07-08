@@ -1,5 +1,8 @@
 import { createContext, useContext, useRef, useState } from "react";
-import { fetchEvaluationCompletionStatus } from "../services/api";
+import {
+  fetchEvaluationCompletionStatus,
+  fetchActiveEvaluationCycle,
+} from "../services/api";
 import { useAuth } from "./AuthContext";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
@@ -64,13 +67,12 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!token) return;
 
-    const cycleId = /* pega ciclo ativo */ 1;
-
     const loadCompletionStatus = async () => {
       try {
-        const status = await fetchEvaluationCompletionStatus(cycleId);
-        setInitialTabCompletion(status); // salva o que veio do backend
-        setTabCompletion(status); // inicia o estado editável com esse valor
+        const activeCycle = await fetchActiveEvaluationCycle(); 
+        const status = await fetchEvaluationCompletionStatus(activeCycle.id);
+        setInitialTabCompletion(status);
+        setTabCompletion(status);
         setIsComplete(Object.values(status).every(Boolean));
       } catch (error) {
         console.error("Erro ao carregar status da avaliação:", error);

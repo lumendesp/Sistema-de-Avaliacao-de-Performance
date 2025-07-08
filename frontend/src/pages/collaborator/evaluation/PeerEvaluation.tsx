@@ -2,9 +2,7 @@ import { useEffect, useState } from "react";
 import CollaboratorsSearchBar from "../../../components/CollaboratorsSearchBar";
 import PeerEvaluationForm from "../../../components/PeerEvaluationForm/PeerEvaluationForm";
 import type { Collaborator } from "../../../types/reference";
-import type {
-  PeerEvaluation,
-} from "../../../types/peerEvaluation";
+import type { PeerEvaluation } from "../../../types/peerEvaluation";
 import {
   findOrCreateEmptyPeerEvaluation,
   fetchActiveEvaluationCycle,
