@@ -274,23 +274,23 @@ function EvaluationSummary({
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             {/* Download Modal */}
             {showDownloadModal && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 w-full max-w-sm flex flex-col items-center">
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 p-2 sm:p-4">
+                    <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 w-full max-w-xs sm:max-w-sm flex flex-col items-center">
                         {!showSpreadsheetOptions ? (
                             <>
-                                <div className="flex flex-col w-full space-y-3">
-                                    <h2 className="text-lg font-semibold mb-4 text-center">Escolha o formato de download</h2>
+                                <div className="flex flex-col w-full space-y-2 sm:space-y-3">
+                                    <h2 className="text-base sm:text-lg font-semibold mb-2 sm:mb-4 text-center">Escolha o formato de download</h2>
                                     <button
-                                        className="px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
+                                        className="px-4 sm:px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
                                         onClick={() => setShowSpreadsheetOptions(true)}
                                     >
                                         Planilha
                                     </button>
                                     <button
-                                        className="mb-3 px-6 py-2 bg-gray-250 text-gray-800 rounded hover:bg-gray-300 w-full"
+                                        className="mb-2 sm:mb-3 px-4 sm:px-6 py-2 bg-gray-250 text-gray-800 rounded hover:bg-gray-300 w-full"
                                         onClick={() => {
                                             handleDownloadPdf();
                                         }}
@@ -298,7 +298,7 @@ function EvaluationSummary({
                                         PDF
                                     </button>
                                     <button
-                                        className="mt-4 text-sm text-gray-500 hover:underline"
+                                        className="mt-2 sm:mt-4 text-xs sm:text-sm text-gray-500 hover:underline"
                                         onClick={handleCloseModals}
                                     >
                                         Cancelar
@@ -307,22 +307,22 @@ function EvaluationSummary({
                             </>
                         ) : (
                             <>
-                                <div className="flex flex-col w-full space-y-3">
-                                    <h2 className="text-lg font-semibold mb-4 text-center">Escolha o formato da planilha</h2>
+                                <div className="flex flex-col w-full space-y-2 sm:space-y-3">
+                                    <h2 className="text-base sm:text-lg font-semibold mb-2 sm:mb-4 text-center">Escolha o formato da planilha</h2>
                                     <button
-                                        className="px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
+                                        className="px-4 sm:px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
                                         onClick={() => handleDownloadSpreadsheet('xlsx')}
                                     >
                                         Excel
                                     </button>
                                     <button
-                                        className="mb-3 px-6 py-2 bg-gray-800 text-gray-800 rounded hover:bg-gray-300 w-full"
+                                        className="mb-2 sm:mb-3 px-4 sm:px-6 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 w-full"
                                         onClick={() => handleDownloadSpreadsheet('csv')}
                                     >
                                         CSV
                                     </button>
                                     <button
-                                        className="mt-4 text-sm text-gray-500 hover:underline"
+                                        className="mt-2 sm:mt-4 text-xs sm:text-sm text-gray-500 hover:underline"
                                         onClick={() => setShowSpreadsheetOptions(false)}
                                     >
                                         Voltar
@@ -336,8 +336,8 @@ function EvaluationSummary({
             )}
 
             {/* Content for PDF */}
-            <div ref={printRef} className="space-y-6">
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div ref={printRef} className="space-y-4 sm:space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4">
                     <Criterion name="Autoavaliação" score={autoAvaliacao} />
                     <Criterion name="Avaliação 360" score={avaliacao360} />
                     <Criterion name="Nota Gestor" score={notaGestor} />
@@ -347,14 +347,16 @@ function EvaluationSummary({
                     )}
                 </div>
 
-                <GenAITextBox userId={userId} cycleId={cycleId}/>
+                <div className="w-full">
+                    <GenAITextBox userId={userId} cycleId={cycleId}/>
+                </div>
 
             </div>
 
             {(!hasAllGrades || isEditing) ? (
                 <>
                     <div>
-                        <h3 className="text-sm font-semibold mb-2">Dê uma avaliação de 0 à 5</h3>
+                        <h3 className="text-xs sm:text-sm font-semibold mb-1 sm:mb-2">Dê uma avaliação de 0 à 5</h3>
                         <CommitteeStarRating 
                             score={currentScore} 
                             onChange={onStarRating || (() => {})} 
@@ -362,7 +364,7 @@ function EvaluationSummary({
                     </div>
                     
                     <div>
-                        <h3 className="text-sm font-semibold mb-2">Justifique sua nota</h3>
+                        <h3 className="text-xs sm:text-sm font-semibold mb-1 sm:mb-2">Justifique sua nota</h3>
                         <textarea 
                             className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F]"
                             rows={4}
@@ -372,7 +374,7 @@ function EvaluationSummary({
                         />
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4">
                         <button
                             className="px-4 py-2 bg-[#08605F] text-white rounded-md hover:bg-[#064a49] transition-colors"
                             onClick={onConcluir}

@@ -2,6 +2,7 @@ import State from "./StatesCommittee"
 import Assessment from "./AssessmentColaboratorsPreview"
 import { UserIcon } from "../UserIcon";
 import { useState } from 'react';
+import { FaExclamationTriangle } from 'react-icons/fa';
 
 interface ColaboratorsCommitteeProps {
     // Profile info
@@ -33,36 +34,74 @@ function ColaboratorsCommitte({
     dropInfo
 }: ColaboratorsCommitteeProps) {
     const [showTooltip, setShowTooltip] = useState(false);
-    return(
-        <div className="border border-gray-300 rounded-md bg-white p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-            <div className="flex items-center gap-x-3 sm:gap-x-4 w-full sm:w-auto">
-                <UserIcon initials={initials} size={40} />
 
-                <div className="flex-1 sm:flex-none flex items-center gap-2 relative">
+    // Calculate discrepancies
+    const grades = [
+        { label: 'Autoavaliação', value: autoAvaliacao },
+        { label: 'Avaliação 360', value: avaliacao360 },
+        { label: 'Nota do Gestor', value: notaGestor },
+        { label: 'Nota do Mentor', value: notaMentor },
+    ];
+    let maxDiscrepancy = 0;
+    let discrepancyInfo = null;
+    for (let i = 0; i < grades.length; i++) {
+        for (let j = i + 1; j < grades.length; j++) {
+            const v1 = grades[i].value;
+            const v2 = grades[j].value;
+            if (typeof v1 === 'number' && typeof v2 === 'number' && v1 > 0 && v2 > 0) {
+                const diff = Math.abs(v1 - v2);
+                const percent = (diff / Math.max(v1, v2)) * 100;
+                if (percent > maxDiscrepancy) {
+                    maxDiscrepancy = percent;
+                    discrepancyInfo = {
+                        percent: Math.round(percent),
+                        label1: grades[i].label,
+                        value1: v1,
+                        label2: grades[j].label,
+                        value2: v2,
+                    };
+                }
+            }
+        }
+    }
+    const hasDiscrepancy = maxDiscrepancy >= 40;
+
+    return(
+        <div className="border border-gray-300 rounded-md bg-white p-2 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 w-full overflow-x-auto">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-x-2 sm:gap-x-4 w-full sm:w-auto">
+                <UserIcon initials={initials} size={36} />
+                <div className="flex-1 sm:flex-none flex items-center gap-1 sm:gap-2 relative">
                     <div>
-                        <h3 className="text-sm sm:text-base font-medium">{name}</h3>
+                        <h3 className="text-xs sm:text-sm md:text-base font-medium">{name}</h3>
                         <h4 className="text-gray-500 text-xs sm:text-sm">{role}</h4>
                     </div>
-                    {dropInfo && (
+                    {(hasDiscrepancy && discrepancyInfo) || (dropInfo && !hasDiscrepancy) ? (
                         <div
-                            className="ml-2 relative flex items-center"
+                            className="ml-1 sm:ml-2 relative flex items-center"
                             onMouseEnter={() => setShowTooltip(true)}
                             onMouseLeave={() => setShowTooltip(false)}
                         >
-                            <div className="w-6 h-6 rounded-full bg-[#08605F] flex items-center justify-center cursor-pointer border-2 border-white shadow" style={{ minWidth: 24, minHeight: 24 }}>
-                                <span className="text-white font-bold text-base select-none">i</span>
-                            </div>
+                            <FaExclamationTriangle className="text-yellow-400 w-5 h-5 sm:w-6 sm:h-6" style={{ minWidth: 20, minHeight: 20 }} />
                             {showTooltip && (
                                 <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-white border border-gray-300 rounded shadow-lg px-3 py-2 text-xs text-gray-800 z-50 whitespace-nowrap">
-                                    {dropInfo.text} <span className="text-[#08605F] font-semibold">({dropInfo.percent}%)</span>
+                                    {hasDiscrepancy && discrepancyInfo ? (
+                                        <>
+                                            Discrepância de {discrepancyInfo.percent}% entre <b>{discrepancyInfo.label1}</b> ({discrepancyInfo.value1}) e <b>{discrepancyInfo.label2}</b> ({discrepancyInfo.value2}).<br/>
+                                            A diferença entre as avaliações excedeu 40%.
+                                        </>
+                                    ) : dropInfo ? (
+                                        <>
+                                            {dropInfo.text} <span className="text-[#08605F] font-semibold">({dropInfo.percent}%)</span>
+                                        </>
+                                    ) : null}
                                 </div>
                             )}
                         </div>
-                    )}
+                    ) : null}
                 </div>
                 <State state={state}/>
             </div>
-            <div className="w-full sm:w-auto">
+            <div className="w-full sm:w-auto mt-2 sm:mt-0">
                 <Assessment 
                     autoAvaliacao={autoAvaliacao}
                     avaliacao360={avaliacao360}
