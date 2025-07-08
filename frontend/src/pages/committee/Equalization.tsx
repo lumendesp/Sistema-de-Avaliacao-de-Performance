@@ -4,7 +4,8 @@ import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import EvaluationSummary from "../../components/Committee/CommitteeEquali/EvaluationSummary";
 import FilterIcon from '../../assets/committee/filter-icon.png';
-import { createFinalScore, updateFinalScore, getUsersWithEvaluationsForCommittee, fetchActiveEvaluationCycle } from '../../services/api';
+import { createFinalScore, updateFinalScore, getUsersWithEvaluationsForCommittee, fetchActiveEvaluationCycle, getSignificantDrops } from '../../services/api';
+import { useSearchParams } from 'react-router-dom';
 
 interface Collaborator {
     id: number;
@@ -24,6 +25,7 @@ interface Collaborator {
     justificativaGestor?: string;
     justificativa360?: string;
     cycleId: number;
+    dropInfo?: { text: string; percent: number };
 }
 
 function Equalization(){
@@ -39,21 +41,26 @@ function Equalization(){
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [activeCycle, setActiveCycle] = useState<any>(null);
+    const [searchParams] = useSearchParams();
 
     const filteredCollaborators = useMemo(() => {
         if (!searchTerm) {
             return collaborators;
         }
-        return collaborators.filter(c => 
-            c.name.toLowerCase().includes(searchTerm.toLowerCase())
+        const searchLower = searchTerm.toLowerCase();
+        const filtered = collaborators.filter(c => 
+            c.name.toLowerCase().includes(searchLower) ||
+            c.role.toLowerCase().includes(searchLower)
         );
+        console.log('Search term:', searchTerm, 'Total collaborators:', collaborators.length, 'Filtered:', filtered.length);
+        return filtered;
     }, [collaborators, searchTerm]);
 
     const fetchCollaborators = async () => {
         try {
             const users = await getUsersWithEvaluationsForCommittee();
             
-            const formattedCollaborators = users.map((user: any) => {
+            const formattedCollaborators = await Promise.all(users.map(async (user: any) => {
                 const evaluations = user.evaluationsEvaluated || [];
                 
                 const getScore = (type: string): number => {
@@ -74,6 +81,22 @@ function Equalization(){
                 const hasAllEvaluations = requiredTypes.every(type => typesPresent.includes(type));
                 const state = hasAllEvaluations ? 'finalizado' : 'pendente';
 
+                // Fetch significant drops if we have an active cycle
+                let dropInfo = undefined;
+                if (activeCycle?.id) {
+                    try {
+                        const dropData = await getSignificantDrops(user.id, activeCycle.id);
+                        if (dropData) {
+                            dropInfo = {
+                                text: dropData.message,
+                                percent: dropData.dropPercent
+                            };
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to fetch drops for user ${user.id}:`, error);
+                    }
+                }
+
                 return {
                     id: user.id,
                     name: user.name,
@@ -92,8 +115,9 @@ function Equalization(){
                     justificativaGestor: getJustification('MANAGER'),
                     justificativa360: getJustification('PEER'),
                     cycleId: activeCycle?.id || 0,
+                    dropInfo: dropInfo,
                 };
-            });
+            }));
             
             setCollaborators(formattedCollaborators);
         } catch (error) {
@@ -119,6 +143,14 @@ function Equalization(){
             fetchCollaborators();
         }
     }, [activeCycle]);
+
+    useEffect(() => {
+        // On mount, check for expand param
+        const expandId = searchParams.get('expand');
+        if (expandId) {
+            setExpandedId(Number(expandId));
+        }
+    }, [searchParams]);
 
     const handleStarRating = (collabId: number, score: number) => {
         setEvaluationState(prev => ({
@@ -213,7 +245,10 @@ function Equalization(){
                                     placeholder="Buscar por colaboradores"
                                     className="flex-1 outline-none text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent"
                                     value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onChange={(e) => {
+                                        console.log('Search term changed:', e.target.value);
+                                        setSearchTerm(e.target.value);
+                                    }}
                                 />
                             </div>
                         </div>
@@ -230,8 +265,10 @@ function Equalization(){
                         {filteredCollaborators.map((collab) => (
                             <div key={collab.id} className="bg-white rounded-lg shadow-md">
                                 <div className="p-4">
-                                    <div className="flex items-center">
-                                        <div className="w-[95%] sm:w-[98%]">
+                                    <div className="flex items-center gap-5 "
+                                    onClick={() => setExpandedId(expandedId === collab.id ? null : collab.id)}
+                                    >
+                                        <div className="w-[95%] sm:w-[95%]">
                                             <Colaborators 
                                                 name={collab.name}
                                                 role={collab.role}
@@ -242,6 +279,7 @@ function Equalization(){
                                                 notaGestor={collab.notaGestor}
                                                 notaMentor={collab.notaMentor}
                                                 notaFinal={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal}
+                                                dropInfo={collab.dropInfo}
                                             />
                                         </div>
                                         <div className="w-[5%] sm:w-[2%] flex justify-center">
@@ -285,6 +323,11 @@ function Equalization(){
                                 </div>
                             </div>
                         ))}
+                        {filteredCollaborators.length === 0 && (
+                            <div className="text-center text-gray-500 py-8">
+                                Nenhum colaborador encontrado
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

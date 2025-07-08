@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { getUsersWithEvaluationsForCommittee, fetchActiveEvaluationCycle } from '../../services/api';
+import { Link, useNavigate } from 'react-router-dom';
+import { getUsersWithEvaluationsForCommittee, fetchActiveEvaluationCycle, getSignificantDrops } from '../../services/api';
 import { exportEvaluationToExcel, exportEvaluationToCSV, transformBackendDataToExport } from '../../services/export.service';
 import InfoCard from "../../components/Committee/CommitteeHome/InfoCard";
 import CircularProgress from "../../components/Committee/CirculaProgress";
@@ -9,6 +9,7 @@ import persons from "../../assets/committee/two-persons.png";
 import { UserIcon } from '../../components/UserIcon';
 import { useAuth } from '../../context/AuthContext';
 import { IoIosSearch } from 'react-icons/io';
+import { FaChevronRight } from 'react-icons/fa';
 
 interface Collaborator {
     id: number;
@@ -22,6 +23,7 @@ interface Collaborator {
     notaGestor: number;
     notaFinal?: number;
     hasAllEvaluations?: boolean;
+    dropInfo?: { text: string; percent: number };
 }
 
 function Committee(){
@@ -31,13 +33,14 @@ function Committee(){
     const [cycle, setCycle] = useState<any>(null);
     const [remainingDays, setRemainingDays] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const navigate = useNavigate();
 
     const fetchCollaborators = async () => {
         try {
             const users = await getUsersWithEvaluationsForCommittee();
             setFullUserData(users); // Store full data for export
             
-            const formattedCollaborators = users.map((user: any) => {
+            const formattedCollaborators = await Promise.all(users.map(async (user: any) => {
                 const evaluations = user.evaluationsEvaluated || [];
                 
                 const getScore = (type: string): number => {
@@ -53,6 +56,21 @@ function Committee(){
                 const hasAllEvaluations = requiredTypes.every(type => typesPresent.includes(type));
                 const state = hasAllEvaluations ? 'finalizado' : 'pendente';
 
+                // Fetch significant drops if we have an active cycle
+                let dropInfo = undefined;
+                if (cycle?.id) {
+                    try {
+                        const dropData = await getSignificantDrops(user.id, cycle.id);
+                        if (dropData) {
+                            dropInfo = {
+                                text: dropData.message,
+                                percent: dropData.dropPercent
+                            };
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to fetch drops for user ${user.id}:`, error);
+                    }
+                }
 
                 return {
                     id: user.id,
@@ -66,8 +84,9 @@ function Committee(){
                     notaGestor: getScore('MANAGER'),
                     notaFinal: finalEval ? finalEval.score : undefined,
                     hasAllEvaluations: hasAllEvaluations,
+                    dropInfo: dropInfo,
                 };
-            });
+            }));
             setCollaborators(formattedCollaborators);
         } catch (error) {
             console.error("Failed to fetch collaborators:", error);
@@ -95,6 +114,13 @@ function Committee(){
         fetchCollaborators();
         fetchCycle();
     }, []);
+
+    // Refetch collaborators when cycle changes to get drop info
+    useEffect(() => {
+        if (cycle) {
+            fetchCollaborators();
+        }
+    }, [cycle]);
 
     // Calculate statistics
     const stats = useMemo(() => {
@@ -173,18 +199,24 @@ function Committee(){
                     {filteredCollaborators.slice(0, 5).map((collab) => {
                         console.log('Colab:', collab);
                         return (
-                            <Colaborators 
+                            <div
                                 key={collab.id}
-                                name={collab.name} 
-                                role={collab.role} 
-                                initials={collab.initials} 
-                                state={collab.state}
-                                autoAvaliacao={collab.autoAvaliacao}
-                                avaliacao360={collab.avaliacao360}
-                                notaMentor={collab.notaMentor}
-                                notaGestor={collab.notaGestor}
-                                notaFinal={collab.notaFinal}
-                            />
+                                className="relative cursor-pointer hover:bg-gray-100 rounded transition-colors"
+                                onClick={() => navigate(`/committee/equalizations?expand=${collab.id}`)}
+                            >
+                                <Colaborators 
+                                    name={collab.name} 
+                                    role={collab.role} 
+                                    initials={collab.initials} 
+                                    state={collab.state}
+                                    autoAvaliacao={collab.autoAvaliacao}
+                                    avaliacao360={collab.avaliacao360}
+                                    notaMentor={collab.notaMentor}
+                                    notaGestor={collab.notaGestor}
+                                    notaFinal={collab.notaFinal}
+                                    dropInfo={collab.dropInfo}
+                                />
+                            </div>
                         );
                     })}
                     {filteredCollaborators.length === 0 && (
