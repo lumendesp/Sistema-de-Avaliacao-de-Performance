@@ -5,11 +5,11 @@ import { useEvaluation } from "../context/EvaluationsContext";
 import { useEffect } from "react";
 
 const tabs = [
-  { label: "Autoavaliação", path: "self-evaluation" },
-  { label: "Avaliação 360", path: "peer-evaluation" },
-  { label: "Mentoria", path: "mentor-evaluation" },
-  { label: "Referências", path: "reference-evaluation" },
-];
+  { key: "self", label: "Autoavaliação", path: "self-evaluation" },
+  { key: "peer", label: "Avaliação 360", path: "peer-evaluation" },
+  { key: "mentor", label: "Mentoria", path: "mentor-evaluation" },
+  { key: "reference", label: "Referências", path: "reference-evaluation" },
+] as const;
 
 const EvaluationLayout = () => {
   const { isComplete, isUpdate, submitAll, tabCompletion } = useEvaluation();
@@ -32,17 +32,24 @@ const EvaluationLayout = () => {
         </header>
 
         <nav className="flex gap-20 pt-16 m-0 pl-10">
-          {tabs.map(({ label, path }) => (
+          {tabs.map(({ key, label, path }) => (
             <NavLink
               key={path}
               to={path}
               className={({ isActive }) =>
-                isActive
-                  ? "text-md font-bold text-green-main border-b-2 border-green-main pb-1"
-                  : "text-md font-medium text-black pb-1"
+                (isActive
+                  ? "text-md font-bold text-green-main border-b-2 border-green-main"
+                  : "text-md font-medium text-black") +
+                " pb-1 flex items-center gap-2"
               }
             >
-              {label}
+              <span>{label}</span>
+              {!tabCompletion[key] && (
+                <span
+                  className="w-2 h-2 rounded-full bg-red-500"
+                  title="Aba incompleta"
+                />
+              )}
             </NavLink>
           ))}
         </nav>
