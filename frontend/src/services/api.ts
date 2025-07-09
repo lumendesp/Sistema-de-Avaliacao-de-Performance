@@ -421,6 +421,21 @@ export const getUsersWithEvaluationsForCommittee = async () => {
   return response.json();
 };
 
+// Get significant drops for a user in a specific cycle
+export const getSignificantDrops = async (userId: number, cycleId: number) => {
+  const response = await fetch(`${API_URL}/users/${userId}/significant-drops/${cycleId}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    if (response.status === 404) {
+      return null; // No significant drops found
+    }
+    throw new Error("Failed to fetch significant drops");
+  }
+  return response.json();
+};
+
 // Creates a new final evaluation
 export const createFinalEvaluation = async (data: {
   score: number;
