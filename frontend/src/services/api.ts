@@ -78,19 +78,48 @@ export const fetchActiveEvaluationCycle = async () => {
 };
 
 export const fetchEvaluationCompletionStatus = async (cycleId: number) => {
-  const res = await fetch(`http://localhost:3000/evaluation-completion/status?cycleId=${cycleId}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `http://localhost:3000/evaluation-completion/status?cycleId=${cycleId}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
 
   if (!res.ok) {
     throw new Error("Erro ao buscar status da avaliação");
   }
 
   return (await res.json()) as {
-    self: boolean;
-    peer: boolean;
-    mentor: boolean;
-    reference: boolean;
+    completionStatus: {
+      self: boolean;
+      peer: boolean;
+      mentor: boolean;
+      reference: boolean;
+    };
+    lastSubmittedAt: string | null;
+  };
+};
+
+export const submitEvaluation = async (cycleId: number) => {
+  const res = await fetch(
+    `http://localhost:3000/evaluation-completion/submit`,
+    {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ cycleId }),
+    }
+  );
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    const message = errorBody?.message || "Erro ao enviar avaliações";
+    throw new Error(message);
+  }
+
+  return (await res.json()) as {
+    submittedAt: string;
   };
 };
 
@@ -335,7 +364,6 @@ export const getProjects = async () => {
 
   return res.json(); // deve retornar a lista de projetos
 };
-
 
 export const fetchAISummary = async (
   userId: number,

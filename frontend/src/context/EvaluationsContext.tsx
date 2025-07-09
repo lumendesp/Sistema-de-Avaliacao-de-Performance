@@ -1,5 +1,9 @@
 import { createContext, useContext, useRef, useState } from "react";
-import { fetchEvaluationCompletionStatus } from "../services/api";
+import {
+  fetchEvaluationCompletionStatus,
+  submitEvaluation,
+  fetchActiveEvaluationCycle,
+} from "../services/api";
 import { useAuth } from "./AuthContext";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
@@ -17,6 +21,10 @@ interface EvaluationContextProps {
   submitAll: () => Promise<void>;
   tabCompletion: TabStateMap<boolean>;
   updateTabCompletion: (key: EvaluationTabKey, value: boolean) => void;
+  lastSubmittedAt: string | null;
+  setLastSubmittedAt: (value: string | null) => void;
+  isSubmit: boolean;
+  setIsSubmit: (value: boolean) => void;
 }
 
 const EvaluationContext = createContext<EvaluationContextProps | undefined>(
@@ -25,6 +33,9 @@ const EvaluationContext = createContext<EvaluationContextProps | undefined>(
 
 export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
   const { token } = useAuth(); // pega o token do usuário logado
+  const [activeCycle, setActiveCycle] = useState<{ id: number } | null>(null);
+  const [lastSubmittedAt, setLastSubmittedAt] = useState<string | null>(null);
+  const [isSubmit, setIsSubmit] = useState(false);
 
   const [isComplete, setIsComplete] = useState(false);
   const [isUpdate, setIsUpdate] = useState(false);
@@ -45,16 +56,34 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
     reference: false,
   });
 
+  const submitAll = async () => {
+    if (!activeCycle) throw new Error("Ciclo ativo não carregado");
+
+    try {
+      await submitEvaluation(activeCycle.id);
+
+      const result = await submitEvaluation(activeCycle.id);
+
+      setLastSubmittedAt(result.submittedAt);
+
+      setIsComplete(true);
+      setIsUpdate(false);
+      setTabCompletion({
+        self: true,
+        peer: true,
+        mentor: true,
+        reference: true,
+      });
+    } catch (error) {
+      console.error("Erro ao enviar avaliações:", error);
+      throw error;
+    }
+  };
+
   const submitHandlers = useRef<Record<string, () => Promise<void>>>({});
 
   const registerSubmitHandler = (key: string, handler: () => Promise<void>) => {
     submitHandlers.current[key] = handler;
-  };
-
-  const submitAll = async () => {
-    for (const handler of Object.values(submitHandlers.current)) {
-      await handler();
-    }
   };
 
   const updateTabCompletion = (key: EvaluationTabKey, value: boolean) => {
@@ -64,14 +93,20 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!token) return;
 
-    const cycleId = /* pega ciclo ativo */ 1;
-
     const loadCompletionStatus = async () => {
       try {
-        const status = await fetchEvaluationCompletionStatus(cycleId);
-        setInitialTabCompletion(status); // salva o que veio do backend
-        setTabCompletion(status); // inicia o estado editável com esse valor
-        setIsComplete(Object.values(status).every(Boolean));
+        const cycle = await fetchActiveEvaluationCycle();
+        setActiveCycle(cycle); // Salva ciclo ativo
+
+        const statusResponse = await fetchEvaluationCompletionStatus(cycle.id);
+
+        setInitialTabCompletion(statusResponse.completionStatus);
+        setTabCompletion(statusResponse.completionStatus);
+        setIsComplete(
+          Object.values(statusResponse.completionStatus).every(Boolean)
+        );
+        setLastSubmittedAt(statusResponse.lastSubmittedAt || null);
+        setIsSubmit(!!statusResponse.lastSubmittedAt); // true se já enviou
       } catch (error) {
         console.error("Erro ao carregar status da avaliação:", error);
       }
@@ -91,6 +126,10 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
         submitAll,
         tabCompletion,
         updateTabCompletion,
+        lastSubmittedAt,
+        setLastSubmittedAt,
+        isSubmit,
+        setIsSubmit,
       }}
     >
       {children}

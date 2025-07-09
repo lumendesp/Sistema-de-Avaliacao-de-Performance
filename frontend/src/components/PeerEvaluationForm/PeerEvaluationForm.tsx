@@ -177,6 +177,7 @@ export default function PeerEvaluationForm({
       setMyEvaluations((prev) =>
         prev.filter((evaluation) => evaluation.id !== evaluationId)
       );
+      updateTabCompletion("peer", false);
       setError(null);
     } catch (err) {
       console.error("Erro ao excluir avaliação", err);
@@ -187,30 +188,31 @@ export default function PeerEvaluationForm({
   const checkIfCompleted = async (updatedEvaluations: PeerEvaluation[]) => {
     setError(null);
 
-    const incomplete = updatedEvaluations.filter((evaluation) => {
-      const data = formData[evaluation.id];
-      return (
-        !data?.score ||
-        !data?.strengths?.trim() ||
-        !data?.improvements?.trim() ||
-        !data?.motivation ||
-        !data?.projectName?.trim() ||
-        !data?.projectPeriod?.trim()
-      );
-    });
-
-    if (incomplete.length > 0) {
+    if (updatedEvaluations.length === 0) {
+      // Sem avaliações, marca incompleto
       updateTabCompletion("peer", false);
-      // setError(
-      //   `Preencha todos os campos para: ${incomplete
-      //     .map((e) => e.evaluatee?.name || "Desconhecido")
-      //     .join(", ")}`
-      // );
       return;
     }
 
-    updateTabCompletion("peer", true);
-    setError(null); // todas já foram salvas automaticamente
+    // Verifica se pelo menos uma avaliação está completa
+    const hasOneComplete = updatedEvaluations.some((evaluation) => {
+      const data = formData[evaluation.id];
+      return (
+        data?.score &&
+        data?.strengths?.trim() &&
+        data?.improvements?.trim() &&
+        data?.motivation &&
+        data?.projectName?.trim() &&
+        data?.projectPeriod?.trim()
+      );
+    });
+
+    if (hasOneComplete) {
+      updateTabCompletion("peer", true);
+      setError(null);
+    } else {
+      updateTabCompletion("peer", false);
+    }
   };
 
   const getInitials = (name: string) =>

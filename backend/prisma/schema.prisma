@@ -215,6 +215,7 @@ model SelfEvaluation {
   userId    Int
   cycleId   Int
   createdAt DateTime @default(now())
+  submittedAt DateTime?
 
   averageScore Float?
 
@@ -271,6 +272,7 @@ model PeerEvaluation {
   strengths    String
   improvements String
   motivation   MotivationLevel?
+  submittedAt DateTime?
 
   evaluator User                    @relation("PeerEvaluator", fields: [evaluatorId], references: [id])
   evaluatee User                    @relation("PeerEvaluatee", fields: [evaluateeId], references: [id])
@@ -286,6 +288,7 @@ model MentorEvaluation {
   createdAt     DateTime @default(now())
   score         Int
   justification String
+  submittedAt DateTime?
 
   evaluator User                   @relation("MentorEvaluator", fields: [evaluatorId], references: [id])
   evaluatee User                   @relation("MentorEvaluatee", fields: [evaluateeId], references: [id])
@@ -340,6 +343,7 @@ model Reference {
   cycleId       Int
   createdAt     DateTime @default(now())
   justification String
+  submittedAt DateTime?
 
   provider User            @relation("ReferenceProvider", fields: [providerId], references: [id])
   receiver User            @relation("ReferenceReceiver", fields: [receiverId], references: [id])

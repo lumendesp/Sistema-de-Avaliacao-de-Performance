@@ -1,7 +1,9 @@
 import {
+  Body,
   Controller,
   Get,
   ParseIntPipe,
+  Post,
   Query,
   Request,
   UseGuards,
@@ -29,9 +31,37 @@ export class EvaluationCompletionController {
     }
 
     const userId = req.user.userId;
-    return this.evaluationCompletionService.getCompletionStatus(
+    const completionStatus =
+      await this.evaluationCompletionService.getCompletionStatus(
+        userId,
+        cycleId,
+      );
+
+    const lastSubmittedAt =
+      await this.evaluationCompletionService.getLastSubmittedAt(
+        userId,
+        cycleId,
+      );
+
+    return {
+      completionStatus,
+      lastSubmittedAt,
+    };
+  }
+
+  @Post('submit')
+  async submitEvaluation(
+    @Body('cycleId', ParseIntPipe) cycleId: number,
+    @Request() req,
+  ) {
+    if (!req.user) {
+      throw new Error('Usuário não autenticado');
+    }
+    const userId = req.user.userId;
+    const submission = await this.evaluationCompletionService.submitEvaluation(
       userId,
       cycleId,
     );
+    return { submittedAt: submission.submittedAt };
   }
 }

@@ -4,6 +4,7 @@ const SubmitButton = ({
   isComplete,
   onClick,
   disabled = false,
+  label
 }: SubmitEvaluationButtonProps) => {
   const isDisabled = disabled || !isComplete;
 
@@ -18,7 +19,7 @@ const SubmitButton = ({
             : "bg-green-main text-white hover:bg-gray-main"
         }`}
     >
-      Concluir e enviar
+      {label}
     </button>
   );
 };

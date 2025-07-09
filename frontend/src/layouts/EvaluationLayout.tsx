@@ -5,14 +5,18 @@ import { useEvaluation } from "../context/EvaluationsContext";
 import { useEffect } from "react";
 
 const tabs = [
-  { label: "Autoavaliação", path: "self-evaluation" },
-  { label: "Avaliação 360", path: "peer-evaluation" },
-  { label: "Mentoria", path: "mentor-evaluation" },
-  { label: "Referências", path: "reference-evaluation" },
-];
+  { key: "self", label: "Autoavaliação", path: "self-evaluation" },
+  { key: "peer", label: "Avaliação 360", path: "peer-evaluation" },
+  { key: "mentor", label: "Mentoria", path: "mentor-evaluation" },
+  { key: "reference", label: "Referências", path: "reference-evaluation" },
+] as const;
 
 const EvaluationLayout = () => {
-  const { isComplete, isUpdate, submitAll, tabCompletion } = useEvaluation();
+  const { isComplete, isUpdate, submitAll, tabCompletion, lastSubmittedAt, isSubmit, setIsSubmit, setLastSubmittedAt } =
+    useEvaluation();
+
+  const isButtonDisabled =
+    !Object.values(tabCompletion).every(Boolean) || !!lastSubmittedAt;
 
   useEffect(() => {
     console.log("Estado das abas:", tabCompletion);
@@ -23,26 +27,50 @@ const EvaluationLayout = () => {
       <div className="p-6 pb-0 m-0">
         <header className="flex justify-between items-center">
           <h1 className="text-xl font-semibold">Ciclo 2025.1</h1>
-          <SubmitButton
-            isComplete={Object.values(tabCompletion).every(Boolean)}
-            isUpdate={isUpdate}
-            onClick={submitAll}
-            disabled={!Object.values(tabCompletion).every(Boolean)}
-          />
+          <div className="flex justify-center items-center gap-5">
+            {lastSubmittedAt && (
+              <span className="text-sm text-gray-600">
+                Último envio: {new Date(lastSubmittedAt).toLocaleString()}
+              </span>
+            )}
+            <SubmitButton
+              isComplete={Object.values(tabCompletion).every(Boolean)}
+              onClick={async () => {
+                if (isSubmit) {
+                  setIsSubmit(false);
+                  setLastSubmittedAt(null);
+                } else {
+                  await submitAll();
+                  setIsSubmit(true);
+                }
+              }}
+              disabled={
+                !isSubmit && !Object.values(tabCompletion).every(Boolean)
+              }
+              label={isSubmit ? "Editar avaliações" : "Concluir e enviar"}
+            />
+          </div>
         </header>
 
         <nav className="flex gap-20 pt-16 m-0 pl-10">
-          {tabs.map(({ label, path }) => (
+          {tabs.map(({ key, label, path }) => (
             <NavLink
               key={path}
               to={path}
               className={({ isActive }) =>
-                isActive
-                  ? "text-md font-bold text-green-main border-b-2 border-green-main pb-1"
-                  : "text-md font-medium text-black pb-1"
+                (isActive
+                  ? "text-md font-bold text-green-main border-b-2 border-green-main"
+                  : "text-md font-medium text-black") +
+                " pb-1 flex items-center gap-2"
               }
             >
-              {label}
+              <span>{label}</span>
+              {!tabCompletion[key] && (
+                <span
+                  className="w-2 h-2 rounded-full bg-red-500"
+                  title="Aba incompleta"
+                />
+              )}
             </NavLink>
           ))}
         </nav>
