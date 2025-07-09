@@ -10,6 +10,7 @@ import { UserIcon } from '../../components/UserIcon';
 import { useAuth } from '../../context/AuthContext';
 import { IoIosSearch } from 'react-icons/io';
 import { FaChevronRight } from 'react-icons/fa';
+import { translateRole } from '../../utils/roleTranslations';
 
 interface Collaborator {
     id: number;
@@ -142,16 +143,15 @@ function Committee(){
 
     return(
         <div className="w-full min-h-screen bg-[#f1f1f1]">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 gap-4">
-                <h1 className="text-xl sm:text-2xl">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 sm:p-5 gap-2 sm:gap-4">
+                <h1 className="text-lg sm:text-xl md:text-2xl">
                     <span className="font-bold">Olá,</span> {user?.name || 'usuário'}
                 </h1>
-                <div className="flex items-center gap-4">
-                    <UserIcon initials={user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'CN'} size={40} />
+                <div className="flex items-center gap-2 sm:gap-4">
+                    <UserIcon initials={user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'CN'} size={36} />
                 </div>
             </div>
-
-            <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 m-4 sm:m-5">
+            <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-2 sm:gap-4 m-2 sm:m-5">
                 <InfoCard 
                     name={cycle ? cycle.name : 'Prazo'} 
                     description={cycle && remainingDays !== null ?
@@ -175,52 +175,49 @@ function Committee(){
                     />
                 </Link>
             </div>
-
-            {/* all members */}
-            <div className="bg-white rounded-lg shadow-md m-4 sm:m-5 p-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 p-4 sm:p-5 gap-2">
-                    <h1 className="text-lg sm:text-xl font-semibold text-gray-800">Resumo de equalizações</h1>
+            <div className="bg-white rounded-lg shadow-md m-2 sm:m-5 p-2 sm:p-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-4 p-2 sm:p-5 gap-1 sm:gap-2">
+                    <h1 className="text-base sm:text-lg md:text-xl font-semibold text-gray-800">Resumo de equalizações</h1>
                     <Link to="/committee/equalizations">
-                        <button className="text-[#08605F] hover:text-green-700 font-medium">ver mais</button>
+                        <button className="text-[#08605F] hover:text-green-700 font-medium text-sm sm:text-base">ver mais</button>
                     </Link>
                 </div>
-                {/* Search bar */}
-                <div className="flex items-center gap-2 rounded-xl py-4 px-7 w-full bg-white mb-4">
+                <div className="flex items-center gap-1 sm:gap-2 rounded-xl py-2 sm:py-4 px-3 sm:px-7 w-full bg-white mb-2 sm:mb-4">
                     <IoIosSearch size={16} className="text-[#1D1D1D]/75" />
                     <input
                         type="text"
                         placeholder="Buscar por colaboradores"
-                        className="flex-1 outline-none text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent"
+                        className="flex-1 outline-none text-xs sm:text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
-                    {filteredCollaborators.slice(0, 5).map((collab) => {
-                        console.log('Colab:', collab);
-                        return (
-                            <div
-                                key={collab.id}
-                                className="relative cursor-pointer hover:bg-gray-100 rounded transition-colors"
-                                onClick={() => navigate(`/committee/equalizations?expand=${collab.id}`)}
-                            >
-                                <Colaborators 
-                                    name={collab.name} 
-                                    role={collab.role} 
-                                    initials={collab.initials} 
-                                    state={collab.state}
-                                    autoAvaliacao={collab.autoAvaliacao}
-                                    avaliacao360={collab.avaliacao360}
-                                    notaMentor={collab.notaMentor}
-                                    notaGestor={collab.notaGestor}
-                                    notaFinal={collab.notaFinal}
-                                    dropInfo={collab.dropInfo}
-                                />
-                            </div>
-                        );
-                    })}
+                <div className="space-y-2 sm:space-y-4 max-h-[50vh] overflow-x-auto pr-1 sm:pr-2">
+                    {filteredCollaborators.slice(0, 5).map((collab) => (
+                        <div
+                            key={collab.id}
+                            className="relative cursor-pointer hover:bg-gray-100 rounded transition-colors min-w-[260px] sm:min-w-0"
+                            onClick={() => navigate(`/committee/equalizations?expand=${collab.id}`)}
+                        >
+                            <Colaborators 
+                                name={collab.name} 
+                                role={collab.role
+                                 .split(',')
+                                 .map(r => translateRole(r.trim()))
+                                 .join(', ')} 
+                                initials={collab.initials} 
+                                state={collab.state}
+                                autoAvaliacao={collab.autoAvaliacao}
+                                avaliacao360={collab.avaliacao360}
+                                notaMentor={collab.notaMentor}
+                                notaGestor={collab.notaGestor}
+                                notaFinal={collab.notaFinal}
+                                dropInfo={collab.dropInfo}
+                            />
+                        </div>
+                    ))}
                     {filteredCollaborators.length === 0 && (
-                        <div className="text-center text-gray-500 py-8">
+                        <div className="text-center text-gray-500 py-4 sm:py-8 text-xs sm:text-base">
                             Nenhum colaborador encontrado
                         </div>
                     )}

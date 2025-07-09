@@ -6,6 +6,7 @@ import EvaluationSummary from "../../components/Committee/CommitteeEquali/Evalua
 import FilterIcon from '../../assets/committee/filter-icon.png';
 import { createFinalScore, updateFinalScore, getUsersWithEvaluationsForCommittee, fetchActiveEvaluationCycle, getSignificantDrops } from '../../services/api';
 import { useSearchParams } from 'react-router-dom';
+import { translateRole } from '../../utils/roleTranslations';
 
 interface Collaborator {
     id: number;
@@ -230,29 +231,26 @@ function Equalization(){
     return(
         <div className="w-full min-h-screen">
             <div className="w-full bg-[#f1f1f1] min-h-full">
-                <div className="bg-white w-full min-h-[15%] p-4 box-border border border-gray-300">
-                    <h1 className="text-left mb-4 mt-4 ml-2 sm:ml-4 text-xl sm:text-2xl font-semibold text-gray-800">
+                <div className="bg-white w-full min-h-[15%] p-2 sm:p-4 box-border border border-gray-300">
+                    <h1 className="text-left mb-2 sm:mb-4 mt-2 sm:mt-4 ml-1 sm:ml-4 text-lg sm:text-xl md:text-2xl font-semibold text-gray-800">
                         Equalizações
                     </h1>
-                </div>
-                <div className="p-4 sm:p-6">
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-6 gap-4">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-4">
                         <div className="flex-1">
-                            <div className="flex items-center gap-2 rounded-xl py-4 px-7 w-full bg-white">
+                            <div className="flex items-center gap-1 sm:gap-2 rounded-xl py-2 sm:py-4 px-3 sm:px-7 w-full bg-gray-100">
                                 <IoIosSearch size={16} className="text-[#1D1D1D]/75" />
                                 <input
                                     type="text"
                                     placeholder="Buscar por colaboradores"
-                                    className="flex-1 outline-none text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent"
+                                    className="flex-1 outline-none text-xs sm:text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent"
                                     value={searchTerm}
                                     onChange={(e) => {
-                                        console.log('Search term changed:', e.target.value);
                                         setSearchTerm(e.target.value);
                                     }}
                                 />
                             </div>
                         </div>
-                        <div className="w-12 h-12 bg-[#08605F] rounded-lg flex items-center justify-center self-center sm:self-auto">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#08605F] rounded-lg flex items-center justify-center self-center sm:self-auto">
                             <img 
                                 src={FilterIcon}
                                 alt="Ícone Filtro"
@@ -260,18 +258,22 @@ function Equalization(){
                             />
                         </div>
                     </div>
-
-                    <div className="space-y-4 max-h-[60vh] sm:max-h-[68vh] overflow-y-auto pr-2">
+                </div>
+                <div className="p-2 sm:p-6">
+                    <div className="space-y-2 sm:space-y-4 max-h-[60vh] sm:max-h-[68vh] overflow-x-auto pr-1 sm:pr-2">
                         {filteredCollaborators.map((collab) => (
-                            <div key={collab.id} className="bg-white rounded-lg shadow-md">
-                                <div className="p-4">
-                                    <div className="flex items-center gap-5 "
+                            <div key={collab.id} className="bg-white rounded-lg shadow-md min-w-[260px] sm:min-w-0">
+                                <div className="p-2 sm:p-4">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-5 "
                                     onClick={() => setExpandedId(expandedId === collab.id ? null : collab.id)}
                                     >
-                                        <div className="w-[95%] sm:w-[95%]">
+                                        <div className="w-full">
                                             <Colaborators 
                                                 name={collab.name}
-                                                role={collab.role}
+                                                role={collab.role
+                                                  .split(',')
+                                                  .map(r => translateRole(r.trim()))
+                                                  .join(', ')}
                                                 initials={collab.initials}
                                                 state={collab.state}
                                                 autoAvaliacao={collab.autoAvaliacao}
@@ -282,7 +284,7 @@ function Equalization(){
                                                 dropInfo={collab.dropInfo}
                                             />
                                         </div>
-                                        <div className="w-[5%] sm:w-[2%] flex justify-center">
+                                        <div className="flex justify-center w-full sm:w-[2%]">
                                             <button 
                                                 onClick={() => setExpandedId(expandedId === collab.id ? null : collab.id)}
                                                 className="p-2 hover:bg-gray-100 rounded-full"
@@ -291,9 +293,8 @@ function Equalization(){
                                             </button>
                                         </div>
                                     </div>
-                                    
                                     {expandedId === collab.id && (
-                                        <div className="mt-4 p-4 border-t border-gray-200">
+                                        <div className="mt-2 sm:mt-4 p-2 sm:p-4 border-t border-gray-200">
                                             <EvaluationSummary 
                                                 userId={collab.id}
                                                 name={collab.name}
@@ -324,7 +325,7 @@ function Equalization(){
                             </div>
                         ))}
                         {filteredCollaborators.length === 0 && (
-                            <div className="text-center text-gray-500 py-8">
+                            <div className="text-center text-gray-500 py-4 sm:py-8 text-xs sm:text-base">
                                 Nenhum colaborador encontrado
                             </div>
                         )}
