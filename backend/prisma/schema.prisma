@@ -194,7 +194,7 @@ model EvaluationCycle {
   endDate     DateTime
   status      CycleStatus
   submittedAt DateTime?
-  isSubmit    Boolean     @default(true)
+  isSubmit    Boolean     @default(false)
 
   // Todas as avaliações ligadas ao ciclo
   selfEvaluations    SelfEvaluation[]
