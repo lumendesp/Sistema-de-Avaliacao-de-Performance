@@ -41,29 +41,28 @@ export class SelfEvaluationService {
       throw new ConflictException('Autoavaliação já existe para este ciclo');
     }
 
+    // Buscar todos os configuredCriterion do usuário para mapear os criterionId
+    const configuredCriteria = await this.prisma.configuredCriterion.findMany({
+      where: {
+        positionId: user.positionId,
+        unitId: user.unitId,
+        trackId: user.trackId,
+      },
+    });
+
     const itemsToCreate = await Promise.all(
       dto.items.map(async (item) => {
-        const configured = await this.prisma.configuredCriterion.findFirst({
-          where: {
-            criterionId: item.criterionId,
-            positionId: user.positionId!,
-            unitId: user.unitId!,
-            trackId: user.trackId!,
-          },
-        });
-
-        if (!configured) {
-          throw new Error(
-            `Critério ${item.criterionId} não configurado para esse usuário`,
-          );
-        }
-
+        const configured = configuredCriteria.find(
+          (cc) => cc.criterionId === item.criterionId,
+        );
+        if (!configured)
+          throw new Error('Critério não configurado para o usuário');
         return {
           criterionId: item.criterionId,
           configuredCriterionId: configured.id,
-          score: item.score,
+          score: encrypt(String(item.score)),
           justification: encrypt(item.justification),
-          scoreDescription: this.getScoreDescription(item.score),
+          scoreDescription: this.getScoreDescription(Number(item.score)),
         };
       }),
     );
@@ -72,7 +71,7 @@ export class SelfEvaluationService {
       data: {
         userId,
         cycleId: dto.cycleId,
-        averageScore: dto.averageScore,
+        averageScore: encrypt(String(dto.averageScore)),
         items: {
           createMany: {
             data: itemsToCreate,
@@ -110,7 +109,7 @@ export class SelfEvaluationService {
       const itemsWithGroup = evaluation.items.map((item) => ({
         id: item.id,
         criterionId: item.criterionId,
-        score: item.score,
+        score: Number(decrypt(item.score)),
         justification: decrypt(item.justification),
         scoreDescription: item.scoreDescription,
         group: item.configuredCriterion?.group
@@ -124,7 +123,9 @@ export class SelfEvaluationService {
       return {
         ...evaluation,
         isEditable,
-        averageScore: evaluation.averageScore,
+        averageScore: evaluation.averageScore
+          ? Number(decrypt(String(evaluation.averageScore)))
+          : null,
         items: itemsWithGroup,
       };
     });
@@ -149,27 +150,28 @@ export class SelfEvaluationService {
       throw new Error('Usuário incompleto ou avaliação inexistente');
     }
 
+    // Buscar todos os configuredCriterion do usuário para mapear os criterionId
+    const configuredCriteria = await this.prisma.configuredCriterion.findMany({
+      where: {
+        positionId: evaluation.user.positionId,
+        unitId: evaluation.user.unitId,
+        trackId: evaluation.user.trackId,
+      },
+    });
+
     const itemsToCreate = await Promise.all(
       dto.items.map(async (item) => {
-        const configured = await this.prisma.configuredCriterion.findFirst({
-          where: {
-            criterionId: item.criterionId,
-            positionId: evaluation.user.positionId!,
-            unitId: evaluation.user.unitId!,
-            trackId: evaluation.user.trackId!,
-          },
-        });
-
-        if (!configured) {
-          throw new Error(`Critério ${item.criterionId} não configurado`);
-        }
-
+        const configured = configuredCriteria.find(
+          (cc) => cc.criterionId === item.criterionId,
+        );
+        if (!configured)
+          throw new Error('Critério não configurado para o usuário');
         return {
           criterionId: item.criterionId,
           configuredCriterionId: configured.id,
-          score: item.score,
+          score: encrypt(String(item.score)),
           justification: encrypt(item.justification),
-          scoreDescription: this.getScoreDescription(item.score),
+          scoreDescription: this.getScoreDescription(Number(item.score)),
         };
       }),
     );
@@ -177,7 +179,7 @@ export class SelfEvaluationService {
     return this.prisma.selfEvaluation.update({
       where: { id },
       data: {
-        averageScore: dto.averageScore,
+        averageScore: encrypt(String(dto.averageScore)),
         items: {
           deleteMany: {},
           create: itemsToCreate,
@@ -298,7 +300,7 @@ export class SelfEvaluationService {
         criterionId: criterion.id,
         title: criterion.name,
         description: criterion.generalDescription,
-        score: item.score,
+        score: Number(decrypt(item.score)),
         justification: decrypt(item.justification),
       });
     }

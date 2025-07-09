@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { decrypt } from '../utils/encryption';
 
 @Injectable()
 export class UsersService {
@@ -38,7 +39,7 @@ export class UsersService {
 
   // função que retorna colaboradores com dados de avaliação para o dashboard
   async findCollaboratorsForDashboard() {
-    return this.prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       where: {
         roles: {
           some: {
@@ -68,6 +69,35 @@ export class UsersService {
         },
       },
     });
+    return users.map((user) => ({
+      ...user,
+      finalScores: user.finalScores.map((fs) => ({
+        ...fs,
+        executionScore: fs.executionScore
+          ? Number(decrypt(fs.executionScore))
+          : null,
+        postureScore: fs.postureScore ? Number(decrypt(fs.postureScore)) : null,
+        finalScore: fs.finalScore ? Number(decrypt(fs.finalScore)) : null,
+        justification: decrypt(fs.justification),
+      })),
+      selfEvaluations: user.selfEvaluations.map((se) => ({
+        ...se,
+        averageScore: se.averageScore ? Number(decrypt(se.averageScore)) : null,
+        items: se.items.map((item) => ({
+          ...item,
+          score: item.score ? Number(decrypt(item.score)) : 0,
+          justification: decrypt(item.justification),
+        })),
+      })),
+      managerEvaluationsReceived: user.managerEvaluationsReceived.map((me) => ({
+        ...me,
+        items: me.items.map((item) => ({
+          ...item,
+          score: item.score ? Number(decrypt(item.score)) : 0,
+          justification: decrypt(item.justification),
+        })),
+      })),
+    }));
   }
 
   // função para buscar um usuário pelo id
@@ -191,20 +221,24 @@ export class UsersService {
     });
 
     // Transform the data to match the frontend expectations
-    return users.map(user => {
+    return users.map((user) => {
       const evaluationsEvaluated = [
         // Self evaluations
-        ...user.selfEvaluations.map(evaluation => ({
+        ...user.selfEvaluations.map((evaluation) => ({
           id: evaluation.id,
           type: 'SELF',
-          score: evaluation.items.reduce((sum, item) => sum + item.score, 0) / evaluation.items.length || 0,
-          justification: evaluation.items.map(item => item.justification).join(' '),
+          score:
+            evaluation.items.reduce((sum, item) => sum + item.score, 0) /
+              evaluation.items.length || 0,
+          justification: evaluation.items
+            .map((item) => item.justification)
+            .join(' '),
           evaluator: { id: user.id, name: user.name },
           cycle: evaluation.cycle,
           items: evaluation.items,
         })),
         // Peer evaluations
-        ...user.peerEvaluationsReceived.map(evaluation => ({
+        ...user.peerEvaluationsReceived.map((evaluation) => ({
           id: evaluation.id,
           type: 'PEER',
           score: evaluation.score,
@@ -213,7 +247,7 @@ export class UsersService {
           cycle: evaluation.cycle,
         })),
         // Mentor evaluations
-        ...user.mentorEvaluationsReceived.map(evaluation => ({
+        ...user.mentorEvaluationsReceived.map((evaluation) => ({
           id: evaluation.id,
           type: 'MENTOR',
           score: evaluation.score,
@@ -222,17 +256,25 @@ export class UsersService {
           cycle: evaluation.cycle,
         })),
         // Manager evaluations
-        ...user.managerEvaluationsReceived.map(evaluation => ({
+        ...user.managerEvaluationsReceived.map((evaluation) => ({
           id: evaluation.id,
           type: 'MANAGER',
-          score: evaluation.items.reduce((sum, item) => sum + item.score, 0) / evaluation.items.length || 0,
-          justification: evaluation.items.map(item => item.justification).join(' '),
+          score:
+            evaluation.items.length > 0
+              ? evaluation.items.reduce(
+                  (sum, item) => sum + Number(item.score),
+                  0,
+                ) / evaluation.items.length
+              : 0,
+          justification: evaluation.items
+            .map((item) => item.justification)
+            .join(' '),
           evaluator: evaluation.evaluator,
           cycle: evaluation.cycle,
           items: evaluation.items,
         })),
         // Final evaluations
-        ...user.finalScores.map(evaluation => ({
+        ...user.finalScores.map((evaluation) => ({
           id: evaluation.id,
           type: 'FINAL',
           score: evaluation.finalScore || 0,
@@ -242,10 +284,11 @@ export class UsersService {
         })),
       ];
 
-      const hasAllEvaluations = user.selfEvaluations.length > 0 && 
-                               user.peerEvaluationsReceived.length > 0 && 
-                               user.managerEvaluationsReceived.length > 0 && 
-                               user.finalScores.length > 0;
+      const hasAllEvaluations =
+        user.selfEvaluations.length > 0 &&
+        user.peerEvaluationsReceived.length > 0 &&
+        user.managerEvaluationsReceived.length > 0 &&
+        user.finalScores.length > 0;
 
       return {
         ...user,

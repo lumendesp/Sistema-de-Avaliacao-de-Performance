@@ -80,6 +80,7 @@ export class PeerEvaluationService {
         evaluatorId,
         evaluateeId,
         cycleId,
+        score: encrypt(String(evaluationData.score)),
       },
     });
 
@@ -167,22 +168,20 @@ export class PeerEvaluationService {
     userId: number,
     cycleId: number,
   ): Promise<{ average: number }> {
-    // aggregate é uma função do prisma que permite fazer operações como avg, sum, count
-    const result = await this.prisma.peerEvaluation.aggregate({
+    // Buscar todas as avaliações e calcular média manualmente
+    const evaluations = await this.prisma.peerEvaluation.findMany({
       where: {
         evaluateeId: userId,
         cycleId: cycleId,
       },
-      // Calcular a média do campo score
-      _avg: {
-        score: true,
-      },
     });
-
-    const average = result._avg.score ?? 0;
-
+    const scores = evaluations
+      .map((ev) => Number(decrypt(ev.score)))
+      .filter((score) => !isNaN(score));
+    const average =
+      scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
     return {
-      average: parseFloat(average.toFixed(1)), 
+      average: parseFloat(average.toFixed(1)),
     };
   }
 
@@ -208,6 +207,7 @@ export class PeerEvaluationService {
               strengths: decrypt(ev.strengths),
               improvements: decrypt(ev.improvements),
               motivation: ev.motivation,
+              score: ev.score ? Number(decrypt(String(ev.score))) : null, // score descriptografado
             }
           : null,
       );

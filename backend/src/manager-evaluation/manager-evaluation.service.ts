@@ -55,9 +55,9 @@ export class ManagerEvaluationService {
           create: dto.groups.flatMap((group) =>
             group.items.map((item) => ({
               criterion: { connect: { id: item.criterionId } },
-              score: item.score,
-              justification: encrypt(item.justification || ''), // justification criptografada
-              scoreDescription: this.getScoreDescription(item.score),
+              score: encrypt(String(item.score)),
+              justification: encrypt(item.justification || ''),
+              scoreDescription: this.getScoreDescription(Number(item.score)),
               groupId: group.groupId,
             })),
           ),
@@ -78,9 +78,9 @@ export class ManagerEvaluationService {
             create: groups.flatMap((group) =>
               group.items.map((item) => ({
                 criterion: { connect: { id: item.criterionId } },
-                score: item.score, // score como number
-                justification: encrypt(item.justification || ''), // justification criptografada
-                scoreDescription: this.getScoreDescription(item.score),
+                score: encrypt(String(item.score)),
+                justification: encrypt(item.justification || ''),
+                scoreDescription: this.getScoreDescription(Number(item.score)),
                 groupId: group.groupId,
               })),
             ),
@@ -93,21 +93,18 @@ export class ManagerEvaluationService {
 
   // Agrupa os itens por groupId ao retornar avaliações
   private groupItems(items: any[]) {
-    // Descriptografa justification, mas score permanece number
+    // Descriptografa justification e score
     const groups: any = {};
     for (const item of items) {
-      if (!groups[item.groupId]) {
-        groups[item.groupId] = {
-          groupId: item.groupId,
-          items: [],
-        };
-      }
-      groups[item.groupId].items.push({
+      const groupId = item.groupId;
+      if (!groups[groupId]) groups[groupId] = [];
+      groups[groupId].push({
         ...item,
+        score: item.score ? Number(decrypt(String(item.score))) : null,
         justification: decrypt(item.justification),
       });
     }
-    return Object.values(groups);
+    return groups;
   }
 
   async findByManager(evaluatorId: number) {

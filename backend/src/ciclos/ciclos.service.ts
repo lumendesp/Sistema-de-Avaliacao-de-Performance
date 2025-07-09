@@ -4,6 +4,7 @@ import { UpdateCicloDto } from './dto/update-ciclo.dto';
 import { PrismaClient } from '@prisma/client';
 import { GeminiService } from '../ai/ai.service';
 import { AiBrutalFactsService } from '../ai-brutal-facts/ai-brutal-facts.service';
+import { decrypt } from '../utils/encryption';
 
 const prisma = new PrismaClient();
 
@@ -59,22 +60,25 @@ export class CiclosService {
       include: { items: true },
     });
 
-    return notas.map(nota => {
-      const selfEval = selfEvals.find(se => se.cycleId === nota.cycleId);
+    return notas.map((nota) => {
+      const selfEval = selfEvals.find((se) => se.cycleId === nota.cycleId);
       let self = '-';
       if (selfEval && selfEval.items && selfEval.items.length > 0) {
         // Calcula a média dos scores dos items
-        const scores = selfEval.items.map(item => item.score);
+        const scores = selfEval.items.map((item) =>
+          Number(decrypt(item.score)),
+        );
         const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
         self = avg.toFixed(2);
       }
       return {
         cycle: nota.cycle.name,
-        status: nota.cycle.status === 'IN_PROGRESS' ? 'Em andamento' : 'Finalizado',
+        status:
+          nota.cycle.status === 'IN_PROGRESS' ? 'Em andamento' : 'Finalizado',
         self,
-        exec: nota.executionScore ?? '-',
-        posture: nota.postureScore ?? '-',
-        final: nota.finalScore ?? '-',
+        exec: nota.executionScore ? Number(decrypt(nota.executionScore)) : '-',
+        posture: nota.postureScore ? Number(decrypt(nota.postureScore)) : '-',
+        final: nota.finalScore ? Number(decrypt(nota.finalScore)) : '-',
         summary: nota.summary ?? '-',
       };
     });
@@ -83,19 +87,19 @@ export class CiclosService {
   async getManagerDashboardStats(managerId: number) {
     // Buscar o ciclo atual (mais recente)
     const currentCycle = await prisma.evaluationCycle.findFirst({
-      orderBy: { startDate: 'desc' }
+      orderBy: { startDate: 'desc' },
     });
 
     if (!currentCycle) {
       return {
-        totalEvaluations: "0",
-        evaluatedCollaborators: "0",
-        pendingCollaborators: "0",
-        averageScore: "0.0/5",
-        evaluationTrend: "0% este mês",
-        collaboratorTrend: "0% este mês",
-        scoreTrend: "0.0 este mês",
-        totalCollaborators: "0"
+        totalEvaluations: '0',
+        evaluatedCollaborators: '0',
+        pendingCollaborators: '0',
+        averageScore: '0.0/5',
+        evaluationTrend: '0% este mês',
+        collaboratorTrend: '0% este mês',
+        scoreTrend: '0.0 este mês',
+        totalCollaborators: '0',
       };
     }
 
@@ -109,64 +113,72 @@ export class CiclosService {
               include: {
                 roles: true,
                 finalScores: {
-                  where: { cycleId: currentCycle.id }
+                  where: { cycleId: currentCycle.id },
                 },
                 selfEvaluations: {
-                  where: { cycleId: currentCycle.id }
+                  where: { cycleId: currentCycle.id },
                 },
                 managerEvaluationsReceived: {
-                  where: { cycleId: currentCycle.id }
-                }
-              }
-            }
-          }
-        }
-      }
+                  where: { cycleId: currentCycle.id },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!manager) {
       return {
-        totalEvaluations: "0",
-        evaluatedCollaborators: "0",
-        pendingCollaborators: "0",
-        averageScore: "0.0/5",
-        evaluationTrend: "0% este mês",
-        collaboratorTrend: "0% este mês",
-        scoreTrend: "0.0 este mês",
-        totalCollaborators: "0"
+        totalEvaluations: '0',
+        evaluatedCollaborators: '0',
+        pendingCollaborators: '0',
+        averageScore: '0.0/5',
+        evaluationTrend: '0% este mês',
+        collaboratorTrend: '0% este mês',
+        scoreTrend: '0.0 este mês',
+        totalCollaborators: '0',
       };
     }
 
     // Lista de colaboradores do gestor, exceto ele mesmo e apenas ativos
     const collaborators = manager.manages
-      .map(m => m.collaborator)
-      .filter(c => c.id !== managerId && c.active);
+      .map((m) => m.collaborator)
+      .filter((c) => c.id !== managerId && c.active);
 
     const totalCollaborators = collaborators.length;
     const totalEvaluations = totalCollaborators;
-    const evaluatedCollaborators = collaborators.filter(collab => collab.finalScores.length > 0).length;
+    const evaluatedCollaborators = collaborators.filter(
+      (collab) => collab.finalScores.length > 0,
+    ).length;
     const pendingCollaborators = totalCollaborators - evaluatedCollaborators;
 
     // Calcular média de desempenho - nota do ciclo atual
     const currentCycleScores = collaborators
-      .filter(collab => collab.finalScores.length > 0)
-      .map(collab => collab.finalScores[0].finalScore!)
-      .filter(score => score !== null && score !== undefined);
+      .filter((collab) => collab.finalScores.length > 0)
+      .map((collab) => Number(decrypt(collab.finalScores[0].finalScore!)))
+      .filter(
+        (score) => score !== null && score !== undefined && !isNaN(score),
+      );
 
-    const averageScore = currentCycleScores.length > 0 
-      ? (currentCycleScores.reduce((sum, score) => sum + score, 0) / currentCycleScores.length).toFixed(1)
-      : '0.0';
+    const averageScore =
+      currentCycleScores.length > 0
+        ? (
+            currentCycleScores.reduce((sum, score) => sum + score, 0) /
+            currentCycleScores.length
+          ).toFixed(1)
+        : '0.0';
 
     // Calcular tendências baseadas em dados reais (opcional: pode ser ajustado para comparar só entre colaboradores do gestor)
     // Buscar ciclo anterior para comparação
     const previousCycle = await prisma.evaluationCycle.findMany({
       orderBy: { startDate: 'desc' },
       skip: 1,
-      take: 1
+      take: 1,
     });
 
-    let evaluationTrend = "0% este mês";
-    let collaboratorTrend = "0% este mês";
+    let evaluationTrend = '0% este mês';
+    let collaboratorTrend = '0% este mês';
     let scoreTrend: string | undefined = undefined;
 
     if (previousCycle.length > 0) {
@@ -181,41 +193,61 @@ export class CiclosService {
                 include: {
                   roles: true,
                   finalScores: {
-                    where: { cycleId: prevCycle.id }
-                  }
-                }
-              }
-            }
-          }
-        }
+                    where: { cycleId: prevCycle.id },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
-      const prevCollaborators = prevManager ? prevManager.manages.map(m => m.collaborator).filter(c => c.id !== managerId && c.active) : [];
+      const prevCollaborators = prevManager
+        ? prevManager.manages
+            .map((m) => m.collaborator)
+            .filter((c) => c.id !== managerId && c.active)
+        : [];
       const prevTotalCollaborators = prevCollaborators.length;
-      const prevEvaluatedCollabs = prevCollaborators.filter(collab => collab.finalScores.length > 0).length;
+      const prevEvaluatedCollabs = prevCollaborators.filter(
+        (collab) => collab.finalScores.length > 0,
+      ).length;
       const prevScores = prevCollaborators
-        .filter(collab => collab.finalScores.length > 0)
-        .map(collab => collab.finalScores[0].finalScore!)
-        .filter(score => score !== null && score !== undefined);
-      const prevAverageScore = prevScores.length > 0 
-        ? prevScores.reduce((sum, score) => sum + score, 0) / prevScores.length
-        : 0;
+        .filter((collab) => collab.finalScores.length > 0)
+        .map((collab) => Number(decrypt(collab.finalScores[0].finalScore!)))
+        .filter(
+          (score) => score !== null && score !== undefined && !isNaN(score),
+        );
+      const prevAverageScore =
+        prevScores.length > 0
+          ? prevScores.reduce((sum, score) => sum + score, 0) /
+            prevScores.length
+          : 0;
       // Calcular tendências
       if (prevTotalCollaborators > 0) {
-        const evalChange = ((totalEvaluations - prevTotalCollaborators) / prevTotalCollaborators * 100).toFixed(0);
+        const evalChange = (
+          ((totalEvaluations - prevTotalCollaborators) /
+            prevTotalCollaborators) *
+          100
+        ).toFixed(0);
         evaluationTrend = `${evalChange}% este mês`;
       }
       if (prevEvaluatedCollabs > 0) {
-        const collabChange = ((evaluatedCollaborators - prevEvaluatedCollabs) / prevEvaluatedCollabs * 100).toFixed(0);
+        const collabChange = (
+          ((evaluatedCollaborators - prevEvaluatedCollabs) /
+            prevEvaluatedCollabs) *
+          100
+        ).toFixed(0);
         collaboratorTrend = `${collabChange}% este mês`;
       }
       if (prevAverageScore > 0) {
-        const scoreChange = (parseFloat(averageScore) - prevAverageScore).toFixed(1);
+        const scoreChange = (
+          parseFloat(averageScore) - prevAverageScore
+        ).toFixed(1);
         scoreTrend = `${scoreChange} este mês`;
       }
     } else {
-      evaluationTrend = "+12% este mês";
-      collaboratorTrend = "+5% este mês";
-      scoreTrend = "+0.3 este mês";
+      evaluationTrend = '+12% este mês';
+      collaboratorTrend = '+5% este mês';
+      scoreTrend = '+0.3 este mês';
     }
 
     return {
@@ -226,7 +258,7 @@ export class CiclosService {
       evaluationTrend,
       collaboratorTrend,
       scoreTrend,
-      totalCollaborators: totalCollaborators.toString()
+      totalCollaborators: totalCollaborators.toString(),
     };
   }
 
@@ -235,17 +267,17 @@ export class CiclosService {
     const lastCompletedCycle = await prisma.evaluationCycle.findFirst({
       where: {
         status: {
-          in: ['CLOSED', 'PUBLISHED']
-        }
+          in: ['CLOSED', 'PUBLISHED'],
+        },
       },
-      orderBy: { startDate: 'desc' }
+      orderBy: { startDate: 'desc' },
     });
 
     if (!lastCompletedCycle) {
       return {
-        insights: "Nenhum ciclo concluído encontrado.",
+        insights: 'Nenhum ciclo concluído encontrado.',
         chartData: [],
-        collaborators: []
+        collaborators: [],
       };
     }
 
@@ -253,76 +285,86 @@ export class CiclosService {
     const completedCycles = await prisma.evaluationCycle.findMany({
       where: {
         status: {
-          in: ['CLOSED', 'PUBLISHED']
-        }
+          in: ['CLOSED', 'PUBLISHED'],
+        },
       },
       orderBy: { startDate: 'desc' },
-      take: 5
+      take: 5,
     });
 
-    const chartData = await Promise.all(completedCycles.map(async (cycle) => {
-      const scores = await prisma.finalScore.findMany({
-        where: { 
-          cycleId: cycle.id,
-          finalScore: { not: null }
-        },
-        select: { finalScore: true }
-      });
+    const chartData = await Promise.all(
+      completedCycles.map(async (cycle) => {
+        const scores = await prisma.finalScore.findMany({
+          where: {
+            cycleId: cycle.id,
+            finalScore: { not: null },
+          },
+          select: { finalScore: true },
+        });
 
-      const averageScore = scores.length > 0 
-        ? scores.reduce((sum, score) => sum + score.finalScore!, 0) / scores.length
-        : 0;
+        const numericScores = scores
+          .map((score) => Number(decrypt(score.finalScore!)))
+          .filter(
+            (score) => score !== null && score !== undefined && !isNaN(score),
+          );
 
-      return {
-        ciclo: cycle.name,
-        valor: parseFloat(averageScore.toFixed(1))
-      };
-    }));
+        const averageScore =
+          numericScores.length > 0
+            ? numericScores.reduce((sum, score) => sum + score, 0) /
+              numericScores.length
+            : 0;
+
+        return {
+          ciclo: cycle.name,
+          valor: parseFloat(averageScore.toFixed(1)),
+        };
+      }),
+    );
 
     // Buscar colaboradores com notas finais do último ciclo concluído
     const collaborators = await prisma.user.findMany({
       where: {
         roles: {
           some: {
-            role: 'COLLABORATOR'
-          }
+            role: 'COLLABORATOR',
+          },
         },
         active: true,
         finalScores: {
           some: {
-            cycleId: lastCompletedCycle.id
-          }
-        }
+            cycleId: lastCompletedCycle.id,
+          },
+        },
       },
       include: {
         position: true,
         finalScores: {
           where: {
-            cycleId: lastCompletedCycle.id
-          }
+            cycleId: lastCompletedCycle.id,
+          },
         },
         selfEvaluations: {
           where: {
-            cycleId: lastCompletedCycle.id
+            cycleId: lastCompletedCycle.id,
           },
           include: {
-            items: true
-          }
+            items: true,
+          },
         },
         managerEvaluationsReceived: {
           where: {
-            cycleId: lastCompletedCycle.id
+            cycleId: lastCompletedCycle.id,
           },
           include: {
-            items: true
-          }
+            items: true,
+          },
         },
         peerEvaluationsReceived: {
           where: {
-            cycleId: lastCompletedCycle.id
-          }
-        }
-      }
+            cycleId: lastCompletedCycle.id,
+          },
+        },
+      },
     });
 
     // Calcular médias por tipo de avaliação
@@ -331,61 +373,126 @@ export class CiclosService {
     const peerScores: number[] = [];
     const finalScores: number[] = [];
 
-    collaborators.forEach(collab => {
+    collaborators.forEach((collab) => {
       // Autoavaliação - média dos itens
-      if (collab.selfEvaluations.length > 0 && collab.selfEvaluations[0].items.length > 0) {
-        const avgSelf = collab.selfEvaluations[0].items.reduce((sum, item) => sum + item.score, 0) / collab.selfEvaluations[0].items.length;
+      if (
+        collab.selfEvaluations.length > 0 &&
+        collab.selfEvaluations[0].items.length > 0
+      ) {
+        const avgSelf =
+          collab.selfEvaluations[0].items.reduce(
+            (sum, item) => sum + Number(decrypt(item.score)),
+            0,
+          ) / collab.selfEvaluations[0].items.length;
         autoScores.push(avgSelf);
       }
 
       // Avaliação do gestor - média dos itens
-      if (collab.managerEvaluationsReceived.length > 0 && collab.managerEvaluationsReceived[0].items.length > 0) {
-        const avgManager = collab.managerEvaluationsReceived[0].items.reduce((sum, item) => sum + item.score, 0) / collab.managerEvaluationsReceived[0].items.length;
+      if (
+        collab.managerEvaluationsReceived.length > 0 &&
+        collab.managerEvaluationsReceived[0].items.length > 0
+      ) {
+        const avgManager =
+          collab.managerEvaluationsReceived[0].items.reduce(
+            (sum, item) => sum + Number(decrypt(item.score)),
+            0,
+          ) / collab.managerEvaluationsReceived[0].items.length;
         managerScores.push(avgManager);
       }
 
       // Avaliação 360 - média das avaliações dos pares
       if (collab.peerEvaluationsReceived.length > 0) {
-        const avgPeer = collab.peerEvaluationsReceived.reduce((sum, peerEval) => sum + peerEval.score, 0) / collab.peerEvaluationsReceived.length;
+        const avgPeer =
+          collab.peerEvaluationsReceived.reduce(
+            (sum, peerEval) => sum + Number(decrypt(peerEval.score)),
+            0,
+          ) / collab.peerEvaluationsReceived.length;
         peerScores.push(avgPeer);
       }
 
       // Nota final (equalização)
-      if (collab.finalScores.length > 0 && collab.finalScores[0].finalScore !== null) {
-        finalScores.push(collab.finalScores[0].finalScore!);
+      if (
+        collab.finalScores.length > 0 &&
+        collab.finalScores[0].finalScore !== null
+      ) {
+        finalScores.push(Number(decrypt(collab.finalScores[0].finalScore!)));
       }
     });
 
     // Calcular médias gerais
-    const averageAuto = autoScores.length > 0 ? (autoScores.reduce((sum, score) => sum + score, 0) / autoScores.length).toFixed(1) : '0.0';
-    const averageManager = managerScores.length > 0 ? (managerScores.reduce((sum, score) => sum + score, 0) / managerScores.length).toFixed(1) : '0.0';
-    const averagePeer = peerScores.length > 0 ? (peerScores.reduce((sum, score) => sum + score, 0) / peerScores.length).toFixed(1) : '0.0';
-    const averageFinal = finalScores.length > 0 ? (finalScores.reduce((sum, score) => sum + score, 0) / finalScores.length).toFixed(1) : '0.0';
+    const averageAuto =
+      autoScores.length > 0
+        ? (
+            autoScores.reduce((sum, score) => sum + score, 0) /
+            autoScores.length
+          ).toFixed(1)
+        : '0.0';
+    const averageManager =
+      managerScores.length > 0
+        ? (
+            managerScores.reduce((sum, score) => sum + score, 0) /
+            managerScores.length
+          ).toFixed(1)
+        : '0.0';
+    const averagePeer =
+      peerScores.length > 0
+        ? (
+            peerScores.reduce((sum, score) => sum + score, 0) /
+            peerScores.length
+          ).toFixed(1)
+        : '0.0';
+    const averageFinal =
+      finalScores.length > 0
+        ? (
+            finalScores.reduce((sum, score) => sum + score, 0) /
+            finalScores.length
+          ).toFixed(1)
+        : '0.0';
 
-    const collaboratorsList = collaborators.map(collab => {
+    const collaboratorsList = collaborators.map((collab) => {
       // Calcular nota de autoavaliação
       let autoNota = '-';
-      if (collab.selfEvaluations.length > 0 && collab.selfEvaluations[0].items.length > 0) {
-        const avgSelf = collab.selfEvaluations[0].items.reduce((sum, item) => sum + item.score, 0) / collab.selfEvaluations[0].items.length;
+      if (
+        collab.selfEvaluations.length > 0 &&
+        collab.selfEvaluations[0].items.length > 0
+      ) {
+        const avgSelf =
+          collab.selfEvaluations[0].items.reduce(
+            (sum, item) => sum + Number(decrypt(item.score)),
+            0,
+          ) / collab.selfEvaluations[0].items.length;
         autoNota = avgSelf.toFixed(1);
       }
 
       // Calcular nota do gestor
       let managerNota = '-';
-      if (collab.managerEvaluationsReceived.length > 0 && collab.managerEvaluationsReceived[0].items.length > 0) {
-        const avgManager = collab.managerEvaluationsReceived[0].items.reduce((sum, item) => sum + item.score, 0) / collab.managerEvaluationsReceived[0].items.length;
+      if (
+        collab.managerEvaluationsReceived.length > 0 &&
+        collab.managerEvaluationsReceived[0].items.length > 0
+      ) {
+        const avgManager =
+          collab.managerEvaluationsReceived[0].items.reduce(
+            (sum, item) => sum + Number(decrypt(item.score)),
+            0,
+          ) / collab.managerEvaluationsReceived[0].items.length;
         managerNota = avgManager.toFixed(1);
       }
 
       // Calcular nota 360
       let peerNota = '-';
       if (collab.peerEvaluationsReceived.length > 0) {
-        const avgPeer = collab.peerEvaluationsReceived.reduce((sum, peerEval) => sum + peerEval.score, 0) / collab.peerEvaluationsReceived.length;
+        const avgPeer =
+          collab.peerEvaluationsReceived.reduce(
+            (sum, peerEval) => sum + Number(decrypt(peerEval.score)),
+            0,
+          ) / collab.peerEvaluationsReceived.length;
         peerNota = avgPeer.toFixed(1);
       }
 
       // Nota final (equalização)
-      const finalNota = collab.finalScores[0]?.finalScore?.toFixed(1) || '-';
+      const finalNota = collab.finalScores[0]?.finalScore
+        ? Number(decrypt(collab.finalScores[0].finalScore)).toFixed(1)
+        : '-';
 
       return {
         nome: collab.name,
@@ -394,15 +501,13 @@ export class CiclosService {
         autoNota,
         managerNota,
         peerNota,
-        finalNota
+        finalNota,
       };
     });
 
     // Gerar insights baseados nos dados do último ciclo concluído
-    const topPerformers = collaboratorsList.filter(c => parseFloat(c.nota) >= 4.5).length;
-    const totalEvaluated = collaboratorsList.length;
-    
-    const insights = await this.aiBrutalFactsService.getInsightForLastCompletedCycle();
+    const insights =
+      await this.aiBrutalFactsService.getInsightForLastCompletedCycle();
 
     // Calcular aumento em relação ao ciclo anterior (scoreTrend)
     let scoreTrend: string | undefined = undefined;
@@ -410,12 +515,12 @@ export class CiclosService {
     const previousCycle = await prisma.evaluationCycle.findMany({
       where: {
         status: {
-          in: ['CLOSED', 'PUBLISHED']
+          in: ['CLOSED', 'PUBLISHED'],
         },
-        id: { not: lastCompletedCycle.id }
+        id: { not: lastCompletedCycle.id },
       },
       orderBy: { startDate: 'desc' },
-      take: 1
+      take: 1,
     });
     if (previousCycle.length > 0) {
       const prevCycle = previousCycle[0];
@@ -423,15 +528,26 @@ export class CiclosService {
       const prevScores = await prisma.finalScore.findMany({
         where: {
           cycleId: prevCycle.id,
-          finalScore: { not: null }
+          finalScore: { not: null },
         },
-        select: { finalScore: true }
+        select: { finalScore: true },
       });
-      const prevAverageFinal = prevScores.length > 0
-        ? prevScores.reduce((sum, score) => sum + score.finalScore!, 0) / prevScores.length
-        : 0;
-      scoreTrend = (parseFloat(averageFinal) - prevAverageFinal).toFixed(1).toString();
+      const numericPrevScores = prevScores
+        .map((score) => Number(decrypt(score.finalScore!)))
+        .filter(
+          (score) => score !== null && score !== undefined && !isNaN(score),
+        );
+      const prevAverageFinal =
+        numericPrevScores.length > 0
+          ? numericPrevScores.reduce((sum, score) => sum + score, 0) /
+            numericPrevScores.length
+          : 0;
+      scoreTrend = (parseFloat(averageFinal) - prevAverageFinal)
+        .toFixed(1)
+        .toString();
     }
+
+    const totalEvaluated = collaboratorsList.length;
 
     return {
       insights,
@@ -444,7 +560,7 @@ export class CiclosService {
       averageManager: `${averageManager}/5`,
       averagePeer: `${averagePeer}/5`,
       averageFinal: `${averageFinal}/5`,
-      scoreTrend: scoreTrend ? `${scoreTrend} este ciclo` : undefined
+      scoreTrend: scoreTrend ? `${scoreTrend} este ciclo` : undefined,
     };
   }
 }

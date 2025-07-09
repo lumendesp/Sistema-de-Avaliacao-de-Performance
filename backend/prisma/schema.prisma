@@ -216,7 +216,7 @@ model SelfEvaluation {
   cycleId   Int
   createdAt DateTime @default(now())
 
-  averageScore Float?
+  averageScore String?
 
   user  User                 @relation(fields: [userId], references: [id])
   cycle EvaluationCycle      @relation(fields: [cycleId], references: [id])
@@ -228,7 +228,7 @@ model SelfEvaluationItem {
   evaluationId         Int
   criterionId          Int
   configuredCriterionId Int?
-  score                Int
+  score                String
   justification        String
   scoreDescription     String?
 
@@ -267,7 +267,7 @@ model PeerEvaluation {
   evaluateeId  Int
   cycleId      Int
   createdAt    DateTime         @default(now())
-  score        Float
+  score        String
   strengths    String
   improvements String
   motivation   MotivationLevel?
@@ -284,7 +284,7 @@ model MentorEvaluation {
   evaluateeId   Int
   cycleId       Int
   createdAt     DateTime @default(now())
-  score         Int
+  score         String
   justification String
 
   evaluator User                   @relation("MentorEvaluator", fields: [evaluatorId], references: [id])
@@ -297,7 +297,7 @@ model MentorEvaluationItem {
   id               Int     @id @default(autoincrement())
   evaluationId     Int
   criterionId      Int
-  score            Int
+  score            String
   justification    String
   scoreDescription String?
 
@@ -323,7 +323,7 @@ model ManagerEvaluationItem {
   id               Int     @id @default(autoincrement())
   evaluationId     Int
   criterionId      Int
-  score            Int
+  score            String
   justification    String
   scoreDescription String?
   groupId       Int
@@ -351,9 +351,9 @@ model FinalScore {
   id             Int     @id @default(autoincrement())
   userId         Int
   cycleId        Int
-  executionScore Float? // Nota de execução
-  postureScore   Float? // Nota de postura
-  finalScore     Float? // Nota final consolidada
+  executionScore String? // Nota de execução
+  postureScore   String? // Nota de postura
+  finalScore     String? // Nota final consolidada
   summary        String? // Resumo textual do ciclo para o usuário
   adjustedBy     Int? // membro do comitê
   justification  String

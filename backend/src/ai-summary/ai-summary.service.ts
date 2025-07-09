@@ -33,10 +33,9 @@ function decrypt(text: string): string {
     return decrypted;
   } catch (error) {
     console.warn('Falha ao descriptografar:', error.message);
-    return '[ERRO DE DESCRIPTOGRAFIA]'; 
+    return '[ERRO DE DESCRIPTOGRAFIA]';
   }
 }
-
 
 type SelfWithItems = {
   items: {
@@ -81,24 +80,49 @@ export class AiSummaryService {
     userId,
     cycleId,
   }: CreateSummaryDto): Promise<string> {
-    const self = await this.prisma.selfEvaluation.findMany({
+    const selfRaw = await this.prisma.selfEvaluation.findMany({
       where: { userId, cycleId },
       include: { items: true },
     });
+    // Corrigir tipagem dos items: score deve ser number
+    const self = selfRaw.map((ev) => ({
+      ...ev,
+      items: ev.items.map((item) => ({
+        ...item,
+        score: Number(decrypt(item.score)),
+        justification: decrypt(item.justification),
+      })),
+    }));
 
     const peer = await this.prisma.peerEvaluation.findMany({
       where: { evaluateeId: userId, cycleId },
     });
 
-    const mentor = await this.prisma.mentorEvaluation.findMany({
+    const mentorRaw = await this.prisma.mentorEvaluation.findMany({
       where: { evaluateeId: userId, cycleId },
       include: { items: true },
     });
+    const mentor = mentorRaw.map((ev) => ({
+      ...ev,
+      items: ev.items.map((item) => ({
+        ...item,
+        score: Number(decrypt(item.score)),
+        justification: decrypt(item.justification),
+      })),
+    }));
 
-    const manager = await this.prisma.managerEvaluation.findMany({
+    const managerRaw = await this.prisma.managerEvaluation.findMany({
       where: { evaluateeId: userId, cycleId },
       include: { items: true },
     });
+    const manager = managerRaw.map((ev) => ({
+      ...ev,
+      items: ev.items.map((item) => ({
+        ...item,
+        score: Number(decrypt(item.score)),
+        justification: decrypt(item.justification),
+      })),
+    }));
 
     const references = await this.prisma.reference.findMany({
       where: { receiverId: userId, cycleId },
@@ -130,7 +154,7 @@ export class AiSummaryService {
       prompt += `Autoavaliação:\n`;
       for (const ev of self) {
         for (const item of ev.items) {
-          prompt += `- Critério: ${item.criterionId}, Justificativa: ${decrypt(item.justification)}, Nota: ${item.score}\n`;
+          prompt += `- Critério: ${item.criterionId}, Justificativa: ${item.justification}, Nota: ${typeof item.score === 'number' ? item.score : '-'}\n`;
         }
       }
     }
@@ -138,7 +162,7 @@ export class AiSummaryService {
     if (peer.length) {
       prompt += `\nAvaliações por Pares:\n`;
       for (const p of peer) {
-        prompt += `- Pontos fortes: ${decrypt(p.strengths)}, Melhorias: ${decrypt(p.improvements)}, Nota: ${p.score}\n`;
+        prompt += `- Pontos fortes: ${decrypt(p.strengths)}, Melhorias: ${decrypt(p.improvements)}, Nota: ${p.score ? Number(decrypt(p.score)) : '-'}\n`;
       }
     }
 
@@ -146,7 +170,7 @@ export class AiSummaryService {
       prompt += `\nAvaliação do mentor:\n`;
       for (const m of mentor) {
         for (const item of m.items) {
-          prompt += `- Critério: ${item.criterionId}, Justificativa: ${decrypt(item.justification)}, Nota: ${item.score}\n`;
+          prompt += `- Critério: ${item.criterionId}, Justificativa: ${item.justification}, Nota: ${typeof item.score === 'number' ? item.score : '-'}\n`;
         }
       }
     }
@@ -155,7 +179,7 @@ export class AiSummaryService {
       prompt += `\nAvaliação do gestor:\n`;
       for (const m of manager) {
         for (const item of m.items) {
-          prompt += `- Critério: ${item.criterionId}, Justificativa: ${decrypt(item.justification)}, Nota: ${item.score}\n`;
+          prompt += `- Critério: ${item.criterionId}, Justificativa: ${item.justification}, Nota: ${typeof item.score === 'number' ? item.score : '-'}\n`;
         }
       }
     }

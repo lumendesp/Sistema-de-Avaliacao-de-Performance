@@ -56,7 +56,7 @@ export class MentorEvaluationService {
         evaluatorId,
         evaluateeId: dto.evaluateeId,
         cycleId: activeCycle.id,
-        score: dto.score,
+        score: encrypt(dto.score.toString()),
         justification: encrypt(dto.justification),
       },
     });
@@ -77,6 +77,7 @@ export class MentorEvaluationService {
     });
     return results.map((ev) => ({
       ...ev,
+      score: Number(decrypt(ev.score)),
       justification: decrypt(ev.justification),
     }));
   }
@@ -96,6 +97,7 @@ export class MentorEvaluationService {
     });
     return results.map((ev) => ({
       ...ev,
+      score: Number(decrypt(ev.score)),
       justification: decrypt(ev.justification),
     }));
   }
@@ -117,6 +119,10 @@ export class MentorEvaluationService {
       },
     });
     if (!result) return null;
-    return { ...result, justification: decrypt(result.justification) };
+    return {
+      ...result,
+      score: Number(decrypt(result.score)),
+      justification: decrypt(result.justification),
+    };
   }
 }
