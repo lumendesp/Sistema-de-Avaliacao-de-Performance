@@ -24,6 +24,7 @@ import { GeminiModule } from './ai/ai.module';
 import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
 import { ManagerModule } from './manager/manager.module';
 import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
+import { MentorToCollaboratorEvaluationModule } from './mentor-to-collaborator-evaluation/mentor-to-collaborator-evaluation.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
     ManagerEvaluationModule,
     ManagerModule,
     AiBrutalFactsModule,
+    MentorToCollaboratorEvaluationModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

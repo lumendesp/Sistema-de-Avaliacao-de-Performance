@@ -127,6 +127,8 @@ model User {
 
   manages         ManagerCollaborator[] @relation("ManagerToCollaborator")
   managedBy       ManagerCollaborator[] @relation("CollaboratorToManager")
+  mentorToCollaboratorEvaluationsGiven MentorToCollaboratorEvaluation[] @relation("MentorToCollaboratorEvaluator")
+  mentorToCollaboratorEvaluationsReceived MentorToCollaboratorEvaluation[] @relation("MentorToCollaboratorEvaluatee")
 }
 
 // ---------------- HISTÓRICO DE TRILHAS -----------------
@@ -207,6 +209,8 @@ model EvaluationCycle {
   aiSummaries        AISummary[]
   committeeNotes     CommitteeNote[]
   managerEvaluations ManagerEvaluation[]
+
+  mentorToCollaboratorEvaluations MentorToCollaboratorEvaluation[] @relation("MentorToCollaboratorCycle")
 }
 
 // ---------- FORMULÁRIOS DE AVALIAÇÃO ----------
@@ -406,4 +410,18 @@ model ManagerCollaborator {
   collaborator   User @relation("CollaboratorToManager", fields: [collaboratorId], references: [id])
 
   @@id([managerId, collaboratorId])
+}
+
+model MentorToCollaboratorEvaluation {
+  id            Int      @id @default(autoincrement())
+  evaluatorId   Int
+  evaluateeId   Int
+  cycleId       Int
+  createdAt     DateTime @default(now())
+  score         Int
+  justification String
+
+  evaluator User @relation("MentorToCollaboratorEvaluator", fields: [evaluatorId], references: [id])
+  evaluatee User @relation("MentorToCollaboratorEvaluatee", fields: [evaluateeId], references: [id])
+  cycle     EvaluationCycle @relation("MentorToCollaboratorCycle", fields: [cycleId], references: [id])
 }
