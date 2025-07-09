@@ -29,9 +29,9 @@ export class FinalScoreService {
       //   throw new ForbiddenException('Only committee members can create final scores.');
       // }
 
-      // Get active cycle for COMMITTEE type
+      // Get active cycle for HR type
       console.log('Looking for active cycle...');
-      const activeCycle = await this.cycleService.findActiveCycle(Role.COMMITTEE);
+      const activeCycle = await this.cycleService.findActiveCycle(Role.HR);
       console.log('Active cycle found:', activeCycle);
       
       if (!activeCycle) {

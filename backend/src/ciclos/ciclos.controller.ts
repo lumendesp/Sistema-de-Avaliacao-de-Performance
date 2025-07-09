@@ -14,6 +14,16 @@ export class CiclosController {
     return this.ciclosService.create(createCicloDto);
   }
 
+  @Post('close-collaborator-and-create-manager')
+  async closeAndCreateManager() {
+    return this.ciclosService.closeCollaboratorAndCreateManagerCycle();
+  }
+
+  @Post('close-manager-and-create-rh')
+  async closeAndCreateRh() {
+    return this.ciclosService.closeManagerAndCreateRhCycle();
+  }
+
   @Get()
   findAll() {
     return this.ciclosService.findAll();

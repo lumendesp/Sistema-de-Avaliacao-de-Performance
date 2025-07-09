@@ -4,6 +4,8 @@ import { UpdateCicloDto } from './dto/update-ciclo.dto';
 import { PrismaClient, Role } from '@prisma/client';
 import { GeminiService } from '../ai/ai.service';
 import { AiBrutalFactsService } from '../ai-brutal-facts/ai-brutal-facts.service';
+import { CycleService } from './cycle.service';
+import { CycleTransferService } from './cycle-transfer.service';
 
 const prisma = new PrismaClient();
 
@@ -12,6 +14,8 @@ export class CiclosService {
   constructor(
     private readonly geminiService: GeminiService,
     private readonly aiBrutalFactsService: AiBrutalFactsService,
+    private readonly cycleService: CycleService,
+    private readonly cycleTransferService: CycleTransferService,
   ) {}
 
   async create(createCicloDto: CreateCicloDto) {
@@ -296,7 +300,8 @@ export class CiclosService {
       where: {
         status: {
           in: ['CLOSED', 'PUBLISHED']
-        }
+        },
+        type: 'HR'
       },
       orderBy: { startDate: 'desc' },
       take: 5
@@ -378,5 +383,73 @@ export class CiclosService {
       startDate: cycle.startDate,
       endDate: cycle.endDate
     }));
+  }
+
+  /**
+   * Fecha o ciclo de colaborador, cria o ciclo de gestor e transfere os dados.
+   */
+  async closeCollaboratorAndCreateManagerCycle(collabCycleId?: number) {
+    let cycleId = collabCycleId;
+    if (!cycleId) {
+      const mostRecent = await this.cycleService.getMostRecentCycle('COLLABORATOR', 'IN_PROGRESS');
+      if (!mostRecent) throw new Error('Nenhum ciclo de colaborador em andamento encontrado');
+      cycleId = mostRecent.id;
+    }
+    if (!cycleId || typeof cycleId !== 'number' || isNaN(cycleId)) {
+      throw new Error('collabCycleId inválido ou não fornecido');
+    }
+    // 1. Fechar o ciclo de colaborador
+    await this.cycleService.closeCycle(cycleId);
+
+    // 2. Buscar dados do ciclo de colaborador
+    const collabCycle = await this.cycleService.getMostRecentCycle('COLLABORATOR', 'CLOSED');
+
+    // 3. Criar ciclo de gestor (manager)
+    const managerCycle = await this.cycleService.createCycle({
+      name: collabCycle?.name || 'Novo ciclo gestor',
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      status: 'IN_PROGRESS',
+      type: 'MANAGER',
+    });
+
+    // 4. Transferir dados
+    await this.cycleTransferService.transferCycleData(cycleId, managerCycle.id);
+
+    return { message: 'Ciclo de colaborador fechado, ciclo de gestor criado e dados transferidos!', managerCycleId: managerCycle.id };
+  }
+
+  /**
+   * Fecha o ciclo de gestor, cria o ciclo de RH e transfere os dados.
+   */
+  async closeManagerAndCreateRhCycle(managerCycleId?: number) {
+    let cycleId = managerCycleId;
+    if (!cycleId) {
+      const mostRecent = await this.cycleService.getMostRecentCycle('MANAGER', 'IN_PROGRESS');
+      if (!mostRecent) throw new Error('Nenhum ciclo de gestor em andamento encontrado');
+      cycleId = mostRecent.id;
+    }
+    if (!cycleId || typeof cycleId !== 'number' || isNaN(cycleId)) {
+      throw new Error('managerCycleId inválido ou não fornecido');
+    }
+    // 1. Fechar o ciclo de gestor
+    await this.cycleService.closeCycle(cycleId);
+
+    // 2. Buscar dados do ciclo de gestor
+    const managerCycle = await this.cycleService.getMostRecentCycle('MANAGER', 'CLOSED');
+
+    // 3. Criar ciclo de RH
+    const rhCycle = await this.cycleService.createCycle({
+      name: managerCycle?.name || 'Novo ciclo RH',
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      status: 'IN_PROGRESS',
+      type: 'HR',
+    });
+
+    // 4. Transferir dados
+    await this.cycleTransferService.transferCycleData(cycleId, rhCycle.id);
+
+    return { message: 'Ciclo de gestor fechado, ciclo de RH criado e dados transferidos!', rhCycleId: rhCycle.id };
   }
 }

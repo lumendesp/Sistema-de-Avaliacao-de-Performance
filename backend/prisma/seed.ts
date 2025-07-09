@@ -466,17 +466,7 @@ async function main() {
     },
   });
 
-  // Criar segundo ciclo
-  const cycle2 = await prisma.evaluationCycle.create({
-    data: {
-      name: 'Ciclo 2025.2',
-      startDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 dias à frente
-      endDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 dias à frente
-      status: 'PUBLISHED',
-    },
-  });
-
-  // Criar ciclos sequenciais para o fluxo: Colaboradores -> Manager -> RH/Comitê
+  // Criar ciclo de colaboradores (único ciclo inicial)
   const cycleCollaborators = await prisma.evaluationCycle.create({
     data: {
       name: '2025.1',
@@ -487,25 +477,9 @@ async function main() {
     },
   });
 
-  const cycleManagers = await prisma.evaluationCycle.create({
-    data: {
-      name: '2025.1',
-      startDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 dias à frente
-      endDate: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000), // 28 dias à frente
-      status: 'IN_PROGRESS', // Aguardando o ciclo de colaboradores terminar
-      type: 'MANAGER',
-    },
-  });
-
-  const cycleRHCommittee = await prisma.evaluationCycle.create({
-    data: {
-      name: '2025.1',
-      startDate: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000), // 35 dias à frente
-      endDate: new Date(Date.now() + 49 * 24 * 60 * 60 * 1000), // 49 dias à frente
-      status: 'IN_PROGRESS', // Aguardando o ciclo de managers terminar
-      type: 'HR',
-    },
-  });
+  // Remover criação dos ciclos de manager e RH/Comitê
+  // const cycleManagers = await prisma.evaluationCycle.create({ ... });
+  // const cycleRHCommittee = await prisma.evaluationCycle.create({ ... });
 
   // Cria alguns projetos para peer evaluation
   const projectsData = [
