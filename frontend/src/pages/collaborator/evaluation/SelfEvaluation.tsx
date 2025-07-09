@@ -4,6 +4,7 @@ import { useAuth } from "../../../context/AuthContext";
 import type { TrackWithGroups } from "../../../types/selfEvaluation";
 import SelfEvaluationGroupList from "../../../components/SelfEvaluationForm/SelfEvaluationGroupList";
 import EvaluationComparisonGroupList from "../../../components/ComparisonEvaluationForm/EvaluationComparisonGroupList";
+import SelfEvaluationGroupReadOnlyList  from "../../../components/SelfEvaluationForm/ReadOnly/SelfEvaluationGroupListReadOnly";
 import { useEvaluation } from "../../../context/EvaluationsContext";
 import { fetchActiveEvaluationCycle } from "../../../services/api"; // ajuste o caminho conforme sua estrutura
 
@@ -48,7 +49,7 @@ export default function SelfEvaluationPage() {
   return (
     <div className="p-3 bg-[#f1f1f1] mt-0">
       {isSubmit ? (
-        <EvaluationComparisonGroupList cycleId={cycleId} trackData={trackGroups} />
+        <SelfEvaluationGroupReadOnlyList trackData={trackGroups} cycleId={cycleId} />
       ) : (
         <SelfEvaluationGroupList trackData={trackGroups} cycleId={cycleId} />
       )}
