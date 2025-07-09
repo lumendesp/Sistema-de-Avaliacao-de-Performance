@@ -33,7 +33,7 @@ export interface PeerEvaluationFormData {
 
 export interface PeerEvaluationFormProps {
   myEvaluations: PeerEvaluation[];
-  setMyEvaluations: (evaluations: PeerEvaluation[]) => void;
+  setMyEvaluations: React.Dispatch<React.SetStateAction<PeerEvaluation[]>>;
   cycleId: number;
   isCycleFinished?: boolean;
 }

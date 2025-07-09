@@ -231,7 +231,14 @@ export default function PeerEvaluationForm({
       ) : (
         <form className="flex flex-col gap-4">
           {myEvaluations.map((evaluation) => {
-            const data = formData[evaluation.id] || {};
+            const data = formData[evaluation.id] || {
+              score: 0,
+              strengths: "",
+              improvements: "",
+              motivation: "",
+              projectName: "",
+              projectPeriod: "",
+            };
             const readonly = isCycleFinished;
 
             return (
