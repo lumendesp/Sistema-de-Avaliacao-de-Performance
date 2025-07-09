@@ -25,6 +25,7 @@ import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation
 import { ManagerModule } from './manager/manager.module';
 import { ProjectsModule } from './projects/projects.module';
 import { EvaluationCompletionModule } from './evaluation-completion/evaluation-completion.module';
+import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { EvaluationCompletionModule } from './evaluation-completion/evaluation-c
     ManagerModule,
     ProjectsModule,
     EvaluationCompletionModule,
+    AiBrutalFactsModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
