@@ -79,7 +79,8 @@ const ReferenceEvaluationForm = ({
       const justification =
         localJustification !== undefined
           ? localJustification
-          : ref.justification;
+          : ref.justification ?? "";
+
       return !justification?.trim();
     });
 

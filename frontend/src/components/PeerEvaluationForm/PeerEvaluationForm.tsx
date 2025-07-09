@@ -288,7 +288,7 @@ export default function PeerEvaluationForm({
                     />
                   )}
                 </div>
-                <div className="flex gap-2 mb-4">
+                <div className="flex flex-col sm:flex-row gap-2 mb-4">
                   {["strengths", "improvements"].map((field) => (
                     <div className="flex flex-col gap-1 flex-1" key={field}>
                       <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
@@ -390,7 +390,7 @@ export default function PeerEvaluationForm({
                       }}
                     />
                   </div>
-                  <div className="flex gap-2 flex-1">
+                  <div className="flex flex-col md:flex-row flex-wrap gap-2 w-full">
                     <div className="flex flex-1 flex-col gap-1">
                       <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
                         Projeto em que atuaram juntos
