@@ -23,7 +23,7 @@ const ReferenceEvaluationForm = ({
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { updateTabCompletion } = useEvaluation();
+  const { updateTabCompletion, isSubmit } = useEvaluation();
 
   useEffect(() => {
     if (myReferences) {
@@ -126,7 +126,7 @@ const ReferenceEvaluationForm = ({
 
   return (
     <div className="flex flex-col gap-4 w-full">
-      {isCycleFinished ? (
+      {isCycleFinished || isSubmit ? (
         // Mostrar só referências já enviadas, todas readonly
         <>
           {myReferences.length > 0 ? (

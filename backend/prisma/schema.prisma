@@ -119,14 +119,14 @@ model User {
   managerEvaluationsReceived ManagerEvaluation[] @relation("ManagerEvaluatee")
 
   // Equalização
-  adjustedScores    FinalScore[]        @relation("CommitteeAdjuster")
-  committeeNotes    CommitteeNote[]
-  discrepancies    Discrepancy[]
-  aiSummaries      AISummary[]
-  finalScores      FinalScore[]
+  adjustedScores FinalScore[]    @relation("CommitteeAdjuster")
+  committeeNotes CommitteeNote[]
+  discrepancies  Discrepancy[]
+  aiSummaries    AISummary[]
+  finalScores    FinalScore[]
 
-  manages         ManagerCollaborator[] @relation("ManagerToCollaborator")
-  managedBy       ManagerCollaborator[] @relation("CollaboratorToManager")
+  manages   ManagerCollaborator[] @relation("ManagerToCollaborator")
+  managedBy ManagerCollaborator[] @relation("CollaboratorToManager")
 }
 
 // ---------------- HISTÓRICO DE TRILHAS -----------------
@@ -142,19 +142,17 @@ model UserTrack {
 }
 
 model Criterion {
-  id                     Int                     @id @default(autoincrement())
-  name                   CriterionName
-  generalDescription     String
-  active                 Boolean                 @default(true)
-  weight                 Int
+  id                 Int           @id @default(autoincrement())
+  name               CriterionName
+  generalDescription String
+  active             Boolean       @default(true)
+  weight             Int
 
   configurations         ConfiguredCriterion[]
   selfEvaluationItems    SelfEvaluationItem[]
   mentorEvaluationItems  MentorEvaluationItem[]
   managerEvaluationItems ManagerEvaluationItem[]
 }
-
-
 
 model CriterionGroup {
   id         Int    @id @default(autoincrement())
@@ -179,23 +177,24 @@ model ConfiguredCriterion {
   positionId  Int
   mandatory   Boolean
 
-  criterion Criterion @relation(fields: [criterionId], references: [id])
-  group    CriterionGroup @relation("GroupConfiguredCriteria", fields: [groupId], references: [id])
-  track    Track          @relation("TrackConfiguredCriteria", fields: [trackId], references: [id])
-  unit     Unit           @relation("UnitConfiguredCriteria", fields: [unitId], references: [id])
-  position Position       @relation("PositionConfiguredCriteria", fields: [positionId], references: [id])
+  criterion Criterion      @relation(fields: [criterionId], references: [id])
+  group     CriterionGroup @relation("GroupConfiguredCriteria", fields: [groupId], references: [id])
+  track     Track          @relation("TrackConfiguredCriteria", fields: [trackId], references: [id])
+  unit      Unit           @relation("UnitConfiguredCriteria", fields: [unitId], references: [id])
+  position  Position       @relation("PositionConfiguredCriteria", fields: [positionId], references: [id])
 
   selfEvaluationItems SelfEvaluationItem[]
 }
 
-
 // ---------- CICLOS ----------
 model EvaluationCycle {
-  id        Int         @id @default(autoincrement())
-  name      String
-  startDate DateTime
-  endDate   DateTime
-  status    CycleStatus
+  id          Int         @id @default(autoincrement())
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  status      CycleStatus
+  submittedAt DateTime?
+  isSubmit    Boolean     @default(true)
 
   // Todas as avaliações ligadas ao ciclo
   selfEvaluations    SelfEvaluation[]
@@ -215,7 +214,6 @@ model SelfEvaluation {
   userId    Int
   cycleId   Int
   createdAt DateTime @default(now())
-  submittedAt DateTime?
 
   averageScore Float?
 
@@ -225,19 +223,18 @@ model SelfEvaluation {
 }
 
 model SelfEvaluationItem {
-  id                   Int     @id @default(autoincrement())
-  evaluationId         Int
-  criterionId          Int
+  id                    Int     @id @default(autoincrement())
+  evaluationId          Int
+  criterionId           Int
   configuredCriterionId Int?
-  score                Int
-  justification        String
-  scoreDescription     String?
+  score                 Int
+  justification         String
+  scoreDescription      String?
 
-  evaluation          SelfEvaluation     @relation(fields: [evaluationId], references: [id])
-  criterion           Criterion          @relation(fields: [criterionId], references: [id])
+  evaluation          SelfEvaluation       @relation(fields: [evaluationId], references: [id])
+  criterion           Criterion            @relation(fields: [criterionId], references: [id])
   configuredCriterion ConfiguredCriterion? @relation(fields: [configuredCriterionId], references: [id])
 }
-
 
 model Project {
   id          Int                     @id @default(autoincrement())
@@ -272,7 +269,6 @@ model PeerEvaluation {
   strengths    String
   improvements String
   motivation   MotivationLevel?
-  submittedAt DateTime?
 
   evaluator User                    @relation("PeerEvaluator", fields: [evaluatorId], references: [id])
   evaluatee User                    @relation("PeerEvaluatee", fields: [evaluateeId], references: [id])
@@ -288,7 +284,6 @@ model MentorEvaluation {
   createdAt     DateTime @default(now())
   score         Int
   justification String
-  submittedAt DateTime?
 
   evaluator User                   @relation("MentorEvaluator", fields: [evaluatorId], references: [id])
   evaluatee User                   @relation("MentorEvaluatee", fields: [evaluateeId], references: [id])
@@ -314,7 +309,7 @@ model ManagerEvaluation {
   evaluateeId Int
   cycleId     Int
   createdAt   DateTime @default(now())
-  status       String   @default("draft") // draft | submitted
+  status      String   @default("draft") // draft | submitted
 
   evaluator User                    @relation("ManagerEvaluator", fields: [evaluatorId], references: [id])
   evaluatee User                    @relation("ManagerEvaluatee", fields: [evaluateeId], references: [id])
@@ -329,7 +324,7 @@ model ManagerEvaluationItem {
   score            Int
   justification    String
   scoreDescription String?
-  groupId       Int
+  groupId          Int
 
   evaluation ManagerEvaluation @relation(fields: [evaluationId], references: [id])
   criterion  Criterion         @relation(fields: [criterionId], references: [id])
@@ -343,7 +338,6 @@ model Reference {
   cycleId       Int
   createdAt     DateTime @default(now())
   justification String
-  submittedAt DateTime?
 
   provider User            @relation("ReferenceProvider", fields: [providerId], references: [id])
   receiver User            @relation("ReferenceReceiver", fields: [receiverId], references: [id])
@@ -366,7 +360,7 @@ model FinalScore {
   cycle    EvaluationCycle @relation(fields: [cycleId], references: [id])
   adjuster User?           @relation("CommitteeAdjuster", fields: [adjustedBy], references: [id])
 
-  createdAt      DateTime  @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Discrepancy {
@@ -406,8 +400,8 @@ model ManagerCollaborator {
   managerId      Int
   collaboratorId Int
 
-  manager        User @relation("ManagerToCollaborator", fields: [managerId], references: [id])
-  collaborator   User @relation("CollaboratorToManager", fields: [collaboratorId], references: [id])
+  manager      User @relation("ManagerToCollaborator", fields: [managerId], references: [id])
+  collaborator User @relation("CollaboratorToManager", fields: [collaboratorId], references: [id])
 
   @@id([managerId, collaboratorId])
 }

@@ -2,21 +2,29 @@ import { useEffect, useState } from "react";
 import CollaboratorsSearchBar from "../../../components/CollaboratorsSearchBar";
 import PeerEvaluationForm from "../../../components/PeerEvaluationForm/PeerEvaluationForm";
 import type { Collaborator } from "../../../types/reference";
-import type {
-  PeerEvaluation,
-} from "../../../types/peerEvaluation";
+import type { PeerEvaluation } from "../../../types/peerEvaluation";
 import {
   findOrCreateEmptyPeerEvaluation,
   fetchActiveEvaluationCycle,
   fetchMyPeerEvaluations,
 } from "../../../services/api";
 import { useAuth } from "../../../context/AuthContext";
+import { useEvaluation } from "../../../context/EvaluationsContext";
+import PeerEvaluationReadOnlyForm from "../../../components/PeerEvaluationForm/PeerEvaluationReadOnlyForm";
 
 const PeerEvaluation = () => {
+  const motivationLabels: Record<string, string> = {
+    CONCORDO_TOTALMENTE: "Concordo totalmente",
+    CONCORDO_PARCIALMENTE: "Concordo parcialmente",
+    DISCORDO_PARCIALMENTE: "Discordo parcialmente",
+    DISCORDO_TOTALMENTE: "Discordo totalmente",
+  };
+
   const [myEvaluations, setMyEvaluations] = useState<PeerEvaluation[]>([]);
   const [activeCycleId, setActiveCycleId] = useState<number | null>(null);
   const [isCycleFinished, setIsCycleFinished] = useState(false);
   const { user } = useAuth();
+  const { isSubmit } = useEvaluation();
 
   useEffect(() => {
     const loadActiveCycle = async () => {
@@ -89,12 +97,48 @@ const PeerEvaluation = () => {
         onSelect={handleAddCollaborator}
         excludeIds={excludeIds}
       />
-      <PeerEvaluationForm
-        myEvaluations={myEvaluations}
-        setMyEvaluations={setMyEvaluations}
-        cycleId={activeCycleId!}
-        isCycleFinished={isCycleFinished}
-      />
+      {isSubmit ? (
+        myEvaluations.map((evaluation) => (
+          <PeerEvaluationReadOnlyForm
+            key={evaluation.id}
+            collaboratorName={evaluation.evaluatee?.name || "Sem nome"}
+            collaboratorEmail={evaluation.evaluatee?.email || "Sem e-mail"}
+            initials={
+              evaluation.evaluatee?.name
+                ?.split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase() || "??"
+            }
+            score={evaluation.score ?? 0}
+            strengths={evaluation.strengths || ""}
+            improvements={evaluation.improvements || ""}
+            motivationLabel={
+              motivationLabels[evaluation.motivation] || "Não informado"
+            }
+            projects={
+              evaluation.projects?.length
+                ? evaluation.projects.map((p) => ({
+                    name: p.project?.name || "",
+                    period: p.period || 0,
+                  }))
+                : [
+                    {
+                      name: evaluation.projects?.[0]?.project?.name || "",
+                      period: evaluation.projects?.[0]?.period || 0,
+                    },
+                  ]
+            }
+          />
+        ))
+      ) : (
+        <PeerEvaluationForm
+          myEvaluations={myEvaluations}
+          setMyEvaluations={setMyEvaluations}
+          cycleId={activeCycleId}
+          isCycleFinished={isCycleFinished}
+        />
+      )}
     </div>
   );
 };

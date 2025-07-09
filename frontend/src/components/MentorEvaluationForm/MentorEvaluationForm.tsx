@@ -23,7 +23,7 @@ const MentorEvaluationForm = ({
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { updateTabCompletion } = useEvaluation();
+  const { updateTabCompletion, isSubmit } = useEvaluation();
 
   useEffect(() => {
     if (mentorEvaluation) {
@@ -127,7 +127,7 @@ const MentorEvaluationForm = ({
   }, [score, feedback]);
 
   // Mostra readonly se o ciclo estiver finalizado
-  if (isCycleFinished) {
+  if (isCycleFinished || isSubmit) {
     return (
       <div className="bg-white w-full flex flex-col px-6 py-9 rounded-xl opacity-80">
         <div className="flex justify-between items-center mb-5">

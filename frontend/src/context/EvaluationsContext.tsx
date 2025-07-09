@@ -3,6 +3,7 @@ import {
   fetchEvaluationCompletionStatus,
   submitEvaluation,
   fetchActiveEvaluationCycle,
+  unlockEvaluations,
 } from "../services/api";
 import { useAuth } from "./AuthContext";
 import { useEffect } from "react";
@@ -14,9 +15,7 @@ type TabStateMap<T> = Record<EvaluationTabKey, T>;
 
 interface EvaluationContextProps {
   isComplete: boolean;
-  isUpdate: boolean;
   setIsComplete: (value: boolean) => void;
-  setIsUpdate: (value: boolean) => void;
   registerSubmitHandler: (key: string, handler: () => Promise<void>) => void;
   submitAll: () => Promise<void>;
   tabCompletion: TabStateMap<boolean>;
@@ -25,6 +24,7 @@ interface EvaluationContextProps {
   setLastSubmittedAt: (value: string | null) => void;
   isSubmit: boolean;
   setIsSubmit: (value: boolean) => void;
+  unlockAllEvaluations: () => Promise<void>;
 }
 
 const EvaluationContext = createContext<EvaluationContextProps | undefined>(
@@ -38,7 +38,16 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
   const [isSubmit, setIsSubmit] = useState(false);
 
   const [isComplete, setIsComplete] = useState(false);
-  const [isUpdate, setIsUpdate] = useState(false);
+
+  const unlockAllEvaluations = async () => {
+    if (!activeCycle) return;
+    try {
+      await unlockEvaluations(activeCycle.id);
+      setIsSubmit(false);
+    } catch (error) {
+      console.error("Erro ao desbloquear avaliações:", error);
+    }
+  };
 
   const [initialTabCompletion, setInitialTabCompletion] = useState<
     TabStateMap<boolean>
@@ -60,14 +69,12 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
     if (!activeCycle) throw new Error("Ciclo ativo não carregado");
 
     try {
-      await submitEvaluation(activeCycle.id);
-
       const result = await submitEvaluation(activeCycle.id);
 
+      setIsSubmit(true);
       setLastSubmittedAt(result.submittedAt);
 
       setIsComplete(true);
-      setIsUpdate(false);
       setTabCompletion({
         self: true,
         peer: true,
@@ -106,7 +113,7 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
           Object.values(statusResponse.completionStatus).every(Boolean)
         );
         setLastSubmittedAt(statusResponse.lastSubmittedAt || null);
-        setIsSubmit(!!statusResponse.lastSubmittedAt); // true se já enviou
+        setIsSubmit(statusResponse.isSubmit);
       } catch (error) {
         console.error("Erro ao carregar status da avaliação:", error);
       }
@@ -115,13 +122,16 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
     loadCompletionStatus();
   }, [token]);
 
+  useEffect(() => {
+    console.log("DEBUG => isSubmit:", isSubmit);
+    console.log("DEBUG => tabCompletion:", tabCompletion);
+  }, [isSubmit, tabCompletion]);
+
   return (
     <EvaluationContext.Provider
       value={{
         isComplete,
         setIsComplete,
-        isUpdate,
-        setIsUpdate,
         registerSubmitHandler,
         submitAll,
         tabCompletion,
@@ -130,6 +140,7 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
         setLastSubmittedAt,
         isSubmit,
         setIsSubmit,
+        unlockAllEvaluations,
       }}
     >
       {children}

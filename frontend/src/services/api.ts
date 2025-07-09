@@ -97,6 +97,7 @@ export const fetchEvaluationCompletionStatus = async (cycleId: number) => {
       reference: boolean;
     };
     lastSubmittedAt: string | null;
+    isSubmit: boolean;
   };
 };
 
@@ -121,6 +122,27 @@ export const submitEvaluation = async (cycleId: number) => {
   return (await res.json()) as {
     submittedAt: string;
   };
+};
+
+export const unlockEvaluations = async (cycleId: number) => {
+  const res = await fetch(
+    "http://localhost:3000/evaluation-completion/unlock",
+    {
+      method: "PATCH",
+      headers: {
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ cycleId }),
+    }
+  );
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    const message = errorBody?.message || "Erro ao desbloquear avaliações";
+    throw new Error(message);
+  }
+
+  return await res.json();
 };
 
 export const fetchMentorEvaluation = async (evaluateeId: number) => {

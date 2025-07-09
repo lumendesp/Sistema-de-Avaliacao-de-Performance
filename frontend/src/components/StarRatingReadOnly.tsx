@@ -10,7 +10,7 @@ const StarRatingReadOnly = ({ score, size = 24, dimmed = false }: StarRatingRead
   const filledColor = dimmed ? '#A7D1D0' : '#08605F';
 
   return (
-    <div className="flex gap-7">
+    <div className="flex gap-5">
       {Array.from({ length: 5 }).map((_, i) => {
         const starIndex = i + 1;
         const filled = score >= starIndex;

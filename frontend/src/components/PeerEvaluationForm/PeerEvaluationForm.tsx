@@ -315,76 +315,7 @@ export default function PeerEvaluationForm({
                   ))}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <div className="flex flex-col gap-1">
-                    <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-                      Projeto em que atuaram juntos
-                    </p>
-                    <Select
-                      menuPortalTarget={document.body}
-                      options={projectOptions}
-                      value={
-                        projectOptions.find(
-                          (opt) => opt.value === data.projectName
-                        ) || null
-                      }
-                      onChange={(selected) =>
-                        handleInputChange(
-                          evaluation.id,
-                          "projectName",
-                          selected ? selected.value : ""
-                        )
-                      }
-                      isDisabled={readonly}
-                      placeholder="Selecione o projeto"
-                      styles={{
-                        control: (base, state) => ({
-                          ...base,
-                          minHeight: "36px",
-                          height: "36px",
-                          borderRadius: "0.25rem",
-                          borderColor: state.isFocused ? "#08605e4a" : "#ccc",
-                          boxShadow: "none",
-                          outline: state.isFocused
-                            ? "1px solid #08605e4a"
-                            : "none",
-                          fontSize: "12px",
-                          padding: 0,
-                          "&:hover": {
-                            borderColor: state.isFocused ? "#08605e4a" : "#ccc",
-                            boxShadow: "none",
-                            outline: state.isFocused
-                              ? "1px solid #08605e4a"
-                              : "none",
-                          },
-                        }),
-                        option: (base, state) => ({
-                          ...base,
-                          backgroundColor: state.isFocused
-                            ? "#08605e4a"
-                            : "white",
-                          color: "#1D1D1D",
-                          cursor: "pointer",
-                          ":active": {
-                            backgroundColor: "#08605e4a",
-                          },
-                        }),
-                        valueContainer: (base) => ({
-                          ...base,
-                          padding: "0 8px",
-                        }),
-                        indicatorsContainer: (base) => ({
-                          ...base,
-                          height: "36px",
-                        }),
-                        menuPortal: (base) => ({
-                          ...base,
-                          zIndex: 9999,
-                          position: "absolute",
-                        }),
-                      }}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 flex-1">
                     <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
                       Você ficaria motivado em trabalhar novamente?
                     </p>
@@ -452,33 +383,106 @@ export default function PeerEvaluationForm({
                       }}
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-                      Período (em meses)
-                    </p>
-                    <input
-                      type="text"
-                      className={`w-full max-w-44 h-9 p-2 rounded border border-gray-300 text-sm ${
-                        readonly || !data.projectName
-                          ? "bg-gray-100 text-[#1D1D1D]"
-                          : "focus:outline-[#08605e4a]"
-                      }`}
-                      placeholder={
-                        data.projectName
-                          ? "Insira apenas o número"
-                          : "Selecione um projeto"
-                      }
-                      value={data.projectPeriod}
-                      onChange={(e) =>
-                        handleInputChange(
-                          evaluation.id,
-                          "projectPeriod",
-                          e.target.value
-                        )
-                      }
-                      disabled={readonly || !data.projectName}
-                      required
-                    />
+                  <div className="flex gap-2 flex-1">
+                    <div className="flex flex-1 flex-col gap-1">
+                      <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
+                        Projeto em que atuaram juntos
+                      </p>
+                      <Select
+                        menuPortalTarget={document.body}
+                        options={projectOptions}
+                        value={
+                          projectOptions.find(
+                            (opt) => opt.value === data.projectName
+                          ) || null
+                        }
+                        onChange={(selected) =>
+                          handleInputChange(
+                            evaluation.id,
+                            "projectName",
+                            selected ? selected.value : ""
+                          )
+                        }
+                        isDisabled={readonly}
+                        placeholder="Selecione o projeto"
+                        styles={{
+                          control: (base, state) => ({
+                            ...base,
+                            minHeight: "36px",
+                            height: "36px",
+                            borderRadius: "0.25rem",
+                            borderColor: state.isFocused ? "#08605e4a" : "#ccc",
+                            boxShadow: "none",
+                            outline: state.isFocused
+                              ? "1px solid #08605e4a"
+                              : "none",
+                            fontSize: "12px",
+                            padding: 0,
+                            "&:hover": {
+                              borderColor: state.isFocused
+                                ? "#08605e4a"
+                                : "#ccc",
+                              boxShadow: "none",
+                              outline: state.isFocused
+                                ? "1px solid #08605e4a"
+                                : "none",
+                            },
+                          }),
+                          option: (base, state) => ({
+                            ...base,
+                            backgroundColor: state.isFocused
+                              ? "#08605e4a"
+                              : "white",
+                            color: "#1D1D1D",
+                            cursor: "pointer",
+                            ":active": {
+                              backgroundColor: "#08605e4a",
+                            },
+                          }),
+                          valueContainer: (base) => ({
+                            ...base,
+                            padding: "0 8px",
+                          }),
+                          indicatorsContainer: (base) => ({
+                            ...base,
+                            height: "36px",
+                          }),
+                          menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                            position: "absolute",
+                          }),
+                        }}
+                      />
+                    </div>
+                    <div className="flex flex-1 flex-col gap-1">
+                      <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
+                        Período (em meses)
+                      </p>
+                      <input
+                        type="text"
+                        className={`w-full h-9 p-2 rounded border border-gray-300 text-sm ${
+                          readonly || !data.projectName
+                            ? "bg-gray-100 text-[#1D1D1D]"
+                            : "focus:outline-[#08605e4a]"
+                        }`}
+                        placeholder={
+                          data.projectName
+                            ? "Insira apenas o número"
+                            : "Selecione um projeto"
+                        }
+                        value={data.projectPeriod}
+                        onChange={(e) =>
+                          handleInputChange(
+                            evaluation.id,
+                            "projectPeriod",
+                            e.target.value
+                          )
+                        }
+                        disabled={readonly || !data.projectName}
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

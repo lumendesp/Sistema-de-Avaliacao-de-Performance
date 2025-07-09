@@ -2,8 +2,6 @@ import { NavLink, Outlet } from "react-router-dom";
 import SubmitButton from "../components/SubmitButton/SubmitButton";
 import { useEvaluation } from "../context/EvaluationsContext";
 
-import { useEffect } from "react";
-
 const tabs = [
   { key: "self", label: "Autoavaliação", path: "self-evaluation" },
   { key: "peer", label: "Avaliação 360", path: "peer-evaluation" },
@@ -12,15 +10,22 @@ const tabs = [
 ] as const;
 
 const EvaluationLayout = () => {
-  const { isComplete, isUpdate, submitAll, tabCompletion, lastSubmittedAt, isSubmit, setIsSubmit, setLastSubmittedAt } =
-    useEvaluation();
+  const {
+    submitAll,
+    tabCompletion,
+    lastSubmittedAt,
+    isSubmit,
+    unlockAllEvaluations,
+  } = useEvaluation();
 
-  const isButtonDisabled =
-    !Object.values(tabCompletion).every(Boolean) || !!lastSubmittedAt;
+  // nem todas as abas estão completas ==> botão de concluir desativado
+  // cliquei em editar mas não atualizei nada ==> botão de concluir desativado
+  // cliquei em enviar ==> botão de editar ativado
 
-  useEffect(() => {
-    console.log("Estado das abas:", tabCompletion);
-  }, [tabCompletion]);
+
+  // useEffect(() => {
+  //   console.log("Estado das abas:", tabCompletion);
+  // }, [tabCompletion]);
 
   return (
     <div className="pt-6">
@@ -28,25 +33,21 @@ const EvaluationLayout = () => {
         <header className="flex justify-between items-center">
           <h1 className="text-xl font-semibold">Ciclo 2025.1</h1>
           <div className="flex justify-center items-center gap-5">
-            {lastSubmittedAt && (
+            {lastSubmittedAt && isSubmit && (
               <span className="text-sm text-gray-600">
                 Último envio: {new Date(lastSubmittedAt).toLocaleString()}
               </span>
             )}
             <SubmitButton
+              key={isSubmit ? "edit-mode" : "submit-mode"}
               isComplete={Object.values(tabCompletion).every(Boolean)}
               onClick={async () => {
                 if (isSubmit) {
-                  setIsSubmit(false);
-                  setLastSubmittedAt(null);
+                  await unlockAllEvaluations();
                 } else {
                   await submitAll();
-                  setIsSubmit(true);
                 }
               }}
-              disabled={
-                !isSubmit && !Object.values(tabCompletion).every(Boolean)
-              }
               label={isSubmit ? "Editar avaliações" : "Concluir e enviar"}
             />
           </div>

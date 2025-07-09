@@ -57,19 +57,23 @@ export class ReferenceService {
 
     const now = new Date();
     const endDate = new Date(reference.cycle.endDate);
-    
+
     if (now > endDate) {
       throw new BadRequestException(
         'O ciclo está finalizado. Não é possível editar esta referência.',
       );
     }
 
-    return this.prisma.reference.update({
+    const updated = await this.prisma.reference.update({
       where: { id: referenceId },
       data: {
         justification: encrypt(dto.justification),
       },
     });
+    return {
+      ...updated,
+      justification: decrypt(updated.justification),
+    };
   }
 
   async deleteReference(referenceId: number, providerId: number) {

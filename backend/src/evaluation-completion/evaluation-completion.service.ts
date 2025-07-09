@@ -59,6 +59,7 @@ export class EvaluationCompletionService {
 
     // ---- MENTOR
     let isMentorComplete = true;
+
     if (user && user.mentorId) {
       const mentorEvaluation = await this.prisma.mentorEvaluation.findFirst({
         where: {
@@ -84,48 +85,15 @@ export class EvaluationCompletionService {
     userId: number,
     cycleId: number,
   ): Promise<string | null> {
-    const self = await this.prisma.selfEvaluation.findFirst({
-      where: { userId, cycleId, submittedAt: { not: null } },
-      orderBy: { submittedAt: 'desc' },
+    const cycle = await this.prisma.evaluationCycle.findUnique({
+      where: { id: cycleId },
       select: { submittedAt: true },
     });
 
-    const peer = await this.prisma.peerEvaluation.findFirst({
-      where: { evaluatorId: userId, cycleId, submittedAt: { not: null } },
-      orderBy: { submittedAt: 'desc' },
-      select: { submittedAt: true },
-    });
-
-    const mentor = await this.prisma.mentorEvaluation.findFirst({
-      where: { evaluatorId: userId, cycleId, submittedAt: { not: null } },
-      orderBy: { submittedAt: 'desc' },
-      select: { submittedAt: true },
-    });
-
-    const reference = await this.prisma.reference.findFirst({
-      where: { providerId: userId, cycleId, submittedAt: { not: null } },
-      orderBy: { submittedAt: 'desc' },
-      select: { submittedAt: true },
-    });
-
-    const dates = [
-      self?.submittedAt,
-      peer?.submittedAt,
-      mentor?.submittedAt,
-      reference?.submittedAt,
-    ]
-      .filter(Boolean)
-      .map((d) => new Date(d!));
-
-    if (dates.length === 0) return null;
-
-    const latest = dates.sort((a, b) => b.getTime() - a.getTime())[0];
-
-    return latest.toISOString();
+    return cycle?.submittedAt?.toISOString() ?? null;
   }
 
   async submitEvaluation(userId: number, cycleId: number) {
-    // Verifica se todas as avaliações estão completas
     const completionStatus = await this.getCompletionStatus(userId, cycleId);
 
     if (!Object.values(completionStatus).every(Boolean)) {
@@ -134,89 +102,45 @@ export class EvaluationCompletionService {
       );
     }
 
-    // Envia cada tipo de avaliação separadamente
-    await this.submitSelfEvaluation(userId, cycleId);
-    await this.submitPeerEvaluation(userId, cycleId);
-    await this.submitMentorEvaluation(userId, cycleId);
-    await this.submitReferenceEvaluation(userId, cycleId);
+    // Marca ciclo como enviado
+    await this.prisma.evaluationCycle.update({
+      where: { id: cycleId },
+      data: {
+        submittedAt: new Date(),
+        isSubmit: true,
+      },
+    });
 
-    // Retorna timestamp do envio
+    console.log(`Avaliações enviadas para o ciclo ${cycleId} por ${userId}`);
+
     return { submittedAt: new Date().toISOString() };
   }
 
-  // ----------- SELF -----------
-  private async submitSelfEvaluation(userId: number, cycleId: number) {
-    await this.prisma.selfEvaluation.updateMany({
-      where: {
-        userId,
-        cycleId,
-      },
+  async unlockEvaluation(userId: number, cycleId: number) {
+    await this.prisma.evaluationCycle.update({
+      where: { id: cycleId },
       data: {
-        submittedAt: new Date(),
+        submittedAt: null,
+        isSubmit: false,
       },
     });
 
     console.log(
-      `Autoavaliação enviada para usuário ${userId} no ciclo ${cycleId}`,
+      `Avaliações desbloqueadas para o ciclo ${cycleId} por ${userId}`,
     );
+
+    return { message: 'Avaliações desbloqueadas com sucesso' };
   }
 
-  // ----------- PEER -----------
-  private async submitPeerEvaluation(userId: number, cycleId: number) {
-    await this.prisma.peerEvaluation.updateMany({
-      where: {
-        evaluatorId: userId,
-        cycleId,
-      },
-      data: {
-        submittedAt: new Date(),
+  async getCycleSubmissionInfo(cycleId: number) {
+    const cycle = await this.prisma.evaluationCycle.findUnique({
+      where: { id: cycleId },
+      select: {
+        submittedAt: true,
+        isSubmit: true,
       },
     });
 
-    console.log(
-      `Avaliações de pares enviadas para usuário ${userId} no ciclo ${cycleId}`,
-    );
-  }
-
-  // ----------- MENTOR -----------
-  private async submitMentorEvaluation(userId: number, cycleId: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { mentorId: true },
-    });
-
-    if (user?.mentorId) {
-      await this.prisma.mentorEvaluation.updateMany({
-        where: {
-          evaluatorId: userId,
-          evaluateeId: user.mentorId,
-          cycleId,
-        },
-        data: {
-          submittedAt: new Date(),
-        },
-      });
-
-      console.log(
-        `Avaliação do mentor enviada para usuário ${userId} no ciclo ${cycleId}`,
-      );
-    }
-  }
-
-  // ----------- REFERENCE -----------
-  private async submitReferenceEvaluation(userId: number, cycleId: number) {
-    await this.prisma.reference.updateMany({
-      where: {
-        providerId: userId,
-        cycleId,
-      },
-      data: {
-        submittedAt: new Date(),
-      },
-    });
-
-    console.log(
-      `Referências enviadas para usuário ${userId} no ciclo ${cycleId}`,
-    );
+    return cycle;
   }
 }

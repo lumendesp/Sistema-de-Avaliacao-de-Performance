@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
   Request,
@@ -31,21 +32,25 @@ export class EvaluationCompletionController {
     }
 
     const userId = req.user.userId;
-    const completionStatus =
+
+    const completionData =
       await this.evaluationCompletionService.getCompletionStatus(
         userId,
         cycleId,
       );
 
-    const lastSubmittedAt =
-      await this.evaluationCompletionService.getLastSubmittedAt(
-        userId,
-        cycleId,
-      );
+    const cycleSubmission =
+      await this.evaluationCompletionService.getCycleSubmissionInfo(cycleId);
 
     return {
-      completionStatus,
-      lastSubmittedAt,
+      completionStatus: {
+        self: completionData.self,
+        peer: completionData.peer,
+        mentor: completionData.mentor,
+        reference: completionData.reference,
+      },
+      lastSubmittedAt: cycleSubmission?.submittedAt,
+      isSubmit: cycleSubmission?.isSubmit,
     };
   }
 
@@ -63,5 +68,14 @@ export class EvaluationCompletionController {
       cycleId,
     );
     return { submittedAt: submission.submittedAt };
+  }
+
+  @Patch('unlock')
+  async unlock(@Request() req, @Body('cycleId') cycleId: number) {
+    const userId = req.user.userId;
+    return await this.evaluationCompletionService.unlockEvaluation(
+      userId,
+      cycleId,
+    );
   }
 }
