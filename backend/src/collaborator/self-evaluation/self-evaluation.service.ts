@@ -5,6 +5,16 @@ import { UpdateSelfEvaluationDto } from './dto/update-self-evaluation.dto';
 import { ConflictException } from '@nestjs/common/exceptions/conflict.exception';
 import { encrypt, decrypt } from '../../utils/encryption';
 
+type ItemToCreate = {
+  criterionId: number;
+  configuredCriterionId: number;
+  score: number;
+  justification: string;
+  scoreDescription: string;
+};
+
+let itemsToCreate: ItemToCreate[] = [];
+
 @Injectable()
 export class SelfEvaluationService {
   constructor(private prisma: PrismaService) {}
@@ -41,38 +51,40 @@ export class SelfEvaluationService {
       throw new ConflictException('Autoavaliação já existe para este ciclo');
     }
 
-    const itemsToCreate = await Promise.all(
-      dto.items.map(async (item) => {
-        const configured = await this.prisma.configuredCriterion.findFirst({
-          where: {
+    if (dto.items && dto.items.length > 0) {
+      itemsToCreate = await Promise.all(
+        dto.items.map(async (item) => {
+          const configured = await this.prisma.configuredCriterion.findFirst({
+            where: {
+              criterionId: item.criterionId,
+              positionId: user.positionId!,
+              unitId: user.unitId!,
+              trackId: user.trackId!,
+            },
+          });
+
+          if (!configured) {
+            throw new Error(
+              `Critério ${item.criterionId} não configurado para esse usuário`,
+            );
+          }
+
+          return {
             criterionId: item.criterionId,
-            positionId: user.positionId!,
-            unitId: user.unitId!,
-            trackId: user.trackId!,
-          },
-        });
-
-        if (!configured) {
-          throw new Error(
-            `Critério ${item.criterionId} não configurado para esse usuário`,
-          );
-        }
-
-        return {
-          criterionId: item.criterionId,
-          configuredCriterionId: configured.id,
-          score: item.score,
-          justification: encrypt(item.justification),
-          scoreDescription: this.getScoreDescription(item.score),
-        };
-      }),
-    );
+            configuredCriterionId: configured.id,
+            score: item.score,
+            justification: encrypt(item.justification),
+            scoreDescription: this.getScoreDescription(item.score),
+          };
+        }),
+      );
+    }
 
     return await this.prisma.selfEvaluation.create({
       data: {
         userId,
         cycleId: dto.cycleId,
-        averageScore: dto.averageScore,
+        averageScore: dto.averageScore ?? null,
         items: {
           createMany: {
             data: itemsToCreate,
@@ -149,7 +161,7 @@ export class SelfEvaluationService {
       throw new Error('Usuário incompleto ou avaliação inexistente');
     }
 
-    const itemsToCreate = await Promise.all(
+    const itemsToCreateRaw = await Promise.all(
       dto.items.map(async (item) => {
         const configured = await this.prisma.configuredCriterion.findFirst({
           where: {
@@ -161,7 +173,10 @@ export class SelfEvaluationService {
         });
 
         if (!configured) {
-          throw new Error(`Critério ${item.criterionId} não configurado`);
+          console.warn(
+            `Critério ${item.criterionId} não está configurado para o usuário. Ignorando.`,
+          );
+          return null;
         }
 
         return {
@@ -174,14 +189,30 @@ export class SelfEvaluationService {
       }),
     );
 
+    const itemsToCreate = itemsToCreateRaw.filter(
+      (item): item is NonNullable<typeof item> => item !== null,
+    );
+
+    // console.log('User info:', {
+    //   positionId: evaluation.user.positionId,
+    //   unitId: evaluation.user.unitId,
+    //   trackId: evaluation.user.trackId,
+    // });
+    // console.log(
+    //   'Item criterionIds:',
+    //   dto.items.map((i) => i.criterionId),
+    // );
+
     return this.prisma.selfEvaluation.update({
       where: { id },
       data: {
         averageScore: dto.averageScore,
-        items: {
-          deleteMany: {},
-          create: itemsToCreate,
-        },
+        ...(itemsToCreate.length > 0 && {
+          items: {
+            deleteMany: {},
+            create: itemsToCreate,
+          },
+        }),
       },
       include: {
         items: true,

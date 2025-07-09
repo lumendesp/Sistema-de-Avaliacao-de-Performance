@@ -12,20 +12,31 @@ interface Props {
 
 const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
   const { token } = useAuth();
-  const { setIsComplete, setIsUpdate, registerSubmitHandler } = useEvaluation();
+  const { setIsComplete, setIsUpdate, updateTabCompletion } = useEvaluation();
 
   const [ratings, setRatings] = useState<Record<number, number[]>>({});
-  const [justifications, setJustifications] = useState<Record<number, string[]>>({});
+  const [justifications, setJustifications] = useState<
+    Record<number, string[]>
+  >({});
   const [selfEvaluationId, setSelfEvaluationId] = useState<number | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [weights, setWeights] = useState<Record<number, number>>({});
 
   useEffect(() => {
+    const isComplete = filled === total;
+    setIsComplete(isComplete);
+    updateTabCompletion("self", isComplete);
+  }, [ratings, justifications]);
+
+  useEffect(() => {
     const fetchWeights = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/rh-criteria/tracks/with-criteria", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await axios.get(
+          "http://localhost:3000/rh-criteria/tracks/with-criteria",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         const weightMap: Record<number, number> = {};
         response.data.forEach((track: any) => {
@@ -61,33 +72,112 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
     setJustifications(initialJustifications);
   }, [trackData]);
 
-  const total = Object.values(ratings).reduce((sum, arr) => sum + arr.length, 0);
+  const total = Object.values(ratings).reduce(
+    (sum, arr) => sum + arr.length,
+    0
+  );
   const filled = Object.entries(ratings).reduce((count, [groupId, arr]) => {
-    return count + arr.filter((r, i) => r > 0 && justifications[Number(groupId)][i]?.trim()).length;
+    return (
+      count +
+      arr.filter((r, i) => r > 0 && justifications[Number(groupId)][i]?.trim())
+        .length
+    );
   }, 0);
 
   useEffect(() => {
     setIsComplete(filled === total);
   }, [ratings, justifications]);
 
-  const handleRatingChange = (groupId: number, index: number, value: number) => {
-    const updated = [...ratings[groupId]];
-    updated[index] = value;
-    setRatings({ ...ratings, [groupId]: updated });
+  const saveDraft = async () => {
+    const allItems = trackData.CriterionGroup.flatMap((group) =>
+      group.configuredCriteria.map((cc, i) => ({
+        criterionId: cc.criterion.id,
+        score: ratings[group.id]?.[i] ?? 0,
+        justification: justifications[group.id]?.[i] ?? "",
+      }))
+    );
+
+    // Filtra apenas os que têm nota ou justificativa
+    const items = allItems.filter(
+      (item) => item.score > 0 || item.justification.trim().length > 0
+    );
+
+    if (items.length === 0) return; // nada a salvar ainda
+
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+
+    items.forEach((item) => {
+      const weight = weights[item.criterionId] ?? 1;
+      totalWeightedScore += item.score * weight;
+      totalWeight += weight;
+    });
+
+    const averageScore =
+      totalWeight > 0
+        ? parseFloat((totalWeightedScore / totalWeight).toFixed(1))
+        : 0;
+
+    const payload = {
+      cycleId,
+      items,
+      averageScore,
+    };
+
+    try {
+      if (selfEvaluationId) {
+        await axios.patch(
+          `http://localhost:3000/self-evaluation/${selfEvaluationId}`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        // console.log("Atualizado.");
+      } else {
+        const res = await axios.post(
+          `http://localhost:3000/self-evaluation`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setSelfEvaluationId(res.data.id);
+        setIsUpdate(true);
+        // console.log("Criado.");
+      }
+    } catch (err) {
+      console.error("Erro ao salvar autoavaliação:", err);
+    }
   };
 
-  const handleJustificationChange = (groupId: number, index: number, value: string) => {
+  const handleRatingChange = (
+    groupId: number,
+    index: number,
+    value: number
+  ) => {
+    const updated = [...ratings[groupId]];
+    updated[index] = value;
+    const newRatings = { ...ratings, [groupId]: updated };
+    setRatings(newRatings);
+  };
+
+  const handleJustificationChange = (
+    groupId: number,
+    index: number,
+    value: string
+  ) => {
     const updated = [...justifications[groupId]];
     updated[index] = value;
-    setJustifications({ ...justifications, [groupId]: updated });
+    const newJustifications = { ...justifications, [groupId]: updated };
+    setJustifications(newJustifications);
   };
 
   useEffect(() => {
     const fetch = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/self-evaluation?cycleId=${cycleId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await axios.get(
+          `http://localhost:3000/self-evaluation?cycleId=${cycleId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         const current = response.data.find((e: any) => e.cycle.id === cycleId);
         if (current) {
@@ -104,7 +194,8 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
             group.configuredCriteria.forEach((cc) => {
               const answer = current.items.find(
                 (item: any) =>
-                  item.criterionId === cc.criterion.id && item.group?.id === group.id
+                  item.criterionId === cc.criterion.id &&
+                  item.group?.id === group.id
               );
 
               groupedRatings[group.id].push(answer?.score ?? 0);
@@ -123,7 +214,11 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
     fetch();
   }, [token, cycleId, trackData]);
 
-  const calculateGroupAverage = (groupId: number, criteria: { id: number }[], scores: number[]) => {
+  const calculateGroupAverage = (
+    groupId: number,
+    criteria: { id: number }[],
+    scores: number[]
+  ) => {
     let weightedSum = 0;
     let totalWeight = 0;
 
@@ -133,7 +228,9 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
       totalWeight += weight;
     });
 
-    return totalWeight > 0 ? parseFloat((weightedSum / totalWeight).toFixed(1)) : 0;
+    return totalWeight > 0
+      ? parseFloat((weightedSum / totalWeight).toFixed(1))
+      : 0;
   };
 
   useEffect(() => {
@@ -146,7 +243,9 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
         }))
       );
 
-      const hasEmpty = items.some((item) => item.score <= 0 || item.justification.trim() === "");
+      const hasEmpty = items.some(
+        (item) => item.score <= 0 || item.justification.trim() === ""
+      );
       if (hasEmpty) {
         alert("Preencha todos os critérios antes de enviar.");
         return;
@@ -161,15 +260,22 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
         totalWeight += weight;
       });
 
-      const averageScore = totalWeight > 0 ? parseFloat((totalWeightedScore / totalWeight).toFixed(1)) : 0;
+      const averageScore =
+        totalWeight > 0
+          ? parseFloat((totalWeightedScore / totalWeight).toFixed(1))
+          : 0;
       const payload = { cycleId, items, averageScore };
 
       setIsSending(true);
       try {
         if (selfEvaluationId) {
-          await axios.patch(`http://localhost:3000/self-evaluation/${selfEvaluationId}`, payload, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          await axios.patch(
+            `http://localhost:3000/self-evaluation/${selfEvaluationId}`,
+            payload,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
           alert("Autoavaliação atualizada com sucesso!");
         } else {
           await axios.post("http://localhost:3000/self-evaluation", payload, {
@@ -185,8 +291,15 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
       }
     };
 
-    registerSubmitHandler("self-evaluation", submitSelfEvaluation);
   }, [ratings, justifications, selfEvaluationId, cycleId, weights]);
+
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      saveDraft();
+    }, 500); // pequeno delay para evitar múltiplas chamadas em sequência
+
+    return () => clearTimeout(debounce);
+  }, [ratings, justifications]);
 
   return (
     <div className="pb-24">
@@ -209,7 +322,9 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
           }))}
           readOnly={false}
           onRatingChange={(i, v) => handleRatingChange(group.id, i, v)}
-          onJustificationChange={(i, v) => handleJustificationChange(group.id, i, v)}
+          onJustificationChange={(i, v) =>
+            handleJustificationChange(group.id, i, v)
+          }
         />
       ))}
     </div>

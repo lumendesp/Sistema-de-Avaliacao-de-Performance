@@ -1,21 +1,35 @@
 import ScoreBox from "../ScoreBox";
 import StarRating from "../StarRating";
 import StarRatingReadOnly from "../StarRatingReadOnly";
-import type { MentorEvaluationProps } from "../../types/mentor-evaluation";
+import type {
+  MentorEvaluation,
+  MentorEvaluationProps,
+} from "../../types/mentor-evaluation";
 import { UserIcon } from "../UserIcon";
 
-import { useState, useEffect } from "react";
-import { submitMentorEvaluation, fetchMentorEvaluation } from "../../services/api";
+import { useState, useEffect, useRef } from "react";
+import { updateMentorEvaluation } from "../../services/api";
 import { useEvaluation } from "../../context/EvaluationsContext";
 
-const MentorEvaluationForm = ({ evaluateeId, mentor }: MentorEvaluationProps) => {
+const MentorEvaluationForm = ({
+  mentor,
+  mentorEvaluation,
+  setMentorEvaluation,
+  isCycleFinished = false,
+}: MentorEvaluationProps) => {
   const [score, setScore] = useState<number | undefined>(undefined);
   const [feedback, setFeedback] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { registerSubmitHandler } = useEvaluation();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { updateTabCompletion, isSubmit } = useEvaluation();
+
+  useEffect(() => {
+    if (mentorEvaluation) {
+      checkIfCompleted(mentorEvaluation);
+    }
+  }, [mentorEvaluation]);
 
   // função auxiliar para pegar as iniciais
   const getInitials = (name: string) => {
@@ -26,43 +40,84 @@ const MentorEvaluationForm = ({ evaluateeId, mentor }: MentorEvaluationProps) =>
       .toUpperCase();
   };
 
-  const handleSubmit = async () => {
-    if (!score || !feedback.trim()) {
+  // Carrega dados da avaliação existente
+  useEffect(() => {
+    if (mentorEvaluation) {
+      setScore(mentorEvaluation.score || undefined);
+      setFeedback(mentorEvaluation.justification || "");
+    }
+  }, [mentorEvaluation]);
+
+  const debouncedSave = (data: { score?: number; justification?: string }) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    timeoutRef.current = setTimeout(async () => {
+      if (!mentorEvaluation?.id) return;
+
+      try {
+        const updatedEvaluation = await updateMentorEvaluation(
+          mentorEvaluation.id,
+          data
+        );
+        if (setMentorEvaluation) {
+          setMentorEvaluation(updatedEvaluation);
+          checkIfCompleted(updatedEvaluation);
+        }
+      } catch (err) {
+        console.error("Erro ao salvar avaliação:", err);
+        setError("Erro ao salvar avaliação.");
+      }
+    }, 500);
+  };
+
+  const handleScoreChange = (newScore: number) => {
+    setScore(newScore);
+    debouncedSave({ score: newScore });
+  };
+
+  const handleFeedbackChange = (value: string) => {
+    setFeedback(value);
+    debouncedSave({ justification: value });
+  };
+
+  const checkIfCompleted = async (
+    updatedEvaluation: MentorEvaluation | null,
+    localScore?: number,
+    localFeedback?: string
+  ) => {
+    setError(null);
+    const currentScore = localScore !== undefined ? localScore : score;
+    const currentFeedback =
+      localFeedback !== undefined ? localFeedback : feedback;
+
+    if (!currentScore || !currentFeedback.trim()) {
+      updateTabCompletion("mentor", false);
       setError("Preencha todos os campos");
       return;
     }
 
+    setError(null);
+
     try {
-      setIsSubmitting(true);
-      await submitMentorEvaluation(evaluateeId, score, feedback);
-      setSuccess(true);
-      setError(null);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsSubmitting(false);
+      if (updatedEvaluation?.id) {
+        await updateMentorEvaluation(updatedEvaluation.id, {
+          score: currentScore,
+          justification: currentFeedback,
+        });
+      }
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao enviar avaliação";
+      setError(errorMessage);
     }
+
+    updateTabCompletion("mentor", true);
   };
 
   useEffect(() => {
-    const loadEvaluation = async () => {
-      try {
-        const data = await fetchMentorEvaluation(evaluateeId);
-        if (data) {
-          setScore(data.score);
-          setFeedback(data.justification);
-          setSuccess(true);
-        }
-      } catch (err) {
-        console.error("Erro ao buscar avaliação existente", err);
-      }
-    };
-
-    loadEvaluation();
-  }, [evaluateeId]);
-
-  useEffect(() => {
-    registerSubmitHandler("mentor-evaluation", handleSubmit);
+    if (!isCycleFinished && mentorEvaluation) {
+      checkIfCompleted(mentorEvaluation, score, feedback);
+    }
   }, [score, feedback]);
 
   useEffect(() => {
@@ -71,7 +126,8 @@ const MentorEvaluationForm = ({ evaluateeId, mentor }: MentorEvaluationProps) =>
     }
   }, [score, feedback]);
 
-  if (success) {
+  // Mostra readonly se o ciclo estiver finalizado
+  if (isCycleFinished || isSubmit) {
     return (
       <div className="bg-white w-full flex flex-col px-6 py-9 rounded-xl opacity-80">
         <div className="flex justify-between items-center mb-5">
@@ -127,10 +183,7 @@ const MentorEvaluationForm = ({ evaluateeId, mentor }: MentorEvaluationProps) =>
           Dê uma avaliação de 1 a 5 ao colaborador
         </p>
         <div>
-          <StarRating
-            score={score ?? 0}
-            onChange={(newScore) => setScore(newScore)}
-          />
+          <StarRating score={score ?? 0} onChange={handleScoreChange} />
         </div>
       </div>
       <div className="flex flex-col gap-1 flex-1">
@@ -141,7 +194,7 @@ const MentorEvaluationForm = ({ evaluateeId, mentor }: MentorEvaluationProps) =>
           className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
           placeholder="Justifique sua nota..."
           value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
+          onChange={(e) => handleFeedbackChange(e.target.value)}
         ></textarea>
       </div>
 

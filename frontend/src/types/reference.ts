@@ -16,9 +16,8 @@ export interface Reference {
 }
 
 export interface ReferenceEvaluationFormProps {
-  selectedCollaborators: Collaborator[];
-  onRemoveCollaborator: (collaboratorId: number) => void;
   myReferences: Reference[];
   setMyReferences: React.Dispatch<React.SetStateAction<Reference[]>>;
   cycleId: number;
+  isCycleFinished: boolean
 }
