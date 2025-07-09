@@ -22,24 +22,31 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchCycle = async () => {
       try {
-        const response = await axios.get<Cycle>('http://localhost:3000/evaluation-cycle/recent', {
+        // Descobrir o role principal do usuário (primeiro role)
+        const mainRole = user?.roles?.[0] || 'COLLABORATOR';
+        console.log('User roles:', user?.roles);
+        console.log('Main role being sent:', mainRole);
+        
+        const response = await axios.get<Cycle>(`http://localhost:3000/ciclos/current?type=${mainRole}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         const cicloMaisRecente = response.data;
         setCycle(cicloMaisRecente);
 
-        const endDate = new Date(cicloMaisRecente.endDate);
-        const hoje = new Date();
-        const diff = Math.ceil((endDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-        setDiasRestantes(diff > 0 ? diff : 0);
+        if (cicloMaisRecente && cicloMaisRecente.endDate) {
+          const endDate = new Date(cicloMaisRecente.endDate);
+          const hoje = new Date();
+          const diff = Math.ceil((endDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+          setDiasRestantes(diff > 0 ? diff : 0);
+        }
       } catch (error) {
         console.error('Erro ao buscar ciclo mais recente:', error);
       }
     };
 
     fetchCycle();
-  }, [token]);
+  }, [token, user]);
 
   const mapCycleStatusToUIStatus = (status: string): 'aberto' | 'emBreve' | 'disponivel' => {
     switch (status) {

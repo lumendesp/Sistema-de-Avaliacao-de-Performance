@@ -103,7 +103,7 @@ function Equalization(){
 
     const fetchActiveCycle = async () => {
         try {
-            const cycle = await fetchActiveEvaluationCycle();
+            const cycle = await fetchActiveEvaluationCycle('HR');
             setActiveCycle(cycle);
         } catch (error) {
             console.error("Failed to fetch active cycle:", error);

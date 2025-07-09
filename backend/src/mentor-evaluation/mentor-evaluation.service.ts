@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma.service';
 import { EvaluationCycleService } from '../evaluation-cycle/evaluation-cycle.service';
 import { CreateMentorEvaluationDto } from './dto/create-mentor-evaluation.dto';
 import { encrypt, decrypt } from '../utils/encryption';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class MentorEvaluationService {
@@ -26,8 +27,8 @@ export class MentorEvaluationService {
       throw new ForbiddenException('Only collaborators can evaluate mentors.');
     }
 
-    // busca o ciclo de avaliação ativo
-    const activeCycle = await this.cycleService.findActiveCycle();
+    // busca o ciclo de avaliação ativo para COLLABORATOR
+    const activeCycle = await this.cycleService.findActiveCycle(Role.COLLABORATOR);
 
     // se não tiver nenhum ciclo ativo
     if (!activeCycle) {

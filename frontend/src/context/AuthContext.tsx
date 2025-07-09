@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await loginRequest(email, password);
 
       // transforma os roles
-      const userRoles = data.user?.roles?.map((r: any) => r.role) || [];
+      const userRoles = data.user?.roles?.map((r: any) => typeof r === "string" ? r : r.role) || [];
 
       // salva o token JWT
       localStorage.setItem("token", data.access_token);
@@ -56,8 +56,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // remove a senha antes de salvar
       const { password: _, ...userWithoutPassword } = data.user || { email };
 
-      // salva o usuário
-      localStorage.setItem("user", JSON.stringify(userWithoutPassword));
+      // salva o usuário, garantindo que roles é array de string
+      localStorage.setItem("user", JSON.stringify({
+        ...userWithoutPassword,
+        roles: userRoles,
+      }));
 
       setUser({
         ...userWithoutPassword,

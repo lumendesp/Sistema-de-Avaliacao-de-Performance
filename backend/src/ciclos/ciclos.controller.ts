@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
 import { CiclosService } from './ciclos.service';
 import { CreateCicloDto } from './dto/create-ciclo.dto';
 import { UpdateCicloDto } from './dto/update-ciclo.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Role } from '@prisma/client';
 
 @Controller('ciclos')
 export class CiclosController {
@@ -28,6 +29,23 @@ export class CiclosController {
   @Get('brutal-facts')
   getBrutalFactsData() {
     return this.ciclosService.getBrutalFactsData();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('debug/cycles')
+  getDebugCycles() {
+    return this.ciclosService.getDebugCycles();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('current')
+  getCurrentCycle(@Query('type') type?: string) {
+    // Validar se o tipo é válido
+    if (type && !Object.values(Role).includes(type as Role)) {
+      throw new Error(`Invalid role type: ${type}`);
+    }
+    
+    return this.ciclosService.getCurrentCycle(type as Role);
   }
 
   @UseGuards(JwtAuthGuard)

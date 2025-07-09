@@ -76,7 +76,7 @@ function Committee(){
 
     const fetchCycle = async () => {
         try {
-            const data = await fetchActiveEvaluationCycle();
+            const data = await fetchActiveEvaluationCycle('HR');
             setCycle(data);
             if (data && data.endDate) {
                 const endDate = new Date(data.endDate);

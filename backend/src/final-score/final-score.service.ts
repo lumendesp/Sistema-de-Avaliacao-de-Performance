@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { CreateFinalScoreDto } from './dto/create-final-score.dto';
 import { UpdateFinalScoreDto } from './dto/update-final-score.dto';
 import { EvaluationCycleService } from '../evaluation-cycle/evaluation-cycle.service';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class FinalScoreService {
@@ -28,9 +29,9 @@ export class FinalScoreService {
       //   throw new ForbiddenException('Only committee members can create final scores.');
       // }
 
-      // Get active cycle
+      // Get active cycle for COMMITTEE type
       console.log('Looking for active cycle...');
-      const activeCycle = await this.cycleService.findActiveCycle();
+      const activeCycle = await this.cycleService.findActiveCycle(Role.COMMITTEE);
       console.log('Active cycle found:', activeCycle);
       
       if (!activeCycle) {
@@ -88,7 +89,7 @@ export class FinalScoreService {
 
   async testActiveCycle() {
     try {
-      const activeCycle = await this.cycleService.findActiveCycle();
+      const activeCycle = await this.cycleService.findActiveCycle(Role.COMMITTEE);
       return {
         activeCycle,
         message: activeCycle ? 'Active cycle found' : 'No active cycle found'
