@@ -122,10 +122,10 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
     loadCompletionStatus();
   }, [token]);
 
-  useEffect(() => {
-    console.log("DEBUG => isSubmit:", isSubmit);
-    console.log("DEBUG => tabCompletion:", tabCompletion);
-  }, [isSubmit, tabCompletion]);
+  // useEffect(() => {
+  //   console.log("DEBUG => isSubmit:", isSubmit);
+  //   console.log("DEBUG => tabCompletion:", tabCompletion);
+  // }, [isSubmit, tabCompletion]);
 
   return (
     <EvaluationContext.Provider
