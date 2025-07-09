@@ -107,9 +107,17 @@ const SidebarRH = () => {
             className="flex items-center gap-2 pl-2 group focus:outline-none"
             tabIndex={0}
           >
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-700 font-bold group-hover:ring-2 group-hover:ring-green-main transition">
-              {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'RH'}
-            </div>
+            {user?.photo ? (
+              <img
+                src={user.photo}
+                alt="Avatar"
+                className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 group-hover:ring-2 group-hover:ring-green-main transition"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-700 font-bold group-hover:ring-2 group-hover:ring-green-main transition">
+                {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'RH'}
+              </div>
+            )}
             <p className="text-sm text-gray-700 font-medium group-hover:underline">
               {user?.name || 'Recursos Humanos'}
             </p>
