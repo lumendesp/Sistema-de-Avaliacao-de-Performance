@@ -1,7 +1,7 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateMentorToCollaboratorEvaluationDto } from './dto/create-mentor-to-collaborator-evaluation.dto';
-import { encrypt } from '../utils/encryption';
+import { encrypt, decrypt } from '../utils/encryption';
 
 @Injectable()
 export class MentorToCollaboratorEvaluationService {
@@ -29,9 +29,14 @@ export class MentorToCollaboratorEvaluationService {
       },
     );
     if (existing) {
-      throw new ForbiddenException(
-        'You have already evaluated this collaborator in this cycle.',
-      );
+      // Atualiza a avaliação existente em vez de bloquear
+      return this.prisma.mentorToCollaboratorEvaluation.update({
+        where: { id: existing.id },
+        data: {
+          score: dto.score,
+          justification: encrypt(dto.justification),
+        },
+      });
     }
     return this.prisma.mentorToCollaboratorEvaluation.create({
       data: {
@@ -45,18 +50,26 @@ export class MentorToCollaboratorEvaluationService {
   }
 
   async getByMentor(mentorId: number) {
-    return this.prisma.mentorToCollaboratorEvaluation.findMany({
+    const results = await this.prisma.mentorToCollaboratorEvaluation.findMany({
       where: { evaluatorId: mentorId },
       include: { evaluatee: true, cycle: true },
       orderBy: { createdAt: 'desc' },
     });
+    return results.map((ev) => ({
+      ...ev,
+      justification: decrypt(ev.justification),
+    }));
   }
 
   async getByCollaborator(collaboratorId: number) {
-    return this.prisma.mentorToCollaboratorEvaluation.findMany({
+    const results = await this.prisma.mentorToCollaboratorEvaluation.findMany({
       where: { evaluateeId: collaboratorId },
       include: { evaluator: true, cycle: true },
       orderBy: { createdAt: 'desc' },
     });
+    return results.map((ev) => ({
+      ...ev,
+      justification: decrypt(ev.justification),
+    }));
   }
 }
