@@ -49,9 +49,36 @@ interface RHCriteriaBoxProps {
     onAddEvaluation?: (criterionIdx: number) => void;
     onEditCriterionGroup?: (criterionIdx: number, newName: string) => void;
     onAddCriterionToGroup?: (groupIdx: number, criterion: AvailableCriterion) => void;
+    togglingCriteria?: Set<string>;
 }
 
-function RHCriteriaBox({ trackName, criteria: initialCriteria, availableCriteria, isExpanded, onToggle, onAddCriterion, onAddPilar, onDeleteTrack, onDeleteCriterio, onDeleteCriterioFromGroup, onDeleteCriterionGroup, onDeleteEvaluation, editingTrackIdx, setEditingTrackIdx, editingTrackName, setEditingTrackName, handleTrackNameSave, handleTrackNameKeyDown, trilhaIdx, onEditCriterion, onEditEvaluation, onAddEvaluation, onEditCriterionGroup, onAddCriterionToGroup }: RHCriteriaBoxProps) {
+function RHCriteriaBox({ 
+    trackName, 
+    criteria: initialCriteria, 
+    availableCriteria, 
+    isExpanded, 
+    onToggle, 
+    onAddCriterion, 
+    onAddPilar, 
+    onDeleteTrack, 
+    onDeleteCriterio, 
+    onDeleteCriterioFromGroup, 
+    onDeleteCriterionGroup, 
+    onDeleteEvaluation, 
+    editingTrackIdx, 
+    setEditingTrackIdx, 
+    editingTrackName, 
+    setEditingTrackName, 
+    handleTrackNameSave, 
+    handleTrackNameKeyDown, 
+    trilhaIdx, 
+    onEditCriterion, 
+    onEditEvaluation, 
+    onAddEvaluation, 
+    onEditCriterionGroup, 
+    onAddCriterionToGroup,
+    togglingCriteria = new Set()
+}: RHCriteriaBoxProps) {
     const [expandedEvaluation, setExpandedEvaluation] = useState<string | null>(null);
     const [editingCriterionIdx, setEditingCriterionIdx] = useState<number | null>(null);
     const [editingCriterionName, setEditingCriterionName] = useState('');
@@ -63,6 +90,15 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, availableCriteria
 
     const handleToggleEvaluation = (criterionIndex: number, evalIndex: number) => {
         if (onEditEvaluation) {
+            // Create the toggle key to check if this specific toggle is loading
+            // criterionIndex = group index, evalIndex = criterion index within the group
+            const toggleKey = `${trilhaIdx}-${criterionIndex}-${evalIndex}`;
+            
+            // Prevent multiple clicks if this toggle is already processing
+            if (togglingCriteria.has(toggleKey)) {
+                return;
+            }
+            
             const current = initialCriteria[criterionIndex].evaluations[evalIndex].mandatory;
             onEditEvaluation(criterionIndex, evalIndex, 'mandatory', !current);
         }
@@ -136,19 +172,19 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, availableCriteria
         if (e.key === 'Escape') setEditingEvaluation({ criterionIdx: null, evalIdx: null, value: '' });
     };
 
-    const handleCriterionSelect = (groupIdx: number, criterion: AvailableCriterion) => {
+    const handleCriterionSelect = (groupIdx: number, criterion: any) => {
         if (onAddCriterionToGroup) {
-            onAddCriterionToGroup(groupIdx, criterion);
+            onAddCriterionToGroup(groupIdx, criterion as AvailableCriterion);
         }
     };
 
     return (
         <div className="border border-gray-300 rounded-lg bg-white">
-            <div className="p-4 flex justify-between items-center cursor-pointer" onClick={onToggle}>
+            <div className="p-3 sm:p-4 flex justify-between items-center cursor-pointer" onClick={onToggle}>
                 <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                     {typeof editingTrackIdx === 'number' && editingTrackIdx === trilhaIdx ? (
                         <input
-                            className="text-lg font-semibold text-[#08605F] border-b border-[#08605F] outline-none bg-transparent px-1"
+                            className="text-base sm:text-lg font-semibold text-[#08605F] border-b border-[#08605F] outline-none bg-transparent px-1"
                             value={editingTrackName}
                             onChange={e => setEditingTrackName && setEditingTrackName(e.target.value)}
                             onBlur={() => handleTrackNameSave && handleTrackNameSave(trilhaIdx ?? 0)}
@@ -157,7 +193,7 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, availableCriteria
                         />
                     ) : (
                         <span
-                            className="text-lg font-semibold text-[#08605F] cursor-pointer select-none"
+                            className="text-base sm:text-lg font-semibold text-[#08605F] cursor-pointer select-none"
                             onDoubleClick={e => {
                                 e.stopPropagation();
                                 setEditingTrackIdx && setEditingTrackIdx(trilhaIdx ?? 0);
@@ -185,8 +221,8 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, availableCriteria
             </div>
 
             {isExpanded && (
-                <div className="p-4 border-t border-gray-200">
-                    <div className="flex justify-end mb-4">
+                <div className="p-3 sm:p-4 border-t border-gray-200">
+                    <div className="flex mb-6 sm:mb-8">
                         {onAddPilar && (
                             <button
                                 className="px-2 py-1 text-xs bg-gray-100 text-[#08605F] rounded hover:bg-gray-200 transition-colors"
@@ -200,12 +236,12 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, availableCriteria
                         )}
                     </div>
                     {initialCriteria.map((criterion, criterionIndex) => (
-                        <div key={criterionIndex} className="mb-6 relative">
-                            <div className="flex items-center justify-between mb-3">
+                        <div key={criterionIndex} className="mb-8 sm:mb-10 relative">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2 sm:gap-0">
                                 <div className="flex items-center gap-2">
                                     {editingGroupIdx === criterionIndex ? (
                                         <input
-                                            className="font-semibold text-gray-700 border-b border-[#08605F] outline-none bg-transparent px-1"
+                                            className="font-semibold text-gray-700 border-b border-[#08605F] outline-none bg-transparent px-1 text-sm sm:text-base"
                                             value={localEditingGroupName}
                                             onChange={handleGroupNameChange}
                                             onBlur={() => handleGroupNameSave(criterionIndex)}
@@ -214,7 +250,7 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, availableCriteria
                                         />
                                     ) : (
                                         <h3
-                                            className="font-semibold text-gray-700 cursor-pointer select-none"
+                                            className="font-semibold text-base sm:text-lg text-gray-700 cursor-pointer select-none"
                                             onDoubleClick={() => handleGroupDoubleClick(criterionIndex, criterion.name)}
                                         >
                                             {criterion.name}
@@ -229,21 +265,10 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, availableCriteria
                                             <FaEdit size={12} />
                                         </button>
                                     )}
-                                    {onAddCriterionToGroup && (
-                                        <div className="ml-2 w-48">
-                                            <EvaluationDropdown
-                                                availableCriteria={availableCriteria.filter(c => 
-                                                    !criterion.evaluations.some(evaluation => evaluation.name === c.displayName)
-                                                )}
-                                                onSelect={(selectedCriterion) => handleCriterionSelect(criterionIndex, selectedCriterion)}
-                                                placeholder="Adicionar critério"
-                                            />
-                                        </div>
-                                    )}
                                 </div>
                                 {onDeleteCriterionGroup && isExpanded && (
                                     <button
-                                        className="text-xs text-red-600 hover:text-red-700 p-1 ml-2 border border-red-200 rounded-md bg-red-50 flex items-center justify-center"
+                                        className="text-xs text-red-600 hover:text-red-700 p-1 border border-red-200 rounded-md bg-red-50 flex items-center justify-center self-start sm:self-auto"
                                             title="Remover pilar"
                                             onClick={() => {
                                                 if (window.confirm('Tem certeza que deseja remover este pilar?')) {
@@ -255,87 +280,106 @@ function RHCriteriaBox({ trackName, criteria: initialCriteria, availableCriteria
                                         </button>
                                     )}
                             </div>
-                            {criterion.evaluations.map((evaluation, evalIndex) => (
-                                <div key={evalIndex} className="border-b border-gray-200 last:border-b-0">
-                                    <div className="flex items-center justify-between py-3">
-                                        <div className="flex items-center gap-2">
-                                            {editingEvaluation.criterionIdx === criterionIndex && editingEvaluation.evalIdx === evalIndex ? (
-                                                <input
-                                                    className="text-sm border-b border-[#08605F] outline-none bg-transparent px-1"
-                                                    value={editingEvaluation.value}
-                                                    onChange={handleEvaluationNameChange}
-                                                    onBlur={() => handleEvaluationNameSave(criterionIndex, evalIndex)}
-                                                    onKeyDown={e => handleEvaluationNameKeyDown(e, criterionIndex, evalIndex)}
-                                                    autoFocus
-                                                />
-                                            ) : (
-                                                <p
-                                                    className="text-sm cursor-pointer"
-                                                    onDoubleClick={() => handleEvaluationDoubleClick(criterionIndex, evalIndex, evaluation.name)}
-                                                >
-                                                    {evaluation.name}
-                                                </p>
-                                            )}
-                                            {onDeleteCriterioFromGroup && expandedEvaluation === evaluation.name && (
-                                                <button
-                                                    className="text-xs text-red-600 hover:text-red-700 p-1 ml-2"
-                                                    title="Remover critério do pilar"
-                                                    onClick={() => {
-                                                        if (window.confirm('Tem certeza que deseja remover este critério do pilar?')) {
-                                                            onDeleteCriterioFromGroup(criterionIndex, evalIndex);
-                                                        }
-                                                    }}
-                                                >
-                                                    <FaTrash size={12} />
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-sm text-gray-500">Campo Obrigatório</span>
-                                            <ToggleSwitch
-                                                isToggled={evaluation.mandatory}
-                                                onToggle={() => handleToggleEvaluation(criterionIndex, evalIndex)}
-                                            />
-                                            <button onClick={() => toggleEvaluationDetails(evaluation.name)} className="p-2">
-                                                {expandedEvaluation === evaluation.name ? <FaChevronUp size={14} /> : <FaChevronDown size={14} />}
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {expandedEvaluation === evaluation.name && (
-                                        <div className="p-4 bg-gray-50 rounded-md my-2">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="text-xs font-semibold text-gray-600">Nome do Critério</label>
-                                                    <input
-                                                        type="text"
-                                                        value={evaluation.name}
-                                                        onChange={e => onEditEvaluation && onEditEvaluation(criterionIndex, evalIndex, 'name', e.target.value)}
-                                                        className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs font-semibold text-gray-600">Peso (%)</label>
-                                                    <input
-                                                        type="number"
-                                                        value={evaluation.weight}
-                                                        onChange={e => onEditEvaluation && onEditEvaluation(criterionIndex, evalIndex, 'weight', Number(e.target.value))}
-                                                        className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="mt-4">
-                                                <label className="text-xs font-semibold text-gray-600">Descrição do Critério</label>
-                                                <textarea
-                                                    value={evaluation.description}
-                                                    onChange={e => onEditEvaluation && onEditEvaluation(criterionIndex, evalIndex, 'description', e.target.value)}
-                                                    className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm"
-                                                    rows={3}
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
+                            {onAddCriterionToGroup && (
+                                <div className="mb-4">
+                                    <EvaluationDropdown
+                                        availableCriteria={availableCriteria as any}
+                                        onSelect={(selectedCriterion) => handleCriterionSelect(criterionIndex, selectedCriterion)}
+                                        placeholder="Adicionar critério"
+                                    />
                                 </div>
-                            ))}
+                            )}
+                            {criterion.evaluations.map((evaluation, evalIndex) => {
+                                
+                                const toggleKey = `${trilhaIdx}-${criterionIndex}-${evalIndex}`;
+                                const isToggling = togglingCriteria.has(toggleKey);
+                                
+                                return (
+                                    <div key={evalIndex} className="border-b border-gray-200 last:border-b-0">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 gap-3 sm:gap-0">
+                                            <div className="flex items-center gap-3 sm:gap-4 order-2 sm:order-1">
+                                                <div className={`${isToggling ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                    <ToggleSwitch
+                                                        isToggled={evaluation.mandatory}
+                                                        onToggle={() => handleToggleEvaluation(criterionIndex, evalIndex)}
+                                                        loading={isToggling}
+                                                    />
+                                                </div>
+                                                <span className="text-xs text-gray-500">Campo Obrigatório</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 order-1 sm:order-2">
+                                                {editingEvaluation.criterionIdx === criterionIndex && editingEvaluation.evalIdx === evalIndex ? (
+                                                    <input
+                                                        className="text-sm border-b border-[#08605F] outline-none bg-transparent px-1"
+                                                        value={editingEvaluation.value}
+                                                        onChange={handleEvaluationNameChange}
+                                                        onBlur={() => handleEvaluationNameSave(criterionIndex, evalIndex)}
+                                                        onKeyDown={e => handleEvaluationNameKeyDown(e, criterionIndex, evalIndex)}
+                                                        autoFocus
+                                                    />
+                                                ) : (
+                                                    <p
+                                                        className="text-sm cursor-pointer max-w-[200px] sm:max-w-none truncate sm:truncate-none"
+                                                        onDoubleClick={() => handleEvaluationDoubleClick(criterionIndex, evalIndex, evaluation.name)}
+                                                        title={evaluation.name}
+                                                    >
+                                                        {evaluation.name}
+                                                    </p>
+                                                )}
+                                                <button onClick={() => toggleEvaluationDetails(evaluation.name)} className="p-2">
+                                                    {expandedEvaluation === evaluation.name ? <FaChevronUp size={14} /> : <FaChevronDown size={14} />}
+                                                </button>
+                                                {onDeleteCriterioFromGroup && expandedEvaluation === evaluation.name && (
+                                                    <button
+                                                        className="text-xs text-red-600 hover:text-red-700 p-1 ml-2"
+                                                        title="Remover critério do pilar"
+                                                        onClick={() => {
+                                                            if (window.confirm('Tem certeza que deseja remover este critério do pilar?')) {
+                                                                onDeleteCriterioFromGroup(criterionIndex, evalIndex);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <FaTrash size={12} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {expandedEvaluation === evaluation.name && (
+                                            <div className="p-3 sm:p-4 bg-gray-50 rounded-md my-2">
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="text-xs font-semibold text-gray-600">Nome do Critério</label>
+                                                        <input
+                                                            type="text"
+                                                            value={evaluation.name}
+                                                            onChange={e => onEditEvaluation && onEditEvaluation(criterionIndex, evalIndex, 'name', e.target.value)}
+                                                            className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-semibold text-gray-600">Peso (%)</label>
+                                                        <input
+                                                            type="number"
+                                                            value={evaluation.weight}
+                                                            onChange={e => onEditEvaluation && onEditEvaluation(criterionIndex, evalIndex, 'weight', Number(e.target.value))}
+                                                            className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="mt-4">
+                                                    <label className="text-xs font-semibold text-gray-600">Descrição do Critério</label>
+                                                    <textarea
+                                                        value={evaluation.description}
+                                                        onChange={e => onEditEvaluation && onEditEvaluation(criterionIndex, evalIndex, 'description', e.target.value)}
+                                                        className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm"
+                                                        rows={3}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     ))}
                 </div>
