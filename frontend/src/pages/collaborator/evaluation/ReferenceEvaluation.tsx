@@ -21,7 +21,7 @@ const ReferenceEvaluation = () => {
   useEffect(() => {
     const loadActiveCycle = async () => {
       try {
-        const cycle = await fetchActiveEvaluationCycle();
+        const cycle = await fetchActiveEvaluationCycle('COLLABORATOR');
         setActiveCycleId(cycle.id);
       } catch (err) {
         console.error("Erro ao carregar ciclo ativo:", err);

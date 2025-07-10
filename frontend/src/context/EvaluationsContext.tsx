@@ -34,7 +34,7 @@ const EvaluationContext = createContext<EvaluationContextProps | undefined>(
 );
 
 export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
-  const { token } = useAuth(); // pega o token do usuário logado
+  const { token, user } = useAuth(); // pega o token e usuário logado
   const [activeCycle, setActiveCycle] = useState<{ id: number } | null>(null);
   const [lastSubmittedAt, setLastSubmittedAt] = useState<string | null>(null);
   const [isSubmit, setIsSubmit] = useState(false);
@@ -51,7 +51,7 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const [initialTabCompletion, setInitialTabCompletion] = useState<
+const [initialTabCompletion, setInitialTabCompletion] = useState<
     TabStateMap<boolean>
   >({
     self: false,
@@ -117,7 +117,21 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
 
     const loadCompletionStatus = async () => {
       try {
-        const cycle = await fetchActiveEvaluationCycle();
+        // Determinar o role baseado nos roles do usuário autenticado
+        let role = "COLLABORATOR"; // default
+
+        if (user?.roles?.includes("MANAGER")) {
+          role = "MANAGER";
+        } else if (
+          user?.roles?.includes("HR") ||
+          user?.roles?.includes("COMMITTEE")
+        ) {
+          role = "HR";
+        } else {
+          role = "COLLABORATOR";
+        }
+
+        const cycle = await fetchActiveEvaluationCycle(role);
         setActiveCycle(cycle); // Salva ciclo ativo
 
         const statusResponse = await fetchEvaluationCompletionStatus(cycle.id);
