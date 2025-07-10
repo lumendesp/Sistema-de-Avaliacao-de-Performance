@@ -178,6 +178,8 @@ model ConfiguredCriterion {
   unitId      Int
   positionId  Int
   mandatory   Boolean
+  description String
+  weight      Int
 
   criterion Criterion @relation(fields: [criterionId], references: [id])
   group    CriterionGroup @relation("GroupConfiguredCriteria", fields: [groupId], references: [id])
@@ -186,6 +188,8 @@ model ConfiguredCriterion {
   position Position       @relation("PositionConfiguredCriteria", fields: [positionId], references: [id])
 
   selfEvaluationItems SelfEvaluationItem[]
+
+  @@unique([groupId, criterionId])
 }
 
 

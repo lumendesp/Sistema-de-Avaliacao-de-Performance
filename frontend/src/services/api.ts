@@ -571,7 +571,9 @@ export const addCriterionToGroup = async (
   trackId: number,
   unitId: number,
   positionId: number,
-  mandatory: boolean = false
+  mandatory: boolean = false,
+  description: string,
+  weight: number
 ) => {
   const res = await fetch(`${API_URL}/rh-criteria/configured`, {
     method: "POST",
@@ -583,6 +585,8 @@ export const addCriterionToGroup = async (
       unitId,
       positionId,
       mandatory,
+      description,
+      weight,
     }),
   });
   if (!res.ok) throw new Error("Erro ao adicionar critério ao grupo");

@@ -87,6 +87,10 @@ function RHCriteriaBox({
     const [editingGroupIdx, setEditingGroupIdx] = useState<number | null>(null);
     const [editingGroupName, setEditingGroupName] = useState('');
     const [localEditingGroupName, setLocalEditingGroupName] = useState('');
+    const [weightInputs, setWeightInputs] = useState<{ [key: string]: string }>({});
+    const [descriptionInputs, setDescriptionInputs] = useState<{ [key: string]: string }>({});
+    const [weightSuccess, setWeightSuccess] = useState<{ [key: string]: boolean }>({});
+    const [descriptionSuccess, setDescriptionSuccess] = useState<{ [key: string]: boolean }>({});
 
     const handleToggleEvaluation = (criterionIndex: number, evalIndex: number) => {
         if (onEditEvaluation) {
@@ -175,6 +179,74 @@ function RHCriteriaBox({
     const handleCriterionSelect = (groupIdx: number, criterion: any) => {
         if (onAddCriterionToGroup) {
             onAddCriterionToGroup(groupIdx, criterion as AvailableCriterion);
+        }
+    };
+
+    const handleWeightInputChange = (criterionIdx: number, evalIdx: number, value: string) => {
+        setWeightInputs(prev => ({ ...prev, [`${criterionIdx}-${evalIdx}`]: value }));
+    };
+
+    const handleWeightKeyDown = (
+        e: React.KeyboardEvent<HTMLInputElement>,
+        criterionIdx: number,
+        evalIdx: number,
+        placeholderValue: number
+    ) => {
+        const key = `${criterionIdx}-${evalIdx}`;
+        const value = Number(weightInputs[key]);
+        if (e.key === 'Enter') {
+            if (isNaN(value) || value < 5 || value > 95) {
+                alert('O peso deve ser entre 5 e 95.');
+                return;
+            }
+            if (onEditEvaluation) {
+                // Wrap the update in a promise to show success after update
+                Promise.resolve(onEditEvaluation(criterionIdx, evalIdx, 'weight', value)).then(() => {
+                    setWeightSuccess(prev => ({ ...prev, [key]: true }));
+                    setTimeout(() => {
+                        setWeightSuccess(prev => ({ ...prev, [key]: false }));
+                    }, 1500);
+                });
+                setTimeout(() => {
+                    setWeightInputs(prev => ({ ...prev, [key]: '' }));
+                }, 0);
+            }
+        }
+    };
+
+    const handleDescriptionInputChange = (criterionIdx: number, evalIdx: number, value: string) => {
+        setDescriptionInputs(prev => ({ ...prev, [`${criterionIdx}-${evalIdx}`]: value }));
+    };
+
+    const handleDescriptionBlur = (criterionIdx: number, evalIdx: number, backendValue: string) => {
+        const key = `${criterionIdx}-${evalIdx}`;
+        const value = descriptionInputs[key];
+        if (value !== undefined && value !== backendValue) {
+            if (onEditEvaluation) {
+                Promise.resolve(onEditEvaluation(criterionIdx, evalIdx, 'description', value)).then(() => {
+                    setDescriptionSuccess(prev => ({ ...prev, [key]: true }));
+                    setTimeout(() => {
+                        setDescriptionSuccess(prev => ({ ...prev, [key]: false }));
+                    }, 1500);
+                });
+            }
+        }
+        // Always clear the local input so the placeholder updates to the latest backend value
+        setTimeout(() => {
+            setDescriptionInputs(prev => ({ ...prev, [key]: '' }));
+        }, 0);
+    };
+
+    const handleDescriptionKeyDown = (
+        e: React.KeyboardEvent<HTMLTextAreaElement>,
+        criterionIdx: number,
+        evalIdx: number,
+        backendValue: string
+    ) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleDescriptionBlur(criterionIdx, evalIdx, backendValue);
+            (e.target as HTMLTextAreaElement).blur();
         }
     };
 
@@ -308,24 +380,13 @@ function RHCriteriaBox({
                                                 <span className="text-xs text-gray-500">Campo Obrigatório</span>
                                             </div>
                                             <div className="flex items-center gap-2 order-1 sm:order-2">
-                                                {editingEvaluation.criterionIdx === criterionIndex && editingEvaluation.evalIdx === evalIndex ? (
-                                                    <input
-                                                        className="text-sm border-b border-[#08605F] outline-none bg-transparent px-1"
-                                                        value={editingEvaluation.value}
-                                                        onChange={handleEvaluationNameChange}
-                                                        onBlur={() => handleEvaluationNameSave(criterionIndex, evalIndex)}
-                                                        onKeyDown={e => handleEvaluationNameKeyDown(e, criterionIndex, evalIndex)}
-                                                        autoFocus
-                                                    />
-                                                ) : (
-                                                    <p
-                                                        className="text-sm cursor-pointer max-w-[200px] sm:max-w-none truncate sm:truncate-none"
-                                                        onDoubleClick={() => handleEvaluationDoubleClick(criterionIndex, evalIndex, evaluation.name)}
-                                                        title={evaluation.name}
-                                                    >
-                                                        {evaluation.name}
-                                                    </p>
-                                                )}
+                                                {/* Remove name editing, just display */}
+                                                <p
+                                                    className="text-sm cursor-default max-w-[200px] sm:max-w-none truncate sm:truncate-none"
+                                                    title={evaluation.name}
+                                                >
+                                                    {evaluation.name}
+                                                </p>
                                                 <button onClick={() => toggleEvaluationDetails(evaluation.name)} className="p-2">
                                                     {expandedEvaluation === evaluation.name ? <FaChevronUp size={14} /> : <FaChevronDown size={14} />}
                                                 </button>
@@ -346,34 +407,39 @@ function RHCriteriaBox({
                                         </div>
                                         {expandedEvaluation === evaluation.name && (
                                             <div className="p-3 sm:p-4 bg-gray-50 rounded-md my-2">
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className="text-xs font-semibold text-gray-600">Nome do Critério</label>
-                                                        <input
-                                                            type="text"
-                                                            value={evaluation.name}
-                                                            onChange={e => onEditEvaluation && onEditEvaluation(criterionIndex, evalIndex, 'name', e.target.value)}
-                                                            className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm"
-                                                        />
-                                                    </div>
+                                                <div className="gap-4">
                                                     <div>
                                                         <label className="text-xs font-semibold text-gray-600">Peso (%)</label>
-                                                        <input
-                                                            type="number"
-                                                            value={evaluation.weight}
-                                                            onChange={e => onEditEvaluation && onEditEvaluation(criterionIndex, evalIndex, 'weight', Number(e.target.value))}
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="number"
+                                                                placeholder="Peso entre 5 e 95"
+                                                                value={weightInputs[`${criterionIndex}-${evalIndex}`] || ''}
+                                                                onChange={e => handleWeightInputChange(criterionIndex, evalIndex, e.target.value)}
+                                                                onKeyDown={e => handleWeightKeyDown(e, criterionIndex, evalIndex, evaluation.weight)}
+                                                                className="w-sm mt-1 p-2 border border-gray-300 rounded-md text-sm"
+                                                            />
+                                                            <span className="text-xs text-gray-500 ml-2">Peso atual para o critério: <b>{evaluation.weight}</b></span>
+                                                            {weightSuccess[`${criterionIndex}-${evalIndex}`] && (
+                                                                <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded text-xs animate-fade-in">Atualizado com sucesso!</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-semibold text-gray-600">Descrição do Critério</label>
+                                                        <textarea
+                                                            placeholder="Coloque uma descrição para o critério (será mostrado para o usuário)"
+                                                            value={descriptionInputs[`${criterionIndex}-${evalIndex}`] ?? evaluation.description}
+                                                            onChange={e => handleDescriptionInputChange(criterionIndex, evalIndex, e.target.value)}
+                                                            onBlur={() => handleDescriptionBlur(criterionIndex, evalIndex, evaluation.description)}
+                                                            onKeyDown={e => handleDescriptionKeyDown(e, criterionIndex, evalIndex, evaluation.description)}
                                                             className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm"
+                                                            rows={3}
                                                         />
                                                     </div>
-                                                </div>
-                                                <div className="mt-4">
-                                                    <label className="text-xs font-semibold text-gray-600">Descrição do Critério</label>
-                                                    <textarea
-                                                        value={evaluation.description}
-                                                        onChange={e => onEditEvaluation && onEditEvaluation(criterionIndex, evalIndex, 'description', e.target.value)}
-                                                        className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm"
-                                                        rows={3}
-                                                    />
+                                                    {descriptionSuccess[`${criterionIndex}-${evalIndex}`] && (
+                                                        <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded text-xs animate-fade-in">Atualizado com sucesso!</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         )}

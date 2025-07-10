@@ -85,6 +85,8 @@ CREATE TABLE "ConfiguredCriterion" (
     "unitId" INTEGER NOT NULL,
     "positionId" INTEGER NOT NULL,
     "mandatory" BOOLEAN NOT NULL,
+    "description" TEXT NOT NULL,
+    "weight" INTEGER NOT NULL,
     CONSTRAINT "ConfiguredCriterion_criterionId_fkey" FOREIGN KEY ("criterionId") REFERENCES "Criterion" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "ConfiguredCriterion_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "CriterionGroup" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "ConfiguredCriterion_trackId_fkey" FOREIGN KEY ("trackId") REFERENCES "Track" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -291,6 +293,9 @@ CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ConfiguredCriterion_groupId_criterionId_key" ON "ConfiguredCriterion"("groupId", "criterionId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Project_name_key" ON "Project"("name");

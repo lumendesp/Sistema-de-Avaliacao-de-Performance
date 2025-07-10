@@ -61,6 +61,8 @@ interface ConfiguredCriterion {
     positionId: number;
     mandatory: boolean;
     criterion: Criterion;
+    weight: number;
+    description: string;
 }
 
 interface TrackWithCriteria {
@@ -129,10 +131,13 @@ function RhCriteriaSettings() {
         const track = tracksWithCriteria[idx];
         if (!track) return;
 
+        // If the user enters an empty string, save as a single space
+        const newName = editingTrackName.trim() === '' ? "Nome da trilha" : editingTrackName;
+
         try {
-            await updateTrack(track.id, { name: editingTrackName });
+            await updateTrack(track.id, { name: newName });
             setTracksWithCriteria(prev => prev.map((t, tIdx) =>
-                tIdx === idx ? { ...t, name: editingTrackName } : t
+                tIdx === idx ? { ...t, name: newName } : t
             ));
             setEditingTrackIdx(null);
         } catch (error) {
@@ -272,7 +277,9 @@ function RhCriteriaSettings() {
                 track.id,
                 group.unitId,
                 group.positionId,
-                false
+                false,
+                availableCriterion.generalDescription,
+                availableCriterion.weight
             );
 
             // Refresh data
@@ -311,6 +318,13 @@ function RhCriteriaSettings() {
             
             if (!track || !group) return;
 
+            // Prevent adding duplicate criterion
+            const alreadyExists = group.configuredCriteria.some(cc => cc.criterionId === selectedCriterion.id);
+            if (alreadyExists) {
+                alert('Este critério já está associado a este pilar');
+                return;
+            }
+
             // Add criterion to the specific group
             await addCriterionToGroup(
                 group.id,
@@ -318,7 +332,9 @@ function RhCriteriaSettings() {
                 track.id,
                 group.unitId,
                 group.positionId,
-                false
+                false,
+                selectedCriterion.generalDescription,
+                selectedCriterion.weight
             );
 
             // Refresh data
@@ -430,15 +446,10 @@ function RhCriteriaSettings() {
         
         if (!track || !group || !configuredCriterion) return;
 
-        // Create a unique key for this specific toggle
         const toggleKey = `${trackIdx}-${groupIdx}-${criterionIdx}`;
-        
-        // For mandatory field, implement optimistic updates
+
         if (field === 'mandatory') {
-            // Add to loading set
             setTogglingCriteria(prev => new Set(prev).add(toggleKey));
-            
-            // Optimistic update
             setTracksWithCriteria(prev => prev.map((t, tIdx) => 
                 tIdx === trackIdx 
                     ? {
@@ -458,14 +469,11 @@ function RhCriteriaSettings() {
                     }
                     : t
             ));
-
             try {
                 await updateCriterionInTrack(track.id, configuredCriterion.criterionId, { mandatory: value as boolean });
             } catch (error) {
                 console.error('Error updating evaluation:', error);
                 alert('Erro ao atualizar avaliação');
-                
-                // Revert optimistic update on error
                 setTracksWithCriteria(prev => prev.map((t, tIdx) => 
                     tIdx === trackIdx 
                         ? {
@@ -486,21 +494,39 @@ function RhCriteriaSettings() {
                         : t
                 ));
             } finally {
-                // Remove from loading set
                 setTogglingCriteria(prev => {
                     const newSet = new Set(prev);
                     newSet.delete(toggleKey);
                     return newSet;
                 });
             }
-        } else {
-            // For other fields, use the original approach but without full refresh
+        } else if (field === 'weight' || field === 'description') {
+            // Log the context and new value
+            console.log('[Edit ConfiguredCriterion]', {
+                track: track.name,
+                pillar: group.name,
+                criterion: configuredCriterion.criterion.displayName,
+                field,
+                newValue: value
+            });
             try {
-                if (field === 'name') {
-                    await updateRhCriterion(configuredCriterion.criterionId, { name: value as string });
-                }
-                
-                // Only refresh if it's not a mandatory toggle
+                await updateCriterionInTrack(track.id, configuredCriterion.criterionId, {
+                    [field]: value
+                });
+                const updatedTracks = await getTracksWithCriteria();
+                setTracksWithCriteria(updatedTracks);
+            } catch (error) {
+                console.error('Error updating evaluation:', error);
+                alert('Erro ao atualizar avaliação');
+            }
+        } else if (field === 'name') {
+            // (Optional: only if you want to update the global criterion)
+            try {
+                await updateRhCriterion(configuredCriterion.criterionId, {
+                    name: value as string,
+                    generalDescription: configuredCriterion.criterion.generalDescription,
+                    active: configuredCriterion.criterion.active,
+                });
                 const updatedTracks = await getTracksWithCriteria();
                 setTracksWithCriteria(updatedTracks);
             } catch (error) {
@@ -510,11 +536,6 @@ function RhCriteriaSettings() {
         }
     }, [tracksWithCriteria]);
 
-    // Add a new evaluation to a criterion (this would need backend implementation for evaluations)
-    const handleAddEvaluation = (trackIdx: number, groupIdx: number, criterionIdx: number) => {
-        // This would need backend implementation for evaluations
-        console.log('Add evaluation not implemented yet');
-    };
 
     // Save all changes
     const handleSave = async () => {
@@ -617,8 +638,8 @@ function RhCriteriaSettings() {
                                         evaluations: group.configuredCriteria.map(cc => ({
                                             name: cc.criterion.displayName,
                                             mandatory: cc.mandatory,
-                                            weight: cc.criterion.weight,
-                                            description: cc.criterion.generalDescription
+                                            weight: cc.weight, // use ConfiguredCriterion's weight
+                                            description: cc.description // use ConfiguredCriterion's description
                                         }))
                                     }))}
                                     availableCriteria={criteria as any}
