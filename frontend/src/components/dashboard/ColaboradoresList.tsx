@@ -211,78 +211,95 @@ const ColaboradoresList: React.FC = () => {
         </a>
       </div>
       <div className="space-y-4">
-        {colaboradores.map((colab, idx) => {
-          const { status, selfScore, managerScore } = getStatusAndScore(
-            colab.id
-          );
-          return (
-            <button
-              key={colab.id || idx}
-              className="w-full flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3 hover:bg-gray-100 transition cursor-pointer"
-              onClick={() => navigate(`/manager/avaliacao/${colab.id}`)}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 text-lg">
-                  {colab.name
-                    ? colab.name
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                        .toUpperCase()
-                        .slice(0, 2)
-                    : "C"}
+        {colaboradores.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum colaborador associado</h3>
+            <p className="text-gray-500 text-sm">
+              Você ainda não possui colaboradores associados ao seu perfil de gestor.
+            </p>
+            <p className="text-gray-400 text-xs mt-1">
+              Entre em contato com o RH para associar colaboradores ao seu time.
+            </p>
+          </div>
+        ) : (
+          colaboradores.map((colab, idx) => {
+            const { status, selfScore, managerScore } = getStatusAndScore(
+              colab.id
+            );
+            return (
+              <button
+                key={colab.id || idx}
+                className="w-full flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3 hover:bg-gray-100 transition cursor-pointer"
+                onClick={() => navigate(`/manager/avaliacao/${colab.id}`)}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 text-lg">
+                    {colab.name
+                      ? colab.name
+                          .split(" ")
+                          .map((n: string) => n[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2)
+                      : "C"}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900 leading-tight">
+                      {colab.name}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {colab.role || "Departamento"}
+                    </div>
+                  </div>
+                  <span
+                    className={`ml-4 px-2 py-0.5 rounded text-xs font-medium ${statusStyles[status]}`}
+                  >
+                    {status}
+                  </span>
                 </div>
-                <div>
-                  <div className="font-semibold text-gray-900 leading-tight">
-                    {colab.name}
+                <div className="flex items-center gap-6">
+                  <div className="text-xs text-gray-500">
+                    Autoavaliação{" "}
+                    <span className="ml-1 font-semibold text-gray-900">
+                      {selfScore !== null && selfScore !== undefined
+                        ? selfScore.toFixed(1)
+                        : "-"}
+                    </span>
                   </div>
                   <div className="text-xs text-gray-500">
-                    {colab.role || "Departamento"}
+                    Nota gestor{" "}
+                    <span className="ml-1 font-semibold text-gray-900">
+                      {managerScore !== null && managerScore !== undefined
+                        ? managerScore.toFixed(1)
+                        : "-"}
+                    </span>
                   </div>
-                </div>
-                <span
-                  className={`ml-4 px-2 py-0.5 rounded text-xs font-medium ${statusStyles[status]}`}
-                >
-                  {status}
-                </span>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="text-xs text-gray-500">
-                  Autoavaliação{" "}
-                  <span className="ml-1 font-semibold text-gray-900">
-                    {selfScore !== null && selfScore !== undefined
-                      ? selfScore.toFixed(1)
-                      : "-"}
+                  <span className="ml-2 text-gray-400 hover:text-teal-700">
+                    <svg
+                      width="20"
+                      height="20"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
                   </span>
                 </div>
-                <div className="text-xs text-gray-500">
-                  Nota gestor{" "}
-                  <span className="ml-1 font-semibold text-gray-900">
-                    {managerScore !== null && managerScore !== undefined
-                      ? managerScore.toFixed(1)
-                      : "-"}
-                  </span>
-                </div>
-                <span className="ml-2 text-gray-400 hover:text-teal-700">
-                  <svg
-                    width="20"
-                    height="20"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </span>
-              </div>
-            </button>
-          );
-        })}
+              </button>
+            );
+          })
+        )}
       </div>
     </div>
   );

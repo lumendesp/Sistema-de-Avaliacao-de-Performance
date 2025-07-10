@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { CreateCicloDto } from './dto/create-ciclo.dto';
 import { UpdateCicloDto } from './dto/update-ciclo.dto';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import { GeminiService } from '../ai/ai.service';
 import { AiBrutalFactsService } from '../ai-brutal-facts/ai-brutal-facts.service';
+import { CycleService } from './cycle.service';
+import { CycleTransferService } from './cycle-transfer.service';
 
 const prisma = new PrismaClient();
 
@@ -12,7 +14,19 @@ export class CiclosService {
   constructor(
     private readonly geminiService: GeminiService,
     private readonly aiBrutalFactsService: AiBrutalFactsService,
+    private readonly cycleService: CycleService,
+    private readonly cycleTransferService: CycleTransferService,
   ) {}
+
+  /**
+   * Gera nome de ciclo baseado no semestre
+   */
+  private generateSemesterCycleName(date: Date, suffix?: string): string {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const semester = month <= 6 ? 1 : 2;
+    return suffix ? `${year}.${semester} - ${suffix}` : `${year}.${semester}`;
+  }
 
   async create(createCicloDto: CreateCicloDto) {
     return prisma.evaluationCycle.create({
@@ -34,17 +48,69 @@ export class CiclosService {
   }
 
   async update(id: number, updateCicloDto: UpdateCicloDto) {
-    return prisma.evaluationCycle.update({
+    // Converte datas string para Date
+    const dataToUpdate: any = { ...updateCicloDto };
+    if (dataToUpdate.startDate && typeof dataToUpdate.startDate === 'string') {
+      dataToUpdate.startDate = new Date(dataToUpdate.startDate);
+    }
+    if (dataToUpdate.endDate && typeof dataToUpdate.endDate === 'string') {
+      dataToUpdate.endDate = new Date(dataToUpdate.endDate);
+    }
+
+    const updatedCycle = await prisma.evaluationCycle.update({
       where: { id },
       data: {
-        ...updateCicloDto,
+        ...dataToUpdate,
         status: updateCicloDto.status as any,
       },
     });
+
+    // Se o ciclo foi fechado (CLOSED ou PUBLISHED), acionar geração de insight
+    if (updateCicloDto.status === 'CLOSED' || updateCicloDto.status === 'PUBLISHED') {
+      // Chama o método de geração de insight do serviço de Brutal Facts
+      await this.aiBrutalFactsService.getInsightForLastCompletedCycle();
+    }
+
+    return updatedCycle;
   }
 
   async remove(id: number) {
     return prisma.evaluationCycle.delete({ where: { id } });
+  }
+
+  async getCurrentCycle(type?: Role) {
+
+    
+    // Buscar o ciclo mais recente do tipo especificado
+    const currentCycle = await prisma.evaluationCycle.findFirst({
+      where: {
+        status: 'IN_PROGRESS',
+        ...(type ? { type } : {})
+      },
+      orderBy: { startDate: 'desc' }
+    });
+
+
+    
+    if (!currentCycle) {
+      return null;
+    }
+
+    const today = new Date();
+    const endDate = new Date(currentCycle.endDate);
+    const diffTime = endDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return {
+      id: currentCycle.id,
+      name: currentCycle.name,
+      startDate: currentCycle.startDate,
+      endDate: currentCycle.endDate,
+      status: currentCycle.status,
+      type: (currentCycle as any).type,
+      daysRemaining: Math.max(0, diffDays),
+      isOverdue: diffDays < 0
+    };
   }
 
   async getHistoricoCiclos(userId: number) {
@@ -81,10 +147,8 @@ export class CiclosService {
   }
 
   async getManagerDashboardStats(managerId: number) {
-    // Buscar o ciclo atual (mais recente)
-    const currentCycle = await prisma.evaluationCycle.findFirst({
-      orderBy: { startDate: 'desc' }
-    });
+    // Buscar o ciclo atual usando o método existente com tipo MANAGER
+    const currentCycle = await this.getCurrentCycle(Role.MANAGER);
 
     if (!currentCycle) {
       return {
@@ -231,17 +295,9 @@ export class CiclosService {
   }
 
   async getBrutalFactsData() {
-    // Buscar o último ciclo concluído (CLOSED ou PUBLISHED)
-    const lastCompletedCycle = await prisma.evaluationCycle.findFirst({
-      where: {
-        status: {
-          in: ['CLOSED', 'PUBLISHED']
-        }
-      },
-      orderBy: { startDate: 'desc' }
-    });
-
-    if (!lastCompletedCycle) {
+    // Buscar dados já processados do serviço de Brutal Facts
+    const brutalFactsData = await this.aiBrutalFactsService.getBrutalFactsDataForLastCompletedCycle();
+    if (!brutalFactsData) {
       return {
         insights: "Nenhum ciclo concluído encontrado.",
         chartData: [],
@@ -254,7 +310,8 @@ export class CiclosService {
       where: {
         status: {
           in: ['CLOSED', 'PUBLISHED']
-        }
+        },
+        type: 'HR'
       },
       orderBy: { startDate: 'desc' },
       take: 5
@@ -279,140 +336,15 @@ export class CiclosService {
       };
     }));
 
-    // Buscar colaboradores com notas finais do último ciclo concluído
-    const collaborators = await prisma.user.findMany({
-      where: {
-        roles: {
-          some: {
-            role: 'COLLABORATOR'
-          }
-        },
-        active: true,
-        finalScores: {
-          some: {
-            cycleId: lastCompletedCycle.id
-          }
-        }
-      },
-      include: {
-        position: true,
-        finalScores: {
-          where: {
-            cycleId: lastCompletedCycle.id
-          }
-        },
-        selfEvaluations: {
-          where: {
-            cycleId: lastCompletedCycle.id
-          },
-          include: {
-            items: true
-          }
-        },
-        managerEvaluationsReceived: {
-          where: {
-            cycleId: lastCompletedCycle.id
-          },
-          include: {
-            items: true
-          }
-        },
-        peerEvaluationsReceived: {
-          where: {
-            cycleId: lastCompletedCycle.id
-          }
-        }
-      }
-    });
-
-    // Calcular médias por tipo de avaliação
-    const autoScores: number[] = [];
-    const managerScores: number[] = [];
-    const peerScores: number[] = [];
-    const finalScores: number[] = [];
-
-    collaborators.forEach(collab => {
-      // Autoavaliação - média dos itens
-      if (collab.selfEvaluations.length > 0 && collab.selfEvaluations[0].items.length > 0) {
-        const avgSelf = collab.selfEvaluations[0].items.reduce((sum, item) => sum + item.score, 0) / collab.selfEvaluations[0].items.length;
-        autoScores.push(avgSelf);
-      }
-
-      // Avaliação do gestor - média dos itens
-      if (collab.managerEvaluationsReceived.length > 0 && collab.managerEvaluationsReceived[0].items.length > 0) {
-        const avgManager = collab.managerEvaluationsReceived[0].items.reduce((sum, item) => sum + item.score, 0) / collab.managerEvaluationsReceived[0].items.length;
-        managerScores.push(avgManager);
-      }
-
-      // Avaliação 360 - média das avaliações dos pares
-      if (collab.peerEvaluationsReceived.length > 0) {
-        const avgPeer = collab.peerEvaluationsReceived.reduce((sum, peerEval) => sum + peerEval.score, 0) / collab.peerEvaluationsReceived.length;
-        peerScores.push(avgPeer);
-      }
-
-      // Nota final (equalização)
-      if (collab.finalScores.length > 0 && collab.finalScores[0].finalScore !== null) {
-        finalScores.push(collab.finalScores[0].finalScore!);
-      }
-    });
-
-    // Calcular médias gerais
-    const averageAuto = autoScores.length > 0 ? (autoScores.reduce((sum, score) => sum + score, 0) / autoScores.length).toFixed(1) : '0.0';
-    const averageManager = managerScores.length > 0 ? (managerScores.reduce((sum, score) => sum + score, 0) / managerScores.length).toFixed(1) : '0.0';
-    const averagePeer = peerScores.length > 0 ? (peerScores.reduce((sum, score) => sum + score, 0) / peerScores.length).toFixed(1) : '0.0';
-    const averageFinal = finalScores.length > 0 ? (finalScores.reduce((sum, score) => sum + score, 0) / finalScores.length).toFixed(1) : '0.0';
-
-    const collaboratorsList = collaborators.map(collab => {
-      // Calcular nota de autoavaliação
-      let autoNota = '-';
-      if (collab.selfEvaluations.length > 0 && collab.selfEvaluations[0].items.length > 0) {
-        const avgSelf = collab.selfEvaluations[0].items.reduce((sum, item) => sum + item.score, 0) / collab.selfEvaluations[0].items.length;
-        autoNota = avgSelf.toFixed(1);
-      }
-
-      // Calcular nota do gestor
-      let managerNota = '-';
-      if (collab.managerEvaluationsReceived.length > 0 && collab.managerEvaluationsReceived[0].items.length > 0) {
-        const avgManager = collab.managerEvaluationsReceived[0].items.reduce((sum, item) => sum + item.score, 0) / collab.managerEvaluationsReceived[0].items.length;
-        managerNota = avgManager.toFixed(1);
-      }
-
-      // Calcular nota 360
-      let peerNota = '-';
-      if (collab.peerEvaluationsReceived.length > 0) {
-        const avgPeer = collab.peerEvaluationsReceived.reduce((sum, peerEval) => sum + peerEval.score, 0) / collab.peerEvaluationsReceived.length;
-        peerNota = avgPeer.toFixed(1);
-      }
-
-      // Nota final (equalização)
-      const finalNota = collab.finalScores[0]?.finalScore?.toFixed(1) || '-';
-
-      return {
-        nome: collab.name,
-        cargo: collab.position?.name || 'Cargo não definido',
-        nota: finalNota,
-        autoNota,
-        managerNota,
-        peerNota,
-        finalNota
-      };
-    });
-
-    // Gerar insights baseados nos dados do último ciclo concluído
-    const topPerformers = collaboratorsList.filter(c => parseFloat(c.nota) >= 4.5).length;
-    const totalEvaluated = collaboratorsList.length;
-    
-    const insights = await this.aiBrutalFactsService.getInsightForLastCompletedCycle();
-
     // Calcular aumento em relação ao ciclo anterior (scoreTrend)
     let scoreTrend: string | undefined = undefined;
-    // Buscar ciclo anterior ao último concluído
+    const lastCycleName = brutalFactsData.cycleName;
     const previousCycle = await prisma.evaluationCycle.findMany({
       where: {
         status: {
           in: ['CLOSED', 'PUBLISHED']
         },
-        id: { not: lastCompletedCycle.id }
+        name: { not: lastCycleName }
       },
       orderBy: { startDate: 'desc' },
       take: 1
@@ -430,21 +362,143 @@ export class CiclosService {
       const prevAverageFinal = prevScores.length > 0
         ? prevScores.reduce((sum, score) => sum + score.finalScore!, 0) / prevScores.length
         : 0;
-      scoreTrend = (parseFloat(averageFinal) - prevAverageFinal).toFixed(1).toString();
+      scoreTrend = (parseFloat(brutalFactsData.averageFinal) - prevAverageFinal).toFixed(1).toString() + ' este ciclo';
     }
 
     return {
-      insights,
+      insights: brutalFactsData.insight,
       chartData,
-      collaborators: collaboratorsList,
-      cycleName: lastCompletedCycle.name,
-      averageScore: `${averageFinal}/5`,
-      totalEvaluated: totalEvaluated.toString(),
-      averageAuto: `${averageAuto}/5`,
-      averageManager: `${averageManager}/5`,
-      averagePeer: `${averagePeer}/5`,
-      averageFinal: `${averageFinal}/5`,
-      scoreTrend: scoreTrend ? `${scoreTrend} este ciclo` : undefined
+      collaborators: brutalFactsData.collaboratorsList,
+      cycleName: brutalFactsData.cycleName,
+      averageScore: `${brutalFactsData.averageFinal}/5`,
+      totalEvaluated: brutalFactsData.totalEvaluated.toString(),
+      averageAuto: `${brutalFactsData.averageAuto}/5`,
+      averageManager: `${brutalFactsData.averageManager}/5`,
+      averagePeer: `${brutalFactsData.averagePeer}/5`,
+      averageFinal: `${brutalFactsData.averageFinal}/5`,
+      scoreTrend
+    };
+  }
+
+  async getDebugCycles() {
+    const allCycles = await prisma.evaluationCycle.findMany({
+      orderBy: { startDate: 'desc' }
+    });
+    
+    return allCycles.map(cycle => ({
+      id: cycle.id,
+      name: cycle.name,
+      type: (cycle as any).type,
+      status: cycle.status,
+      startDate: cycle.startDate,
+      endDate: cycle.endDate
+    }));
+  }
+
+  /**
+   * Fecha o ciclo de colaborador, cria o ciclo de gestor e transfere os dados.
+   */
+  async closeCollaboratorAndCreateManagerCycle(collabCycleId?: number) {
+    let cycleId = collabCycleId;
+    if (!cycleId) {
+      const mostRecent = await this.cycleService.getMostRecentCycle('COLLABORATOR', 'IN_PROGRESS');
+      if (!mostRecent) throw new Error('Nenhum ciclo de colaborador em andamento encontrado');
+      cycleId = mostRecent.id;
+    }
+    if (!cycleId || typeof cycleId !== 'number' || isNaN(cycleId)) {
+      throw new Error('collabCycleId inválido ou não fornecido');
+    }
+    // 1. Fechar o ciclo de colaborador
+    await this.cycleService.closeCycle(cycleId);
+
+    // 2. Buscar dados do ciclo de colaborador
+    const collabCycle = await this.cycleService.getMostRecentCycle('COLLABORATOR', 'CLOSED');
+
+    // 3. Criar ciclo de gestor (manager) com nome baseado no semestre
+    const startDate = new Date();
+    const managerCycleName = this.generateSemesterCycleName(startDate);
+
+    const managerCycle = await this.cycleService.createCycle({
+      name: managerCycleName,
+      startDate: startDate,
+      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      status: 'IN_PROGRESS',
+      type: 'MANAGER',
+    });
+
+    // 4. Transferir dados
+    await this.cycleTransferService.transferCycleData(cycleId, managerCycle.id);
+
+    return { message: 'Ciclo de colaborador fechado, ciclo de gestor criado e dados transferidos!', managerCycleId: managerCycle.id };
+  }
+
+  /**
+   * Fecha o ciclo de gestor, cria o ciclo de COMITÊ e transfere os dados.
+   */
+  async closeManagerAndCreateCommitteeCycle(managerCycleId?: number) {
+    let cycleId = managerCycleId;
+    if (!cycleId) {
+      const mostRecent = await this.cycleService.getMostRecentCycle('MANAGER', 'IN_PROGRESS');
+      if (!mostRecent) throw new Error('Nenhum ciclo de gestor em andamento encontrado');
+      cycleId = mostRecent.id;
+    }
+    if (!cycleId || typeof cycleId !== 'number' || isNaN(cycleId)) {
+      throw new Error('managerCycleId inválido ou não fornecido');
+    }
+    // 1. Fechar o ciclo de gestor
+    await this.cycleService.closeCycle(cycleId);
+
+    // 2. Buscar dados do ciclo de gestor
+    const managerCycle = await this.cycleService.getMostRecentCycle('MANAGER', 'CLOSED');
+
+    // 3. Criar ciclo de COMITÊ com nome baseado no semestre
+    const startDate = new Date();
+    const committeeCycleName = this.generateSemesterCycleName(startDate);
+
+    const committeeCycle = await this.cycleService.createCycle({
+      name: committeeCycleName,
+      startDate: startDate,
+      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      status: 'IN_PROGRESS',
+      type: 'COMMITTEE',
+    });
+
+    // 4. Transferir dados
+    await this.cycleTransferService.transferCycleData(cycleId, committeeCycle.id);
+
+    return { message: 'Ciclo de gestor fechado, ciclo de COMITÊ criado e dados transferidos!', committeeCycleId: committeeCycle.id };
+  }
+
+  /**
+   * Cria um novo ciclo de colaborador.
+   */
+  async createCollaboratorCycle(cycleData?: { name?: string; startDate?: Date; endDate?: Date }) {
+    // Verificar se já existe um ciclo de colaborador em andamento
+    const existingCycle = await this.cycleService.getMostRecentCycle('COLLABORATOR', 'IN_PROGRESS');
+    if (existingCycle) {
+      throw new Error('Já existe um ciclo de colaborador em andamento');
+    }
+
+    // Definir datas padrão se não fornecidas
+    const startDate = cycleData?.startDate || new Date();
+    const endDate = cycleData?.endDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 dias
+    
+    // Gerar nome baseado no semestre
+    const name = cycleData?.name || this.generateSemesterCycleName(startDate);
+
+    // Criar o ciclo de colaborador
+    const collaboratorCycle = await this.cycleService.createCycle({
+      name,
+      startDate,
+      endDate,
+      status: 'IN_PROGRESS',
+      type: 'COLLABORATOR',
+    });
+
+    return { 
+      message: 'Ciclo de colaborador criado com sucesso!', 
+      collaboratorCycleId: collaboratorCycle.id,
+      cycle: collaboratorCycle
     };
   }
 }

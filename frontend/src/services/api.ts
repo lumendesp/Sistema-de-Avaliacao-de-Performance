@@ -65,15 +65,28 @@ export const submitMentorEvaluation = async (
   return res.json();
 };
 
-export const fetchActiveEvaluationCycle = async () => {
-  const res = await fetch(`${API_URL}/evaluation-cycle/active`, {
+// Agora aceita um parâmetro opcional de role
+export const fetchActiveEvaluationCycle = async (role?: string) => {
+  let mainRole = role;
+  if (!mainRole) {
+    // Buscar o usuário do localStorage para obter o role
+    const userStr = localStorage.getItem('user');
+    mainRole = 'COLLABORATOR'; // default
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        mainRole = user.roles?.[0] || 'COLLABORATOR';
+      } catch (error) {
+        console.error('Erro ao parsear usuário do localStorage:', error);
+      }
+    }
+  }
+  const res = await fetch(`${API_URL}/evaluation-cycle/active?type=${mainRole}`, {
     headers: getAuthHeaders(),
   });
-
   if (!res.ok) {
     throw new Error("Erro ao buscar ciclo ativo");
   }
-
   return res.json();
 };
 

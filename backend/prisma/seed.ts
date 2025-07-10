@@ -361,14 +361,125 @@ async function main() {
     },
   });
 
-  const cycle = await prisma.evaluationCycle.create({
+  // Criação dos 4 novos usuários
+  const passwordHash3 = await bcrypt.hash('password123', 10);
+  const passwordHash4 = await bcrypt.hash('password123', 10);
+  const passwordHash5 = await bcrypt.hash('password123', 10);
+  const passwordHash6 = await bcrypt.hash('password123', 10);
+
+  // Usuário 3: COLLABORATOR, MANAGER, MENTOR
+  const user3 = await prisma.user.create({
     data: {
-      name: 'Ciclo 2025.1',
+      name: 'Carlos Silva',
+      username: 'carlos.s',
+      email: 'carlos@example.com',
+      password: passwordHash3,
+      active: true,
+      positionId: position1.id,
+      unitId: unit1.id,
+      trackId: track1.id,
+      roles: {
+        create: [
+          { role: 'COLLABORATOR' },
+          { role: 'MANAGER' },
+          { role: 'MENTOR' },
+        ],
+      },
+    },
+  });
+
+  // Usuário 4: COLLABORATOR, COMMITTEE, HR
+  const user4 = await prisma.user.create({
+    data: {
+      name: 'Diana Santos',
+      username: 'diana.s',
+      email: 'diana@example.com',
+      password: passwordHash4,
+      active: true,
+      positionId: position1.id,
+      unitId: unit1.id,
+      trackId: track1.id,
+      roles: {
+        create: [
+          { role: 'COLLABORATOR' },
+          { role: 'COMMITTEE' },
+          { role: 'HR' },
+        ],
+      },
+    },
+  });
+
+  // Usuário 5: MANAGER, COMMITTEE, HR
+  const user5 = await prisma.user.create({
+    data: {
+      name: 'Eduardo Costa',
+      username: 'eduardo.c',
+      email: 'eduardo@example.com',
+      password: passwordHash5,
+      active: true,
+      positionId: position2.id,
+      unitId: unit2.id,
+      trackId: track3.id,
+      roles: {
+        create: [
+          { role: 'COLLABORATOR' },
+          { role: 'COMMITTEE' },
+          { role: 'HR' }
+        ],
+      },
+    },
+  });
+
+  // Usuário 6: ADMIN
+  const user6 = await prisma.user.create({
+    data: {
+      name: 'Fernanda Lima',
+      username: 'fernanda.l',
+      email: 'fernanda@example.com',
+      password: passwordHash6,
+      active: true,
+      positionId: position2.id,
+      unitId: unit2.id,
+      trackId: track3.id,
+      roles: {
+        create: [
+          { role: 'ADMIN' },
+        ],
+      },
+    },
+  });
+
+  // Relacionamentos adicionais (opcional)
+  // Carlos gerencia Diana
+  await prisma.managerCollaborator.create({
+    data: {
+      managerId: user3.id, // Carlos
+      collaboratorId: user4.id, // Diana
+    },
+  });
+
+  // Eduardo gerencia Carlos
+  await prisma.managerCollaborator.create({
+    data: {
+      managerId: user5.id, // Eduardo
+      collaboratorId: user3.id, // Carlos
+    },
+  });
+
+  // Criar ciclo de colaboradores (único ciclo inicial)
+  const cycleCollaborators = await prisma.evaluationCycle.create({
+    data: {
+      name: '2025.1',
       startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 dias atrás
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias à frente
       status: 'IN_PROGRESS',
+      type: 'COLLABORATOR',
     },
   });
+
+  // Remover criação dos ciclos de manager e RH/Comitê
+  // const cycleManagers = await prisma.evaluationCycle.create({ ... });
+  // const cycleRHCommittee = await prisma.evaluationCycle.create({ ... });
 
   // Cria alguns projetos para peer evaluation
   const projectsData = [
@@ -393,7 +504,7 @@ async function main() {
   }
 
   console.log('Seed completed!');
-  console.log('Cycle ID criado:', cycle.id);
+  console.log('Cycle ID criado:', cycleCollaborators.id);
 }
 
 main()

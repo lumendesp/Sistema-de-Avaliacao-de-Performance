@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
 import { CiclosService } from './ciclos.service';
 import { CreateCicloDto } from './dto/create-ciclo.dto';
 import { UpdateCicloDto } from './dto/update-ciclo.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Role } from '@prisma/client';
 
 @Controller('ciclos')
 export class CiclosController {
@@ -11,6 +12,28 @@ export class CiclosController {
   @Post()
   create(@Body() createCicloDto: CreateCicloDto) {
     return this.ciclosService.create(createCicloDto);
+  }
+
+  @Post('close-collaborator-and-create-manager')
+  async closeAndCreateManager() {
+    return this.ciclosService.closeCollaboratorAndCreateManagerCycle();
+  }
+
+  @Post('close-manager-and-create-committee')
+  async closeAndCreateCommittee() {
+    return this.ciclosService.closeManagerAndCreateCommitteeCycle();
+  }
+
+  @Post('create-collaborator-cycle')
+  async createCollaboratorCycle(@Body() cycleData?: { name?: string; startDate?: string; endDate?: string }) {
+    // Converter strings de data para Date se fornecidas
+    const data = cycleData ? {
+      ...cycleData,
+      startDate: cycleData.startDate ? new Date(cycleData.startDate) : undefined,
+      endDate: cycleData.endDate ? new Date(cycleData.endDate) : undefined
+    } : undefined;
+    
+    return this.ciclosService.createCollaboratorCycle(data);
   }
 
   @Get()
@@ -28,6 +51,18 @@ export class CiclosController {
   @Get('brutal-facts')
   getBrutalFactsData() {
     return this.ciclosService.getBrutalFactsData();
+  }
+
+
+  @UseGuards(JwtAuthGuard)
+  @Get('current')
+  getCurrentCycle(@Query('type') type?: string) {
+    // Validar se o tipo é válido
+    if (type && !Object.values(Role).includes(type as Role)) {
+      throw new Error(`Invalid role type: ${type}`);
+    }
+    
+    return this.ciclosService.getCurrentCycle(type as Role);
   }
 
   @UseGuards(JwtAuthGuard)

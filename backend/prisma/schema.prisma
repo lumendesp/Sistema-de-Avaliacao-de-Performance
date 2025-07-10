@@ -195,6 +195,8 @@ model EvaluationCycle {
   status      CycleStatus
   submittedAt DateTime?
   isSubmit    Boolean     @default(false)
+  type      Role        @default(COLLABORATOR) // COLLABORATOR, MANAGER, HR, COMMITTEE
+  createdAt DateTime    @default(now())
 
   // Todas as avaliações ligadas ao ciclo
   selfEvaluations    SelfEvaluation[]
@@ -404,4 +406,11 @@ model ManagerCollaborator {
   collaborator User @relation("CollaboratorToManager", fields: [collaboratorId], references: [id])
 
   @@id([managerId, collaboratorId])
+}
+
+model BrutalFactsCache {
+  id        Int      @id @default(autoincrement())
+  cycleId   Int      @unique
+  data      Json
+  createdAt DateTime @default(now())
 }
