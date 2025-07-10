@@ -1,31 +1,29 @@
 import React from 'react';
-import { FaStar } from 'react-icons/fa';
 import AIIcon from "../../assets/committee/AI-icon.png";
 import ColoredScoreBox from "./ColoredScoreBox";
 
 interface EvaluationCycleCardProps {
   cycle: string;
   status: string;
-  self: string | number;
-  exec: string | number;
-  posture: string | number;
-  final: string | number;
+  selfEvaluation?: number;
+  peerEvaluation?: number;
+  finalScore?: number;
   summary: string;
 }
 
 const getColor = (score: number) => {
-  if (score >= 4) return '#08605F'; // verde
-  if (score >= 3) return '#F5C130'; // amarelo
-  return '#DC2626'; // vermelho
+  if (score >= 4) return '#08605F';
+  if (score >= 3) return '#F5C130';
+  return '#DC2626';
 };
 
-const ProgressBar = ({ value }: { value: number }) => (
+const ProgressBar = ({ value }: { value?: number }) => (
   <div className="w-full h-2 bg-gray-200 rounded-full">
     <div
       className="h-2 rounded-full"
       style={{
-        width: `${(value / 5) * 100}%`,
-        backgroundColor: getColor(value),
+        width: value !== undefined ? `${(value / 5) * 100}%` : '0%',
+        backgroundColor: value !== undefined ? getColor(value) : '#d1d5db',
       }}
     />
   </div>
@@ -34,14 +32,13 @@ const ProgressBar = ({ value }: { value: number }) => (
 const EvaluationCycleCard: React.FC<EvaluationCycleCardProps> = ({
   cycle,
   status,
-  self,
-  exec,
-  posture,
-  final,
+  selfEvaluation,
+  peerEvaluation,
+  finalScore,
   summary
 }) => (
   <div className="border rounded-lg p-4 bg-white shadow-sm space-y-4">
-    {/* Top info */}
+    {/* Header */}
     <div className="flex justify-between items-center">
       <div className="flex items-center gap-2">
         <span className="text-sm font-semibold text-gray-800">Ciclo {cycle.replace(/^Ciclo\s*/i, "")}</span>
@@ -51,9 +48,8 @@ const EvaluationCycleCard: React.FC<EvaluationCycleCardProps> = ({
       </div>
       <div className="flex items-center gap-2">
         <span className="text-sm text-gray-600 font-medium">Nota final</span>
-        <ColoredScoreBox score={Number(final)} />
+        <ColoredScoreBox score={finalScore} />
       </div>
-
     </div>
 
     {/* Avaliações com barra */}
@@ -61,23 +57,29 @@ const EvaluationCycleCard: React.FC<EvaluationCycleCardProps> = ({
       <div className="flex-1">
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">Autoavaliação</span>
-          <span className="font-medium text-gray-800">{self}</span>
+          <span className="font-medium text-gray-800">
+            {typeof selfEvaluation === 'number' ? selfEvaluation.toFixed(1) : '-'}
+          </span>
         </div>
-        <ProgressBar value={Number(self)} />
+        <ProgressBar value={selfEvaluation} />
       </div>
       <div className="flex-1">
         <div className="flex justify-between mb-1">
-          <span className="text-gray-600">Avaliação final - Execução</span>
-          <span className="font-medium text-gray-800">{exec}</span>
+          <span className="text-gray-600">Avaliação 360</span>
+          <span className="font-medium text-gray-800">
+            {typeof peerEvaluation === 'number' ? peerEvaluation.toFixed(1) : '-'}
+          </span>
         </div>
-        <ProgressBar value={Number(exec)} />
+        <ProgressBar value={peerEvaluation} />
       </div>
       <div className="flex-1">
         <div className="flex justify-between mb-1">
-          <span className="text-gray-600">Avaliação final - Postura</span>
-          <span className="font-medium text-gray-800">{posture}</span>
+          <span className="text-gray-600">Nota final</span>
+          <span className="font-medium text-gray-800">
+            {typeof finalScore === 'number' ? finalScore.toFixed(1) : '-'}
+          </span>
         </div>
-        <ProgressBar value={Number(posture)} />
+        <ProgressBar value={finalScore} />
       </div>
     </div>
 
