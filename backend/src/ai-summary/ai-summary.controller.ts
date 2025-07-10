@@ -11,6 +11,11 @@ export class AiSummaryController {
     return this.aiSummaryService.generateSummary(dto);
   }
 
+  @Post('lean')
+  generateLeanSummary(@Body() dto: CreateSummaryDto) {
+    return this.aiSummaryService.generateLeanSummary(dto);
+  }
+
   @Get()
   getSummary(
     @Query('userId') userId: string,

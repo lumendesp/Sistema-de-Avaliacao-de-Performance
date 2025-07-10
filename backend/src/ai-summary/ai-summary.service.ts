@@ -33,33 +33,20 @@ function decrypt(text: string): string {
     return decrypted;
   } catch (error) {
     console.warn('Falha ao descriptografar:', error.message);
-    return '[ERRO DE DESCRIPTOGRAFIA]'; 
+    return '[ERRO DE DESCRIPTOGRAFIA]';
   }
 }
 
-
 type SelfWithItems = {
-  items: {
-    criterionId: number;
-    justification: string;
-    score: number;
-  }[];
+  items: { criterionId: number; justification: string; score: number }[];
 };
 
 type MentorWithItems = {
-  items: {
-    criterionId: number;
-    justification: string;
-    score: number;
-  }[];
+  items: { criterionId: number; justification: string; score: number }[];
 };
 
 type ManagerWithItems = {
-  items: {
-    criterionId: number;
-    justification: string;
-    score: number;
-  }[];
+  items: { criterionId: number; justification: string; score: number }[];
 };
 
 @Injectable()
@@ -73,7 +60,6 @@ export class AiSummaryService {
     const summary = await this.prisma.aISummary.findUnique({
       where: { userId_cycleId: { userId, cycleId } },
     });
-
     return summary?.text || null;
   }
 
@@ -105,7 +91,6 @@ export class AiSummaryService {
     });
 
     const prompt = this.buildPrompt(self, peer, mentor, manager, references);
-
     const response = await this.geminiService.generate(prompt);
 
     await this.prisma.aISummary.upsert({
@@ -115,6 +100,31 @@ export class AiSummaryService {
     });
 
     return response;
+  }
+
+  async generateLeanSummary({
+    userId,
+    cycleId,
+  }: CreateSummaryDto): Promise<string> {
+    const summary = await this.getSummary(userId, cycleId);
+    if (!summary) throw new Error('Resumo técnico ainda não gerado');
+
+    const prompt = `Reescreva o texto abaixo como uma mensagem final para o colaborador, com no máximo 2 frases. Seja direto e destaque apenas os principais pontos positivos, como: "Você se destacou em X e Y". Não use sugestões, perguntas nem linguagem técnica.
+
+    ${summary}
+
+    Mensagem final:`;
+
+
+    const leanText = await this.geminiService.generate(prompt);
+
+    await this.prisma.aISummary.upsert({
+      where: { userId_cycleId: { userId, cycleId } },
+      update: { leanText },
+      create: { userId, cycleId, text: '', leanText },
+    });
+
+    return leanText;
   }
 
   private buildPrompt(
