@@ -16,6 +16,7 @@ const EvaluationLayout = () => {
     lastSubmittedAt,
     isSubmit,
     unlockAllEvaluations,
+    activeCycle,
   } = useEvaluation();
 
   // nem todas as abas estão completas ==> botão de concluir desativado
@@ -66,7 +67,7 @@ const EvaluationLayout = () => {
                 }
               >
                 <span>{label}</span>
-                {!tabCompletion[key] && (
+                {!tabCompletion[key] && activeCycle && (
                   <span
                     className="w-2 h-2 rounded-full bg-red-500"
                     title="Aba incompleta"
@@ -78,7 +79,7 @@ const EvaluationLayout = () => {
         </nav>
       </div>
 
-        <Outlet />
+      <Outlet />
     </div>
   );
 };

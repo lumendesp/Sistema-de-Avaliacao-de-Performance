@@ -25,6 +25,8 @@ interface EvaluationContextProps {
   isSubmit: boolean;
   setIsSubmit: (value: boolean) => void;
   unlockAllEvaluations: () => Promise<void>;
+  resetEvaluationContext: () => void;
+  activeCycle: { id: number } | null;
 }
 
 const EvaluationContext = createContext<EvaluationContextProps | undefined>(
@@ -97,6 +99,19 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
     setTabCompletion((prev) => ({ ...prev, [key]: value }));
   };
 
+  const resetEvaluationContext = () => {
+    setActiveCycle(null);
+    setLastSubmittedAt(null);
+    setIsSubmit(false);
+    setIsComplete(false);
+    setTabCompletion({
+      self: false,
+      peer: false,
+      mentor: false,
+      reference: false,
+    });
+  };
+
   useEffect(() => {
     if (!token) return;
 
@@ -141,6 +156,8 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
         isSubmit,
         setIsSubmit,
         unlockAllEvaluations,
+        resetEvaluationContext,
+        activeCycle,
       }}
     >
       {children}
