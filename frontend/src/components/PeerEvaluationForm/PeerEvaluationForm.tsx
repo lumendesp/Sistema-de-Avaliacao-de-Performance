@@ -253,7 +253,7 @@ const PeerEvaluationForm = ({
                       Pontos fortes
                     </p>
                     <textarea
-                      className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
+                      className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal styled-scrollbar"
                       placeholder="Justifique sua nota..."
                       value={data.strengths}
                       onChange={(e) =>
@@ -271,7 +271,7 @@ const PeerEvaluationForm = ({
                       Pontos de melhoria
                     </p>
                     <textarea
-                      className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
+                      className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal styled-scrollbar"
                       placeholder="Justifique sua nota..."
                       value={data.improvements}
                       onChange={(e) =>
