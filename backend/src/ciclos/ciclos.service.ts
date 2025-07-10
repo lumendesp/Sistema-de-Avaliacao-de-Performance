@@ -81,10 +81,9 @@ export class CiclosService {
   async getCurrentCycle(type?: Role) {
 
     
-    // Buscar o ciclo mais recente do tipo especificado
+    // Buscar o ciclo mais recente do tipo especificado (independente do status)
     const currentCycle = await prisma.evaluationCycle.findFirst({
       where: {
-        status: 'IN_PROGRESS',
         ...(type ? { type } : {})
       },
       orderBy: { startDate: 'desc' }

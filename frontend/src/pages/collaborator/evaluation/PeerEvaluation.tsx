@@ -29,7 +29,7 @@ const PeerEvaluation = () => {
   useEffect(() => {
     const loadActiveCycle = async () => {
       try {
-        const cycle = await fetchActiveEvaluationCycle();
+        const cycle = await fetchActiveEvaluationCycle('COLLABORATOR');
         setActiveCycleId(cycle.id);
         setIsCycleFinished(cycle.status === "FINISHED");
       } catch (err) {
