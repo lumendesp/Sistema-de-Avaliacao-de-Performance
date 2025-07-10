@@ -18,6 +18,16 @@ export class CiclosService {
     private readonly cycleTransferService: CycleTransferService,
   ) {}
 
+  /**
+   * Gera nome de ciclo baseado no semestre
+   */
+  private generateSemesterCycleName(date: Date, suffix?: string): string {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const semester = month <= 6 ? 1 : 2;
+    return suffix ? `${year}.${semester} - ${suffix}` : `${year}.${semester}`;
+  }
+
   async create(createCicloDto: CreateCicloDto) {
     return prisma.evaluationCycle.create({
       data: {
@@ -404,10 +414,13 @@ export class CiclosService {
     // 2. Buscar dados do ciclo de colaborador
     const collabCycle = await this.cycleService.getMostRecentCycle('COLLABORATOR', 'CLOSED');
 
-    // 3. Criar ciclo de gestor (manager)
+    // 3. Criar ciclo de gestor (manager) com nome baseado no semestre
+    const startDate = new Date();
+    const managerCycleName = this.generateSemesterCycleName(startDate);
+
     const managerCycle = await this.cycleService.createCycle({
-      name: collabCycle?.name || 'Novo ciclo gestor',
-      startDate: new Date(),
+      name: managerCycleName,
+      startDate: startDate,
       endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
       status: 'IN_PROGRESS',
       type: 'MANAGER',
@@ -420,9 +433,9 @@ export class CiclosService {
   }
 
   /**
-   * Fecha o ciclo de gestor, cria o ciclo de RH e transfere os dados.
+   * Fecha o ciclo de gestor, cria o ciclo de COMITÊ e transfere os dados.
    */
-  async closeManagerAndCreateRhCycle(managerCycleId?: number) {
+  async closeManagerAndCreateCommitteeCycle(managerCycleId?: number) {
     let cycleId = managerCycleId;
     if (!cycleId) {
       const mostRecent = await this.cycleService.getMostRecentCycle('MANAGER', 'IN_PROGRESS');
@@ -438,18 +451,54 @@ export class CiclosService {
     // 2. Buscar dados do ciclo de gestor
     const managerCycle = await this.cycleService.getMostRecentCycle('MANAGER', 'CLOSED');
 
-    // 3. Criar ciclo de RH
-    const rhCycle = await this.cycleService.createCycle({
-      name: managerCycle?.name || 'Novo ciclo RH',
-      startDate: new Date(),
+    // 3. Criar ciclo de COMITÊ com nome baseado no semestre
+    const startDate = new Date();
+    const committeeCycleName = this.generateSemesterCycleName(startDate);
+
+    const committeeCycle = await this.cycleService.createCycle({
+      name: committeeCycleName,
+      startDate: startDate,
       endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
       status: 'IN_PROGRESS',
-      type: 'HR',
+      type: 'COMMITTEE',
     });
 
     // 4. Transferir dados
-    await this.cycleTransferService.transferCycleData(cycleId, rhCycle.id);
+    await this.cycleTransferService.transferCycleData(cycleId, committeeCycle.id);
 
-    return { message: 'Ciclo de gestor fechado, ciclo de RH criado e dados transferidos!', rhCycleId: rhCycle.id };
+    return { message: 'Ciclo de gestor fechado, ciclo de COMITÊ criado e dados transferidos!', committeeCycleId: committeeCycle.id };
+  }
+
+  /**
+   * Cria um novo ciclo de colaborador.
+   */
+  async createCollaboratorCycle(cycleData?: { name?: string; startDate?: Date; endDate?: Date }) {
+    // Verificar se já existe um ciclo de colaborador em andamento
+    const existingCycle = await this.cycleService.getMostRecentCycle('COLLABORATOR', 'IN_PROGRESS');
+    if (existingCycle) {
+      throw new Error('Já existe um ciclo de colaborador em andamento');
+    }
+
+    // Definir datas padrão se não fornecidas
+    const startDate = cycleData?.startDate || new Date();
+    const endDate = cycleData?.endDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 dias
+    
+    // Gerar nome baseado no semestre
+    const name = cycleData?.name || this.generateSemesterCycleName(startDate);
+
+    // Criar o ciclo de colaborador
+    const collaboratorCycle = await this.cycleService.createCycle({
+      name,
+      startDate,
+      endDate,
+      status: 'IN_PROGRESS',
+      type: 'COLLABORATOR',
+    });
+
+    return { 
+      message: 'Ciclo de colaborador criado com sucesso!', 
+      collaboratorCycleId: collaboratorCycle.id,
+      cycle: collaboratorCycle
+    };
   }
 }

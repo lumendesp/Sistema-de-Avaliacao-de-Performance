@@ -19,9 +19,21 @@ export class CiclosController {
     return this.ciclosService.closeCollaboratorAndCreateManagerCycle();
   }
 
-  @Post('close-manager-and-create-rh')
-  async closeAndCreateRh() {
-    return this.ciclosService.closeManagerAndCreateRhCycle();
+  @Post('close-manager-and-create-committee')
+  async closeAndCreateCommittee() {
+    return this.ciclosService.closeManagerAndCreateCommitteeCycle();
+  }
+
+  @Post('create-collaborator-cycle')
+  async createCollaboratorCycle(@Body() cycleData?: { name?: string; startDate?: string; endDate?: string }) {
+    // Converter strings de data para Date se fornecidas
+    const data = cycleData ? {
+      ...cycleData,
+      startDate: cycleData.startDate ? new Date(cycleData.startDate) : undefined,
+      endDate: cycleData.endDate ? new Date(cycleData.endDate) : undefined
+    } : undefined;
+    
+    return this.ciclosService.createCollaboratorCycle(data);
   }
 
   @Get()
@@ -41,11 +53,6 @@ export class CiclosController {
     return this.ciclosService.getBrutalFactsData();
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('debug/cycles')
-  getDebugCycles() {
-    return this.ciclosService.getDebugCycles();
-  }
 
   @UseGuards(JwtAuthGuard)
   @Get('current')
