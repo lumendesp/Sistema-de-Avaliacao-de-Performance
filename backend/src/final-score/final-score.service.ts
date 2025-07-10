@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { CreateFinalScoreDto } from './dto/create-final-score.dto';
 import { UpdateFinalScoreDto } from './dto/update-final-score.dto';
 import { EvaluationCycleService } from '../evaluation-cycle/evaluation-cycle.service';
+import { encrypt, decrypt } from '../utils/encryption';
 import { Role } from '@prisma/client';
 
 @Injectable()
@@ -23,11 +24,6 @@ export class FinalScoreService {
       console.log('Adjuster ID:', adjusterId);
       console.log('Adjuster roles:', adjuster?.roles);
 
-      // Temporarily disable committee check for debugging
-      // const isCommittee = adjuster?.roles.some((r) => r.role === 'COMMITTEE');
-      // if (!isCommittee) {
-      //   throw new ForbiddenException('Only committee members can create final scores.');
-      // }
 
       // Get active cycle for HR type
       console.log('Looking for active cycle...');
@@ -53,16 +49,16 @@ export class FinalScoreService {
         throw new ForbiddenException('Final score already exists for this user in this cycle.');
       }
 
-      console.log('Creating final score with data:', {
-        userId: dto.userId,
-        cycleId: activeCycle.id,
-        executionScore: dto.executionScore,
-        postureScore: dto.postureScore,
-        finalScore: dto.finalScore,
-        summary: dto.summary,
-        adjustedBy: adjusterId,
-        justification: dto.justification,
-      });
+      // console.log('Creating final score with data:', {
+      //   userId: dto.userId,
+      //   cycleId: activeCycle.id,
+      //   executionScore: dto.executionScore,
+      //   postureScore: dto.postureScore,
+      //   finalScore: dto.finalScore,
+      //   summary: dto.summary,
+      //   adjustedBy: adjusterId,
+      //   justification: dto.justification,
+      // });
 
       return this.prisma.finalScore.create({
         data: {
@@ -73,7 +69,7 @@ export class FinalScoreService {
           finalScore: dto.finalScore,
           summary: dto.summary,
           adjustedBy: adjusterId,
-          justification: dto.justification,
+          justification: encrypt(dto.justification),
         },
         include: {
           user: true,
@@ -174,6 +170,7 @@ export class FinalScoreService {
       where: { id },
       data: {
         ...dto,
+        justification: dto.justification ? encrypt(dto.justification) : undefined,
         adjustedBy: adjusterId,
       },
       include: {

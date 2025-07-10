@@ -1,5 +1,11 @@
+import { UpdateMentorEvaluationDto } from './dto/update-mentor-evaluation.dto';
 import * as crypto from 'crypto';
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { EvaluationCycleService } from '../evaluation-cycle/evaluation-cycle.service';
 import { CreateMentorEvaluationDto } from './dto/create-mentor-evaluation.dto';
@@ -12,6 +18,45 @@ export class MentorEvaluationService {
     private prisma: PrismaService,
     private cycleService: EvaluationCycleService, // necessário para buscar informações sobre o ciclo ativo
   ) {}
+
+  async findOrCreateEmptyEvaluation(
+    evaluatorId: number,
+    evaluateeId: number,
+    cycleId: number,
+  ) {
+    // Tenta buscar avaliação existente
+    let evaluation = await this.prisma.mentorEvaluation.findFirst({
+      where: {
+        evaluatorId,
+        evaluateeId,
+        cycleId,
+      },
+    });
+
+    if (evaluation) {
+      // Retorna com justificativa descriptografada
+      return {
+        ...evaluation,
+        justification: decrypt(evaluation.justification),
+      };
+    }
+
+    // Se não existir, cria uma avaliação vazia
+    evaluation = await this.prisma.mentorEvaluation.create({
+      data: {
+        evaluatorId,
+        evaluateeId,
+        cycleId,
+        score: 0, // ou undefined, conforme seu modelo
+        justification: encrypt(''), // salva string vazia criptografada
+      },
+    });
+
+    return {
+      ...evaluation,
+      justification: '',
+    };
+  }
 
   // função para criar uma avaliação para o mentor
   async create(evaluatorId: number, dto: CreateMentorEvaluationDto) {
@@ -61,6 +106,61 @@ export class MentorEvaluationService {
         justification: encrypt(dto.justification),
       },
     });
+  }
+
+  async update(
+    evaluatorId: number,
+    evaluationId: number,
+    dto: UpdateMentorEvaluationDto,
+  ) {
+    // Busca avaliação para garantir que existe e pertence ao avaliador
+    const evaluation = await this.prisma.mentorEvaluation.findUnique({
+      where: { id: evaluationId },
+      include: { cycle: true },
+    });
+
+    if (!evaluation) {
+      throw new NotFoundException('Mentor evaluation not found.');
+    }
+
+    if (evaluation.evaluatorId !== evaluatorId) {
+      throw new ForbiddenException('You can only update your own evaluations.');
+    }
+
+    // Verifica se o ciclo está ativo para permitir atualização
+    if (evaluation.cycle.status !== 'IN_PROGRESS') {
+      throw new BadRequestException(
+        'Cannot update evaluation after cycle is finished.',
+      );
+    }
+
+    // Prepara dados para update (só atualiza o que foi enviado)
+    const dataToUpdate: Partial<{ score: number; justification: string }> = {};
+
+    if (dto.score !== undefined) {
+      dataToUpdate.score = dto.score;
+    }
+
+    if (dto.justification !== undefined) {
+      dataToUpdate.justification = encrypt(dto.justification);
+    }
+
+    if (Object.keys(dataToUpdate).length === 0) {
+      throw new BadRequestException('No valid fields provided for update.');
+    }
+
+    // Atualiza no banco
+    const updatedEvaluation = await this.prisma.mentorEvaluation.update({
+      where: { id: evaluationId },
+      data: dataToUpdate,
+      include: { cycle: true },
+    });
+
+    // Decripta a justificativa para retornar
+    return {
+      ...updatedEvaluation,
+      justification: decrypt(updatedEvaluation.justification),
+    };
   }
 
   // busca todas as avaliações recebidas por um mentor, por ciclo ou não (por enquanto, não temos a lógica de ciclos certinha)

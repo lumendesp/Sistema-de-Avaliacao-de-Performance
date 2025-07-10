@@ -20,7 +20,6 @@ export interface PeerEvaluation {
   };
 }
 
-
 export interface PeerEvaluationFormData {
   [collaboratorId: number]: {
     score?: number;
@@ -30,4 +29,11 @@ export interface PeerEvaluationFormData {
     projectName: string;
     projectPeriod: string;
   };
+}
+
+export interface PeerEvaluationFormProps {
+  myEvaluations: PeerEvaluation[];
+  setMyEvaluations: React.Dispatch<React.SetStateAction<PeerEvaluation[]>>;
+  cycleId: number;
+  isCycleFinished?: boolean;
 }

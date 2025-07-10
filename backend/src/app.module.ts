@@ -23,6 +23,8 @@ import { AiSummaryModule } from './ai-summary/ai-summary.module';
 import { GeminiModule } from './ai/ai.module';
 import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
 import { ManagerModule } from './manager/manager.module';
+import { ProjectsModule } from './projects/projects.module';
+import { EvaluationCompletionModule } from './evaluation-completion/evaluation-completion.module';
 import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
 
 @Module({
@@ -54,6 +56,8 @@ import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
     GeminiModule,
     ManagerEvaluationModule,
     ManagerModule,
+    ProjectsModule,
+    EvaluationCompletionModule,
     AiBrutalFactsModule,
   ],
   controllers: [AppController],

@@ -3,10 +3,14 @@ import axios from "axios";
 import { useAuth } from "../../../context/AuthContext";
 import type { TrackWithGroups } from "../../../types/selfEvaluation";
 import SelfEvaluationGroupList from "../../../components/SelfEvaluationForm/SelfEvaluationGroupList";
+import EvaluationComparisonGroupList from "../../../components/ComparisonEvaluationForm/EvaluationComparisonGroupList";
+import SelfEvaluationGroupReadOnlyList  from "../../../components/SelfEvaluationForm/ReadOnly/SelfEvaluationGroupListReadOnly";
+import { useEvaluation } from "../../../context/EvaluationsContext";
 import { fetchActiveEvaluationCycle } from "../../../services/api"; // ajuste o caminho conforme sua estrutura
 
 export default function SelfEvaluationPage() {
   const { token, user } = useAuth();
+  const { isSubmit } = useEvaluation();
   const [trackGroups, setTrackGroups] = useState<TrackWithGroups | null>(null);
   const [loading, setLoading] = useState(true);
   const [cycleId, setCycleId] = useState<number | null>(null);
@@ -44,7 +48,11 @@ export default function SelfEvaluationPage() {
 
   return (
     <div className="p-3 bg-[#f1f1f1] mt-0">
-      <SelfEvaluationGroupList trackData={trackGroups} cycleId={cycleId} />
+      {isSubmit ? (
+        <SelfEvaluationGroupReadOnlyList trackData={trackGroups} cycleId={cycleId} />
+      ) : (
+        <SelfEvaluationGroupList trackData={trackGroups} cycleId={cycleId} />
+      )}
     </div>
   );
 }

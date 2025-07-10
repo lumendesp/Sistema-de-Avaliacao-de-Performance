@@ -14,6 +14,9 @@ import PeerEvaluation from "../pages/collaborator/evaluation/PeerEvaluation";
 import MentorEvaluation from "../pages/collaborator/evaluation/MentorEvaluation";
 import ReferenceEvaluation from "../pages/collaborator/evaluation/ReferenceEvaluation";
 import ComparisonEvaluation from "../pages/collaborator/evaluation/ComparisonEvaluation"; // novo
+import PeerEvaluationComparison from "../pages/collaborator/evaluation/PeerEvaluationComparison";
+import MentorEvaluationComparison from "../pages/collaborator/evaluation/MentorEvaluationComparison";
+import ReferenceEvaluationComparison from "../pages/collaborator/evaluation/ReferenceEvaluationComparison";
 
 import Login from "../pages/login/Login";
 import Unauthorized from "../pages/login/Unauthorized";
@@ -33,7 +36,7 @@ import RHDashboard from "../pages/RH/RHDashboard/RHDashboard";
 import RHCollaboratorsPage from "../pages/RH/RHCollaborators/RHCollaborators";
 import RHCriteriaSettingsPage from "../pages/RH/RHCriteriaSettings/RHCriteriaSettings";
 
-import BrutalFacts from '../pages/manager/BrutalFacts';
+import BrutalFacts from "../pages/manager/BrutalFacts";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -57,7 +60,10 @@ const AppRoutes = () => (
             </ProtectedRoute>
           }
         />
-        <Route path ="/collaborator/progress" element={<EvolutionCollaborator />} />
+        <Route
+          path="/collaborator/progress"
+          element={<EvolutionCollaborator />}
+        />
         <Route
           path="evaluation"
           element={
@@ -70,7 +76,10 @@ const AppRoutes = () => (
           <Route path="self-evaluation" element={<SelfEvaluation />} />
           <Route path="peer-evaluation" element={<PeerEvaluation />} />
           <Route path="mentor-evaluation" element={<MentorEvaluation />} />
-          <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
+          <Route
+            path="reference-evaluation"
+            element={<ReferenceEvaluation />}
+          />
         </Route>
         <Route
           path="evaluation-comparison"
@@ -81,9 +90,18 @@ const AppRoutes = () => (
           }
         >
           <Route index element={<ComparisonEvaluation />} />
-          <Route path="peer-evaluation" element={<PeerEvaluation />} />
-          <Route path="mentor-evaluation" element={<MentorEvaluation />} />
-          <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
+          <Route
+            path="peer-evaluation"
+            element={<PeerEvaluationComparison />}
+          />
+          <Route
+            path="mentor-evaluation"
+            element={<MentorEvaluationComparison />}
+          />
+          <Route
+            path="reference-evaluation"
+            element={<ReferenceEvaluationComparison />}
+          />
         </Route>
       </Route>
 
