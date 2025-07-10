@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsBoolean } from 'class-validator';
+import { IsInt, IsBoolean, IsString } from 'class-validator';
 
 export class CreateConfiguredCriterionDto {
   @ApiProperty({ 
@@ -43,4 +43,18 @@ export class CreateConfiguredCriterionDto {
   })
   @IsBoolean()
   mandatory: boolean;
+
+  @ApiProperty({
+    description: 'Peso do critério (específico para a trilha/pilar)',
+    example: 10
+  })
+  @IsInt()
+  weight: number;
+
+  @ApiProperty({
+    description: 'Descrição do critério (específica para a trilha/pilar)',
+    example: 'Descrição customizada'
+  })
+  @IsString()
+  description: string;
 } 

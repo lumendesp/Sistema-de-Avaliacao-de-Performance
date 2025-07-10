@@ -88,7 +88,7 @@ function EvaluationDropdown({ availableCriteria, onSelect, placeholder = "Seleci
                                         className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
                                         onClick={() => handleSelect(criterion)}
                                     >
-                                        <div className="font-medium text-gray-900">
+                                        <div className="font-medium text-gray-900 text-sm">
                                             {criterion.displayName}
                                         </div>
                                         <div className="text-xs text-gray-500 truncate">

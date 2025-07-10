@@ -33,11 +33,14 @@ import RHDashboard from "../pages/RH/RHDashboard/RHDashboard";
 import RHCollaboratorsPage from "../pages/RH/RHCollaborators/RHCollaborators";
 import RHCriteriaSettingsPage from "../pages/RH/RHCriteriaSettings/RHCriteriaSettings";
 
+import BrutalFacts from '../pages/manager/BrutalFacts';
+
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
+
       <Route
         path="/collaborator"
         element={
@@ -83,6 +86,7 @@ const AppRoutes = () => (
           <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
         </Route>
       </Route>
+
       <Route
         path="/manager"
         element={
@@ -106,6 +110,7 @@ const AppRoutes = () => (
           />
         </Route>
         <Route path="historico" element={<EvolutionManager />} />
+        <Route path="brutal-facts" element={<BrutalFacts />} />
       </Route>
 
       <Route
@@ -140,7 +145,11 @@ const AppRoutes = () => (
             <CommitteeLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<Committee />} />
+        <Route path="equalizations" element={<Equalization />} />
+      </Route>
+
       <Route
         path="/rh"
         element={
