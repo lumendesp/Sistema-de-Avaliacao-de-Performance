@@ -7,6 +7,7 @@ import {
   fetchMentorMentees,
   fetchSelfEvaluation,
   fetchManagerEvaluation,
+  fetchMentorToCollaboratorEvaluationsByCollaborator
 } from "../../services/api";
 
 export default function MentorStatus() {
@@ -18,6 +19,8 @@ export default function MentorStatus() {
   const [selfEvaluations, setSelfEvaluations] = useState<Record<number, any>>(
     {}
   );
+  // Novo state para as notas do mentor
+  const [mentorScores, setMentorScores] = useState<Record<number, number | null>>({});
 
   useEffect(() => {
     if (!user?.id) return;
@@ -38,29 +41,42 @@ export default function MentorStatus() {
     Promise.all(
       list.map((mentee) =>
         Promise.all([
-          fetchManagerEvaluation(mentee.id).catch(() => null),
+          fetchMentorToCollaboratorEvaluationsByCollaborator(mentee.id).catch(() => null),
           fetchSelfEvaluation(mentee.id).catch(() => null),
         ])
       )
     ).then((results) => {
       const evalMap: Record<number, any> = {};
       const selfEvalMap: Record<number, any> = {};
-      results.forEach(([evaluation, selfEval], idx) => {
+      const mentorScoreMap: Record<number, number | null> = {};
+      results.forEach(([mentorEvaluations, selfEval], idx) => {
         const id = list[idx].id;
-        evalMap[id] = evaluation;
+        // Extrai a nota do mentor do ciclo mais recente
+        let mentorScore = null;
+        if (Array.isArray(mentorEvaluations) && mentorEvaluations.length > 0) {
+          const latest = mentorEvaluations.reduce((prev, curr) => {
+            const prevCycle = prev.cycleId ?? prev.cycle?.id ?? 0;
+            const currCycle = curr.cycleId ?? curr.cycle?.id ?? 0;
+            return currCycle > prevCycle ? curr : prev;
+          });
+          mentorScore = latest.score;
+        }
+        mentorScoreMap[id] = mentorScore;
+        evalMap[id] = mentorEvaluations; // Mantém o array para debug, mas não é mais usado para nota
         // Pega a autoavaliação mais recente (maior cycleId)
-        let latest = null;
+        let latestSelf = null;
         if (Array.isArray(selfEval) && selfEval.length > 0) {
-          latest = selfEval.reduce((prev, curr) =>
+          latestSelf = selfEval.reduce((prev, curr) =>
             prev.cycle && curr.cycle && prev.cycle.id > curr.cycle.id
               ? prev
               : curr
           );
         }
-        selfEvalMap[id] = latest;
+        selfEvalMap[id] = latestSelf;
       });
       setEvaluations(evalMap);
       setSelfEvaluations(selfEvalMap);
+      setMentorScores(mentorScoreMap);
     });
   }, [mentees, search]);
 
@@ -93,13 +109,14 @@ export default function MentorStatus() {
         selfEval.items.reduce((sum: number, item: any) => sum + item.score, 0) /
         selfEval.items.length;
     }
+    let mentorScore = mentorScores[collaboratorId] ?? null;
     if (!evaluation || total === 0 || withScore.length === 0) {
-      return { status: "Pendente" as const, managerScore: null, selfScore };
+      return { status: "Pendente" as const, managerScore: null, selfScore, mentorScore };
     }
     if (filled.length < total) {
-      return { status: "Em andamento" as const, managerScore, selfScore };
+      return { status: "Em andamento" as const, managerScore, selfScore, mentorScore };
     }
-    return { status: "Finalizado" as const, managerScore, selfScore };
+    return { status: "Finalizado" as const, managerScore, selfScore, mentorScore };
   }
 
   return (
@@ -124,7 +141,7 @@ export default function MentorStatus() {
       <div className="flex flex-col gap-4 w-full px-8">
         {filtered.length > 0 ? (
           filtered.map((mentee) => {
-            const { status, managerScore, selfScore } = getStatusAndScore(
+            const { status, managerScore, selfScore, mentorScore } = getStatusAndScore(
               mentee.id
             );
             return (
@@ -135,6 +152,7 @@ export default function MentorStatus() {
                   status,
                   managerScore,
                   selfScore,
+                  mentorScore,
                 }}
               />
             );

@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { API_URL, getAuthHeaders, fetchMentorMentees } from "../../services/api";
+import {
+  API_URL,
+  getAuthHeaders,
+  fetchMentorMentees,
+  fetchMentorToCollaboratorEvaluationsByCollaborator,
+} from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import type { Collaborator as CollaboratorStatus } from "../../types/collaboratorStatus";
@@ -44,6 +49,9 @@ const ColaboradoresList: React.FC = () => {
   const [selfEvaluations, setSelfEvaluations] = useState<
     Record<number, SelfEvaluation | null>
   >({});
+  const [mentorEvaluations, setMentorEvaluations] = useState<Record<number, any>>(
+    {}
+  );
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -101,25 +109,30 @@ const ColaboradoresList: React.FC = () => {
               return { id, selfEval: latest };
             })
             .catch(() => ({ id, selfEval: null })),
+          fetchMentorToCollaboratorEvaluationsByCollaborator(id).catch(() => null),
         ])
       )
     ).then((results) => {
       const evalMap: Record<number, ManagerEvaluation | null> = {};
       const selfEvalMap: Record<number, SelfEvaluation | null> = {};
-      results.forEach((pairArr) => {
-        const [{ id, evaluation }, { selfEval }] = pairArr;
+      const mentorEvalMap: Record<number, any> = {};
+      results.forEach((tripleArr) => {
+        const [{ id, evaluation }, { selfEval }, mentorEval] = tripleArr;
         evalMap[id] = evaluation;
         selfEvalMap[id] = selfEval;
+        mentorEvalMap[id] = mentorEval;
       });
       setEvaluations(evalMap);
       setSelfEvaluations(selfEvalMap);
+      setMentorEvaluations(mentorEvalMap);
     });
   }, [colaboradores]);
 
-  // Função para calcular status, nota do gestor e nota de autoavaliação
+  // Função para calcular status, nota do gestor, nota do mentor e autoavaliação
   function getStatusAndScore(collaboratorId: number) {
     const evaluation = evaluations[collaboratorId];
     const selfEval = selfEvaluations[collaboratorId];
+    const mentorEval = mentorEvaluations[collaboratorId];
     const allCriteria = (evaluation?.groups || []).flatMap(
       (g) => g.items || []
     );
@@ -149,13 +162,24 @@ const ColaboradoresList: React.FC = () => {
         selfEval.items.reduce((sum, item) => sum + item.score, 0) /
         selfEval.items.length;
     }
+    // Nota do mentor
+    let mentorScore: number | null = null;
+    if (mentorEval && Array.isArray(mentorEval) && mentorEval.length > 0) {
+      // Se vier array, pega a nota do ciclo mais recente
+      const latest = mentorEval.reduce((prev, curr) =>
+        prev.cycleId && curr.cycleId && prev.cycleId > curr.cycleId ? prev : curr
+      );
+      mentorScore = latest.score ?? null;
+    } else if (mentorEval && mentorEval.score !== undefined) {
+      mentorScore = mentorEval.score;
+    }
     if (!evaluation || total === 0 || withScore.length === 0) {
-      return { status: "Pendente" as const, managerScore: null, selfScore };
+      return { status: "Pendente" as const, managerScore: null, selfScore, mentorScore };
     }
     if (filled.length < total) {
-      return { status: "Em andamento" as const, managerScore, selfScore };
+      return { status: "Em andamento" as const, managerScore, selfScore, mentorScore };
     }
-    return { status: "Finalizado" as const, managerScore, selfScore };
+    return { status: "Finalizado" as const, managerScore, selfScore, mentorScore };
   }
 
   if (loading)
@@ -201,14 +225,14 @@ const ColaboradoresList: React.FC = () => {
       </div>
       <div className="space-y-4">
         {colaboradores.map((colab, idx) => {
-          const { status, selfScore, managerScore } = getStatusAndScore(
+          const { status, selfScore, managerScore, mentorScore } = getStatusAndScore(
             colab.id
           );
           return (
             <button
               key={colab.id || idx}
               className="w-full flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3 hover:bg-gray-100 transition cursor-pointer"
-              onClick={() => navigate(`/manager/avaliacao/${colab.id}`)}
+              onClick={() => navigate(`/mentor/avaliacao/${colab.id}`)}
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 text-lg">
@@ -245,10 +269,10 @@ const ColaboradoresList: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-xs text-gray-500">
-                  Nota gestor{" "}
+                  Nota mentor{" "}
                   <span className="ml-1 font-semibold text-gray-900">
-                    {managerScore !== null && managerScore !== undefined
-                      ? managerScore.toFixed(1)
+                    {mentorScore !== null && mentorScore !== undefined
+                      ? mentorScore.toFixed(1)
                       : "-"}
                   </span>
                 </div>
