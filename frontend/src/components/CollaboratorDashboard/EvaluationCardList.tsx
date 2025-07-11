@@ -41,7 +41,7 @@ const EvaluationCardList = () => {
       </div>
 
       {/* Lista scrollável */}
-      <div className="flex flex-col gap-3 max-h-80 overflow-y-auto pr-1">
+      <div className="flex flex-col gap-3 max-h-[300px] sm:max-h-80 overflow-y-auto pr-1">
         {ciclos.map((c, idx) => (
           <EvaluationCardMini key={idx} {...c} />
         ))}

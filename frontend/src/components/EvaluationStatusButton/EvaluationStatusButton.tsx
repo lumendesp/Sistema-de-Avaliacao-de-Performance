@@ -29,12 +29,10 @@ function EvaluationStatusButton({
     >
       <div className="flex items-start gap-3 text-left">
         <svg
-          width="46"
-          height="46"
           viewBox="0 0 46 46"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className={iconColor}
+          className={`hidden md:block w-10 h-10 md:w-[46px] md:h-[46px] ${iconColor}`}
         >
           <path
             d="M34.5 9.58337L29.8732 4.95654C29.1544 4.2376 28.1796 3.83359 27.163 3.83337H11.5C10.4833 3.83337 9.50831 4.23724 8.78942 4.95613C8.07053 5.67502 7.66666 6.65004 7.66666 7.66671V38.3334C7.66666 39.35 8.07053 40.3251 8.78942 41.0439C9.50831 41.7628 10.4833 42.1667 11.5 42.1667H34.5C35.5167 42.1667 36.4917 41.7628 37.2106 41.0439C37.9295 40.3251 38.3333 39.35 38.3333 38.3334"
@@ -59,7 +57,7 @@ function EvaluationStatusButton({
           />
         </svg>
         <div>
-          <p className={`font-semibold ${textColor}`}>
+          <p className={`font-semibold text-sm md:text-base ${textColor}`}>
             Ciclo {ciclo} de avaliação {status === 'aberto' ? 'está aberto' : 'finalizado'}
           </p>
           <p className={`text-sm opacity-80 ${textColor}`}>
