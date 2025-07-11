@@ -35,6 +35,7 @@ import EvolutionMentor from "../pages/mentor/EvolutionMentor";
 import PeerEvaluationMentor from "../pages/mentor/Evaluation360";
 import BrutalFactsMentor from "../pages/mentor/BrutalFacts";
 import MentorEvaluationPage from "../pages/mentor/Evaluation";
+import MentorSelfEvaluationReadOnly from "../pages/mentor/CollaboratorEval";
 
 import Committee from "../pages/committee/Committee";
 import Equalization from "../pages/committee/Equalization";
@@ -146,6 +147,7 @@ const AppRoutes = () => (
           <Route index element={<MentorEvaluationPage />} />
           <Route path="" element={<div>Selecione uma aba</div>} />
           <Route path="360" element={<PeerEvaluationMentor />} />
+          <Route path="autoavaliacao" element={<MentorSelfEvaluationReadOnly />} />
           <Route path="historico" element={<EvolutionMentor />} />
         </Route>
         <Route path="historico" element={<EvolutionMentor />} />

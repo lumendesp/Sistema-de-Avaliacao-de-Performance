@@ -101,6 +101,18 @@ export default function MentorEvaluationLayout() {
               </li>
               <li>
                 <NavLink
+                  to="autoavaliacao"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "border-b-2 border-teal-700 pb-3 text-teal-700 flex items-center gap-2"
+                      : "pb-3 flex items-center gap-2"
+                  }
+                >
+                  Autoavaliação 
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
                   to="360"
                   className={({ isActive }) =>
                     isActive
