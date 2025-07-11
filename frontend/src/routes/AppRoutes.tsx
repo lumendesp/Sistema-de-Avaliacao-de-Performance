@@ -7,6 +7,7 @@ import CommitteeLayout from "../layouts/CommitteeLayout";
 import RHLayout from "../layouts/RHLayout";
 import EvaluationLayout from "../layouts/EvaluationLayout";
 import ComparisonLayout from "../layouts/ComparisonLayout"; // novo
+import MentorLayout from "../layouts/MentorLayout";
 
 import Dashboard from "../pages/collaborator/Dashboard";
 import SelfEvaluation from "../pages/collaborator/evaluation/SelfEvaluation";
@@ -26,6 +27,15 @@ import CollaboratorEvaluation from "../pages/manager/Evaluation.tsx";
 import EvolutionManager from "../pages/manager/EvolutionManager.tsx";
 import PeerEvaluationManager from "../pages/manager/Evaluation360.tsx";
 
+/* Adicione aqui embaixo os imports do mentor*/
+import MentorEvaluationLayout from "../layouts/MentorEvaluationLayout.tsx";
+import DashboardMentorPage from "../pages/mentor/DashboardMentorPage";
+import MentorStatus from "../pages/mentor/Status";
+import EvolutionMentor from "../pages/mentor/EvolutionMentor";
+import PeerEvaluationMentor from "../pages/mentor/Evaluation360";
+import BrutalFactsMentor from "../pages/mentor/BrutalFacts";
+import MentorEvaluationPage from "../pages/mentor/Evaluation";
+
 import Committee from "../pages/committee/Committee";
 import Equalization from "../pages/committee/Equalization";
 
@@ -33,7 +43,7 @@ import RHDashboard from "../pages/RH/RHDashboard/RHDashboard";
 import RHCollaboratorsPage from "../pages/RH/RHCollaborators/RHCollaborators";
 import RHCriteriaSettingsPage from "../pages/RH/RHCriteriaSettings/RHCriteriaSettings";
 
-import BrutalFacts from '../pages/manager/BrutalFacts';
+import BrutalFacts from "../pages/manager/BrutalFacts";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -57,7 +67,10 @@ const AppRoutes = () => (
             </ProtectedRoute>
           }
         />
-        <Route path ="/collaborator/progress" element={<EvolutionCollaborator />} />
+        <Route
+          path="/collaborator/progress"
+          element={<EvolutionCollaborator />}
+        />
         <Route
           path="evaluation"
           element={
@@ -70,7 +83,10 @@ const AppRoutes = () => (
           <Route path="self-evaluation" element={<SelfEvaluation />} />
           <Route path="peer-evaluation" element={<PeerEvaluation />} />
           <Route path="mentor-evaluation" element={<MentorEvaluation />} />
-          <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
+          <Route
+            path="reference-evaluation"
+            element={<ReferenceEvaluation />}
+          />
         </Route>
         <Route
           path="evaluation-comparison"
@@ -83,7 +99,10 @@ const AppRoutes = () => (
           <Route index element={<ComparisonEvaluation />} />
           <Route path="peer-evaluation" element={<PeerEvaluation />} />
           <Route path="mentor-evaluation" element={<MentorEvaluation />} />
-          <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
+          <Route
+            path="reference-evaluation"
+            element={<ReferenceEvaluation />}
+          />
         </Route>
       </Route>
 
@@ -117,25 +136,20 @@ const AppRoutes = () => (
         path="/mentor"
         element={
           <ProtectedRoute allowedRoles={["MENTOR", "ADMIN"]}>
-            <ManagerLayout />
+            <MentorLayout />
           </ProtectedRoute>
         }
       >
-        <Route index element={<DashboardManagerPage />} />
-        <Route path="collaborators" element={<Collaborators />} />
-        <Route path="avaliacao/:id" element={<ManagerEvaluationLayout />}>
-          <Route index element={<CollaboratorEvaluation />} />
-          <Route path="historico" element={<EvolutionCollaborator />} />
-          <Route
-            path="360"
-            element={
-              <ProtectedRoute allowedRoles={["MENTOR", "ADMIN"]}>
-                <PeerEvaluationManager />
-              </ProtectedRoute>
-            }
-          />
+        <Route index element={<DashboardMentorPage />} />
+        <Route path="collaborators" element={<MentorStatus />} />
+        <Route path="avaliacao/:id" element={<MentorEvaluationLayout />}>
+          <Route index element={<MentorEvaluationPage />} />
+          <Route path="" element={<div>Selecione uma aba</div>} />
+          <Route path="360" element={<PeerEvaluationMentor />} />
+          <Route path="historico" element={<EvolutionMentor />} />
         </Route>
-        <Route path="historico" element={<EvolutionManager />} />
+        <Route path="historico" element={<EvolutionMentor />} />
+        <Route path="brutal-facts" element={<BrutalFactsMentor />} />
       </Route>
 
       <Route

@@ -179,7 +179,7 @@ export const fetchAISummary = async (
   userId: number,
   cycleId: number
 ): Promise<string> => {
-  console.log(userId, cycleId)
+  console.log(userId, cycleId);
   const res = await fetch(
     `${API_URL}/ai-summary?userId=${userId}&cycleId=${cycleId}`,
     {
@@ -196,12 +196,11 @@ export const fetchAISummary = async (
   return res.text(); // o backend já retorna só o texto do resumo
 };
 
-
 // Fetches all users with their associated evaluations
 
 export const getUsersWithEvaluationsForCommittee = async () => {
   const response = await fetch(`${API_URL}/users/evaluations`, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
   if (!response.ok) {
@@ -655,14 +654,13 @@ export const fetchManagersBySearch = async (searchTerm: string) => {
   return res.json(); // array de usuários com role MANAGER
 };
 
-
 // Committee evaluation functions
 export const getUsersWithEvaluations = async () => {
   const res = await fetch(`${API_URL}/users/evaluations`, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao buscar usuários com avaliações');
+  if (!res.ok) throw new Error("Erro ao buscar usuários com avaliações");
   return res.json();
 };
 
@@ -676,14 +674,14 @@ export const createFinalScore = async (data: {
   justification: string;
   cycleId?: number;
 }) => {
-  console.log('Creating final score with data:', data);
+  console.log("Creating final score with data:", data);
   const res = await fetch(`${API_URL}/final-scores`, {
-    method: 'POST',
+    method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    let errorMsg = 'Erro ao criar avaliação final';
+    let errorMsg = "Erro ao criar avaliação final";
     try {
       const errorJson = await res.json();
       errorMsg = errorJson.message || errorMsg;
@@ -691,74 +689,197 @@ export const createFinalScore = async (data: {
       const errorText = await res.text();
       if (errorText) errorMsg = errorText;
     }
-    console.error('Error response:', errorMsg);
+    console.error("Error response:", errorMsg);
     throw new Error(errorMsg);
   }
   return res.json();
 };
 
-export const updateFinalScore = async (id: number, data: {
-  executionScore?: number;
-  postureScore?: number;
-  finalScore?: number;
-  summary?: string;
-  justification?: string;
-}) => {
+export const updateFinalScore = async (
+  id: number,
+  data: {
+    executionScore?: number;
+    postureScore?: number;
+    finalScore?: number;
+    summary?: string;
+    justification?: string;
+  }
+) => {
   const res = await fetch(`${API_URL}/final-scores/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao atualizar avaliação final');
+  if (!res.ok) throw new Error("Erro ao atualizar avaliação final");
   return res.json();
 };
 
 export const getFinalScores = async (cycleId?: number) => {
-  const url = cycleId ? `${API_URL}/final-scores?cycleId=${cycleId}` : `${API_URL}/final-scores`;
+  const url = cycleId
+    ? `${API_URL}/final-scores?cycleId=${cycleId}`
+    : `${API_URL}/final-scores`;
   const res = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao buscar avaliações finais');
+  if (!res.ok) throw new Error("Erro ao buscar avaliações finais");
   return res.json();
 };
 
 export const getFinalScoreByUser = async (userId: number, cycleId?: number) => {
-  const url = cycleId ? `${API_URL}/final-scores/user/${userId}?cycleId=${cycleId}` : `${API_URL}/final-scores/user/${userId}`;
+  const url = cycleId
+    ? `${API_URL}/final-scores/user/${userId}?cycleId=${cycleId}`
+    : `${API_URL}/final-scores/user/${userId}`;
   const res = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao buscar avaliação final do usuário');
+  if (!res.ok) throw new Error("Erro ao buscar avaliação final do usuário");
   return res.json();
 };
 
 export const getManagerEvaluations = async (cycleId?: number) => {
-  const url = cycleId ? `${API_URL}/manager-evaluations?cycleId=${cycleId}` : `${API_URL}/manager-evaluations`;
+  const url = cycleId
+    ? `${API_URL}/manager-evaluations?cycleId=${cycleId}`
+    : `${API_URL}/manager-evaluations`;
   const res = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao buscar avaliações dos gestores');
+  if (!res.ok) throw new Error("Erro ao buscar avaliações dos gestores");
   return res.json();
 };
 
-export const getManagerEvaluationsByUser = async (userId: number, cycleId?: number) => {
-  const url = cycleId ? `${API_URL}/manager-evaluations/user/${userId}?cycleId=${cycleId}` : `${API_URL}/manager-evaluations/user/${userId}`;
+export const getManagerEvaluationsByUser = async (
+  userId: number,
+  cycleId?: number
+) => {
+  const url = cycleId
+    ? `${API_URL}/manager-evaluations/user/${userId}?cycleId=${cycleId}`
+    : `${API_URL}/manager-evaluations/user/${userId}`;
   const res = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao buscar avaliações do gestor para o usuário');
+  if (!res.ok)
+    throw new Error("Erro ao buscar avaliações do gestor para o usuário");
   return res.json();
 };
 
 export const getMyManagerEvaluations = async (cycleId?: number) => {
-  const url = cycleId ? `${API_URL}/manager-evaluations/evaluator/me?cycleId=${cycleId}` : `${API_URL}/manager-evaluations/evaluator/me`;
+  const url = cycleId
+    ? `${API_URL}/manager-evaluations/evaluator/me?cycleId=${cycleId}`
+    : `${API_URL}/manager-evaluations/evaluator/me`;
   const res = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao buscar minhas avaliações de gestor');
+  if (!res.ok) throw new Error("Erro ao buscar minhas avaliações de gestor");
+  return res.json();
+};
+
+// Busca mentorados de um mentor
+export const fetchMentorMentees = async (mentorId: number) => {
+  const res = await fetch(`${API_URL}/mentors/${mentorId}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar mentorados");
+  const data = await res.json();
+  return data.mentees || [];
+};
+
+// Busca autoavaliação do colaborador
+export const fetchSelfEvaluation = async (collaboratorId: number) => {
+  const res = await fetch(`${API_URL}/self-evaluation/user/${collaboratorId}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar autoavaliação");
+  return res.json();
+};
+
+// Busca avaliações de pares recebidas pelo colaborador
+export const fetchPeerEvaluations = async (collaboratorId: number) => {
+  const res = await fetch(
+    `${API_URL}/peer-evaluation/by-evaluatee/${collaboratorId}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!res.ok) throw new Error("Erro ao buscar avaliações 360");
+  return res.json();
+};
+
+// Busca histórico de ciclos e desempenho do colaborador
+export const fetchCollaboratorCyclesHistory = async (
+  collaboratorId: number
+) => {
+  const res = await fetch(`${API_URL}/ciclos/historico/${collaboratorId}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar histórico de ciclos");
+  return res.json();
+};
+
+// Avaliação de mentor para colaborador (mentor-to-collaborator)
+export const createMentorToCollaboratorEvaluation = async ({
+  evaluateeId,
+  cycleId,
+  score,
+  justification,
+}: {
+  evaluateeId: number;
+  cycleId: number;
+  score: number;
+  justification: string;
+}) => {
+  const res = await fetch(`${API_URL}/mentor-to-collaborator-evaluations`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ evaluateeId, cycleId, score, justification }),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(
+      error.message || "Erro ao enviar avaliação de mentor para colaborador"
+    );
+  }
+  return res.json();
+};
+
+export const fetchMentorToCollaboratorEvaluations = async (
+  mentorId: number
+) => {
+  const res = await fetch(
+    `${API_URL}/mentor-to-collaborator-evaluations/mentor/${mentorId}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(
+      error.message || "Erro ao buscar avaliações enviadas pelo mentor"
+    );
+  }
+  return res.json();
+};
+
+export const fetchMentorToCollaboratorEvaluationsByCollaborator = async (
+  collaboratorId: number
+) => {
+  const res = await fetch(
+    `${API_URL}/mentor-to-collaborator-evaluations/collaborator/${collaboratorId}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(
+      error.message || "Erro ao buscar avaliações recebidas pelo colaborador"
+    );
+  }
   return res.json();
 };
