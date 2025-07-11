@@ -3,13 +3,13 @@ import { RHDashboardService } from './dashboard.service';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { RHDashboardDto } from './dto/rh-dashboard.dto';
 import { RhCollaboratorDto } from './dto/rh-collaborator.dto';
-// import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 // import { RolesGuard } from '../../auth/guards/roles.guard';
 // import { Roles } from '../../auth/decorators/roles.decorator';
 
 @ApiTags('RH - Dashboard')
 @Controller('rh/dashboard')
-// @UseGuards(JwtAuthGuard, RolesGuard) // 
+@UseGuards(JwtAuthGuard)
 export class RHDashboardController {
     constructor(private readonly dashboardService: RHDashboardService) { }
 

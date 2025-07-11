@@ -11,6 +11,29 @@ import { ImportDto } from './dto/import.dto';
 export class ImportController {
     constructor(private readonly importService: ImportService) { }
 
+    // --- NOVO ENDPOINT PARA UPLOAD EM MASSA (.ZIP) ---
+    @Post('bulk-history')
+    @UseInterceptors(FileInterceptor('file'))
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Importa um lote de históricos a partir de um arquivo .zip.' })
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                cycleId: { type: 'number' },
+                file: { type: 'string', format: 'binary', description: 'Arquivo .zip contendo os arquivos .xlsx' },
+            },
+        },
+    })
+    async uploadBulkHistory(
+        @UploadedFile() file: Express.Multer.File,
+        @Body() importDto: ImportDto,
+    ) {
+        return this.importService.importBulkHistory(file, importDto.cycleId);
+    }
+
+    //
     @Post('history')
     // A verificação de Roles ('HR', 'ADMIN') não será adicionada por agora
     @UseInterceptors(FileInterceptor('file'))
@@ -22,7 +45,7 @@ export class ImportController {
             type: 'object',
             properties: {
                 cycleId: { type: 'number' },
-                file: { type: 'string', format: 'binary' },
+                file: { type: 'string', format: 'binary', description: 'Arquivo .xlsx individual.' },
             },
         },
     })

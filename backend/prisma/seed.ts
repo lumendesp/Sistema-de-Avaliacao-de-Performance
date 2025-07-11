@@ -13,6 +13,10 @@ async function main() {
   // Cria unidades
   const unit1 = await prisma.unit.create({ data: { name: 'Rio de Janeiro' } });
   const unit2 = await prisma.unit.create({ data: { name: 'Recife' } });
+  const unit3 = await prisma.unit.create({ data: { name: 'São Paulo' } });
+  const unit4 = await prisma.unit.create({ data: { name: 'Porto Alegre' } });
+  const unit5 = await prisma.unit.create({ data: { name: 'Belo Horizonte' } });
+  const unit6 = await prisma.unit.create({ data: { name: 'Salvador' } });
 
   // Cria trilhas
   const track1 = await prisma.track.create({ data: { name: 'Backend' } });

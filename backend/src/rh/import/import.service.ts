@@ -1,8 +1,19 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import * as xlsx from 'xlsx';
-import { CriterionName, Role, SelfEvaluation, User } from '@prisma/client';
+import { CriterionName, Role, SelfEvaluation, User, MotivationLevel, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { encrypt } from '../../utils/encryption';
+import * as JSZip from 'jszip';
+
+type PrismaTransactionClient = Omit<PrismaService, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
+
+export interface FileProcessResult {
+    status: 'success' | 'error';
+    fileName: string;
+    data?: any;      // Os dados de sucesso
+    reason?: string; // O motivo do erro
+}
 
 @Injectable()
 export class ImportService {
@@ -36,26 +47,67 @@ export class ImportService {
         1: 'Fica muito abaixo das expectativas'
     };
 
+    private readonly motivationMapping: Record<string, MotivationLevel> = {
+        'Concordo Totalmente': 'CONCORDO_TOTALMENTE',
+        'Concordo Parcialmente': 'CONCORDO_PARCIALMENTE',
+        'Discordo Parcialmente': 'DISCORDO_PARCIALMENTE',
+        'Discordo Totalmente': 'DISCORDO_TOTALMENTE',
+    };
+
     constructor(private readonly prisma: PrismaService) { }
 
-    async importHistory(
-        file: Express.Multer.File,
-        cycleId: number,
-    ) {
+    // --- NOVA FUNÇÃO PÚBLICA PARA O ZIP ---
+    async importBulkHistory(zipFile: Express.Multer.File, cycleId: number) {
+        if (!zipFile || !['application/zip', 'application/x-zip-compressed'].includes(zipFile.mimetype)) {
+            throw new BadRequestException('Arquivo inválido. Por favor, envie um arquivo .zip.');
+        }
+
+        const zip = await JSZip.loadAsync(zipFile.buffer);
+        const fileNames = Object.keys(zip.files).filter(name => !zip.files[name].dir && name.toLowerCase().endsWith('.xlsx'));
+
+        if (fileNames.length === 0) {
+            throw new BadRequestException('Nenhum arquivo .xlsx encontrado dentro do .zip.');
+        }
+
+        const results: FileProcessResult[] = [];
+        for (const fileName of fileNames) {
+            try {
+                const fileBuffer = await zip.files[fileName].async('nodebuffer');
+                // Chamamos a lógica de importação individual para cada arquivo
+                const result = await this.processSingleFile(fileBuffer, fileName, cycleId);
+                results.push({ status: 'success', fileName, data: result });
+            } catch (error) {
+                console.error(`Falha ao importar o arquivo ${fileName}:`, error.message);
+                results.push({ status: 'error', fileName, reason: error.message });
+            }
+        }
+
+        return {
+            message: 'Importação em massa concluída.',
+            totalFiles: fileNames.length,
+            results,
+        };
+    }
+
+    // --- FUNÇÃO PÚBLICA ANTIGA, AGORA APENAS CHAMA A LÓGICA PRINCIPAL ---
+    async importHistory(file: Express.Multer.File, cycleId: number) {
         if (!file) {
             throw new BadRequestException('Nenhum arquivo enviado.');
         }
+        return this.processSingleFile(file.buffer, file.originalname, cycleId);
+    }
 
+    private async processSingleFile(fileBuffer: Buffer, fileName: string, cycleId: number) {
         // Inicia uma transação. Todas as operações dentro dela ou funcionam ou são revertidas.
         return this.prisma.$transaction(async (tx) => {
-            // 2. Valida o ciclo de avaliação
+            // Valida o ciclo de avaliação
             const cycle = await tx.evaluationCycle.findUnique({ where: { id: cycleId } });
             if (!cycle) {
                 throw new NotFoundException(`Ciclo com ID ${cycleId} não encontrado.`);
             }
 
-            // Processa cada aba do Excel (começando pela Autoavaliação)
-            const workbook = xlsx.read(file.buffer, { type: 'buffer' });
+            // Processa cada aba do Excel
+            const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
 
             // Lendo a aba "Perfil" para pegar todos os dados do usuário
             const perfilSheet = workbook.Sheets['Perfil'];
@@ -92,7 +144,7 @@ export class ImportService {
                 const position = await tx.position.findFirst({ where: { name: positionName } });
                 if (!position) throw new NotFoundException(`Posição "${positionName}" não encontrada.`);
 
-                const unitName = userDataFromExcel['UNIDADE'] || 'Recife';
+                const unitName = userDataFromExcel['Unidade'];
                 const unit = await tx.unit.findFirst({ where: { name: unitName } });
                 if (!unit) throw new NotFoundException(`Unidade "${unitName}" não encontrada.`);
 
@@ -100,11 +152,28 @@ export class ImportService {
                 const track = await tx.track.findFirst({ where: { name: trackName } });
                 if (!track) throw new NotFoundException(`Trilha "${trackName}" não encontrada.`);
 
+                //---Logica para criacao de username unico
+                const baseUsername = userDataFromExcel['Email'].split('@')[0];
+                let finalUsername = baseUsername;
+                let counter = 2;
+                // Verifica se o username já existe
+                let usernameExists = await tx.user.findUnique({
+                    where: { username: finalUsername },
+                });
+                // Se existir, entra em um loop para encontrar um nome disponível
+                while (usernameExists) {
+                    finalUsername = `${baseUsername}${counter}`;
+                    usernameExists = await tx.user.findUnique({
+                        where: { username: finalUsername },
+                    });
+                    counter++;
+                }
+
                 user = await tx.user.create({
                     data: {
                         email: userDataFromExcel['Email'],
                         name: this.formatUserNameFromSheet(userDataFromExcel['Nome ( nome.sobrenome )']),
-                        username: userDataFromExcel['Email'].split('@')[0],
+                        username: finalUsername,
                         password: hashedPassword,
                         active: true,
                         position: { connect: { id: position.id } },
@@ -197,7 +266,7 @@ export class ImportService {
                         evaluationId: selfEvaluation.id,
                         criterionId: criterion.id,
                         score: averageScore,
-                        justification: combinedJustification,
+                        justification: encrypt(combinedJustification),
                         scoreDescription: scoreDescription,
                     },
                 });
@@ -214,9 +283,206 @@ export class ImportService {
                 });
             }
 
+            // --- Processando a Aba "Avaliação 360" ---
+            const peerSheet = workbook.Sheets['Avaliação 360'];
+            let peerEvaluationsImported = 0;
+
+            if (peerSheet) {
+                const peerData: any[] = xlsx.utils.sheet_to_json(peerSheet);
+
+                for (const row of peerData) {
+                    const evaluateeNameFromExcel = row['EMAIL DO AVALIADO ( nome.sobrenome )'];
+                    if (!evaluateeNameFromExcel) continue;
+
+                    // Encontra o usuário AVALIADO na linha
+                    let evaluatee: User;
+                    const formattedEvaluateeName = this.formatUserNameFromSheet(evaluateeNameFromExcel);
+                    const existingEvaluatee = await tx.user.findFirst({ where: { name: formattedEvaluateeName } });
+
+                    if (existingEvaluatee) {
+                        evaluatee = existingEvaluatee;
+                    } else {
+                        // Se o avaliado não existe, cria um novo
+                        console.warn(`Atenção: Colaborador avaliado "${formattedEvaluateeName}" não encontrado. Criando um novo registro...`);
+
+                        const tempPassword = Math.random().toString(36).slice(-10);
+                        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+                        const newEmail = `${evaluateeNameFromExcel.toLowerCase().replace('.', '_')}@example.com`;
+
+                        evaluatee = await tx.user.create({
+                            data: {
+                                email: newEmail,
+                                username: newEmail.split('@')[0],
+                                name: formattedEvaluateeName,
+                                password: hashedPassword,
+                                active: true,
+                                // Atribui o mesmo cargo/unidade/trilha do avaliador
+                                positionId: user.positionId,
+                                unitId: user.unitId,
+                                trackId: user.trackId,
+                                roles: { create: [{ role: Role.COLLABORATOR }] },
+                            }
+                        });
+                        console.log(`Novo usuário AVALIADO criado: ${evaluatee.name} (ID: ${evaluatee.id}).`);
+                    }
+
+                    const evaluatorId = user.id;
+                    const evaluateeId = evaluatee.id;
+
+                    // Previne autoavaliação 360
+                    if (evaluatorId === evaluateeId) continue;
+
+                    // Extrai, traduz e criptografa os dados da linha
+                    const score = row['DÊ UMA NOTA GERAL PARA O COLABORADOR'];
+                    if (typeof score !== 'number') continue;
+                    const roundedScore = Math.round(score);
+
+                    const strengths = row['PONTOS QUE FAZ BEM E DEVE EXPLORAR'] || '';
+                    const improvements = row['PONTOS QUE DEVE MELHORAR'] || '';
+                    const motivationText = row['VOCÊ FICARIA MOTIVADO EM TRABALHAR NOVAMENTE COM ESTE COLABORADOR'];
+                    const motivation = this.motivationMapping[motivationText] || undefined;
+
+                    const peerEvaluationData = {
+                        score: roundedScore,
+                        strengths: encrypt(strengths),
+                        improvements: encrypt(improvements),
+                        motivation: motivation,
+                    };
+
+                    // Verifica se a avaliação já existe para não duplicar
+                    const existingPeerEval = await tx.peerEvaluation.findFirst({
+                        where: { evaluatorId, evaluateeId, cycleId: cycle.id }
+                    });
+
+                    let savedPeerEvaluation;
+
+                    if (existingPeerEval) {
+                        console.log(`Avaliação de ${user.name} para ${evaluatee.name} já existe. Atualizando.`);
+                        savedPeerEvaluation = await tx.peerEvaluation.update({
+                            where: { id: existingPeerEval.id },
+                            data: peerEvaluationData,
+                        });
+                    } else {
+                        // Se não existe, CRIA
+                        savedPeerEvaluation = await tx.peerEvaluation.create({
+                            data: {
+                                ...peerEvaluationData,
+                                evaluatorId: evaluatorId,
+                                evaluateeId: evaluateeId,
+                                cycleId: cycle.id,
+                            }
+                        });
+                    }
+                    peerEvaluationsImported++;
+
+
+                    // Lida com os projetos
+                    const projectName = row['PROJETO EM QUE ATUARAM JUNTOS - OBRIGATÓRIO TEREM ATUADOS JUNTOS'];
+                    const period = row['PERÍODO'];
+                    const periodAsNumber = parseInt(period, 10);
+
+                    if (projectName && !isNaN(periodAsNumber)) {
+                        await tx.peerEvaluationProject.deleteMany({ where: { peerEvaluationId: savedPeerEvaluation.id } });
+
+                        const project = await tx.project.upsert({
+                            where: { name: projectName },
+                            create: { name: projectName },
+                            update: {}
+                        });
+                        await tx.peerEvaluationProject.create({
+                            data: {
+                                peerEvaluationId: savedPeerEvaluation.id,
+                                projectId: project.id,
+                                period: periodAsNumber
+                            }
+                        });
+                    } else {
+                        console.warn('AVISO: Projeto ou período inválido. A conexão com o projeto foi ignorada para esta avaliação.');
+                    }
+                }
+            }
+
+            // --- Processando a Aba "Pesquisa de Referências" ---
+            const referenceSheet = workbook.Sheets['Pesquisa de Referências'];
+            let referencesProcessed = 0;
+
+            if (referenceSheet) {
+                const referenceData: any[] = xlsx.utils.sheet_to_json(referenceSheet);
+
+                for (const row of referenceData) {
+                    const receiverNameFromExcel = row['EMAIL DA REFERÊNCIA\n( nome.sobrenome )'];
+                    const justification = row['JUSTIFICATIVA'] || '';
+
+                    if (!receiverNameFromExcel) continue;
+
+                    // Lógica de "Find or Create" para a pessoa referenciada
+                    let receiver: User;
+                    const formattedReceiverName = this.formatUserNameFromSheet(receiverNameFromExcel);
+                    const existingReceiver = await tx.user.findFirst({ where: { name: formattedReceiverName } });
+
+                    if (existingReceiver) {
+                        receiver = existingReceiver;
+                    } else {
+                        // Se a referência não existe como usuário, cria um novo
+                        console.warn(`Atenção: Referência "${formattedReceiverName}" não encontrada. Criando um novo registro...`);
+
+                        const tempPassword = Math.random().toString(36).slice(-10);
+                        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+                        const newEmail = `${receiverNameFromExcel.toLowerCase().replace('.', '_')}@example.com`;
+
+                        receiver = await tx.user.create({
+                            data: {
+                                email: newEmail,
+                                username: newEmail.split('@')[0],
+                                name: formattedReceiverName,
+                                password: hashedPassword,
+                                active: true,
+                                positionId: user.positionId,
+                                unitId: user.unitId,
+                                trackId: user.trackId,
+                                roles: { create: [{ role: Role.COLLABORATOR }] },
+                            }
+                        });
+                    }
+
+                    // Previne que alguém se auto-referencie
+                    if (user.id === receiver.id) continue;
+
+                    // Atualiza ou cria o registro de referência
+                    const existingReference = await tx.reference.findFirst({
+                        where: {
+                            providerId: user.id,
+                            receiverId: receiver.id,
+                            cycleId: cycle.id,
+                        }
+                    });
+
+                    if (existingReference) {
+                        // Se existe, ATUALIZA a justificativa
+                        await tx.reference.update({
+                            where: { id: existingReference.id },
+                            data: { justification: encrypt(justification) },
+                        });
+                    } else {
+                        // Se não existe, CRIA a nova referência
+                        await tx.reference.create({
+                            data: {
+                                providerId: user.id,
+                                receiverId: receiver.id,
+                                cycleId: cycle.id,
+                                justification: encrypt(justification),
+                            }
+                        });
+                    }
+                    referencesProcessed++;
+                }
+            }
+
             return {
                 message: `Histórico de ${user.name} importado e ${existingEvaluation ? 'ATUALIZADO' : 'CRIADO'} com sucesso!`,
-                criteriaProcessed: groupedData.size,
+                selfEvaluationItemsProcessed: groupedData.size,
+                peerEvaluationsImported,
+                referencesProcessed,
             };
         });
     }
