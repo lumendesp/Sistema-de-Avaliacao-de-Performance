@@ -128,6 +128,8 @@ model User {
   manages             ManagerCollaborator[] @relation("ManagerToCollaborator")
   managedBy           ManagerCollaborator[] @relation("CollaboratorToManager")
   EvaluationCycleUser EvaluationCycleUser[]
+
+  climateSurveysCreated ClimateSurvey[] @relation("UserCreatedClimateSurveys")  
 }
 
 // ---------------- HISTÓRICO DE TRILHAS -----------------
@@ -428,3 +430,65 @@ model BrutalFactsCache {
   data      Json
   createdAt DateTime @default(now())
 }
+
+model ClimateSurvey {
+  id            Int                 @id @default(autoincrement())
+  title         String
+  description   String?
+  isActive      Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  createdById   Int
+  createdBy     User                @relation("UserCreatedClimateSurveys", fields: [createdById], references: [id])
+
+  questions     ClimateSurveyQuestion[]
+  responses     ClimateSurveyResponse[]
+  aiSummaries   ClimateSurveyAISummary[]
+}
+
+model ClimateSurveyQuestion {
+  id          Int                     @id @default(autoincrement())
+  surveyId    Int
+  text        String
+
+  survey      ClimateSurvey           @relation(fields: [surveyId], references: [id])
+  answers     ClimateSurveyAnswer[]
+}
+
+model ClimateSurveyResponse {
+  id           Int       @id @default(autoincrement())
+  surveyId     Int
+  hashId       String
+  createdAt    DateTime  @default(now())
+  isSubmit     Boolean   @default(false)
+  submittedAt  DateTime?
+
+  survey       ClimateSurvey             @relation(fields: [surveyId], references: [id])
+  answers      ClimateSurveyAnswer[]
+  aiSummary    ClimateSurveyAISummary?
+}
+
+model ClimateSurveyAnswer {
+  id             Int               @id @default(autoincrement())
+  questionId     Int
+  responseId     Int
+  level          MotivationLevel
+  justification  String
+
+  question       ClimateSurveyQuestion  @relation(fields: [questionId], references: [id])
+  response       ClimateSurveyResponse  @relation(fields: [responseId], references: [id])
+}
+
+model ClimateSurveyAISummary {
+  id         Int       @id @default(autoincrement())
+  surveyId   Int
+  responseId Int
+  text       String
+  createdAt  DateTime  @default(now())
+
+  survey     ClimateSurvey          @relation(fields: [surveyId], references: [id])
+  response   ClimateSurveyResponse  @relation(fields: [responseId], references: [id])
+
+  @@unique([responseId])
+}
+
+

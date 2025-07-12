@@ -26,6 +26,8 @@ import { ManagerModule } from './manager/manager.module';
 import { ProjectsModule } from './projects/projects.module';
 import { EvaluationCompletionModule } from './evaluation-completion/evaluation-completion.module';
 import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
+import { CollaboratorModule } from './climate-survey/collaborator/collaborator.module';
+import { RhModule } from './climate-survey/rh/rh.module';
 
 @Module({
   imports: [
@@ -59,6 +61,7 @@ import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
     ProjectsModule,
     EvaluationCompletionModule,
     AiBrutalFactsModule,
+    CollaboratorModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
