@@ -883,3 +883,19 @@ export const fetchMentorToCollaboratorEvaluationsByCollaborator = async (
   }
   return res.json();
 };
+
+// Busca avaliações de pares recebidas pelo colaborador em um ciclo
+export const fetchPeerEvaluationsReceived = async (
+  cycleId: number,
+  userId: number
+) => {
+  const res = await fetch(
+    `${API_URL}/peer-evaluations/cycle/${cycleId}/user/${userId}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!res.ok) throw new Error("Erro ao buscar avaliações 360 recebidas");
+  return res.json();
+};

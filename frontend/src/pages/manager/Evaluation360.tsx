@@ -1,45 +1,74 @@
-import CollaboratorsSearchBar from "../../components/CollaboratorsSearchBar";
-import PeerEvaluationReadOnlyForm from "../../components/PeerEvaluationForm/PeerEvaluationReadOnlyForm";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import PeerEvaluationReadOnlyFormNoHeader from "../../components/PeerEvaluationForm/PeerEvaluationReadOnlyFormNoHeader";
+import {
+  fetchActiveEvaluationCycle,
+  fetchPeerEvaluationsReceived,
+} from "../../services/api";
+import type { PeerEvaluation as PeerEvaluationType } from "../../types/peerEvaluation";
 
-const fakePeerEvaluations = [
-  {
-    collaboratorName: "Carlos Nunes",
-    role: "Product Design",
-    score: 4,
-    strengths:
-      "Carlos sempre entrega suas tarefas no prazo e colabora muito bem com o time.",
-    improvements:
-      "Poderia participar mais das reuniões semanais e compartilhar mais ideias.",
-    initials: "CN",
-  },
-  {
-    collaboratorName: "Ana Souza",
-    role: "Frontend Developer",
-    score: 5,
-    strengths:
-      "Ana tem excelente conhecimento técnico e ajuda os colegas sempre que possível.",
-    improvements:
-      "Pode melhorar a comunicação em projetos multidisciplinares.",
-    initials: "AS",
-  },
-  {
-    collaboratorName: "Bruno Lima",
-    role: "Backend Developer",
-    score: 3,
-    strengths: "Bruno é dedicado e aprende rápido.",
-    improvements:
-      "Precisa revisar melhor o código antes de enviar para evitar bugs simples.",
-    initials: "BL",
-  },
-];
+const motivationLabels: Record<string, string> = {
+  CONCORDO_TOTALMENTE: "Concordo Totalmente",
+  CONCORDO_PARCIALMENTE: "Concordo Parcialmente",
+  DISCORDO_PARCIALMENTE: "Discordo Parcialmente",
+  DISCORDO_TOTALMENTE: "Discordo Totalmente",
+};
 
 const PeerEvaluationManager = () => {
+  const { id } = useParams();
+  const [peerEvaluations, setPeerEvaluations] = useState<PeerEvaluationType[]>(
+    []
+  );
+  const [loading, setLoading] = useState(false);
+  const [cycleId, setCycleId] = useState<number | null>(null);
+  const collaboratorId = id ? Number(id) : null;
+
+  useEffect(() => {
+    const loadCycle = async () => {
+      try {
+        setLoading(true);
+        const cycle = await fetchActiveEvaluationCycle();
+        setCycleId(cycle.id);
+      } catch {
+        setCycleId(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadCycle();
+  }, []);
+
+  useEffect(() => {
+    if (!collaboratorId || !cycleId) return;
+    setLoading(true);
+    fetchPeerEvaluationsReceived(cycleId, collaboratorId)
+      .then(setPeerEvaluations)
+      .catch(() => setPeerEvaluations([]))
+      .finally(() => setLoading(false));
+  }, [collaboratorId, cycleId]);
+
   return (
     <div className="bg-[#f1f1f1] h-screen w-full flex flex-col gap-4 p-3">
-      <CollaboratorsSearchBar/>
-      {fakePeerEvaluations.map((evaluation, idx) => (
-        <PeerEvaluationReadOnlyForm key={idx} {...evaluation} />
-      ))}
+      {loading && <div>Carregando avaliações 360...</div>}
+      {!loading && peerEvaluations.length === 0 && (
+        <div>Nenhuma avaliação 360 encontrada para este colaborador.</div>
+      )}
+      {!loading &&
+        peerEvaluations.map((evaluation, idx) => (
+          <PeerEvaluationReadOnlyFormNoHeader
+            key={evaluation.id || idx}
+            score={evaluation.score}
+            strengths={evaluation.strengths}
+            improvements={evaluation.improvements}
+            motivationLabel={
+              motivationLabels[evaluation.motivation] || evaluation.motivation
+            }
+            projects={evaluation.projects?.map((p) => ({
+              name: p.project?.name || "",
+              period: p.period ?? 0,
+            }))}
+          />
+        ))}
     </div>
   );
 };
