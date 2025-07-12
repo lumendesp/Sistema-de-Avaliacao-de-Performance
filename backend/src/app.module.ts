@@ -7,7 +7,6 @@ import { PrismaService } from './prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma.module';
 import { AuthModule } from './auth/auth.module';
-import { RhModule } from './rh/rh.modules';
 import { TrackModule } from './track/track.module';
 import { UnitModule } from './unit/unit.module';
 import { PositionModule } from './position/position.module';
