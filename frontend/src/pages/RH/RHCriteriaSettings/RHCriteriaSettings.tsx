@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import CollaboratorsSearchBar from '../../../components/CollaboratorsSearchBar';
 import RHCriteriaBox from '../../../components/RH/RHCriteria/RHCriteriaBox';
 import { IoFunnel } from "react-icons/io5";
+import { IoIosSearch } from "react-icons/io";
 import { 
     getAllTracks, 
     createTrack, 
@@ -60,6 +61,8 @@ interface ConfiguredCriterion {
     positionId: number;
     mandatory: boolean;
     criterion: Criterion;
+    weight: number;
+    description: string;
 }
 
 interface TrackWithCriteria {
@@ -83,6 +86,10 @@ function RhCriteriaSettings() {
     const [openBoxIndex, setOpenBoxIndex] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [trackSearchTerm, setTrackSearchTerm] = useState("");
+    
+    // Add loading state for individual toggles
+    const [togglingCriteria, setTogglingCriteria] = useState<Set<string>>(new Set());
 
     // Data from backend
     const [tracksWithCriteria, setTracksWithCriteria] = useState<TrackWithCriteria[]>([]);
@@ -124,10 +131,13 @@ function RhCriteriaSettings() {
         const track = tracksWithCriteria[idx];
         if (!track) return;
 
+        // If the user enters an empty string, save as a single space
+        const newName = editingTrackName.trim() === '' ? "Nome da trilha" : editingTrackName;
+
         try {
-            await updateTrack(track.id, { name: editingTrackName });
+            await updateTrack(track.id, { name: newName });
             setTracksWithCriteria(prev => prev.map((t, tIdx) =>
-                tIdx === idx ? { ...t, name: editingTrackName } : t
+                tIdx === idx ? { ...t, name: newName } : t
             ));
             setEditingTrackIdx(null);
         } catch (error) {
@@ -267,7 +277,9 @@ function RhCriteriaSettings() {
                 track.id,
                 group.unitId,
                 group.positionId,
-                false
+                false,
+                availableCriterion.generalDescription,
+                availableCriterion.weight
             );
 
             // Refresh data
@@ -306,6 +318,13 @@ function RhCriteriaSettings() {
             
             if (!track || !group) return;
 
+            // Prevent adding duplicate criterion
+            const alreadyExists = group.configuredCriteria.some(cc => cc.criterionId === selectedCriterion.id);
+            if (alreadyExists) {
+                alert('Este critério já está associado a este pilar');
+                return;
+            }
+
             // Add criterion to the specific group
             await addCriterionToGroup(
                 group.id,
@@ -313,7 +332,9 @@ function RhCriteriaSettings() {
                 track.id,
                 group.unitId,
                 group.positionId,
-                false
+                false,
+                selectedCriterion.generalDescription,
+                selectedCriterion.weight
             );
 
             // Refresh data
@@ -410,35 +431,111 @@ function RhCriteriaSettings() {
         }
     };
 
-    // Edit an evaluation field (mandatory status)
-    const handleEditEvaluation = async (trackIdx: number, groupIdx: number, criterionIdx: number, evalIdx: number, field: 'name' | 'weight' | 'description' | 'mandatory', value: string | number | boolean) => {
+    // Optimized edit evaluation function with optimistic updates
+    const handleEditEvaluation = useCallback(async (
+        trackIdx: number, 
+        groupIdx: number, 
+        criterionIdx: number, 
+        evalIdx: number, 
+        field: 'name' | 'weight' | 'description' | 'mandatory', 
+        value: string | number | boolean
+    ) => {
         const track = tracksWithCriteria[trackIdx];
         const group = track?.CriterionGroup[groupIdx];
         const configuredCriterion = group?.configuredCriteria[criterionIdx];
         
         if (!track || !group || !configuredCriterion) return;
 
-        try {
-            if (field === 'mandatory') {
-                await updateCriterionInTrack(track.id, configuredCriterion.criterionId, { mandatory: value as boolean });
-            } else if (field === 'name') {
-                await updateRhCriterion(configuredCriterion.criterionId, { name: value as string });
-            }
-            
-            // Refresh data
-            const updatedTracks = await getTracksWithCriteria();
-            setTracksWithCriteria(updatedTracks);
-        } catch (error) {
-            console.error('Error updating evaluation:', error);
-            alert('Erro ao atualizar avaliação');
-        }
-    };
+        const toggleKey = `${trackIdx}-${groupIdx}-${criterionIdx}`;
 
-    // Add a new evaluation to a criterion (this would need backend implementation for evaluations)
-    const handleAddEvaluation = (trackIdx: number, groupIdx: number, criterionIdx: number) => {
-        // This would need backend implementation for evaluations
-        console.log('Add evaluation not implemented yet');
-    };
+        if (field === 'mandatory') {
+            setTogglingCriteria(prev => new Set(prev).add(toggleKey));
+            setTracksWithCriteria(prev => prev.map((t, tIdx) => 
+                tIdx === trackIdx 
+                    ? {
+                        ...t,
+                        CriterionGroup: t.CriterionGroup.map((g, gIdx) => 
+                            gIdx === groupIdx 
+                                ? {
+                                    ...g,
+                                    configuredCriteria: g.configuredCriteria.map((cc, ccIdx) => 
+                                        ccIdx === criterionIdx 
+                                            ? { ...cc, mandatory: value as boolean }
+                                            : cc
+                                    )
+                                }
+                                : g
+                        )
+                    }
+                    : t
+            ));
+            try {
+                await updateCriterionInTrack(track.id, configuredCriterion.criterionId, { mandatory: value as boolean });
+            } catch (error) {
+                console.error('Error updating evaluation:', error);
+                alert('Erro ao atualizar avaliação');
+                setTracksWithCriteria(prev => prev.map((t, tIdx) => 
+                    tIdx === trackIdx 
+                        ? {
+                            ...t,
+                            CriterionGroup: t.CriterionGroup.map((g, gIdx) => 
+                                gIdx === groupIdx 
+                                    ? {
+                                        ...g,
+                                        configuredCriteria: g.configuredCriteria.map((cc, ccIdx) => 
+                                            ccIdx === criterionIdx 
+                                                ? { ...cc, mandatory: !value as boolean }
+                                                : cc
+                                        )
+                                    }
+                                    : g
+                            )
+                        }
+                        : t
+                ));
+            } finally {
+                setTogglingCriteria(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(toggleKey);
+                    return newSet;
+                });
+            }
+        } else if (field === 'weight' || field === 'description') {
+            // Log the context and new value
+            console.log('[Edit ConfiguredCriterion]', {
+                track: track.name,
+                pillar: group.name,
+                criterion: configuredCriterion.criterion.displayName,
+                field,
+                newValue: value
+            });
+            try {
+                await updateCriterionInTrack(track.id, configuredCriterion.criterionId, {
+                    [field]: value
+                });
+                const updatedTracks = await getTracksWithCriteria();
+                setTracksWithCriteria(updatedTracks);
+            } catch (error) {
+                console.error('Error updating evaluation:', error);
+                alert('Erro ao atualizar avaliação');
+            }
+        } else if (field === 'name') {
+            // (Optional: only if you want to update the global criterion)
+            try {
+                await updateRhCriterion(configuredCriterion.criterionId, {
+                    name: value as string,
+                    generalDescription: configuredCriterion.criterion.generalDescription,
+                    active: configuredCriterion.criterion.active,
+                });
+                const updatedTracks = await getTracksWithCriteria();
+                setTracksWithCriteria(updatedTracks);
+            } catch (error) {
+                console.error('Error updating evaluation:', error);
+                alert('Erro ao atualizar avaliação');
+            }
+        }
+    }, [tracksWithCriteria]);
+
 
     // Save all changes
     const handleSave = async () => {
@@ -455,6 +552,13 @@ function RhCriteriaSettings() {
         }
     };
 
+    // Filtered tracks by search term
+    const filteredTracks = trackSearchTerm.trim() === ""
+        ? tracksWithCriteria
+        : tracksWithCriteria.filter(track =>
+            track.name.toLowerCase().includes(trackSearchTerm.toLowerCase())
+        );
+
     if (loading) {
         return (
             <div className="w-full flex justify-center items-center h-64">
@@ -466,10 +570,10 @@ function RhCriteriaSettings() {
     return (
         <div className="w-full">
             {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Critérios de Avaliação</h1>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Critérios de Avaliação</h1>
                 <button 
-                    className="bg-[#08605F] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-50"
+                    className="bg-[#08605F] text-white px-3 sm:px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto"
                     onClick={handleSave}
                     disabled={saving}
                 >
@@ -478,15 +582,15 @@ function RhCriteriaSettings() {
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-gray-300 mb-6">
+            <div className="flex border-b border-gray-300 mb-4 sm:mb-6">
                 <button
-                    className={`px-4 py-2 text-sm font-medium ${activeTab === 'track' ? 'border-b-2 border-[#08605F] text-[#08605F]' : 'text-gray-500'}`}
+                    className={`px-3 sm:px-4 py-2 text-sm font-medium ${activeTab === 'track' ? 'border-b-2 border-[#08605F] text-[#08605F]' : 'text-gray-500'}`}
                     onClick={() => setActiveTab('track')}
                 >
                     Trilha
                 </button>
                 <button
-                    className={`px-4 py-2 text-sm font-medium ${activeTab === 'unit' ? 'border-b-2 border-[#08605F] text-[#08605F]' : 'text-gray-500'}`}
+                    className={`px-3 sm:px-4 py-2 text-sm font-medium ${activeTab === 'unit' ? 'border-b-2 border-[#08605F] text-[#08605F]' : 'text-gray-500'}`}
                     onClick={() => setActiveTab('unit')}
                 >
                     Unidade
@@ -496,26 +600,36 @@ function RhCriteriaSettings() {
             {/* Content */}
             {activeTab === 'track' && (
                 <div>
-                    <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
-                        <div className="flex-grow w-full md:w-auto">
-                            <CollaboratorsSearchBar/>
+                    <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 mb-4 sm:mb-6">
+                        <div className="flex-grow w-full">
+                            {/* Track search bar styled like CollaboratorsSearchBar */}
+                            <div className="flex items-center gap-2 rounded-xl py-3 sm:py-4 px-4 sm:px-7 w-full bg-white">
+                                <IoIosSearch size={16} className="text-[#1D1D1D]/75 flex-shrink-0" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar trilha"
+                                    className="flex-1 outline-none text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent"
+                                    value={trackSearchTerm}
+                                    onChange={e => setTrackSearchTerm(e.target.value)}
+                                />
+                            </div>
                         </div>
-                        <div className="bg-[#08605F] p-3 rounded-md text-white">
-                            <IoFunnel size={24} />
+                        <div className="bg-[#08605F] p-3 rounded-md text-white flex-shrink-0">
+                            <IoFunnel size={20} className="sm:w-6 sm:h-6" />
                         </div>
                     </div>
                     {/* Criteria Section */}
-                    <div className="flex items-center justify-between mb-4">
-                        <span className="font-semibold text-lg text-gray-700">Trilha</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2 sm:gap-0">
+                        <span className="font-semibold text-base sm:text-lg text-gray-700">Trilha</span>
                         <button
-                            className="px-2 py-1 text-xs bg-gray-100 text-[#08605F] rounded hover:bg-gray-200 transition-colors"
+                            className="px-2 py-1 text-xs bg-gray-100 text-[#08605F] rounded hover:bg-gray-200 transition-colors w-full sm:w-auto"
                             onClick={handleAddCriteriaGroup}
                         >
                             Adicionar Trilha
                         </button>
                     </div>
-                    <div className="flex flex-col gap-6">
-                        {tracksWithCriteria.map((track, trackIdx) => (
+                    <div className="flex flex-col gap-4 sm:gap-6">
+                        {filteredTracks.map((track, trackIdx) => (
                             <div key={track.id}>
                                 <RHCriteriaBox
                                     trackName={track.name}
@@ -524,11 +638,11 @@ function RhCriteriaSettings() {
                                         evaluations: group.configuredCriteria.map(cc => ({
                                             name: cc.criterion.displayName,
                                             mandatory: cc.mandatory,
-                                            weight: cc.criterion.weight,
-                                            description: cc.criterion.generalDescription
+                                            weight: cc.weight, // use ConfiguredCriterion's weight
+                                            description: cc.description // use ConfiguredCriterion's description
                                         }))
                                     }))}
-                                    availableCriteria={criteria}
+                                    availableCriteria={criteria as any}
                                     isExpanded={openBoxIndex === trackIdx}
                                     onToggle={() => setOpenBoxIndex(openBoxIndex === trackIdx ? null : trackIdx)}
                                     onAddCriterion={() => {
@@ -556,20 +670,26 @@ function RhCriteriaSettings() {
                                     handleTrackNameKeyDown={(e, idx) => handleTrackNameKeyDown(e, idx)}
                                     trilhaIdx={trackIdx}
                                     onEditCriterion={(criterionIdx, newName) => handleEditCriterion(trackIdx, 0, criterionIdx, newName)}
-                                    onEditEvaluation={(criterionIdx, evalIdx, field, value) => handleEditEvaluation(trackIdx, 0, criterionIdx, evalIdx, field, value)}
+                                    onEditEvaluation={(criterionIdx, evalIdx, field, value) => handleEditEvaluation(trackIdx, criterionIdx, evalIdx, 0, field, value)}
                                     onAddEvaluation={(groupIdx) => handleAddCriterionToGroup(trackIdx, groupIdx)}
                                     onEditCriterionGroup={(groupIdx, newName) => handleEditCriterionGroup(trackIdx, groupIdx, newName)}
                                     onAddCriterionToGroup={(groupIdx, criterion) => handleAddCriterionToGroupFromDropdown(trackIdx, groupIdx, criterion)}
+                                    togglingCriteria={togglingCriteria}
                                 />
                             </div>
                         ))}
+                        {filteredTracks.length === 0 && (
+                            <div className="text-center text-gray-500 py-8">
+                                Nenhuma trilha encontrada
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
 
             {activeTab === 'unit' && (
-                <div className="text-center p-8">
-                    <h2 className="text-xl text-gray-500">A seção Unidade está em desenvolvimento.</h2>
+                <div className="text-center p-6 sm:p-8">
+                    <h2 className="text-lg sm:text-xl text-gray-500">A seção Unidade está em desenvolvimento.</h2>
                 </div>
             )}
         </div>

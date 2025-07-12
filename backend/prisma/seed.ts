@@ -299,11 +299,22 @@ async function main() {
     },
   ];
 
+  // Add description and weight to each config
+  function enrichConfig(config) {
+    const criterion = criteria.find(c => c.id === config.criterionId);
+    return {
+      ...config,
+      description: criterion ? criterion.generalDescription : 'Descrição padrão',
+      weight: criterion ? criterion.weight : 10,
+    };
+  }
+
   const allConfigs = [
     ...backendConfigs,
     ...frontendConfigs,
     ...leadershipConfigs,
-  ];
+  ].map(enrichConfig);
+
   for (const config of allConfigs) {
     if (config.criterionId) {
       await prisma.configuredCriterion.create({

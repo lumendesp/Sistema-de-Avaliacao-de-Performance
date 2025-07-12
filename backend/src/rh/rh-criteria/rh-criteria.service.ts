@@ -8,6 +8,7 @@ import { CreateConfiguredCriterionDto } from './dto/create-configured-criterion.
 import { UpdateConfiguredCriterionDto } from './dto/update-configured-criterion.dto';
 import { CriterionName } from '@prisma/client';
 import { getCriterionDisplayName } from 'src/utils/criterion-formatter';
+import { ConflictException } from '@nestjs/common';
 
 @Injectable()
 export class RhCriteriaService {
@@ -82,7 +83,25 @@ export class RhCriteriaService {
 
   // ConfiguredCriterion
   async addConfiguredCriterion(data: CreateConfiguredCriterionDto) {
-    return this.prisma.configuredCriterion.create({ data });
+    // Find the related criterion to get its default values
+    const criterion = await this.prisma.criterion.findUnique({
+      where: { id: data.criterionId },
+    });
+    if (!criterion) throw new Error('Criterion not found');
+    try {
+      return await this.prisma.configuredCriterion.create({
+        data: {
+          ...data,
+          description: data.description ?? criterion.generalDescription,
+          weight: data.weight ?? criterion.weight,
+        },
+      });
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException('Este critério já está associado a este pilar.');
+      }
+      throw error;
+    }
   }
 
   async getConfiguredCriteria() {
@@ -143,6 +162,11 @@ export class RhCriteriaService {
     positionId: number,
     mandatory: boolean = false
   ) {
+    // Find the related criterion to get its default values
+    const criterion = await this.prisma.criterion.findUnique({
+      where: { id: criterionId },
+    });
+    if (!criterion) throw new Error('Criterion not found');
     const result = await this.prisma.configuredCriterion.create({
       data: {
         trackId,
@@ -151,6 +175,8 @@ export class RhCriteriaService {
         unitId,
         positionId,
         mandatory,
+        description: criterion.generalDescription,
+        weight: criterion.weight,
       },
       include: {
         criterion: true,
@@ -160,7 +186,6 @@ export class RhCriteriaService {
         group: true,
       },
     });
-
     return {
       ...result,
       criterion: {

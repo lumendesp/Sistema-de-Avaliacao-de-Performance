@@ -24,14 +24,19 @@ export class CriterionGroupService {
   }
 
   async remove(id: number) {
-    return this.prisma.$transaction(async (prisma) => {
-      // First delete all configured criteria associated with this group
-      await prisma.configuredCriterion.deleteMany({
-        where: { groupId: id }
+    try {
+      return await this.prisma.$transaction(async (prisma) => {
+        // First delete all configured criteria associated with this group
+        await prisma.configuredCriterion.deleteMany({
+          where: { groupId: id }
+        });
+        
+        // Then delete the criterion group
+        return prisma.criterionGroup.delete({ where: { id } });
       });
-      
-      // Then delete the criterion group
-      return prisma.criterionGroup.delete({ where: { id } });
-    });
+    } catch (error) {
+      console.error('Error deleting criterion group:', error);
+      throw error;
+    }
   }
 } 

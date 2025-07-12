@@ -19,6 +19,64 @@ import { UpdateTrackDto } from './dto/update-track.dto';
 export class TrackController {
   constructor(private readonly trackService: TrackService) {}
 
+  @Get('health')
+  @ApiOperation({ summary: 'Health check for track module' })
+  @ApiResponse({ status: 200, description: 'Track module is healthy' })
+  async health() {
+    try {
+      // Test database connection
+      const trackCount = await this.trackService['prisma'].track.count();
+      return { 
+        status: 'healthy', 
+        message: 'Track module is working!', 
+        timestamp: new Date().toISOString(),
+        trackCount 
+      };
+    } catch (error) {
+      console.error('Health check error:', error);
+      return { 
+        status: 'unhealthy', 
+        error: error.message, 
+        timestamp: new Date().toISOString() 
+      };
+    }
+  }
+
+  @Get('debug/:id')
+  @ApiOperation({ summary: 'Debug endpoint to check track state' })
+  @ApiParam({ name: 'id', description: 'Track ID' })
+  @ApiResponse({ status: 200, description: 'Track debug info' })
+  async debug(@Param('id') id: string) {
+    try {
+      const trackId = +id;
+      
+      // Check if track exists
+      const track = await this.trackService.findOne(trackId);
+      
+      // Get related data
+      const criterionGroups = await this.trackService['prisma'].criterionGroup.findMany({
+        where: { trackId },
+        include: {
+          configuredCriteria: {
+            include: {
+              criterion: true
+            }
+          }
+        }
+      });
+      
+      return {
+        track,
+        criterionGroups,
+        totalGroups: criterionGroups.length,
+        totalCriteria: criterionGroups.reduce((sum, group) => sum + group.configuredCriteria.length, 0)
+      };
+    } catch (error) {
+      console.error('Debug error:', error);
+      return { error: error.message, stack: error.stack };
+    }
+  }
+
   @Get('test')
   @ApiOperation({ summary: 'Test endpoint to verify track module is working' })
   @ApiResponse({ status: 200, description: 'Track module is working' })
@@ -55,8 +113,14 @@ export class TrackController {
   @ApiParam({ name: 'id', description: 'Track ID' })
   @ApiResponse({ status: 200, description: 'Track updated successfully' })
   @ApiResponse({ status: 404, description: 'Track not found' })
-  update(@Param('id') id: string, @Body() updateTrackDto: UpdateTrackDto) {
-    return this.trackService.update(+id, updateTrackDto);
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async update(@Param('id') id: string, @Body() updateTrackDto: UpdateTrackDto) {
+    try {
+      return await this.trackService.update(+id, updateTrackDto);
+    } catch (error) {
+      console.error('Controller error updating track:', error);
+      throw error;
+    }
   }
 
   @Delete(':id')
