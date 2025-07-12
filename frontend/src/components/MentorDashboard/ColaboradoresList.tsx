@@ -49,9 +49,9 @@ const ColaboradoresList: React.FC = () => {
   const [selfEvaluations, setSelfEvaluations] = useState<
     Record<number, SelfEvaluation | null>
   >({});
-  const [mentorEvaluations, setMentorEvaluations] = useState<Record<number, any>>(
-    {}
-  );
+  const [mentorEvaluations, setMentorEvaluations] = useState<
+    Record<number, any>
+  >({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -109,7 +109,9 @@ const ColaboradoresList: React.FC = () => {
               return { id, selfEval: latest };
             })
             .catch(() => ({ id, selfEval: null })),
-          fetchMentorToCollaboratorEvaluationsByCollaborator(id).catch(() => null),
+          fetchMentorToCollaboratorEvaluationsByCollaborator(id).catch(
+            () => null
+          ),
         ])
       )
     ).then((results) => {
@@ -167,19 +169,36 @@ const ColaboradoresList: React.FC = () => {
     if (mentorEval && Array.isArray(mentorEval) && mentorEval.length > 0) {
       // Se vier array, pega a nota do ciclo mais recente
       const latest = mentorEval.reduce((prev, curr) =>
-        prev.cycleId && curr.cycleId && prev.cycleId > curr.cycleId ? prev : curr
+        prev.cycleId && curr.cycleId && prev.cycleId > curr.cycleId
+          ? prev
+          : curr
       );
       mentorScore = latest.score ?? null;
     } else if (mentorEval && mentorEval.score !== undefined) {
       mentorScore = mentorEval.score;
     }
     if (!evaluation || total === 0 || withScore.length === 0) {
-      return { status: "Pendente" as const, managerScore: null, selfScore, mentorScore };
+      return {
+        status: "Pendente" as const,
+        managerScore: null,
+        selfScore,
+        mentorScore,
+      };
     }
     if (filled.length < total) {
-      return { status: "Em andamento" as const, managerScore, selfScore, mentorScore };
+      return {
+        status: "Em andamento" as const,
+        managerScore,
+        selfScore,
+        mentorScore,
+      };
     }
-    return { status: "Finalizado" as const, managerScore, selfScore, mentorScore };
+    return {
+      status: "Finalizado" as const,
+      managerScore,
+      selfScore,
+      mentorScore,
+    };
   }
 
   if (loading)
@@ -225,9 +244,8 @@ const ColaboradoresList: React.FC = () => {
       </div>
       <div className="space-y-4">
         {colaboradores.map((colab, idx) => {
-          const { status, selfScore, managerScore, mentorScore } = getStatusAndScore(
-            colab.id
-          );
+          const { status, selfScore, managerScore, mentorScore } =
+            getStatusAndScore(colab.id);
           return (
             <button
               key={colab.id || idx}
@@ -249,9 +267,7 @@ const ColaboradoresList: React.FC = () => {
                   <div className="font-semibold text-gray-900 leading-tight">
                     {colab.name}
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {colab.role || "Departamento"}
-                  </div>
+                  <div className="text-xs text-gray-500">{colab.role}</div>
                 </div>
                 <span
                   className={`ml-4 px-2 py-0.5 rounded text-xs font-medium ${statusStyles[status]}`}
