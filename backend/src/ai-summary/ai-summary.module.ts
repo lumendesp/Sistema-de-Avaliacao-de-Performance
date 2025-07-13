@@ -8,5 +8,6 @@ import { GeminiService } from 'src/ai/ai.service';
   imports: [PrismaModule],
   controllers: [AiSummaryController],
   providers: [AiSummaryService, GeminiService],
+  exports: [AiSummaryService],
 })
 export class AiSummaryModule {}
