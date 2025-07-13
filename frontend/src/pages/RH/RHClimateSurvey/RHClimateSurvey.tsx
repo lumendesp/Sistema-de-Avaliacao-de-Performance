@@ -1,38 +1,116 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import RHCircularProgressCard from "../../../components/RH/RHCircularProgressCard/RHCircularProgressCard";
 import RHClimateMetricCard from "../../../components/RH/RHClimateMetricCard/RHClimateMetricCard";
 import RHColoredMetricCard from "../../../components/RH/RHColoredMetricCard/RHColoredMetricCard";
 import SurveyRow from "../../../components/RH/SurveyRow/SurveyRow";
 import SatisfactionChartCard from "../../../components/RH/SatisfactionChartCard/SatisfactionChartCard";
+import {
+  getClimateSurveys,
+  countCollaborators,
+  getClimateSurveyResponses,
+} from "../../../services/api";
 import type { SurveyStatus } from "../../../types/surveyStatus";
-
-interface Survey {
-  title: string;
-  date: string;
-  status: SurveyStatus;
-}
+import type { ClimateSurvey } from "../../../types/climateSurvey";
+import { IoAddCircle } from "react-icons/io5";
 
 const RHClimateSurvey = () => {
+  const navigate = useNavigate();
   const [selectedYear, setSelectedYear] = useState("2025");
-  // Dados mockados (substituir depois por fetch real)
-  const totalSurveys = 1;
-  const totalResponses = 12;
-  const completionPercentage = Math.round(
-    (totalResponses / (totalSurveys * 10)) * 100
-  ); // ex: 10 respostas esperadas por pesquisa
+  const [loading, setLoading] = useState(true);
+  const [surveys, setSurveys] = useState<ClimateSurvey[]>([]);
+  const [collaboratorCount, setCollaboratorCount] = useState<number>(0);
+  const [activeResponsesCount, setActiveResponsesCount] = useState<number>(0);
 
-  const mockSurveys: Survey[] = [
-    {
-      title: "Clima 2024.2",
-      date: "Fechada em 10/05/2024",
-      status: "fechada",
-    },
-    {
-      title: "Clima 2025.1",
-      date: "Aberta desde 01/07/2025",
-      status: "aberta",
-    },
-  ];
+  const activeSurvey = surveys.find((survey) => survey.isActive);
+
+  const daysLeft = activeSurvey
+    ? Math.max(
+        0,
+        Math.ceil(
+          (new Date(activeSurvey.endDate).getTime() - Date.now()) /
+            (1000 * 60 * 60 * 24)
+        )
+      )
+    : 0;
+
+  const completionPercentage =
+    collaboratorCount > 0
+      ? Math.round((activeResponsesCount / collaboratorCount) * 100)
+      : 0;
+
+  useEffect(() => {
+    const loadSurveys = async () => {
+      try {
+        setLoading(true);
+        const [surveysData, countData] = await Promise.all([
+          getClimateSurveys() as Promise<ClimateSurvey[]>,
+          countCollaborators(),
+        ]);
+        setSurveys(surveysData);
+        setCollaboratorCount(
+          typeof countData === "number" ? countData : countData.count
+        );
+        // verifica se há pesquisa ativa e busca as respostas reais dela
+        const currentActiveSurvey = surveysData.find((s) => s.isActive);
+        if (currentActiveSurvey) {
+          const responses = await getClimateSurveyResponses(
+            currentActiveSurvey.id
+          );
+          setActiveResponsesCount(responses.length); // pega o count real
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        // fallback apenas para surveys
+        setSurveys([
+          {
+            id: 1,
+            title: "Clima 2024.2",
+            description: "Pesquisa de clima organizacional 2024.2",
+            endDate: "2024-05-10",
+            isActive: false,
+            createdAt: "2024-01-01",
+            createdById: 1,
+            questions: [],
+            _count: { responses: 8 },
+          },
+          {
+            id: 2,
+            title: "Clima 2025.1",
+            description: "Pesquisa de clima organizacional 2025.1",
+            endDate: "2025-08-30",
+            isActive: true,
+            createdAt: "2025-07-01",
+            createdById: 1,
+            questions: [],
+            _count: { responses: 4 },
+          },
+        ]);
+        setCollaboratorCount(10); // mock fallback
+        setActiveResponsesCount(4); // mock fallback
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSurveys();
+  }, []);
+
+  const formatSurveyDate = (survey: ClimateSurvey) => {
+    if (survey.isActive) {
+      return `Aberta desde ${new Date(survey.createdAt).toLocaleDateString(
+        "pt-BR"
+      )}`;
+    } else {
+      return `Fechada em ${new Date(survey.endDate).toLocaleDateString(
+        "pt-BR"
+      )}`;
+    }
+  };
+
+  const getSurveyStatus = (survey: ClimateSurvey): SurveyStatus => {
+    return survey.isActive ? "aberta" : "fechada";
+  };
 
   return (
     <>
@@ -46,52 +124,83 @@ const RHClimateSurvey = () => {
       </header>
 
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <RHCircularProgressCard
-          title="Preenchimento da Pesquisa"
-          percentage={completionPercentage}
-          description={`${totalResponses} colaboradores já responderam à pesquisa`}
-        />
+        {activeSurvey ? (
+          <>
+            <RHCircularProgressCard
+              title="Preenchimento da Pesquisa"
+              percentage={completionPercentage}
+              description={`${activeResponsesCount} de ${collaboratorCount} colaboradores já responderam à pesquisa`}
+            />
+
+            <RHColoredMetricCard
+              title="Fechamento da Pesquisa"
+              description={`Faltam ${daysLeft} dias para o fechamento do ciclo, no dia ${new Date(
+                activeSurvey.endDate
+              ).toLocaleDateString("pt-BR")}`}
+              value={daysLeft}
+              unit="dias"
+            />
+          </>
+        ) : (
+          <>
+            <RHCircularProgressCard
+              title="Nenhuma pesquisa ativa"
+              percentage={0}
+              description="Não há pesquisa de clima aberta no momento"
+            />
+            <RHColoredMetricCard
+              title="Crie uma nova pesquisa"
+              description="Inicie uma nova pesquisa para conhecer melhor o clima da empresa"
+              value={0}
+              unit="dias"
+            />
+          </>
+        )}
+
         <RHClimateMetricCard
           title="Análise de Sentimento"
-          description="Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book."
-          value={40}
-        />
-
-        <RHColoredMetricCard
-          title="Fechamento da Pesquisa"
-          description="Faltam 30 dias para o fechamento do ciclo, no dia 30/08/2025"
-          value={3}
-          unit="dias"
+          description="Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type."
+          value={80}
         />
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        {/* Lado esquerdo: Pesquisas anteriores */}
+
         <div className="lg:col-span-1 bg-white rounded-xl shadow-md p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-800">
-              Pesquisas de clima e engajamento
+              Pesquisas de Clima
             </h2>
-            <a
-              href="#"
-              className="text-blue-500 hover:underline font-medium text-sm"
-            >
-              Ver todas
-            </a>
+            <IoAddCircle
+              size={27}
+              className="text-[#08605F] cursor-pointer"
+              onClick={() => navigate("../climate-survey/create")}
+            />
           </div>
           <div className="flex flex-col gap-y-2 max-h-[350px] overflow-y-auto pr-2">
-            {mockSurveys.map((s, i) => (
-              <SurveyRow
-                key={i}
-                title={s.title}
-                date={s.date}
-                status={s.status}
-              />
-            ))}
+            {loading ? (
+              <div className="text-center py-4 text-gray-500">
+                Carregando...
+              </div>
+            ) : surveys.length === 0 ? (
+              <div className="text-center py-4 text-gray-500">
+                Nenhuma pesquisa encontrada
+              </div>
+            ) : (
+              surveys.map((survey) => (
+                <SurveyRow
+                  key={survey.id}
+                  id={survey.id}
+                  title={survey.title}
+                  date={formatSurveyDate(survey)}
+                  status={getSurveyStatus(survey)}
+                  onClick={() => navigate(`../climate-survey/${survey.id}`)}
+                />
+              ))
+            )}
           </div>
         </div>
 
-        {/* Lado direito: Gráfico de satisfação */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
           <SatisfactionChartCard
             title="Satisfação ao longo do tempo"

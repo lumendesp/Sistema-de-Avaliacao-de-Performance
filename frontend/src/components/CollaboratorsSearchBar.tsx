@@ -51,7 +51,7 @@ const CollaboratorsSearchBar = ({
   return (
     <div className="w-full relative">
       {/* barra de busca */}
-      <div className="flex items-center gap-2 rounded-xl py-4 px-7 w-full bg-white">
+      <div className="flex items-center gap-2 rounded-xl py-4 px-7 w-full bg-white/50">
         <IoIosSearch size={16} className="text-[#1D1D1D]/75" />
         <input
           type="text"

@@ -17,7 +17,7 @@ const RHClimateMetricCard: React.FC<RHClimateMetricCardProps> = ({
   return (
     <div className="bg-white rounded-xl shadow-md p-6 flex justify-between items-center">
       <div>
-        <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-1">{title}</h2>
         <div className="flex items-center gap-2">
           <div
             className={`h-10 w-1 rounded-md ${
@@ -29,7 +29,7 @@ const RHClimateMetricCard: React.FC<RHClimateMetricCardProps> = ({
             }`}
           ></div>
           {description && (
-            <p className="text-xs text-gray-600 mt-1 max-w-[340px]">
+            <p className="text-xs text-gray-600 max-w-[340px]">
               {description}
             </p>
           )}

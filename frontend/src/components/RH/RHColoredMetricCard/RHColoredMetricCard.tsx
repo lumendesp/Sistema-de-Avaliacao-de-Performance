@@ -15,7 +15,9 @@ const RHColoredMetricCard: React.FC<RHColoredMetricCardProps> = ({
   unit,
 }) => {
   const colorClass =
-    value < 4
+    value == 0
+      ? "text-gray-600"
+      : value < 4
       ? "text-red-600"
       : value <= 7
       ? "text-yellow-600"
@@ -34,8 +36,10 @@ const RHColoredMetricCard: React.FC<RHColoredMetricCardProps> = ({
           <BiCalendar size={50} className={`${colorClass}`} />
         </div>
         <div className="flex flex-col justify-center items-center">
-          <span className={`text-4xl font-bold ${colorClass}`}>{value}</span>
-          {unit && <span className={`text-lg ml-1 ${colorClass}`}>{unit}</span>}
+          <span className={`text-4xl -mb-1.5 font-bold ${colorClass}`}>
+            {value}
+          </span>
+          {unit && <span className={`text-lg ${colorClass}`}>{unit}</span>}
         </div>
       </div>
     </div>
