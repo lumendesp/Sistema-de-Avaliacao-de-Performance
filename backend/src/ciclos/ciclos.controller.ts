@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
 import { CiclosService } from './ciclos.service';
 import { CreateCicloDto } from './dto/create-ciclo.dto';
-import { UpdateCicloDto } from './dto/update-ciclo.dto';
+import { UpdateCicloDto, UpdateCycleStatusDto } from './dto/update-ciclo.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Role } from '@prisma/client';
+import { CycleStatus } from '@prisma/client';
 
 @Controller('ciclos')
 export class CiclosController {
@@ -14,14 +14,21 @@ export class CiclosController {
     return this.ciclosService.create(createCicloDto);
   }
 
-  @Post('close-collaborator-and-create-manager')
-  async closeAndCreateManager() {
-    return this.ciclosService.closeCollaboratorAndCreateManagerCycle();
+  // Removidas as rotas POST de fechamento e criação de ciclo subsequente
+
+  @Patch(':id/status')
+  async updateCycleStatus(@Param('id') id: string, @Body() updateStatusDto: UpdateCycleStatusDto) {
+    return this.ciclosService.updateCycleStatus(Number(id), updateStatusDto.status);
   }
 
-  @Post('close-manager-and-create-committee')
-  async closeAndCreateCommittee() {
-    return this.ciclosService.closeManagerAndCreateCommitteeCycle();
+  @Patch('close-collaborator')
+  async closeCollaboratorAndCreateManager() {
+    return this.ciclosService.closeCollaboratorAndCreateManager();
+  }
+
+  @Patch('close-manager')
+  async closeManagerAndCreateCommittee() {
+    return this.ciclosService.closeManagerAndCreateCommittee();
   }
 
   @Post('create-collaborator-cycle')
@@ -53,16 +60,15 @@ export class CiclosController {
     return this.ciclosService.getBrutalFactsData();
   }
 
-
   @UseGuards(JwtAuthGuard)
   @Get('current')
-  getCurrentCycle(@Query('type') type?: string) {
-    // Validar se o tipo é válido
-    if (type && !Object.values(Role).includes(type as Role)) {
-      throw new Error(`Invalid role type: ${type}`);
+  getCurrentCycle(@Query('status') status?: string) {
+    // Validar se o status é válido
+    if (status && !Object.values(CycleStatus).includes(status as CycleStatus)) {
+      throw new Error(`Invalid cycle status: ${status}`);
     }
     
-    return this.ciclosService.getCurrentCycle(type as Role);
+    return this.ciclosService.getCurrentCycle(status);
   }
 
   @UseGuards(JwtAuthGuard)

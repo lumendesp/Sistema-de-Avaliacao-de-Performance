@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateCicloDto } from './dto/create-ciclo.dto';
 import { UpdateCicloDto } from './dto/update-ciclo.dto';
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, Role, CycleStatus } from '@prisma/client';
 import { GeminiService } from '../ai/ai.service';
 import { AiBrutalFactsService } from '../ai-brutal-facts/ai-brutal-facts.service';
 import { CycleService } from './cycle.service';
@@ -78,19 +78,15 @@ export class CiclosService {
     return prisma.evaluationCycle.delete({ where: { id } });
   }
 
-  async getCurrentCycle(type?: Role) {
-
-    
-    // Buscar o ciclo mais recente do tipo especificado (independente do status)
+  async getCurrentCycle(status?: string) {
+    // Buscar o ciclo mais recente do status especificado (independente do status)
     const currentCycle = await prisma.evaluationCycle.findFirst({
       where: {
-        ...(type ? { type } : {})
+        ...(status ? { status: status as any } : {})
       },
       orderBy: { startDate: 'desc' }
     });
 
-
-    
     if (!currentCycle) {
       return null;
     }
@@ -106,7 +102,6 @@ export class CiclosService {
       startDate: currentCycle.startDate,
       endDate: currentCycle.endDate,
       status: currentCycle.status,
-      type: (currentCycle as any).type,
       daysRemaining: Math.max(0, diffDays),
       isOverdue: diffDays < 0
     };
@@ -135,7 +130,7 @@ export class CiclosService {
       }
       return {
         cycle: nota.cycle.name,
-        status: nota.cycle.status === 'IN_PROGRESS' ? 'Em andamento' : 'Finalizado',
+        status: nota.cycle.status.startsWith('IN_PROGRESS') ? 'Em andamento' : 'Finalizado',
         self,
         exec: nota.executionScore ?? '-',
         posture: nota.postureScore ?? '-',
@@ -146,8 +141,8 @@ export class CiclosService {
   }
 
   async getManagerDashboardStats(managerId: number) {
-    // Buscar o ciclo atual usando o método existente com tipo MANAGER
-    const currentCycle = await this.getCurrentCycle(Role.MANAGER);
+    // Buscar o ciclo atual usando o método existente com status IN_PROGRESS_MANAGER
+    const currentCycle = await this.getCurrentCycle('IN_PROGRESS_MANAGER');
 
     if (!currentCycle) {
       return {
@@ -309,8 +304,7 @@ export class CiclosService {
       where: {
         status: {
           in: ['CLOSED', 'PUBLISHED']
-        },
-        type: 'HR'
+        }
       },
       orderBy: { startDate: 'desc' },
       take: 5
@@ -387,85 +381,60 @@ export class CiclosService {
     return allCycles.map(cycle => ({
       id: cycle.id,
       name: cycle.name,
-      type: (cycle as any).type,
       status: cycle.status,
       startDate: cycle.startDate,
       endDate: cycle.endDate
     }));
   }
 
-  /**
-   * Fecha o ciclo de colaborador, cria o ciclo de gestor e transfere os dados.
-   */
-  async closeCollaboratorAndCreateManagerCycle(collabCycleId?: number) {
-    let cycleId = collabCycleId;
-    if (!cycleId) {
-      const mostRecent = await this.cycleService.getMostRecentCycle('COLLABORATOR', 'IN_PROGRESS');
-      if (!mostRecent) throw new Error('Nenhum ciclo de colaborador em andamento encontrado');
-      cycleId = mostRecent.id;
+  async closeCollaboratorAndCreateManager() {
+    // Buscar o ciclo de colaborador atual
+    const collaboratorCycle = await this.cycleService.getMostRecentCycle('IN_PROGRESS_COLLABORATOR' as CycleStatus);
+    
+    if (!collaboratorCycle) {
+      throw new Error('Nenhum ciclo de colaborador em andamento encontrado');
     }
-    if (!cycleId || typeof cycleId !== 'number' || isNaN(cycleId)) {
-      throw new Error('collabCycleId inválido ou não fornecido');
-    }
-    // 1. Fechar o ciclo de colaborador
-    await this.cycleService.closeCycle(cycleId);
 
-    // 2. Buscar dados do ciclo de colaborador
-    const collabCycle = await this.cycleService.getMostRecentCycle('COLLABORATOR', 'CLOSED');
-
-    // 3. Criar ciclo de gestor (manager) com nome baseado no semestre
-    const startDate = new Date();
-    const managerCycleName = this.generateSemesterCycleName(startDate);
-
-    const managerCycle = await this.cycleService.createCycle({
-      name: managerCycleName,
-      startDate: startDate,
-      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-      status: 'IN_PROGRESS',
-      type: 'MANAGER',
+    // Atualizar o ciclo para status de manager e ajustar datas
+    const updatedCycle = await prisma.evaluationCycle.update({
+      where: { id: collaboratorCycle.id },
+      data: {
+        status: 'IN_PROGRESS_MANAGER' as CycleStatus,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias
+      }
     });
 
-    // 4. Transferir dados
-    await this.cycleTransferService.transferCycleData(cycleId, managerCycle.id);
-
-    return { message: 'Ciclo de colaborador fechado, ciclo de gestor criado e dados transferidos!', managerCycleId: managerCycle.id };
+    return { 
+      message: 'Ciclo de colaborador alterado para ciclo de manager!', 
+      cycleId: updatedCycle.id,
+      cycle: updatedCycle
+    };
   }
 
-  /**
-   * Fecha o ciclo de gestor, cria o ciclo de COMITÊ e transfere os dados.
-   */
-  async closeManagerAndCreateCommitteeCycle(managerCycleId?: number) {
-    let cycleId = managerCycleId;
-    if (!cycleId) {
-      const mostRecent = await this.cycleService.getMostRecentCycle('MANAGER', 'IN_PROGRESS');
-      if (!mostRecent) throw new Error('Nenhum ciclo de gestor em andamento encontrado');
-      cycleId = mostRecent.id;
+  async closeManagerAndCreateCommittee() {
+    // Buscar o ciclo de manager atual
+    const managerCycle = await this.cycleService.getMostRecentCycle('IN_PROGRESS_MANAGER' as CycleStatus);
+    
+    if (!managerCycle) {
+      throw new Error('Nenhum ciclo de manager em andamento encontrado');
     }
-    if (!cycleId || typeof cycleId !== 'number' || isNaN(cycleId)) {
-      throw new Error('managerCycleId inválido ou não fornecido');
-    }
-    // 1. Fechar o ciclo de gestor
-    await this.cycleService.closeCycle(cycleId);
 
-    // 2. Buscar dados do ciclo de gestor
-    const managerCycle = await this.cycleService.getMostRecentCycle('MANAGER', 'CLOSED');
-
-    // 3. Criar ciclo de COMITÊ com nome baseado no semestre
-    const startDate = new Date();
-    const committeeCycleName = this.generateSemesterCycleName(startDate);
-
-    const committeeCycle = await this.cycleService.createCycle({
-      name: committeeCycleName,
-      startDate: startDate,
-      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-      status: 'IN_PROGRESS',
-      type: 'COMMITTEE',
+    // Atualizar o ciclo para status de comitê e ajustar datas
+    const updatedCycle = await prisma.evaluationCycle.update({
+      where: { id: managerCycle.id },
+      data: {
+        status: 'IN_PROGRESS_COMMITTEE' as CycleStatus,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias
+      }
     });
 
-    // 4. Transferir dados
-    await this.cycleTransferService.transferCycleData(cycleId, committeeCycle.id);
-
-    return { message: 'Ciclo de gestor fechado, ciclo de COMITÊ criado e dados transferidos!', committeeCycleId: committeeCycle.id };
+    return { 
+      message: 'Ciclo de manager alterado para ciclo de comitê!', 
+      cycleId: updatedCycle.id,
+      cycle: updatedCycle
+    };
   }
 
   /**
@@ -473,7 +442,7 @@ export class CiclosService {
    */
   async createCollaboratorCycle(cycleData?: { name?: string; startDate?: Date; endDate?: Date }) {
     // Verificar se já existe um ciclo de colaborador em andamento
-    const existingCycle = await this.cycleService.getMostRecentCycle('COLLABORATOR', 'IN_PROGRESS');
+    const existingCycle = await this.cycleService.getMostRecentCycle('IN_PROGRESS_COLLABORATOR' as CycleStatus);
     if (existingCycle) {
       throw new Error('Já existe um ciclo de colaborador em andamento');
     }
@@ -490,8 +459,7 @@ export class CiclosService {
       name,
       startDate,
       endDate,
-      status: 'IN_PROGRESS',
-      type: 'COLLABORATOR',
+      status: 'IN_PROGRESS_COLLABORATOR' as CycleStatus,
     });
 
     return { 
@@ -499,5 +467,25 @@ export class CiclosService {
       collaboratorCycleId: collaboratorCycle.id,
       cycle: collaboratorCycle
     };
+  }
+
+  async updateCycleStatus(id: number, newStatus: CycleStatus) {
+    // Atualiza o status do ciclo
+    const updated = await prisma.evaluationCycle.update({
+      where: { id },
+      data: { status: newStatus }
+    });
+
+    // Exemplo: se fechou colaborador, cria ciclo de manager
+    if (newStatus === 'CLOSED') {
+      // Verifica se era um ciclo de colaborador
+      if (updated.status === 'CLOSED' && updated.name && updated.name.toLowerCase().includes('colaborador')) {
+        // Cria ciclo de manager automaticamente, se necessário
+        // ... lógica opcional ...
+      }
+    }
+
+    // Retorna o ciclo atualizado
+    return updated;
   }
 }

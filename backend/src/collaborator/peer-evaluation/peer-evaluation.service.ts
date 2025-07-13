@@ -242,7 +242,7 @@ export class PeerEvaluationService {
       }
 
       // Verifica se o ciclo está ativo para permitir atualização
-      if (evaluation.cycle.status !== 'IN_PROGRESS') {
+      if (!evaluation.cycle.status.startsWith('IN_PROGRESS_COLLABORATOR')) {
         throw new BadRequestException(
           'Cannot update evaluation after cycle is finished.',
         );

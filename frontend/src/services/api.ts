@@ -81,7 +81,13 @@ export const fetchActiveEvaluationCycle = async (role?: string) => {
       }
     }
   }
-  const res = await fetch(`${API_URL}/evaluation-cycle/active?type=${mainRole}`, {
+
+  // Mapeamento de role para status
+  let status = 'IN_PROGRESS_COLLABORATOR';
+  if (mainRole === 'MANAGER') status = 'IN_PROGRESS_MANAGER';
+  else if (mainRole === 'COMMITTEE') status = 'IN_PROGRESS_COMMITTEE';
+
+  const res = await fetch(`${API_URL}/evaluation-cycle/active?status=${status}`, {
     headers: getAuthHeaders(),
   });
   if (!res.ok) {
