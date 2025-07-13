@@ -11,7 +11,12 @@ interface Cycle {
   name: string;
   startDate: string;
   endDate: string;
-  status: "IN_PROGRESS" | "CLOSED" | "PUBLISHED";
+  status:
+    | "IN_PROGRESS_COLLABORATOR"
+    | "IN_PROGRESS_MANAGER"
+    | "IN_PROGRESS_COMMITTEE"
+    | "CLOSED"
+    | "PUBLISHED";
 }
 
 export default function Dashboard() {
@@ -22,7 +27,6 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchCycle = async () => {
       try {
-        // Na página de colaborador, sempre buscar ciclo do tipo COLLABORATOR
         const mainRole = "COLLABORATOR";
         console.log("User roles:", user?.roles);
         console.log("Página de colaborador - buscando ciclo do tipo:", mainRole);
@@ -55,15 +59,17 @@ export default function Dashboard() {
   }, [token, user]);
 
   const mapCycleStatusToUIStatus = (
-    status: string
+    status: Cycle["status"]
   ): "aberto" | "emBreve" | "disponivel" => {
     console.log("Mapeando status:", status);
     const mappedStatus = (() => {
       switch (status) {
         case "IN_PROGRESS_COLLABORATOR":
           return "aberto";
-        case "CLOSED":
+        case "IN_PROGRESS_MANAGER":
+        case "IN_PROGRESS_COMMITTEE":
           return "emBreve";
+        case "CLOSED":
         case "PUBLISHED":
           return "disponivel";
         default:
