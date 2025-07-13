@@ -472,7 +472,7 @@ model ClimateSurveyAnswer {
   id             Int               @id @default(autoincrement())
   questionId     Int
   responseId     Int
-  level          MotivationLevel
+  level          ClimateLevel
   justification  String
 
   question       ClimateSurveyQuestion  @relation(fields: [questionId], references: [id])
@@ -492,4 +492,10 @@ model ClimateSurveyAISummary {
   @@unique([responseId])
 }
 
-
+enum ClimateLevel {
+  CONCORDO_TOTALMENTE
+  CONCORDO_PARCIALMENTE
+  NEUTRO
+  DISCORDO_PARCIALMENTE
+  DISCORDO_TOTALMENTE
+}
