@@ -8,16 +8,19 @@ export default function MentorEvaluationPage() {
   const { id: collaboratorId } = useParams();
   const { user } = useAuth();
   const [cycleId, setCycleId] = useState<number | null>(null);
+  const [cycleStatus, setCycleStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadCycle = async () => {
       setLoading(true);
       try {
-        const cycle = await fetchActiveEvaluationCycle();
+        const cycle = await fetchActiveEvaluationCycle("MANAGER");
         setCycleId(cycle.id);
+        setCycleStatus(cycle.status || null);
       } catch {
         setCycleId(null);
+        setCycleStatus(null);
       } finally {
         setLoading(false);
       }
@@ -27,21 +30,26 @@ export default function MentorEvaluationPage() {
 
   if (!collaboratorId)
     return (
-      <div className="text-red-500 text-center mt-10">
+      <div className="text-red-500 text-center mt-10 font-semibold bg-red-100 border border-red-300 rounded p-4 max-w-xl mx-auto">
         Colaborador não encontrado.
       </div>
     );
   if (loading)
     return <div className="text-gray-500 text-center mt-10">Carregando...</div>;
-  if (!cycleId)
+  if (!cycleId || cycleStatus !== "IN_PROGRESS_MANAGER")
     return (
-      <div className="text-red-500 text-center mt-10">
-        Nenhum ciclo ativo encontrado.
+      <div className="text-red-500 text-center mt-10 font-semibold bg-red-100 border border-red-300 rounded p-4 max-w-xl mx-auto">
+        Nenhum ciclo de avaliação de gestor em andamento.
+        <br />
+        <span className="text-gray-700 text-sm font-normal">
+          A avaliação de mentor só estará disponível durante o ciclo de
+          avaliação do gestor.
+        </span>
       </div>
     );
   if (!user)
     return (
-      <div className="text-red-500 text-center mt-10">
+      <div className="text-red-500 text-center mt-10 font-semibold bg-red-100 border border-red-300 rounded p-4 max-w-xl mx-auto">
         Usuário não autenticado.
       </div>
     );

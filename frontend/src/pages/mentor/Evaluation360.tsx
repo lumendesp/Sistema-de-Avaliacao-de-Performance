@@ -27,7 +27,7 @@ const PeerEvaluationMentor = () => {
     const loadCycle = async () => {
       try {
         setLoading(true);
-        const cycle = await fetchActiveEvaluationCycle();
+        const cycle = await fetchActiveEvaluationCycle("MANAGER");
         setCycleId(cycle.id);
       } catch {
         setCycleId(null);
@@ -47,11 +47,30 @@ const PeerEvaluationMentor = () => {
       .finally(() => setLoading(false));
   }, [collaboratorId, cycleId]);
 
+  if (loading)
+    return (
+      <div className="text-gray-500 text-center mt-10">
+        Carregando avaliações 360...
+      </div>
+    );
+  if (!cycleId)
+    return (
+      <div className="text-red-500 text-center mt-10 font-semibold bg-red-100 border border-red-300 rounded p-4 max-w-xl mx-auto">
+        Nenhum ciclo de avaliação de gestor em andamento.
+        <br />
+        <span className="text-gray-700 text-sm font-normal">
+          As avaliações 360 deste colaborador só estarão disponíveis durante o
+          ciclo de avaliação do gestor.
+        </span>
+      </div>
+    );
+
   return (
     <div className="bg-[#f1f1f1] min-h-screen w-full flex flex-col gap-4 p-3">
-      {loading && <div>Carregando avaliações 360...</div>}
       {!loading && peerEvaluations.length === 0 && (
-        <div>Nenhuma avaliação 360 encontrada para este colaborador.</div>
+        <div className="text-gray-500 text-center mt-10 font-semibold bg-yellow-100 border border-yellow-300 rounded p-4 max-w-xl mx-auto">
+          Nenhuma avaliação 360 encontrada para este colaborador.
+        </div>
       )}
       {!loading &&
         peerEvaluations.map((evaluation, idx) => (

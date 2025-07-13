@@ -40,18 +40,23 @@ export default function CollaboratorEvaluation() {
   const [evaluationId, setEvaluationId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [selfEvaluation, setSelfEvaluation] = useState<any>(null);
-  const [loaded, setLoaded] = useState(false);
   const outletContext = useOutletContext<OutletContextType>();
   const { token } = useAuth();
   const [cycleId, setCycleId] = useState<number | null>(null);
+  const [cycleStatus, setCycleStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCycle = async () => {
+      setLoading(true); // Garante que loading inicia
       try {
-        const cycle = await fetchActiveEvaluationCycle('MANAGER');
+        const cycle = await fetchActiveEvaluationCycle("MANAGER");
         setCycleId(cycle?.id || null);
-      } catch (err) {
+        setCycleStatus(cycle?.status || null);
+      } catch {
         setCycleId(null);
+        setCycleStatus(null);
+      } finally {
+        setLoading(false); // Garante que loading termina mesmo se não houver ciclo
       }
     };
     fetchCycle();
@@ -66,7 +71,6 @@ export default function CollaboratorEvaluation() {
         return;
       }
       setLoading(true);
-      setLoaded(false);
       try {
         // Busca todos os tracks com grupos/criterios
         const tracksData: TrackWithGroups[] = await getTracksWithCriteria();
@@ -109,25 +113,27 @@ export default function CollaboratorEvaluation() {
         );
         // Pega a avaliação do ciclo atual
         const selfEval = Array.isArray(selfEvalRes.data)
-          ? selfEvalRes.data.find((e: any) => e.cycle.id === cycleId)
+          ? selfEvalRes.data.find(
+              (e: unknown) =>
+                typeof e === "object" &&
+                e &&
+                "cycle" in e &&
+                (e as { cycle: { id: number } }).cycle.id === cycleId
+            )
           : null;
         setSelfEvaluation(selfEval);
         // Estado inicial dos critérios
         const initialState: Record<number, EvaluationCriterion[]> = {};
         filteredGroups.forEach((group) => {
-          console.log(
-            "Montando critérios para group:",
-            group.name,
-            group.configuredCriteria
-          );
-          initialState[group.id] = group.configuredCriteria.map((cc: any) => {
+          initialState[group.id] = group.configuredCriteria.map((cc) => {
             // Busca resposta do self evaluation para este critério
             let selfRating = 0;
             let selfJustification = "";
             let selfScoreDescription = "";
             if (selfEval && selfEval.items) {
               const found = selfEval.items.find(
-                (item: any) => item.criterionId === cc.criterion.id
+                (item: { criterionId: number }) =>
+                  item.criterionId === cc.criterion.id
               );
               if (found) {
                 selfRating = found.score;
@@ -145,47 +151,53 @@ export default function CollaboratorEvaluation() {
               managerRating: undefined,
               managerJustification: "",
             };
-            console.log("Critério montado:", critObj);
             return critObj;
           });
         });
         console.log("initialState (criteriaState):", initialState);
         setCriteriaState(initialState);
-        setLoaded(true);
         // Busca avaliação já existente
         const evaluation = await fetchManagerEvaluation(Number(collaboratorId));
         if (evaluation && evaluation.groups) {
-          // Preenche notas já existentes
           const newState: Record<number, EvaluationCriterion[]> = {
             ...initialState,
           };
-          evaluation.groups.forEach((g: any) => {
-            if (!newState[g.groupId]) return;
-            newState[g.groupId] = newState[g.groupId].map((crit, idx) => {
-              const found = g.items.find((c: any) => c.criterionId === crit.id);
-              return found
-                ? {
-                    ...crit,
-                    managerRating: found.score,
-                    managerJustification: found.justification,
-                  }
-                : crit;
-            });
-          });
+          evaluation.groups.forEach(
+            (g: {
+              groupId: number;
+              items: {
+                criterionId: number;
+                score: number;
+                justification: string;
+              }[];
+            }) => {
+              if (!newState[g.groupId]) return;
+              newState[g.groupId] = newState[g.groupId].map((crit) => {
+                const found = g.items.find((c) => c.criterionId === crit.id);
+                return found
+                  ? {
+                      ...crit,
+                      managerRating: found.score,
+                      managerJustification: found.justification,
+                    }
+                  : crit;
+              });
+            }
+          );
           setCriteriaState(newState);
         }
-        setLoaded(true);
+        setLoading(false);
       } catch (e) {
         console.error("Erro no fetchGroupsAndCriteria:", e);
-        // Não limpe os grupos nem o criteriaState!
         setSelfEvaluation(null);
-      } finally {
         setLoading(false);
       }
     }
-    fetchGroupsAndCriteria();
+    if (collaboratorId && cycleId && cycleStatus === "IN_PROGRESS_MANAGER") {
+      fetchGroupsAndCriteria();
+    }
     // eslint-disable-next-line
-  }, [collaboratorId]);
+  }, [collaboratorId, cycleId, cycleStatus]);
 
   const handleCriterionChange = (
     groupId: number,
@@ -216,8 +228,12 @@ export default function CollaboratorEvaluation() {
       }));
       // Validação: todos os critérios precisam de nota e justificativa
       const hasEmpty = groupsPayload.some((g) =>
-        g.items.some((item) =>
-          !item.score || item.score < 1 || !item.justification || item.justification.trim() === ""
+        g.items.some(
+          (item) =>
+            !item.score ||
+            item.score < 1 ||
+            !item.justification ||
+            item.justification.trim() === ""
         )
       );
       if (hasEmpty) {
@@ -239,12 +255,19 @@ export default function CollaboratorEvaluation() {
           });
         }
         return true;
-      } catch (e: any) {
-        alert(e?.response?.data?.message || "Erro ao enviar avaliação");
+      } catch (e) {
+        alert((e as Error)?.message || "Erro ao enviar avaliação");
         return false;
       }
     }, !!evaluationId);
-  }, [criteriaState, groups, collaboratorId, evaluationId, outletContext, cycleId]);
+  }, [
+    criteriaState,
+    groups,
+    collaboratorId,
+    evaluationId,
+    outletContext,
+    cycleId,
+  ]);
 
   // LOG: antes do return
   console.log("groups (render):", groups);
@@ -258,7 +281,18 @@ export default function CollaboratorEvaluation() {
     )
   );
 
-  if (loading || !loaded || !cycleId || typeof cycleId !== 'number') return <div>Carregando...</div>;
+  if (loading) return <div>Carregando...</div>;
+  if (!cycleId || cycleStatus !== "IN_PROGRESS_MANAGER")
+    return (
+      <div className="text-red-500 text-center mt-10 font-semibold bg-red-100 border border-red-300 rounded p-4 max-w-xl mx-auto">
+        Nenhum ciclo de avaliação de gestor em andamento.
+        <br />
+        <span className="text-gray-700 text-sm font-normal">
+          A avaliação de gestor só estará disponível durante o ciclo de
+          avaliação do gestor.
+        </span>
+      </div>
+    );
   if (!groups.length)
     return <div>Nenhum critério configurado para este colaborador.</div>;
 

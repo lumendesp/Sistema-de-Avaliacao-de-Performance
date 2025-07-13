@@ -122,10 +122,9 @@ const [initialTabCompletion, setInitialTabCompletion] = useState<
 
         if (user?.roles?.includes("MANAGER")) {
           role = "MANAGER";
-        } else if (
-          user?.roles?.includes("HR") ||
-          user?.roles?.includes("COMMITTEE")
-        ) {
+        } else if (user?.roles?.includes("COMMITTEE")) {
+          role = "COMMITTEE";
+        } else if (user?.roles?.includes("HR")) {
           role = "HR";
         } else {
           role = "COLLABORATOR";

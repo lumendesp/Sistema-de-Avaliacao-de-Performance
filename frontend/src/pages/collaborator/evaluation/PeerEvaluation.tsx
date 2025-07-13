@@ -12,7 +12,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { useEvaluation } from "../../../context/EvaluationsContext";
 import PeerEvaluationReadOnlyForm from "../../../components/PeerEvaluationForm/PeerEvaluationReadOnlyForm";
 
-const PeerEvaluation = () => {
+const PeerEvaluationPage = () => {
   const motivationLabels: Record<string, string> = {
     CONCORDO_TOTALMENTE: "Concordo totalmente",
     CONCORDO_PARCIALMENTE: "Concordo parcialmente",
@@ -143,4 +143,4 @@ const PeerEvaluation = () => {
   );
 };
 
-export default PeerEvaluation;
+export default PeerEvaluationPage;
