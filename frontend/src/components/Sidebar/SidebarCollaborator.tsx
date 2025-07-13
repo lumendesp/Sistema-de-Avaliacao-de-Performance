@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { FiLogOut, FiMenu, FiX } from 'react-icons/fi';
 import { useState } from 'react';
+import { FlagIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import dashboardIcon from '../../assets/dashboard.svg';
 import evaluationIcon from '../../assets/evaluation.svg';
 import evolutionIcon from '../../assets/evolution.svg';
@@ -22,6 +23,16 @@ const menuItems = [
     path: '/collaborator/progress',
     label: 'Evolução',
     icon: <img src={evolutionIcon} alt="Evolução" className="w-5 h-5" />,
+  },
+  {
+    path: '/collaborator/okr',
+    label: 'OKR',
+    icon: <FlagIcon className="w-5 h-5" />,
+  },
+  {
+    path: '/collaborator/pdi',
+    label: 'PDI',
+    icon: <UserGroupIcon className="w-5 h-5" />,
   },
 ];
 

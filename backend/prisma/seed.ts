@@ -472,8 +472,7 @@ async function main() {
       name: '2025.1',
       startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 dias atrás
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias à frente
-      status: 'IN_PROGRESS',
-      type: 'COLLABORATOR',
+      status: 'IN_PROGRESS_COLLABORATOR' as any,
     },
   });
 

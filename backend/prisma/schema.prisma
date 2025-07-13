@@ -30,7 +30,9 @@ enum MotivationLevel {
 }
 
 enum CycleStatus {
-  IN_PROGRESS
+  IN_PROGRESS_COLLABORATOR
+  IN_PROGRESS_MANAGER
+  IN_PROGRESS_COMMITTEE
   CLOSED
   PUBLISHED
 }
@@ -194,7 +196,6 @@ model EvaluationCycle {
   startDate DateTime
   endDate   DateTime
   status    CycleStatus
-  type      Role        @default(COLLABORATOR) // COLLABORATOR, MANAGER, HR, COMMITTEE
   createdAt DateTime    @default(now())
 
   // Todas as avaliações ligadas ao ciclo
