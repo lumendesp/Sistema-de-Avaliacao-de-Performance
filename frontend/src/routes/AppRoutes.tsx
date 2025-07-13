@@ -11,6 +11,7 @@ import ComparisonLayout from "../layouts/ComparisonLayout"; // novo
 import Dashboard from "../pages/collaborator/Dashboard";
 import SelfEvaluation from "../pages/collaborator/evaluation/SelfEvaluation";
 import PeerEvaluation from "../pages/collaborator/evaluation/PeerEvaluation";
+import Admin from "../pages/admin/Admin";
 import MentorEvaluation from "../pages/collaborator/evaluation/MentorEvaluation";
 import ReferenceEvaluation from "../pages/collaborator/evaluation/ReferenceEvaluation";
 import ComparisonEvaluation from "../pages/collaborator/evaluation/ComparisonEvaluation"; // novo
@@ -37,6 +38,7 @@ import RHCollaboratorsPage from "../pages/RH/RHCollaborators/RHCollaborators";
 import RHCriteriaSettingsPage from "../pages/RH/RHCriteriaSettings/RHCriteriaSettings";
 
 import BrutalFacts from "../pages/manager/BrutalFacts";
+import AdminLayout from "../layouts/AdminLayout.tsx";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -186,6 +188,17 @@ const AppRoutes = () => (
         <Route path="criteria" element={<RHCriteriaSettingsPage />} />
       </Route>
       <Route path="/perfil" element={<Profile />} />
+      
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Admin />} />
+      </Route>
     </Routes>
   </BrowserRouter>
 );

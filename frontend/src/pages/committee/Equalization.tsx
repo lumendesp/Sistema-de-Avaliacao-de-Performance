@@ -4,7 +4,7 @@ import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import EvaluationSummary from "../../components/Committee/CommitteeEquali/EvaluationSummary";
 import FilterIcon from '../../assets/committee/filter-icon.png';
-import { createFinalScore, updateFinalScore, getUsersWithEvaluationsForCommittee, fetchActiveEvaluationCycle, getSignificantDrops } from '../../services/api';
+import { createFinalScore, updateFinalScore, getUsersWithEvaluationsForCommittee, fetchCommitteeEqualizationCycle, getSignificantDrops } from '../../services/api';
 import { useSearchParams } from 'react-router-dom';
 import { translateRole } from '../../utils/roleTranslations';
 
@@ -42,6 +42,7 @@ function Equalization(){
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [activeCycle, setActiveCycle] = useState<any>(null);
+    const [noActiveCycle, setNoActiveCycle] = useState(false);
     const [searchParams] = useSearchParams();
 
     const filteredCollaborators = useMemo(() => {
@@ -126,17 +127,20 @@ function Equalization(){
         }
     };
 
-    const fetchActiveCycle = async () => {
+    const fetchCommitteeCycle = async () => {
         try {
-            const cycle = await fetchActiveEvaluationCycle('HR');
+            const cycle = await fetchCommitteeEqualizationCycle();
             setActiveCycle(cycle);
+            setNoActiveCycle(false);
         } catch (error) {
-            console.error("Failed to fetch active cycle:", error);
+            console.error("Failed to fetch committee equalization cycle:", error);
+            setNoActiveCycle(true);
+            setActiveCycle(null);
         }
     };
 
     useEffect(() => {
-        fetchActiveCycle();
+        fetchCommitteeCycle();
     }, []);
 
     useEffect(() => {
@@ -251,86 +255,86 @@ function Equalization(){
                                 />
                             </div>
                         </div>
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#08605F] rounded-lg flex items-center justify-center self-center sm:self-auto">
-                            <img 
-                                src={FilterIcon}
-                                alt="Ícone Filtro"
-                                className="w-5 h-5 hover:scale-105 transition-transform"
-                            />
-                        </div>
                     </div>
                 </div>
                 <div className="p-2 sm:p-6">
-                    <div className="space-y-2 sm:space-y-4 max-h-[60vh] sm:max-h-[68vh] overflow-x-auto pr-1 sm:pr-2">
-                        {filteredCollaborators.map((collab) => (
-                            <div key={collab.id} className="bg-white rounded-lg shadow-md min-w-[260px] sm:min-w-0">
-                                <div className="p-2 sm:p-4">
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-5 "
-                                    onClick={() => setExpandedId(expandedId === collab.id ? null : collab.id)}
-                                    >
-                                        <div className="w-full">
-                                            <Colaborators 
-                                                name={collab.name}
-                                                role={collab.role
-                                                  .split(',')
-                                                  .map(r => translateRole(r.trim()))
-                                                  .join(', ')}
-                                                initials={collab.initials}
-                                                state={collab.state}
-                                                autoAvaliacao={collab.autoAvaliacao}
-                                                avaliacao360={collab.avaliacao360}
-                                                notaGestor={collab.notaGestor}
-                                                notaMentor={collab.notaMentor}
-                                                notaFinal={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal}
-                                                dropInfo={collab.dropInfo}
-                                            />
+                    {noActiveCycle ? (
+                        <div className="text-center text-gray-500 py-8 text-base">
+                            <p className="mb-2">Nenhum ciclo de equalização disponível.</p>
+                            <p className="text-sm">Aguarde o fechamento do ciclo de avaliação e sua liberação para o comitê. As avaliações estarão disponíveis para equalização após esse processo.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-2 sm:space-y-4 max-h-[60vh] sm:max-h-[68vh] overflow-x-auto pr-1 sm:pr-2">
+                            {filteredCollaborators.map((collab) => (
+                                <div key={collab.id} className="bg-white rounded-lg shadow-md min-w-[260px] sm:min-w-0">
+                                    <div className="p-2 sm:p-4">
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-5 "
+                                        onClick={() => setExpandedId(expandedId === collab.id ? null : collab.id)}
+                                        >
+                                            <div className="w-full">
+                                                <Colaborators 
+                                                    name={collab.name}
+                                                    role={collab.role
+                                                      .split(',')
+                                                      .map(r => translateRole(r.trim()))
+                                                      .join(', ')}
+                                                    initials={collab.initials}
+                                                    state={collab.state}
+                                                    autoAvaliacao={collab.autoAvaliacao}
+                                                    avaliacao360={collab.avaliacao360}
+                                                    notaGestor={collab.notaGestor}
+                                                    notaMentor={collab.notaMentor}
+                                                    notaFinal={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal}
+                                                    dropInfo={collab.dropInfo}
+                                                />
+                                            </div>
+                                            <div className="flex justify-center w-full sm:w-[2%]">
+                                                <button 
+                                                    onClick={() => setExpandedId(expandedId === collab.id ? null : collab.id)}
+                                                    className="p-2 hover:bg-gray-100 rounded-full"
+                                                >
+                                                    {expandedId === collab.id ? <FaChevronUp /> : <FaChevronDown />}
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="flex justify-center w-full sm:w-[2%]">
-                                            <button 
-                                                onClick={() => setExpandedId(expandedId === collab.id ? null : collab.id)}
-                                                className="p-2 hover:bg-gray-100 rounded-full"
-                                            >
-                                                {expandedId === collab.id ? <FaChevronUp /> : <FaChevronDown />}
-                                            </button>
-                                        </div>
+                                        {expandedId === collab.id && (
+                                            <div className="mt-2 sm:mt-4 p-2 sm:p-4 border-t border-gray-200">
+                                                <EvaluationSummary 
+                                                    userId={collab.id}
+                                                    name={collab.name}
+                                                    role={collab.role}                                                
+                                                    autoAvaliacao={collab.autoAvaliacao}
+                                                    avaliacao360={collab.avaliacao360}
+                                                    notaMentor={collab.notaMentor}
+                                                    notaGestor={collab.notaGestor}
+                                                    notaFinal={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal}
+                                                    onEdit={() => handleEdit(collab.id)}
+                                                    onDownload={() => handleDownload(collab.id)}
+                                                    onStarRating={(score) => handleStarRating(collab.id, score)}
+                                                    onJustification={(text) => handleJustification(collab.id, text)}
+                                                    onConcluir={() => handleConcluir(collab.id)}
+                                                    currentScore={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal ?? 0}
+                                                    currentJustification={evaluationState[collab.id]?.justification ?? collab.justification ?? ''}
+                                                    isEditing={evaluationState[collab.id]?.isEditing || false}
+                                                    justificativaAutoAvaliacao={collab.justificativaAutoAvaliacao}
+                                                    justificativaMentor={collab.justificativaMentor}
+                                                    justificativaGestor={collab.justificativaGestor}
+                                                    justificativa360={collab.justificativa360}
+                                                    backendData={collab}
+                                                    cycleId={collab.cycleId}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
-                                    {expandedId === collab.id && (
-                                        <div className="mt-2 sm:mt-4 p-2 sm:p-4 border-t border-gray-200">
-                                            <EvaluationSummary 
-                                                userId={collab.id}
-                                                name={collab.name}
-                                                role={collab.role}                                                
-                                                autoAvaliacao={collab.autoAvaliacao}
-                                                avaliacao360={collab.avaliacao360}
-                                                notaMentor={collab.notaMentor}
-                                                notaGestor={collab.notaGestor}
-                                                notaFinal={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal}
-                                                onEdit={() => handleEdit(collab.id)}
-                                                onDownload={() => handleDownload(collab.id)}
-                                                onStarRating={(score) => handleStarRating(collab.id, score)}
-                                                onJustification={(text) => handleJustification(collab.id, text)}
-                                                onConcluir={() => handleConcluir(collab.id)}
-                                                currentScore={evaluationState[collab.id]?.notaFinal ?? collab.notaFinal ?? 0}
-                                                currentJustification={evaluationState[collab.id]?.justification ?? collab.justification ?? ''}
-                                                isEditing={evaluationState[collab.id]?.isEditing || false}
-                                                justificativaAutoAvaliacao={collab.justificativaAutoAvaliacao}
-                                                justificativaMentor={collab.justificativaMentor}
-                                                justificativaGestor={collab.justificativaGestor}
-                                                justificativa360={collab.justificativa360}
-                                                backendData={collab}
-                                                cycleId={collab.cycleId}
-                                            />
-                                        </div>
-                                    )}
                                 </div>
-                            </div>
-                        ))}
-                        {filteredCollaborators.length === 0 && (
-                            <div className="text-center text-gray-500 py-4 sm:py-8 text-xs sm:text-base">
-                                Nenhum colaborador encontrado
-                            </div>
-                        )}
-                    </div>
+                            ))}
+                            {filteredCollaborators.length === 0 && (
+                                <div className="text-center text-gray-500 py-4 sm:py-8 text-xs sm:text-base">
+                                    Nenhum colaborador encontrado
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

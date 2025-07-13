@@ -128,6 +128,7 @@ model User {
   manages             ManagerCollaborator[] @relation("ManagerToCollaborator")
   managedBy           ManagerCollaborator[] @relation("CollaboratorToManager")
   EvaluationCycleUser EvaluationCycleUser[]
+  logs                Log[]
 }
 
 // ---------------- HISTÓRICO DE TRILHAS -----------------
@@ -177,6 +178,8 @@ model ConfiguredCriterion {
   unitId      Int
   positionId  Int
   mandatory   Boolean
+  description String? @default("")
+  weight      Int     @default(1)
 
   criterion Criterion      @relation(fields: [criterionId], references: [id])
   group     CriterionGroup @relation("GroupConfiguredCriteria", fields: [groupId], references: [id])
@@ -185,6 +188,8 @@ model ConfiguredCriterion {
   position  Position       @relation("PositionConfiguredCriteria", fields: [positionId], references: [id])
 
   selfEvaluationItems SelfEvaluationItem[]
+
+  @@unique([groupId, criterionId])
 }
 
 // ---------- CICLOS ----------
@@ -427,4 +432,24 @@ model BrutalFactsCache {
   cycleId   Int      @unique
   data      Json
   createdAt DateTime @default(now())
+}
+
+// ---------- LOGS ----------
+model Log {
+  id             Int      @id @default(autoincrement())
+  userId         Int?
+  userEmail      String?
+  userName       String?
+  action         String
+  method         String
+  path           String
+  ip             String
+  userAgent      String?
+  requestBody    String?
+  responseStatus Int?
+  responseTime   Int?
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 }

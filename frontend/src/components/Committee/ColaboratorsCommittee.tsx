@@ -54,7 +54,7 @@ function ColaboratorsCommitte({
                 if (percent > maxDiscrepancy) {
                     maxDiscrepancy = percent;
                     discrepancyInfo = {
-                        percent: Math.round(percent),
+                        percent: parseFloat(percent.toFixed(2)),
                         label1: grades[i].label,
                         value1: v1,
                         label2: grades[j].label,

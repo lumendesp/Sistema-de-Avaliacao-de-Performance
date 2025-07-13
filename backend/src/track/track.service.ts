@@ -85,13 +85,20 @@ export class TrackService {
   }
 
   async update(id: number, updateTrackDto: UpdateTrackDto) {
-    // Verificar se a track existe
-    await this.findOne(id);
+    try {
+      // Verificar se a track existe
+      await this.findOne(id);
 
-    return this.prisma.track.update({
-      where: { id },
-      data: updateTrackDto,
-    });
+      const result = await this.prisma.track.update({
+        where: { id },
+        data: updateTrackDto,
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Error updating track:', error);
+      throw error;
+    }
   }
 
   async remove(id: number) {

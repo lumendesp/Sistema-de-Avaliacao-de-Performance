@@ -3,23 +3,17 @@ import { FiLogOut, FiMenu, FiX } from 'react-icons/fi';
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import dashboardIcon from '../../assets/dashboard.svg';
-import equalizationsIcon from '../../assets/equalization.svg';
+
 
 const menuItems = [
   {
-    path: '/committee',
-    label: 'Dashboard',
-    icon: <img src={dashboardIcon} alt="Dashboard" className="w-5 h-5" />,
-  },
-  {
-    path: '/committee/equalizations',
-    label: 'Equalizações',
-    icon: <img src={equalizationsIcon} alt="Equalizações" className="w-5 h-5" />,
-    badge: true,
+    path: '/admin',
+    label: 'Informações do Sistema',
+    icon: <img src={dashboardIcon} alt="Informacoes do Sistema" className="w-5 h-5" />,
   },
 ];
 
-const SidebarCommittee = () => {
+const SidebarAdmin = () => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -132,4 +126,4 @@ const SidebarCommittee = () => {
   );
 };
 
-export default SidebarCommittee;
+export default SidebarAdmin;
