@@ -37,6 +37,7 @@ import RHCollaboratorsPage from "../pages/RH/RHCollaborators/RHCollaborators";
 import RHCriteriaSettingsPage from "../pages/RH/RHCriteriaSettings/RHCriteriaSettings";
 
 import BrutalFacts from "../pages/manager/BrutalFacts";
+import RHClimateSurvey from "../pages/RH/RHClimateSurvey/RHClimateSurvey.tsx";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -184,6 +185,8 @@ const AppRoutes = () => (
 
         {/* No futuro, a rota para /rh/criteria viria aqui */}
         <Route path="criteria" element={<RHCriteriaSettingsPage />} />
+
+        <Route path="climate-survey" element={<RHClimateSurvey />} />
       </Route>
       <Route path="/perfil" element={<Profile />} />
     </Routes>

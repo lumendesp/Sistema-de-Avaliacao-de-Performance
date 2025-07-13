@@ -1,26 +1,38 @@
-import { useNavigate, NavLink } from 'react-router-dom';
-import { FiLogOut, FiMenu, FiX } from 'react-icons/fi';
-import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import dashboardIcon from '../../assets/dashboard.svg';
-import collaboratorsIcon from '../../assets/collaborators.svg';
-import configIcon from '../../assets/config.svg';
+import { useNavigate, NavLink } from "react-router-dom";
+import { FiLogOut, FiMenu, FiX } from "react-icons/fi";
+import { IoBarChart } from "react-icons/io5";
+import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import dashboardIcon from "../../assets/dashboard.svg";
+import collaboratorsIcon from "../../assets/collaborators.svg";
+import configIcon from "../../assets/config.svg";
 
 const menuItems = [
   {
-    path: '/rh',
-    label: 'Dashboard',
+    path: "/rh",
+    label: "Dashboard",
     icon: <img src={dashboardIcon} alt="Dashboard" className="w-5 h-5" />,
   },
   {
-    path: '/rh/collaborators',
-    label: 'Colaboradores',
-    icon: <img src={collaboratorsIcon} alt="Colaboradores" className="w-5 h-5" />,
+    path: "/rh/collaborators",
+    label: "Colaboradores",
+    icon: (
+      <img src={collaboratorsIcon} alt="Colaboradores" className="w-5 h-5" />
+    ),
   },
   {
-    path: '/rh/criteria',
-    label: 'Critérios de Avaliação',
-    icon: <img src={configIcon} alt="Critérios de Avaliação" className="w-5 h-5" />,
+    path: "/rh/criteria",
+    label: "Critérios de Avaliação",
+    icon: (
+      <img src={configIcon} alt="Critérios de Avaliação" className="w-5 h-5" />
+    ),
+  },
+  {
+    path: "/rh/climate-survey",
+    label: "Clima Organizacional",
+    icon: (
+      <IoBarChart size={20}/>
+    ),
   },
 ];
 
@@ -31,7 +43,7 @@ const SidebarRH = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
   };
 
   return (
@@ -56,7 +68,7 @@ const SidebarRH = () => {
       <aside
         className={`fixed top-0 left-0 w-64 min-h-screen bg-white border-r z-50 flex flex-col justify-between py-6 px-4
           transition-transform duration-300 md:transform-none transform ${
-            isOpen ? 'translate-x-0' : '-translate-x-full'
+            isOpen ? "translate-x-0" : "-translate-x-full"
           } md:translate-x-0`}
       >
         {/* Fechar menu mobile */}
@@ -78,13 +90,13 @@ const SidebarRH = () => {
                 <li key={path}>
                   <NavLink
                     to={path}
-                    end={path === '/rh'}
+                    end={path === "/rh"}
                     onClick={() => setIsOpen(false)}
                     className={({ isActive }) =>
                       `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition ${
                         isActive
-                          ? 'bg-green-100 text-green-main font-semibold'
-                          : 'text-gray-700 hover:bg-gray-100'
+                          ? "bg-green-100 text-green-main font-semibold"
+                          : "text-gray-700 hover:bg-gray-100"
                       }`
                     }
                   >
@@ -101,7 +113,7 @@ const SidebarRH = () => {
         <div className="flex flex-col gap-6">
           <button
             onClick={() => {
-              navigate('/perfil');
+              navigate("/perfil");
               setIsOpen(false);
             }}
             className="flex items-center gap-2 pl-2 group focus:outline-none"
@@ -115,11 +127,17 @@ const SidebarRH = () => {
               />
             ) : (
               <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-700 font-bold group-hover:ring-2 group-hover:ring-green-main transition">
-                {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'RH'}
+                {user?.name
+                  ? user.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()
+                  : "RH"}
               </div>
             )}
             <p className="text-sm text-gray-700 font-medium group-hover:underline">
-              {user?.name || 'Recursos Humanos'}
+              {user?.name || "Recursos Humanos"}
             </p>
           </button>
 
