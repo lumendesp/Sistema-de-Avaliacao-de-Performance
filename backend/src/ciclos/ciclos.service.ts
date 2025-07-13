@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateCicloDto } from './dto/create-ciclo.dto';
 import { UpdateCicloDto } from './dto/update-ciclo.dto';
-import { PrismaClient, Role, CycleStatus } from '@prisma/client';
+import { PrismaClient, CycleStatus } from '@prisma/client';
 import { GeminiService } from '../ai/ai.service';
 import { AiBrutalFactsService } from '../ai-brutal-facts/ai-brutal-facts.service';
 import { CycleService } from './cycle.service';
@@ -432,6 +432,29 @@ export class CiclosService {
 
     return { 
       message: 'Ciclo de manager alterado para ciclo de comitê!', 
+      cycleId: updatedCycle.id,
+      cycle: updatedCycle
+    };
+  }
+
+  async closeCommittee() {
+    // Buscar o ciclo de comitê atual
+    const committeeCycle = await this.cycleService.getMostRecentCycle('IN_PROGRESS_COMMITTEE' as CycleStatus);
+    
+    if (!committeeCycle) {
+      throw new Error('Nenhum ciclo de comitê em andamento encontrado');
+    }
+
+    // Fechar o ciclo de comitê
+    const updatedCycle = await prisma.evaluationCycle.update({
+      where: { id: committeeCycle.id },
+      data: {
+        status: 'CLOSED' as CycleStatus,
+      }
+    });
+
+    return { 
+      message: 'Ciclo de comitê fechado com sucesso!', 
       cycleId: updatedCycle.id,
       cycle: updatedCycle
     };

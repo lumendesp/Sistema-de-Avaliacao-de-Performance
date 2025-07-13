@@ -31,6 +31,11 @@ export class CiclosController {
     return this.ciclosService.closeManagerAndCreateCommittee();
   }
 
+  @Patch('close-committee')
+  async closeCommittee() {
+    return this.ciclosService.closeCommittee();
+  }
+
   @Post('create-collaborator-cycle')
   async createCollaboratorCycle(@Body() cycleData?: { name?: string; startDate?: string; endDate?: string }) {
     // Converter strings de data para Date se fornecidas
