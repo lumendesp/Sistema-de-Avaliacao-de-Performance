@@ -437,6 +437,7 @@ model ClimateSurvey {
   description   String?
   isActive      Boolean             @default(true)
   createdAt     DateTime            @default(now())
+  endDate       DateTime
   createdById   Int
   createdBy     User                @relation("UserCreatedClimateSurveys", fields: [createdById], references: [id])
 
