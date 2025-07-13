@@ -14,7 +14,13 @@ import {
 import { SelfEvaluationService } from './self-evaluation.service';
 import { CreateSelfEvaluationDto } from './dto/create-self-evaluation.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiQuery} from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { UpdateSelfEvaluationDto } from './dto/update-self-evaluation.dto';
 
 @ApiTags('Self Evaluation')
@@ -53,7 +59,6 @@ export class SelfEvaluationController {
     return this.selfEvaluationService.delete(id);
   }
 
-
   @Get('available')
   @ApiOperation({ summary: 'Listar critérios de autoavaliação disponíveis' })
   async getAvailableCriteria(@Req() req) {
@@ -62,19 +67,23 @@ export class SelfEvaluationController {
   }
 
   @Get('grouped/:cycleId')
-  @ApiOperation({ summary: 'Critérios e respostas agrupados por grupo de critérios de um ciclo anterior' })
+  @ApiOperation({
+    summary:
+      'Critérios e respostas agrupados por grupo de critérios de um ciclo anterior',
+  })
   @UseGuards(JwtAuthGuard)
   async getGroupedByCycle(
     @Param('cycleId', ParseIntPipe) cycleId: number,
-    @Req() req: any
+    @Req() req: any,
   ) {
     const userId = req.user.userId; // conforme seu token
     return this.selfEvaluationService.getGroupedEvaluation(cycleId, userId);
   }
 
-
   @Get('user/:userId')
-  @ApiOperation({ summary: 'Listar todas as autoavaliações anteriores de um usuário' })
+  @ApiOperation({
+    summary: 'Listar todas as autoavaliações anteriores de um usuário',
+  })
   @ApiParam({ name: 'userId', type: Number })
   getByUserId(@Param('userId', ParseIntPipe) userId: number) {
     return this.selfEvaluationService.getByUserId(userId);
@@ -82,15 +91,15 @@ export class SelfEvaluationController {
 
   @Get(':userId/avg-score')
   @ApiOperation({
-    summary: 'Retorna apenas a média da autoavaliação e dados básicos do ciclo de um usuário específico',
+    summary:
+      'Retorna apenas a média da autoavaliação e dados básicos do ciclo de um usuário específico',
   })
   @ApiParam({ name: 'userId', type: Number })
   @ApiQuery({ name: 'cycleId', required: true, type: Number })
   async getAverageScoreByUser(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query('cycleId', ParseIntPipe) cycleId: number
+    @Query('cycleId', ParseIntPipe) cycleId: number,
   ) {
     return this.selfEvaluationService.getAverage(userId, cycleId);
   }
-
 }

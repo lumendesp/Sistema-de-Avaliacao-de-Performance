@@ -24,10 +24,9 @@ interface GroupedData {
 }
 
 const EvaluationComparisonGroupList = ({ cycleId, trackData }: Props) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [grouped, setGrouped] = useState<GroupedData[]>([]);
 
-  // Mapeia criterionId -> displayName usando trackData
   const criterionTitleMap: Record<number, string> = {};
   trackData.CriterionGroup.forEach((group) => {
     group.configuredCriteria.forEach((cc) => {
@@ -38,16 +37,31 @@ const EvaluationComparisonGroupList = ({ cycleId, trackData }: Props) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get(`http://localhost:3000/self-evaluation?cycleId=${cycleId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // 1. Buscar dados da autoavaliação
+        const selfRes = await axios.get(
+          `http://localhost:3000/self-evaluation?cycleId=${cycleId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-        const current = res.data.find((e: any) => e.cycle.id === cycleId);
-        if (!current) return;
+        const selfData = selfRes.data.find((e: any) => e.cycle.id === cycleId);
+        if (!selfData) return;
 
         const groups: GroupedData[] = [];
 
-        current.items.forEach((item: any) => {
+        // 2. Buscar avaliação do gestor
+        const managerRes = await axios.get(
+          `http://localhost:3000/manager-evaluation/${user?.id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const managerData = managerRes.data;
+
+        // 3. Agrupar autoavaliação
+        selfData.items.forEach((item: any) => {
           const groupId = item.group?.id ?? 0;
           const groupName = item.group?.name ?? "Sem grupo";
 
@@ -56,7 +70,7 @@ const EvaluationComparisonGroupList = ({ cycleId, trackData }: Props) => {
             group = {
               groupId,
               groupName,
-              selfAverageScore: current.averageScore ?? 0,
+              selfAverageScore: selfData.averageScore ?? 0,
               finalAverageScore: 0,
               criteria: [],
             };
@@ -66,20 +80,43 @@ const EvaluationComparisonGroupList = ({ cycleId, trackData }: Props) => {
           group.criteria.push({
             criterionId: item.criterionId,
             title: criterionTitleMap[item.criterionId] ?? "Sem título",
-            justification: item.justification,
+            justification: item.justification, // mantém justificativa original da autoavaliação
             selfScore: item.score,
-            finalScore: item.finalScore ?? 0,
+            finalScore: 0,
           });
+          
+        });
+
+        // 4. Preencher finalScore com base na avaliação do gestor, sem alterar justificativas
+        managerData.items?.forEach((item: any) => {
+          const group = groups.find((g) => g.groupId === item.groupId);
+          const criterion = group?.criteria.find(
+            (c) => c.criterionId === item.criterionId
+          );
+          if (criterion) {
+            criterion.finalScore = item.score;
+          }
+        });
+
+        // 5. Calcular média final por grupo
+        groups.forEach((group) => {
+          const total = group.criteria.reduce(
+            (sum, c) => sum + c.finalScore,
+            0
+          );
+          group.finalAverageScore = group.criteria.length
+            ? total / group.criteria.length
+            : 0;
         });
 
         setGrouped(groups);
       } catch (error) {
-        console.error("Erro ao buscar dados da autoavaliação:", error);
+        console.error("Erro ao buscar dados:", error);
       }
     };
 
     fetchData();
-  }, [cycleId, token, trackData]);
+  }, [cycleId, token, trackData, user]);
 
   if (!grouped.length) return <div>Nenhuma resposta para este ciclo.</div>;
 

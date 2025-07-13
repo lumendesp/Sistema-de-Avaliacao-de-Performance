@@ -4,6 +4,7 @@ export interface EvaluationComparisonItemProps {
   selfScore: number;
   finalScore: number;
   justification: string;
+  readOnly?: boolean;
 }
 
 export interface EvaluationComparisonItemData {

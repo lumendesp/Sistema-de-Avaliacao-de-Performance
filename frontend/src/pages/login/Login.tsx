@@ -15,10 +15,32 @@ const Login = () => {
     logout();
   }, []);
 
+  const getHighestRoleRoute = (roles: string[] = []) => {
+    if (roles.includes("ADMIN")) return "/manager";
+    if (roles.includes("HR")) return "/rh";
+    if (roles.includes("COMMITTEE")) return "/committee";
+    if (roles.includes("MANAGER")) return "/manager";
+    if (roles.includes("MENTOR")) return "/mentor";
+    if (roles.includes("COLLABORATOR")) return "/collaborator";
+    return "/collaborator";
+  };
+
   const handleLogin = async () => {
     const success = await login(email, password);
-    if (success) navigate("/collaborator");
-    else setError("Invalid credentials");
+    if (success) {
+      // user pode não estar atualizado imediatamente, então pega do localStorage
+      const storedUser = localStorage.getItem("user");
+      let roles: string[] = [];
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          roles = Array.isArray(parsed.roles)
+            ? parsed.roles.map((r: any) => (typeof r === "string" ? r : r.role))
+            : [];
+        } catch {}
+      }
+      navigate(getHighestRoleRoute(roles));
+    } else setError("Invalid credentials");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

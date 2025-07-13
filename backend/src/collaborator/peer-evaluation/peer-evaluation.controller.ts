@@ -8,10 +8,14 @@ import {
   Param,
   Delete,
   Query,
+  Patch,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { PeerEvaluationService } from './peer-evaluation.service';
 import { CreatePeerEvaluationDto } from './dto/create-peer-evaluation.dto';
+import { UpdatePeerEvaluationDto } from './dto/update-peer-evaluation.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { EvaluationCycleService } from '../../evaluation-cycle/evaluation-cycle.service';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -24,7 +28,10 @@ import {
 @UseGuards(JwtAuthGuard)
 @Controller('peer-evaluations')
 export class PeerEvaluationController {
-  constructor(private readonly service: PeerEvaluationService) {}
+  constructor(
+    private readonly service: PeerEvaluationService,
+    private readonly cycleService: EvaluationCycleService,
+  ) {}
 
   // cria uma nova avaliação por pares
   @Post()
@@ -36,6 +43,42 @@ export class PeerEvaluationController {
   create(@Body() dto: CreatePeerEvaluationDto, @Request() req) {
     const evaluatorId = req.user.userId;
     return this.service.create(evaluatorId, dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a peer evaluation' })
+  @ApiResponse({
+    status: 200,
+    description: 'Peer evaluation successfully updated.',
+  })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdatePeerEvaluationDto,
+    @Request() req,
+  ) {
+    const evaluatorId = req.user.userId;
+    return this.service.update(evaluatorId, id, dto);
+  }
+
+  // busca ou cria uma avaliação vazia para o colaborador
+  @Get('find-or-create/:evaluateeId')
+  @ApiOperation({ summary: 'Find or create empty peer evaluation' })
+  async findOrCreateEmptyEvaluation(
+    @Request() req,
+    @Param('evaluateeId', ParseIntPipe) evaluateeId: number,
+  ) {
+    const evaluatorId = req.user.userId;
+    const activeCycle = await this.cycleService.findActiveCycle('IN_PROGRESS_COLLABORATOR' as any);
+
+    if (!activeCycle) {
+      throw new Error('No active evaluation cycle found');
+    }
+
+    return this.service.findOrCreateEmptyEvaluation(
+      evaluatorId,
+      evaluateeId,
+      activeCycle.id,
+    );
   }
 
   // retorna as avaliações recebidas por um usuário em um ciclo específico
@@ -76,7 +119,8 @@ export class PeerEvaluationController {
   // remove uma avaliação de pares
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a peer evaluation by id' })
-  remove(@Param('id') id: string) {
-    return this.service.remove(+id);
+  remove(@Param('id') id: string, @Request() req: any) {
+    const userId = req.user.userId;
+    return this.service.remove(+id, userId);
   }
 }

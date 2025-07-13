@@ -98,7 +98,11 @@ CREATE TABLE "EvaluationCycle" (
     "name" TEXT NOT NULL,
     "startDate" DATETIME NOT NULL,
     "endDate" DATETIME NOT NULL,
-    "status" TEXT NOT NULL
+    "status" TEXT NOT NULL,
+    "submittedAt" DATETIME,
+    "isSubmit" BOOLEAN NOT NULL DEFAULT false,
+    "type" TEXT NOT NULL DEFAULT 'COLLABORATOR',
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- CreateTable
@@ -286,6 +290,14 @@ CREATE TABLE "ManagerCollaborator" (
     CONSTRAINT "ManagerCollaborator_collaboratorId_fkey" FOREIGN KEY ("collaboratorId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
+-- CreateTable
+CREATE TABLE "BrutalFactsCache" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "cycleId" INTEGER NOT NULL,
+    "data" JSONB NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
 
@@ -294,3 +306,9 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Project_name_key" ON "Project"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AISummary_userId_cycleId_key" ON "AISummary"("userId", "cycleId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "BrutalFactsCache_cycleId_key" ON "BrutalFactsCache"("cycleId");

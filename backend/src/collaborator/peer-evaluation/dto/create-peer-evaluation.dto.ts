@@ -18,7 +18,7 @@ class EvaluationProjectDto {
 
   @ApiProperty({ example: 6, description: 'Duração em meses' })
   @IsInt()
-  @Min(1)
+  @Min(0)
   period: number;
 }
 

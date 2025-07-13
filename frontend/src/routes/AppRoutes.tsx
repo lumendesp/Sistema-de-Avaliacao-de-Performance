@@ -10,10 +10,15 @@ import ComparisonLayout from "../layouts/ComparisonLayout"; // novo
 
 import Dashboard from "../pages/collaborator/Dashboard";
 import SelfEvaluation from "../pages/collaborator/evaluation/SelfEvaluation";
-import PeerEvaluation from "../pages/collaborator/evaluation/PeerEvaluation";
+import PeerEvaluationPage from "../pages/collaborator/evaluation/PeerEvaluation";
 import MentorEvaluation from "../pages/collaborator/evaluation/MentorEvaluation";
 import ReferenceEvaluation from "../pages/collaborator/evaluation/ReferenceEvaluation";
 import ComparisonEvaluation from "../pages/collaborator/evaluation/ComparisonEvaluation"; // novo
+import PeerEvaluationComparison from "../pages/collaborator/evaluation/PeerEvaluationComparison";
+import MentorEvaluationComparison from "../pages/collaborator/evaluation/MentorEvaluationComparison";
+import ReferenceEvaluationComparison from "../pages/collaborator/evaluation/ReferenceEvaluationComparison";
+import OKRCollaborator from "../pages/collaborator/OKR";
+import PDICollaborator from "../pages/collaborator/PDI";
 
 import Login from "../pages/login/Login";
 import Unauthorized from "../pages/login/Unauthorized";
@@ -25,15 +30,21 @@ import DashboardManagerPage from "../pages/DashboardManagerPage";
 import CollaboratorEvaluation from "../pages/manager/Evaluation.tsx";
 import EvolutionManager from "../pages/manager/EvolutionManager.tsx";
 import PeerEvaluationManager from "../pages/manager/Evaluation360.tsx";
+import OKRManager from "../pages/manager/OKR";
+import PDIManager from "../pages/manager/PDI";
 
 import Committee from "../pages/committee/Committee";
 import Equalization from "../pages/committee/Equalization";
+import OKRCommittee from "../pages/committee/OKR";
+import PDICommittee from "../pages/committee/PDI";
 
 import RHDashboard from "../pages/RH/RHDashboard/RHDashboard";
 import RHCollaboratorsPage from "../pages/RH/RHCollaborators/RHCollaborators";
 import RHCriteriaSettingsPage from "../pages/RH/RHCriteriaSettings/RHCriteriaSettings";
+import OKRRH from "../pages/RH/OKR";
+import PDIRH from "../pages/RH/PDI";
 
-import BrutalFacts from '../pages/manager/BrutalFacts';
+import BrutalFacts from "../pages/manager/BrutalFacts";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -57,7 +68,10 @@ const AppRoutes = () => (
             </ProtectedRoute>
           }
         />
-        <Route path ="/collaborator/progress" element={<EvolutionCollaborator />} />
+        <Route
+          path="/collaborator/progress"
+          element={<EvolutionCollaborator />}
+        />
         <Route
           path="evaluation"
           element={
@@ -68,10 +82,15 @@ const AppRoutes = () => (
         >
           <Route index element={<Navigate to="self-evaluation" />} />
           <Route path="self-evaluation" element={<SelfEvaluation />} />
-          <Route path="peer-evaluation" element={<PeerEvaluation />} />
+          <Route path="peer-evaluation" element={<PeerEvaluationPage />} />
           <Route path="mentor-evaluation" element={<MentorEvaluation />} />
-          <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
-        </Route>
+                  <Route
+          path="reference-evaluation"
+          element={<ReferenceEvaluation />}
+        />
+      </Route>
+        <Route path="okr" element={<OKRCollaborator />} />
+        <Route path="pdi" element={<PDICollaborator />} />
         <Route
           path="evaluation-comparison"
           element={
@@ -81,9 +100,18 @@ const AppRoutes = () => (
           }
         >
           <Route index element={<ComparisonEvaluation />} />
-          <Route path="peer-evaluation" element={<PeerEvaluation />} />
-          <Route path="mentor-evaluation" element={<MentorEvaluation />} />
-          <Route path="reference-evaluation" element={<ReferenceEvaluation />} />
+          <Route
+            path="peer-evaluation"
+            element={<PeerEvaluationComparison />}
+          />
+          <Route
+            path="mentor-evaluation"
+            element={<MentorEvaluationComparison />}
+          />
+          <Route
+            path="reference-evaluation"
+            element={<ReferenceEvaluationComparison />}
+          />
         </Route>
       </Route>
 
@@ -111,6 +139,8 @@ const AppRoutes = () => (
         </Route>
         <Route path="historico" element={<EvolutionManager />} />
         <Route path="brutal-facts" element={<BrutalFacts />} />
+        <Route path="okr" element={<OKRManager />} />
+        <Route path="pdi" element={<PDIManager />} />
       </Route>
 
       <Route
@@ -136,6 +166,8 @@ const AppRoutes = () => (
           />
         </Route>
         <Route path="historico" element={<EvolutionManager />} />
+        <Route path="okr" element={<OKRManager />} />
+        <Route path="pdi" element={<PDIManager />} />
       </Route>
 
       <Route
@@ -148,6 +180,8 @@ const AppRoutes = () => (
       >
         <Route index element={<Committee />} />
         <Route path="equalizations" element={<Equalization />} />
+        <Route path="okr" element={<OKRCommittee />} />
+        <Route path="pdi" element={<PDICommittee />} />
       </Route>
 
       <Route
@@ -166,6 +200,8 @@ const AppRoutes = () => (
 
         {/* No futuro, a rota para /rh/criteria viria aqui */}
         <Route path="criteria" element={<RHCriteriaSettingsPage />} />
+        <Route path="okr" element={<OKRRH />} />
+        <Route path="pdi" element={<PDIRH />} />
       </Route>
       <Route path="/perfil" element={<Profile />} />
     </Routes>

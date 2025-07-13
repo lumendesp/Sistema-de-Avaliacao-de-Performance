@@ -3,6 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import EvaluationComparisonGroupList from "../../../components/ComparisonEvaluationForm/EvaluationComparisonGroupList";
 import { useAuth } from "../../../context/AuthContext";
 import type { TrackWithGroups } from "../../../types/selfEvaluation";
+import SelfEvaluationGroupReadOnlyList from "../../../components/SelfEvaluationForm/ReadOnly/SelfEvaluationGroupListReadOnly";
 
 type OutletContextType = {
   selectedCycleId: number | null;
@@ -55,7 +56,7 @@ export default function ComparisonEvaluation() {
     );
 
   return (
-    <EvaluationComparisonGroupList
+    <SelfEvaluationGroupReadOnlyList
       cycleId={selectedCycleId}
       trackData={trackData}
     />
