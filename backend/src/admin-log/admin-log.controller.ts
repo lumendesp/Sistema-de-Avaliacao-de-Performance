@@ -131,8 +131,6 @@ export class AdminLogController {
       ? req.user.roles.filter((r: any) => typeof r === 'string')
       : [];
     
-    console.log('Controller Debug - User roles:', userRoles);
-    console.log('Controller Debug - Full user object:', req.user);
     
     return this.adminLogService.getDashboardStats(userRoles);
   }

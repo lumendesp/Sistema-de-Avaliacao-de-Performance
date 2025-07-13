@@ -100,6 +100,14 @@ function RhCriteriaSettings() {
     // Local state for UI
     const [editingTrackIdx, setEditingTrackIdx] = useState<number | null>(null);
     const [editingTrackName, setEditingTrackName] = useState('');
+    
+    // Track last update time
+    const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
+
+    // Helper function to update last update time
+    const updateLastModifiedTime = () => {
+        setLastUpdateTime(new Date());
+    };
 
     // Load data from backend
     useEffect(() => {
@@ -140,6 +148,7 @@ function RhCriteriaSettings() {
                 tIdx === idx ? { ...t, name: newName } : t
             ));
             setEditingTrackIdx(null);
+            updateLastModifiedTime();
         } catch (error) {
             console.error('Error updating track:', error);
             alert('Erro ao atualizar trilha');
@@ -177,6 +186,7 @@ function RhCriteriaSettings() {
             // Refresh data to get the complete structure
             const updatedTracks = await getTracksWithCriteria();
             setTracksWithCriteria(updatedTracks);
+            updateLastModifiedTime();
         } catch (error) {
             console.error('Error creating track:', error);
             alert('Erro ao criar trilha');
@@ -214,6 +224,7 @@ function RhCriteriaSettings() {
             // Refresh data
             const updatedTracks = await getTracksWithCriteria();
             setTracksWithCriteria(updatedTracks);
+            updateLastModifiedTime();
         } catch (error) {
             console.error('Error adding criterion:', error);
             alert('Erro ao adicionar critério à trilha');
@@ -246,6 +257,7 @@ function RhCriteriaSettings() {
             // Refresh data
             const updatedTracks = await getTracksWithCriteria();
             setTracksWithCriteria(updatedTracks);
+            updateLastModifiedTime();
         } catch (error) {
             console.error('Error creating pillar:', error);
             alert('Erro ao criar pilar');
@@ -285,6 +297,7 @@ function RhCriteriaSettings() {
             // Refresh data
             const updatedTracks = await getTracksWithCriteria();
             setTracksWithCriteria(updatedTracks);
+            updateLastModifiedTime();
         } catch (error) {
             console.error('Error adding criterion to group:', error);
             alert('Erro ao adicionar critério ao pilar');
@@ -304,6 +317,7 @@ function RhCriteriaSettings() {
             // Refresh data
             const updatedTracks = await getTracksWithCriteria();
             setTracksWithCriteria(updatedTracks);
+            updateLastModifiedTime();
         } catch (error) {
             console.error('Error updating criterion group:', error);
             alert('Erro ao atualizar pilar');
@@ -340,6 +354,7 @@ function RhCriteriaSettings() {
             // Refresh data
             const updatedTracks = await getTracksWithCriteria();
             setTracksWithCriteria(updatedTracks);
+            updateLastModifiedTime();
         } catch (error) {
             console.error('Error adding criterion to group:', error);
             alert('Erro ao adicionar critério ao pilar');
@@ -357,6 +372,7 @@ function RhCriteriaSettings() {
             // Refresh data from backend to ensure consistency
             const updatedTracks = await getTracksWithCriteria();
             setTracksWithCriteria(updatedTracks);
+            updateLastModifiedTime();
             
             // Close the expanded box if it was the deleted track
             if (openBoxIndex === idx) setOpenBoxIndex(null);
@@ -380,6 +396,7 @@ function RhCriteriaSettings() {
             // Refresh data
             const updatedTracks = await getTracksWithCriteria();
             setTracksWithCriteria(updatedTracks);
+            updateLastModifiedTime();
         } catch (error) {
             console.error('Error removing criterion:', error);
             alert('Erro ao remover critério da trilha');
@@ -399,6 +416,7 @@ function RhCriteriaSettings() {
             // Refresh data
             const updatedTracks = await getTracksWithCriteria();
             setTracksWithCriteria(updatedTracks);
+            updateLastModifiedTime();
         } catch (error) {
             console.error('Error deleting criterion group:', error);
             alert('Erro ao deletar pilar');
@@ -425,6 +443,7 @@ function RhCriteriaSettings() {
             // Refresh data
             const updatedTracks = await getTracksWithCriteria();
             setTracksWithCriteria(updatedTracks);
+            updateLastModifiedTime();
         } catch (error) {
             console.error('Error updating criterion:', error);
             alert('Erro ao atualizar critério');
@@ -571,7 +590,14 @@ function RhCriteriaSettings() {
         <div className="w-full">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Critérios de Avaliação</h1>
+                <div className="flex flex-col">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Critérios de Avaliação</h1>
+                    {lastUpdateTime && (
+                        <span className="text-sm text-gray-500 mt-1">
+                            Última atualização: {lastUpdateTime.toLocaleDateString('pt-BR')}
+                        </span>
+                    )}
+                </div>
                 <button 
                     className="bg-[#08605F] text-white px-3 sm:px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto"
                     onClick={handleSave}
