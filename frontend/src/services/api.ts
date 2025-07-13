@@ -1017,3 +1017,107 @@ export const getMyManagerEvaluations = async (cycleId?: number) => {
   if (!res.ok) throw new Error("Erro ao buscar minhas avaliações de gestor");
   return res.json();
 };
+
+// Climate Survey
+export const createClimateSurvey = async (data: {
+  title: string;
+  description?: string;
+  endDate: string;
+  questions: { text: string }[];
+}) => {
+  const res = await fetch(`${API_URL}/rh/climate-survey`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao criar pesquisa de clima");
+  }
+
+  return res.json();
+};
+
+export const getClimateSurveys = async () => {
+  const res = await fetch(`${API_URL}/rh/climate-survey`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar pesquisas de clima");
+  }
+
+  return res.json();
+};
+
+export const getClimateSurveyById = async (surveyId: number) => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/${surveyId}`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar pesquisa");
+  }
+
+  return res.json();
+};
+
+export const getClimateSurveyResponses = async (surveyId: number) => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/${surveyId}/responses`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar respostas da pesquisa");
+  }
+
+  return res.json();
+};
+
+export const closeClimateSurvey = async (surveyId: number, endDate?: string) => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/${surveyId}/close`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ endDate }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao encerrar pesquisa");
+  }
+
+  return res.json();
+};
+
+export const reopenClimateSurvey = async (surveyId: number) => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/${surveyId}/reopen`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao reabrir pesquisa");
+  }
+
+  return res.json();
+};
+
+export const countCollaborators = async () => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/count`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao contar colaboradores");
+  }
+
+  return res.json(); // vai retornar algo como: { count: 42 }
+};
+
+

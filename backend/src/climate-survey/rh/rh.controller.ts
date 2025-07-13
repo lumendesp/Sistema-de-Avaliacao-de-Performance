@@ -33,6 +33,18 @@ export class RhController {
     return this.rhService.getSurveySummaries(userId);
   }
 
+  
+  @Get('count')
+  countCollaborators() {
+    return this.rhService.countCollaborators();
+  }
+
+  @Get(':id')
+  async findOne(@Req() req, @Param('id') surveyId: string) {
+    const userId = req.user.userId;
+    return this.rhService.getSurveyById(userId, parseInt(surveyId));
+  }
+
   @Get(':id/responses')
   async getResponses(@Req() req, @Param('id') surveyId: string) {
     const userId = req.user.userId;
@@ -53,4 +65,5 @@ export class RhController {
   async reopen(@Param('id') id: string) {
     return this.rhService.reopenSurvey(Number(id));
   }
+
 }

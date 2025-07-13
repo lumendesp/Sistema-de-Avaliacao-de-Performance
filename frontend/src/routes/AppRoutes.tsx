@@ -37,6 +37,10 @@ import RHCollaboratorsPage from "../pages/RH/RHCollaborators/RHCollaborators";
 import RHCriteriaSettingsPage from "../pages/RH/RHCriteriaSettings/RHCriteriaSettings";
 
 import BrutalFacts from "../pages/manager/BrutalFacts";
+import RHClimateSurvey from "../pages/RH/RHClimateSurvey/RHClimateSurvey.tsx";
+import RHCreateClimateSurvey from "../pages/RH/RHClimateSurvey/RHCreateClimateSurvey.tsx";
+import RHClimateSurveyDetail from "../pages/RH/RHClimateSurvey/RHClimateSurveyDetail.tsx";
+import RHSurveys from "../pages/RH/RHSurveys/RHSurveys.tsx";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -184,6 +188,12 @@ const AppRoutes = () => (
 
         {/* No futuro, a rota para /rh/criteria viria aqui */}
         <Route path="criteria" element={<RHCriteriaSettingsPage />} />
+
+        <Route path="climate-survey" element={<RHClimateSurvey />} />
+        <Route path="climate-survey/create" element={<RHCreateClimateSurvey />} />
+        <Route path="climate-survey/:id" element={<RHClimateSurveyDetail />} />
+
+        {/* <Route path="climate-surveys" element={<RHSurveys />} /> */}
       </Route>
       <Route path="/perfil" element={<Profile />} />
     </Routes>

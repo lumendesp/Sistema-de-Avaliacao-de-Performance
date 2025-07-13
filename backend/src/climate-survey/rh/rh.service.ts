@@ -70,6 +70,36 @@ export class RhService {
     });
   }
 
+  async getSurveyById(userId: number, surveyId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { roles: true },
+    });
+
+    if (!user || !user.roles.some((r) => r.role === 'HR')) {
+      throw new ForbiddenException('Apenas RH pode visualizar pesquisas');
+    }
+
+    const survey = await this.prisma.climateSurvey.findUnique({
+      where: {
+        id: surveyId,
+        createdById: userId,
+      },
+      include: {
+        questions: true,
+        _count: {
+          select: { responses: true },
+        },
+      },
+    });
+
+    if (!survey) {
+      throw new NotFoundException('Pesquisa não encontrada');
+    }
+
+    return survey;
+  }
+
   async getSurveyResponses(userId: number, surveyId: number) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -132,6 +162,18 @@ export class RhService {
       where: { id: surveyId },
       data: {
         isActive: true,
+      },
+    });
+  }
+
+  async countCollaborators() {
+    return this.prisma.user.count({
+      where: {
+        roles: {
+          some: {
+            role: 'COLLABORATOR',
+          },
+        },
       },
     });
   }
