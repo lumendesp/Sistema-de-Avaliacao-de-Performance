@@ -1,32 +1,103 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
-import { API_URL } from '../../services/api';
+import { API_URL, fetchActiveEvaluationCycle } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+
+interface CurrentCycle {
+  id: number;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  daysRemaining: number;
+  isOverdue: boolean;
+}
 
 const PlanoFuturo: React.FC = () => {
+  const { user } = useAuth();
   const [pending, setPending] = useState<number>(0);
+  const [currentCycle, setCurrentCycle] = useState<CurrentCycle | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPending = async () => {
+    const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/ciclos/dashboard/manager`, {
+        
+        // Buscar dados do dashboard (pending)
+        const dashboardRes = await fetch(`${API_URL}/ciclos/dashboard/manager`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           }
         });
-        if (!res.ok) throw new Error('Erro ao buscar métricas');
-        const data = await res.json();
-        setPending(Number(data.pendingCollaborators || 0));
-      } catch {
-        setPending(0);
+        if (dashboardRes.ok) {
+          const dashboardData = await dashboardRes.json();
+          setPending(Number(dashboardData.pendingCollaborators || 0));
+        }
+
+        // Descobrir o role principal do usuário (primeiro role)
+        const data = await fetchActiveEvaluationCycle('MANAGER');
+        console.log('Cycle data received:', data);
+        if (data && data.endDate) {
+          const endDate = new Date(data.endDate);
+          const today = new Date();
+          const diffTime = endDate.getTime() - today.getTime();
+          const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const isOverdue = daysRemaining < 0;
+          setCurrentCycle({
+            ...data,
+            daysRemaining,
+            isOverdue,
+          });
+        } else {
+          setCurrentCycle(data);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar dados:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchPending();
-  }, []);
+
+    fetchData();
+  }, [user]);
+
+  // Função para determinar a cor baseada no prazo
+  const getCycleColor = (daysRemaining: number) => {
+    if (daysRemaining > 30) {
+      return {
+        bg: 'bg-blue-50',
+        text: 'text-blue-600',
+        border: 'border-blue-200'
+      };
+    } else if (daysRemaining > 7) {
+      return {
+        bg: 'bg-yellow-50',
+        text: 'text-yellow-600',
+        border: 'border-yellow-200'
+      };
+    } else {
+      return {
+        bg: 'bg-red-50',
+        text: 'text-red-600',
+        border: 'border-red-200'
+      };
+    }
+  };
+
+  // Função para determinar o texto do prazo
+  const getDeadlineText = (daysRemaining: number, isOverdue: boolean) => {
+    if (isOverdue) {
+      return `Atrasado há ${Math.abs(daysRemaining)} dia${Math.abs(daysRemaining) > 1 ? 's' : ''}`;
+    } else if (daysRemaining === 0) {
+      return 'Termina hoje';
+    } else if (daysRemaining === 1) {
+      return 'Termina amanhã';
+    } else {
+      return `Termina em ${daysRemaining} dias`;
+    }
+  };
 
   if (loading) return null;
 
@@ -45,13 +116,17 @@ const PlanoFuturo: React.FC = () => {
                 </div>
               </div>
             )}
-            <div className="flex items-center p-4 bg-blue-50 rounded-lg">
-              <ClockIcon className="h-5 w-5 text-blue-600 mr-3" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Ciclo de avaliação atual</p>
-                <p className="text-sm text-gray-500">Termina em 15 dias</p>
+            {currentCycle && (
+              <div className={`flex items-center p-4 rounded-lg ${getCycleColor(currentCycle.daysRemaining).bg} ${getCycleColor(currentCycle.daysRemaining).border} border`}>
+                <ClockIcon className={`h-5 w-5 mr-3 ${getCycleColor(currentCycle.daysRemaining).text}`} />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Ciclo de avaliação atual: {currentCycle.name}</p>
+                  <p className={`text-sm ${getCycleColor(currentCycle.daysRemaining).text} font-medium`}>
+                    {getDeadlineText(currentCycle.daysRemaining, currentCycle.isOverdue)}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

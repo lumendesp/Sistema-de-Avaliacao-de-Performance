@@ -1,3 +1,5 @@
+import { data } from "react-router-dom";
+
 export const API_URL = "http://localhost:3000";
 
 // Função auxiliar para obter o token do localStorage
@@ -63,16 +65,100 @@ export const submitMentorEvaluation = async (
   return res.json();
 };
 
-export const fetchActiveEvaluationCycle = async () => {
-  const res = await fetch(`${API_URL}/evaluation-cycle/active`, {
-    headers: getAuthHeaders(),
-  });
-
+// Agora aceita um parâmetro opcional de role
+export const fetchActiveEvaluationCycle = async (role?: string) => {
+  let mainRole = role;
+  if (!mainRole) {
+    // Buscar o usuário do localStorage para obter o role
+    const userStr = localStorage.getItem("user");
+    mainRole = "COLLABORATOR"; // default
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        mainRole = user.roles?.[0] || "COLLABORATOR";
+      } catch (error) {
+        console.error("Erro ao parsear usuário do localStorage:", error);
+      }
+    }
+  }
+  const res = await fetch(
+    `${API_URL}/evaluation-cycle/active?type=${mainRole}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   if (!res.ok) {
     throw new Error("Erro ao buscar ciclo ativo");
   }
-
   return res.json();
+};
+
+export const fetchEvaluationCompletionStatus = async (cycleId: number) => {
+  const res = await fetch(
+    `http://localhost:3000/evaluation-completion/status?cycleId=${cycleId}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Erro ao buscar status da avaliação");
+  }
+
+  return (await res.json()) as {
+    completionStatus: {
+      self: boolean;
+      peer: boolean;
+      mentor: boolean;
+      reference: boolean;
+    };
+    lastSubmittedAt: string | null;
+    isSubmit: boolean;
+  };
+};
+
+export const submitEvaluation = async (cycleId: number) => {
+  const res = await fetch(
+    `http://localhost:3000/evaluation-completion/submit`,
+    {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ cycleId }),
+    }
+  );
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    const message = errorBody?.message || "Erro ao enviar avaliações";
+    throw new Error(message);
+  }
+
+  return (await res.json()) as {
+    submittedAt: string;
+  };
+};
+
+export const unlockEvaluations = async (cycleId: number) => {
+  const res = await fetch(
+    "http://localhost:3000/evaluation-completion/unlock",
+    {
+      method: "PATCH",
+      headers: {
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ cycleId }),
+    }
+  );
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    const message = errorBody?.message || "Erro ao desbloquear avaliações";
+    throw new Error(message);
+  }
+
+  return await res.json();
 };
 
 export const fetchMentorEvaluation = async (evaluateeId: number) => {
@@ -83,6 +169,44 @@ export const fetchMentorEvaluation = async (evaluateeId: number) => {
 
   if (!res.ok) {
     throw new Error("Erro ao buscar avaliação existente");
+  }
+
+  return res.json();
+};
+
+export const findOrCreateEmptyMentorEvaluation = async (
+  evaluateeId: number
+) => {
+  const res = await fetch(
+    `${API_URL}/mentor-evaluations/find-or-create/${evaluateeId}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Erro ao buscar ou criar avaliação vazia");
+  }
+
+  return res.json();
+};
+
+export const updateMentorEvaluation = async (
+  evaluationId: number,
+  data: { score?: number; justification?: string }
+) => {
+  const res = await fetch(`${API_URL}/mentor-evaluations/${evaluationId}`, {
+    method: "PATCH",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    throw new Error("Erro ao atualizar avaliação do mentor");
   }
 
   return res.json();
@@ -138,6 +262,38 @@ export const fetchMyReferences = async (cycleId: number) => {
   return res.json();
 };
 
+export async function updateReference(id: number, newJustification: string) {
+  const res = await fetch(`${API_URL}/references/${id}`, {
+    method: "PATCH",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ justification: newJustification }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao editar referência");
+  }
+
+  return res.json();
+}
+
+export async function deleteReference(id: number) {
+  const res = await fetch(`${API_URL}/references/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao deletar referência");
+  }
+
+  return res.json();
+}
+
 export const createPeerEvaluation = async (evaluationData: {
   evaluateeId: number;
   cycleId: number;
@@ -175,6 +331,78 @@ export const fetchMyPeerEvaluations = async (cycleId: number) => {
   return res.json(); // retorna array de avaliações
 };
 
+export const findOrCreateEmptyPeerEvaluation = async (evaluateeId: number) => {
+  const res = await fetch(
+    `${API_URL}/peer-evaluations/find-or-create/${evaluateeId}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Erro ao buscar ou criar avaliação vazia");
+  }
+
+  return res.json();
+};
+
+export const updatePeerEvaluation = async (
+  evaluationId: number,
+  data: {
+    score?: number;
+    strengths?: string;
+    improvements?: string;
+    motivation?: string;
+    projects?: { name: string; period: number }[];
+  }
+) => {
+  const res = await fetch(`${API_URL}/peer-evaluations/${evaluationId}`, {
+    method: "PATCH",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    throw new Error("Erro ao atualizar avaliação por pares");
+  }
+
+  return res.json();
+};
+
+export const deletePeerEvaluation = async (id: number) => {
+  const res = await fetch(`${API_URL}/peer-evaluations/${id}`, {
+    method: "DELETE",
+    headers: {
+      ...getAuthHeaders(), // reutiliza a lógica de token
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Erro ao excluir avaliação");
+  }
+
+  return true;
+};
+
+export const getProjects = async () => {
+  const res = await fetch(`${API_URL}/projects`, {
+    method: "GET",
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Erro ao buscar projetos");
+  }
+
+  return res.json(); // deve retornar a lista de projetos
+};
+
 export const fetchAISummary = async (
   userId: number,
   cycleId: number
@@ -205,6 +433,24 @@ export const getUsersWithEvaluationsForCommittee = async () => {
   });
   if (!response.ok) {
     throw new Error("Failed to fetch users");
+  }
+  return response.json();
+};
+
+// Get significant drops for a user in a specific cycle
+export const getSignificantDrops = async (userId: number, cycleId: number) => {
+  const response = await fetch(
+    `${API_URL}/users/${userId}/significant-drops/${cycleId}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!response.ok) {
+    if (response.status === 404) {
+      return null; // No significant drops found
+    }
+    throw new Error("Failed to fetch significant drops");
   }
   return response.json();
 };

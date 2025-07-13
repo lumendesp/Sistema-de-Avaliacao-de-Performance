@@ -1,3 +1,4 @@
+import { UpdateReferenceDto } from './dto/update-reference.dto';
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateReferenceDto } from './dto/create-reference.dto';
@@ -28,6 +29,78 @@ export class ReferenceService {
         cycleId,
         justification: encrypt(justification),
       },
+    });
+  }
+  async updateReference(
+    referenceId: number,
+    providerId: number,
+    dto: UpdateReferenceDto,
+  ) {
+    console.log(referenceId);
+    console.log(providerId);
+    const reference = await this.prisma.reference.findUnique({
+      where: { id: referenceId },
+      include: {
+        cycle: true,
+      },
+    });
+
+    if (!reference) {
+      throw new BadRequestException('Referência não encontrada.');
+    }
+
+    if (reference.providerId !== providerId) {
+      throw new BadRequestException(
+        'Você não tem permissão para editar esta referência.',
+      );
+    }
+
+    const now = new Date();
+    const endDate = new Date(reference.cycle.endDate);
+
+    if (now > endDate) {
+      throw new BadRequestException(
+        'O ciclo está finalizado. Não é possível editar esta referência.',
+      );
+    }
+
+    const updated = await this.prisma.reference.update({
+      where: { id: referenceId },
+      data: {
+        justification: encrypt(dto.justification),
+      },
+    });
+    return {
+      ...updated,
+      justification: decrypt(updated.justification),
+    };
+  }
+
+  async deleteReference(referenceId: number, providerId: number) {
+    const reference = await this.prisma.reference.findUnique({
+      where: { id: referenceId },
+      include: { cycle: true },
+    });
+
+    if (!reference) {
+      throw new BadRequestException('Referência não encontrada.');
+    }
+
+    if (reference.providerId !== providerId) {
+      throw new BadRequestException(
+        'Você não tem permissão para deletar esta referência.',
+      );
+    }
+
+    const now = new Date();
+    if (new Date(reference.cycle.endDate) < now) {
+      throw new BadRequestException(
+        'Ciclo finalizado. Não é possível apagar esta referência.',
+      );
+    }
+
+    return this.prisma.reference.delete({
+      where: { id: referenceId },
     });
   }
 

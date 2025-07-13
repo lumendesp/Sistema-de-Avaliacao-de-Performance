@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
-import DashboardHeader from '../../components/CollaboratorDashboard/DashboardHeader';
-import EvaluationStatusButton from '../../components/EvaluationStatusButton/EvaluationStatusButton';
-import EvaluationCardList from '../../components/CollaboratorDashboard/EvaluationCardList';
-import PerformanceChart from '../../components/CollaboratorDashboard/PerformanceChart';
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useAuth } from "../../context/AuthContext";
+import DashboardHeader from "../../components/CollaboratorDashboard/DashboardHeader";
+import EvaluationStatusButton from "../../components/EvaluationStatusButton/EvaluationStatusButton";
+import EvaluationCardList from "../../components/CollaboratorDashboard/EvaluationCardList";
+import PerformanceChart from "../../components/CollaboratorDashboard/PerformanceChart";
 
 interface Cycle {
   id: number;
   name: string;
   startDate: string;
   endDate: string;
-  status: 'IN_PROGRESS' | 'CLOSED' | 'PUBLISHED';
+  status: "IN_PROGRESS" | "CLOSED" | "PUBLISHED";
 }
 
 export default function Dashboard() {
@@ -22,41 +22,61 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchCycle = async () => {
       try {
-        const response = await axios.get<Cycle>('http://localhost:3000/evaluation-cycle/recent', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // Na página de colaborador, sempre buscar ciclo do tipo COLLABORATOR
+        const mainRole = "COLLABORATOR";
+        console.log("User roles:", user?.roles);
+        console.log("Página de colaborador - buscando ciclo do tipo:", mainRole);
+
+        const response = await axios.get<Cycle>(
+          `http://localhost:3000/ciclos/current?type=${mainRole}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         const cicloMaisRecente = response.data;
+        console.log("Ciclo recebido do backend:", cicloMaisRecente);
         setCycle(cicloMaisRecente);
 
-        const endDate = new Date(cicloMaisRecente.endDate);
-        const hoje = new Date();
-        const diff = Math.ceil((endDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-        setDiasRestantes(diff > 0 ? diff : 0);
+        if (cicloMaisRecente && cicloMaisRecente.endDate) {
+          const endDate = new Date(cicloMaisRecente.endDate);
+          const hoje = new Date();
+          const diff = Math.ceil(
+            (endDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)
+          );
+          setDiasRestantes(diff > 0 ? diff : 0);
+        }
       } catch (error) {
-        console.error('Erro ao buscar ciclo mais recente:', error);
+        console.error("Erro ao buscar ciclo mais recente:", error);
       }
     };
 
     fetchCycle();
-  }, [token]);
+  }, [token, user]);
 
-  const mapCycleStatusToUIStatus = (status: string): 'aberto' | 'emBreve' | 'disponivel' => {
-    switch (status) {
-      case 'IN_PROGRESS':
-        return 'aberto';
-      case 'CLOSED':
-        return 'emBreve';
-      case 'PUBLISHED':
-        return 'disponivel';
-      default:
-        return 'emBreve';
-    }
+  const mapCycleStatusToUIStatus = (
+    status: string
+  ): "aberto" | "emBreve" | "disponivel" => {
+    console.log("Mapeando status:", status);
+    const mappedStatus = (() => {
+      switch (status) {
+        case "IN_PROGRESS":
+          return "aberto";
+        case "CLOSED":
+          return "emBreve";
+        case "PUBLISHED":
+          return "disponivel";
+        default:
+          return "emBreve";
+      }
+    })();
+    console.log("Status mapeado para:", mappedStatus);
+    return mappedStatus;
   };
 
   return (
     <div className="w-full flex flex-col gap-4 p-10 bg-[#f1f1f1]">
-      <DashboardHeader name={user?.name ?? 'Usuário'} />
+      <DashboardHeader name={user?.name ?? "Usuário"} />
       {cycle && diasRestantes !== null && (
         <EvaluationStatusButton
           status={mapCycleStatusToUIStatus(cycle.status)}

@@ -29,7 +29,7 @@ const PeerEvaluationReadOnlyForm = ({
   projects = [],
 }: PeerEvaluationReadOnlyFormProps) => {
   return (
-    <div className="bg-white w-full flex flex-col px-6 py-9 rounded-xl">
+    <div className="bg-white max-w-full w-full flex flex-col px-6 py-9 rounded-xl overflow-hidden">
       <div className="flex justify-between items-center mb-5">
         <div className="flex justify-center items-center gap-3">
           <UserIcon initials={initials} size={40} />
@@ -52,7 +52,7 @@ const PeerEvaluationReadOnlyForm = ({
         <StarRatingReadOnly score={score ?? 0} dimmed={true} />
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-2 mb-4">
         <div className="flex flex-col gap-1 flex-1">
           <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
             Pontos fortes
@@ -75,20 +75,8 @@ const PeerEvaluationReadOnlyForm = ({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <div className="flex flex-col gap-1">
-          <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-            Projeto em que atuaram juntos (obrigatório terem atuado juntos)
-          </p>
-          <input
-            type="text"
-            className="w-full h-9 p-2 rounded border border-gray-300 text-sm text-[#1D1D1D] bg-gray-100"
-            value={projects[0]?.name || ""}
-            readOnly
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
+      <div className="flex flex-col md:flex-row flex-wrap gap-2">
+        <div className="flex flex-col gap-1 flex-1">
           <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
             Você ficaria motivado em trabalhar novamente com este colaborador?
           </p>
@@ -100,17 +88,29 @@ const PeerEvaluationReadOnlyForm = ({
           />
         </div>
 
-        
-        <div className="flex flex-col gap-1">
-          <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-            Período (em meses)
-          </p>
-          <input
-            type="text"
-            className="w-full max-w-28 h-9 p-2 rounded border border-gray-300 text-sm text-[#1D1D1D] bg-gray-100"
-            value={projects[0]?.period?.toString() || ""}
-            readOnly
-          />
+        <div className="flex flex-col sm:flex-row gap-2 flex-1">
+          <div className="flex flex-1 flex-col gap-1">
+            <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
+              Projeto em que atuaram juntos
+            </p>
+            <input
+              type="text"
+              className="w-full h-9 p-2 rounded border border-gray-300 text-sm text-[#1D1D1D] bg-gray-100"
+              value={projects[0]?.name || ""}
+              readOnly
+            />
+          </div>
+          <div className="flex flex-1 flex-col gap-1">
+            <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
+              Período (em meses)
+            </p>
+            <input
+              type="text"
+              className="w-full h-9 p-2 rounded border border-gray-300 text-sm text-[#1D1D1D] bg-gray-100"
+              value={projects[0]?.period?.toString() || ""}
+              readOnly
+            />
+          </div>
         </div>
       </div>
     </div>

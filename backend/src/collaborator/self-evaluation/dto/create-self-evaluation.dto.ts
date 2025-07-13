@@ -1,4 +1,12 @@
-import { IsInt, IsArray, ValidateNested, IsOptional, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsInt,
+  IsArray,
+  ValidateNested,
+  IsOptional,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { CreateSelfEvaluationItemDto } from './create-self-evaluation-item.dto';
@@ -12,12 +20,17 @@ export class CreateSelfEvaluationDto {
     type: [CreateSelfEvaluationItemDto],
     description: 'Lista de critérios avaliados',
   })
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateSelfEvaluationItemDto)
-  items: CreateSelfEvaluationItemDto[];
+  items?: CreateSelfEvaluationItemDto[];
 
-  @ApiProperty({ example: 3.7, required: false, description: 'Média das notas da autoavaliação' })
+  @ApiProperty({
+    example: 3.7,
+    required: false,
+    description: 'Média das notas da autoavaliação',
+  })
   @IsOptional()
   @IsNumber()
   @Min(1)

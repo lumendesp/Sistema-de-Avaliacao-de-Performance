@@ -14,6 +14,5 @@ export class CreateReferenceDto {
     example: 'Foi uma ótima experiência trabalhar com ela no projeto X.',
   })
   @IsString()
-  @IsNotEmpty()
   justification: string;
 }

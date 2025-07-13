@@ -23,7 +23,7 @@ interface CircularProgressProps {
       <div className="relative w-24 h-24">
         <svg height={radius * 2} width={radius * 2}>
           <circle
-            stroke="#e5e7eb" // Tailwind gray-200
+            stroke="#e5e7eb" 
             fill="transparent"
             strokeWidth={stroke}
             r={normalizedRadius}

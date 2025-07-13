@@ -15,6 +15,9 @@ import PeerEvaluation from "../pages/collaborator/evaluation/PeerEvaluation";
 import MentorEvaluation from "../pages/collaborator/evaluation/MentorEvaluation";
 import ReferenceEvaluation from "../pages/collaborator/evaluation/ReferenceEvaluation";
 import ComparisonEvaluation from "../pages/collaborator/evaluation/ComparisonEvaluation"; // novo
+import PeerEvaluationComparison from "../pages/collaborator/evaluation/PeerEvaluationComparison";
+import MentorEvaluationComparison from "../pages/collaborator/evaluation/MentorEvaluationComparison";
+import ReferenceEvaluationComparison from "../pages/collaborator/evaluation/ReferenceEvaluationComparison";
 
 import Login from "../pages/login/Login";
 import Unauthorized from "../pages/login/Unauthorized";
@@ -98,11 +101,17 @@ const AppRoutes = () => (
           }
         >
           <Route index element={<ComparisonEvaluation />} />
-          <Route path="peer-evaluation" element={<PeerEvaluation />} />
-          <Route path="mentor-evaluation" element={<MentorEvaluation />} />
+          <Route
+            path="peer-evaluation"
+            element={<PeerEvaluationComparison />}
+          />
+          <Route
+            path="mentor-evaluation"
+            element={<MentorEvaluationComparison />}
+          />
           <Route
             path="reference-evaluation"
-            element={<ReferenceEvaluation />}
+            element={<ReferenceEvaluationComparison />}
           />
         </Route>
       </Route>
@@ -147,7 +156,10 @@ const AppRoutes = () => (
           <Route index element={<MentorEvaluationPage />} />
           <Route path="" element={<div>Selecione uma aba</div>} />
           <Route path="360" element={<PeerEvaluationMentor />} />
-          <Route path="autoavaliacao" element={<MentorSelfEvaluationReadOnly />} />
+          <Route
+            path="autoavaliacao"
+            element={<MentorSelfEvaluationReadOnly />}
+          />
           <Route path="historico" element={<EvolutionMentor />} />
         </Route>
         <Route path="historico" element={<EvolutionMentor />} />

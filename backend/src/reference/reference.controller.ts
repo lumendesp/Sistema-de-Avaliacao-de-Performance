@@ -1,14 +1,17 @@
 import {
   Controller,
   Post,
+  Patch,
+  Delete,
   Body,
   Request,
   UseGuards,
   Get,
   Param,
-  Query
+  Query,
 } from '@nestjs/common';
 import { ReferenceService } from './reference.service';
+import { UpdateReferenceDto } from './dto/update-reference.dto';
 import { CreateReferenceDto } from './dto/create-reference.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
@@ -31,6 +34,26 @@ export class ReferenceController {
   create(@Body() dto: CreateReferenceDto, @Request() req) {
     const providerId = req.user.userId;
     return this.referenceService.createReference(providerId, dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a reference' })
+  @ApiResponse({ status: 200, description: 'Reference updated successfully.' })
+  updateReference(
+    @Param('id') id: string,
+    @Body() dto: UpdateReferenceDto, // pode reutilizar
+    @Request() req,
+  ) {
+    const providerId = req.user.userId;
+    return this.referenceService.updateReference(+id, providerId, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a reference' })
+  @ApiResponse({ status: 200, description: 'Reference deleted successfully.' })
+  deleteReference(@Param('id') id: string, @Request() req) {
+    const providerId = req.user.userId;
+    return this.referenceService.deleteReference(+id, providerId);
   }
 
   @Get('cycle/:cycleId')

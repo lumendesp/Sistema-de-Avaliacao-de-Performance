@@ -23,6 +23,8 @@ import { AiSummaryModule } from './ai-summary/ai-summary.module';
 import { GeminiModule } from './ai/ai.module';
 import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
 import { ManagerModule } from './manager/manager.module';
+import { ProjectsModule } from './projects/projects.module';
+import { EvaluationCompletionModule } from './evaluation-completion/evaluation-completion.module';
 import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
 import { MentorToCollaboratorEvaluationModule } from './mentor-to-collaborator-evaluation/mentor-to-collaborator-evaluation.module';
 
@@ -55,6 +57,8 @@ import { MentorToCollaboratorEvaluationModule } from './mentor-to-collaborator-e
     GeminiModule,
     ManagerEvaluationModule,
     ManagerModule,
+    ProjectsModule,
+    EvaluationCompletionModule,
     AiBrutalFactsModule,
     MentorToCollaboratorEvaluationModule,
   ],
