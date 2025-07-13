@@ -11,8 +11,8 @@ type PrismaTransactionClient = Omit<PrismaService, '$connect' | '$disconnect' | 
 export interface FileProcessResult {
     status: 'success' | 'error';
     fileName: string;
-    data?: any;      // Os dados de sucesso
-    reason?: string; // O motivo do erro
+    data?: any;
+    reason?: string;
 }
 
 @Injectable()
@@ -33,7 +33,7 @@ export class ImportService {
         'Criatividade e Inovação': 'PENSAR_FORA_DA_CAIXA',
         'Gestão de Pessoas*': 'GENTE',
         'Gestão de Projetos*': 'RESULTADOS',
-        'Gestão Organizacional*': 'EVOLUCAO_DA_ROCKET_COR',
+        'Gestão Organizacional*': 'GESTAO',
         'Novos Clientes**': 'EVOLUCAO_DA_ROCKET_COR',
         'Novos Projetos**': 'EVOLUCAO_DA_ROCKET_COR',
         'Novos Produtos ou Serviços**': 'EVOLUCAO_DA_ROCKET_COR'
@@ -54,9 +54,31 @@ export class ImportService {
         'Discordo Totalmente': 'DISCORDO_TOTALMENTE',
     };
 
+    private readonly criterionToLevelMap: Record<string, number> = {
+        'Organização': 1, 'Imagem': 1, 'Iniciativa': 1, 'Comprometimento': 1,
+        'Flexibilidade': 1, 'Aprendizagem Contínua': 1, 'Trabalho em Equipe': 1,
+        'Relacionamento Inter-Pessoal': 1, 'Produtividade': 1, 'Qualidade': 1,
+        'Foco no Cliente': 1, 'Criatividade e Inovação': 1,
+        'Gestão de Pessoas*': 2, 'Gestão de Projetos*': 2,
+        'Gestão Organizacional*': 2, 'Novos Clientes**': 3,
+        'Novos Projetos**': 3, 'Novos Produtos ou Serviços**': 3
+    };
+
+    private readonly levelToRolesMap: Record<number, Role[]> = {
+        1: [Role.COLLABORATOR],
+        2: [Role.COLLABORATOR, Role.MANAGER],
+        3: [Role.COLLABORATOR, Role.MANAGER, Role.COMMITTEE],
+    };
+
+    private readonly levelToTrackNameMap: Record<number, string> = {
+        1: 'Trilha do Colaborador',
+        2: 'Trilha de Liderança',
+        3: 'Trilha Executiva',
+    };
+
     constructor(private readonly prisma: PrismaService) { }
 
-    // --- NOVA FUNÇÃO PÚBLICA PARA O ZIP ---
+    // --- FUNÇÃO PÚBLICA PARA O ZIP ---
     async importBulkHistory(zipFile: Express.Multer.File, cycleId: number) {
         if (!zipFile || !['application/zip', 'application/x-zip-compressed'].includes(zipFile.mimetype)) {
             throw new BadRequestException('Arquivo inválido. Por favor, envie um arquivo .zip.');
@@ -89,7 +111,7 @@ export class ImportService {
         };
     }
 
-    // --- FUNÇÃO PÚBLICA ANTIGA, AGORA APENAS CHAMA A LÓGICA PRINCIPAL ---
+    // --- FUNÇÃO PÚBLICA PARA UM ÚNICO ARQUIVO XLSX ---
     async importHistory(file: Express.Multer.File, cycleId: number) {
         if (!file) {
             throw new BadRequestException('Nenhum arquivo enviado.');
@@ -109,6 +131,14 @@ export class ImportService {
             // Processa cada aba do Excel
             const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
 
+            // --- Processando a Aba "Autoavaliação" para decisão de cargos ---
+            const autoAvaliacaoSheet = workbook.Sheets['Autoavaliação'];
+            if (!autoAvaliacaoSheet) {
+                throw new BadRequestException('Aba "Autoavaliação" não encontrada no arquivo.');
+            }
+            const autoAvaliacaoData: any[] = xlsx.utils.sheet_to_json(autoAvaliacaoSheet);
+            const { roles: determinedRoles, trackName: determinedTrackName } = this._determineRolesAndTrackFromEvaluation(autoAvaliacaoData);
+
             // Lendo a aba "Perfil" para pegar todos os dados do usuário
             const perfilSheet = workbook.Sheets['Perfil'];
             if (!perfilSheet) {
@@ -121,7 +151,19 @@ export class ImportService {
                 throw new BadRequestException('Dados de perfil ou Email não encontrados no arquivo.');
             }
 
-            // Lógica "Find or Create" (Upsert)
+            //Salvando position, unit e track de acordo com o arquivo excel
+            const positionName = 'Developer';
+            const position = await tx.position.findFirst({ where: { name: positionName } });
+            if (!position) throw new NotFoundException(`Posição "${positionName}" não encontrada.`);
+
+            const unitName = userDataFromExcel['Unidade'];
+            const unit = await tx.unit.findFirst({ where: { name: unitName } });
+            if (!unit) throw new NotFoundException(`Unidade "${unitName}" não encontrada.`);
+
+            const track = await tx.track.findFirst({ where: { name: determinedTrackName } });
+            if (!track) throw new NotFoundException(`Trilha "${determinedTrackName}" não encontrada.`);
+
+            // Lógica "Find or Create"
             let user: User;
 
             // Tenta encontrar o usuário que já existe
@@ -130,27 +172,26 @@ export class ImportService {
             });
 
             if (existingUser) {
-                // Se encontrou, apenas usa o usuário existente
-                user = existingUser;
-                console.log(`Usuário existente encontrado: ${user.name} (ID: ${user.id}).`);
+                // Se encontrou, apenas atualiza o usuário
+                console.log(`Usuário existente encontrado: ${existingUser.name} (ID: ${existingUser.id}).`);
+                user = await tx.user.update({
+                    where: { id: existingUser.id },
+                    data: {
+                        positionId: position.id,
+                        unitId: unit.id,
+                        trackId: track.id,
+                        roles: {
+                            deleteMany: {},
+                            create: determinedRoles.map(role => ({ role })),
+                        },
+                    },
+                });
             } else {
                 // Se NÃO encontrou, SÓ ENTÃO executa a lógica de criação
                 console.log(`Usuário com email ${userDataFromExcel['Email']} não encontrado. Criando novo usuário...`);
 
                 const tempPassword = Math.random().toString(36).slice(-10);
                 const hashedPassword = await bcrypt.hash(tempPassword, 10);
-
-                const positionName = userDataFromExcel['CARGO'] || 'Developer';
-                const position = await tx.position.findFirst({ where: { name: positionName } });
-                if (!position) throw new NotFoundException(`Posição "${positionName}" não encontrada.`);
-
-                const unitName = userDataFromExcel['Unidade'];
-                const unit = await tx.unit.findFirst({ where: { name: unitName } });
-                if (!unit) throw new NotFoundException(`Unidade "${unitName}" não encontrada.`);
-
-                const trackName = userDataFromExcel['TRILHA'] || 'Backend';
-                const track = await tx.track.findFirst({ where: { name: trackName } });
-                if (!track) throw new NotFoundException(`Trilha "${trackName}" não encontrada.`);
 
                 //---Logica para criacao de username unico
                 const baseUsername = userDataFromExcel['Email'].split('@')[0];
@@ -179,7 +220,7 @@ export class ImportService {
                         position: { connect: { id: position.id } },
                         unit: { connect: { id: unit.id } },
                         track: { connect: { id: track.id } },
-                        roles: { create: [{ role: Role.COLLABORATOR }] },
+                        roles: { create: determinedRoles.map(role => ({ role })) },
                     },
                 });
 
@@ -207,12 +248,6 @@ export class ImportService {
             }
 
             // --- Processando a Aba "Autoavaliação" ---
-            const autoAvaliacaoSheet = workbook.Sheets['Autoavaliação'];
-            if (!autoAvaliacaoSheet) {
-                throw new BadRequestException('Aba "Autoavaliação" não encontrada no arquivo.');
-            }
-            const autoAvaliacaoData: any[] = xlsx.utils.sheet_to_json(autoAvaliacaoSheet);
-
             // Agrupar os dados pelo NOVO critério
             const groupedData = new Map<CriterionName, { scores: number[]; justifications: string[] }>();
 
@@ -309,6 +344,10 @@ export class ImportService {
                         const hashedPassword = await bcrypt.hash(tempPassword, 10);
                         const newEmail = `${evaluateeNameFromExcel.toLowerCase().replace('.', '_')}@example.com`;
 
+                        const defaultTrackName = 'Trilha do Colaborador';
+                        const defaultTrack = await tx.track.findFirst({ where: { name: defaultTrackName } });
+                        if (!defaultTrack) throw new NotFoundException(`Trilha padrão "${defaultTrackName}" não encontrada.`);
+
                         evaluatee = await tx.user.create({
                             data: {
                                 email: newEmail,
@@ -319,7 +358,7 @@ export class ImportService {
                                 // Atribui o mesmo cargo/unidade/trilha do avaliador
                                 positionId: user.positionId,
                                 unitId: user.unitId,
-                                trackId: user.trackId,
+                                trackId: defaultTrack.id,
                                 roles: { create: [{ role: Role.COLLABORATOR }] },
                             }
                         });
@@ -430,6 +469,10 @@ export class ImportService {
                         const hashedPassword = await bcrypt.hash(tempPassword, 10);
                         const newEmail = `${receiverNameFromExcel.toLowerCase().replace('.', '_')}@example.com`;
 
+                        const defaultTrackName = 'Trilha do Colaborador';
+                        const defaultTrack = await tx.track.findFirst({ where: { name: defaultTrackName } });
+                        if (!defaultTrack) throw new NotFoundException(`Trilha padrão "${defaultTrackName}" não encontrada.`);
+
                         receiver = await tx.user.create({
                             data: {
                                 email: newEmail,
@@ -439,7 +482,7 @@ export class ImportService {
                                 active: true,
                                 positionId: user.positionId,
                                 unitId: user.unitId,
-                                trackId: user.trackId,
+                                trackId: defaultTrack.id,
                                 roles: { create: [{ role: Role.COLLABORATOR }] },
                             }
                         });
@@ -485,6 +528,26 @@ export class ImportService {
                 referencesProcessed,
             };
         });
+    }
+
+    // --- FUNÇÃO PRIVADA PARA DETERMINAR AS ROLES E AS TRACKS ---
+    private _determineRolesAndTrackFromEvaluation(evaluationData: any[]) {
+        let maxLevel = 0;
+        for (const row of evaluationData) {
+            const score = row['AUTO-AVALIAÇÃO'];
+            const oldCriterionName = row['CRITÉRIO'];
+            if (oldCriterionName && typeof score === 'number') {
+                const level = this.criterionToLevelMap[oldCriterionName];
+                if (level > maxLevel) {
+                    maxLevel = level;
+                }
+            }
+        }
+
+        const roles = this.levelToRolesMap[maxLevel];
+        const trackName = this.levelToTrackNameMap[maxLevel];
+
+        return { roles, trackName };
     }
 
     // Transforma "nome.sobrenome" em "Nome Sobrenome"

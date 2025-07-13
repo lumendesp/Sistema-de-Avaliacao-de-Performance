@@ -169,7 +169,7 @@ export class RHDashboardService {
                 role: user.position?.name || 'N/A',
                 unit: user.unit?.name || 'N/A',
                 status: isComplete ? 'finalizado' : 'pendente',
-                autoAvaliacao: selfScore,
+                autoAvaliacao: this.formatAverage(selfScore),
                 avaliacao360: peerScore,
                 notaGestor: managerScore,
                 notaFinal: finalScore ?? undefined,
@@ -177,5 +177,12 @@ export class RHDashboardService {
         });
 
         return formattedCollaborators;
+    }
+
+    private formatAverage(value: number | null | undefined): number | undefined {
+        if (typeof value !== 'number') {
+            return undefined;
+        }
+        return parseFloat(value.toFixed(1));
     }
 }
