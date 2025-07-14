@@ -15,12 +15,10 @@ interface EvaluationCyclesListProps {
 }
 
 const parseScore = (value: string): number | undefined => {
-  return value === "-" ? undefined : parseFloat(value);
+  return value === '-' ? undefined : parseFloat(value);
 };
 
 const EvaluationCyclesList: React.FC<EvaluationCyclesListProps> = ({ cycles }) => {
-  console.log("Ciclos recebidos:", cycles);
-
   return (
     <div className="bg-white rounded-lg shadow p-4">
       <span className="text-gray-700 font-semibold">Ciclos de Avaliação</span>
