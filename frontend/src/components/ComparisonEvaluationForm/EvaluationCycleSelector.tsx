@@ -26,7 +26,6 @@ const EvaluationCycleSelector = ({ currentCycle, onChange }: Props) => {
 
         const data = await res.json();
 
-        // Garante que `data` seja sempre array
         if (Array.isArray(data)) {
           setCycles(data);
         } else {
@@ -46,13 +45,16 @@ const EvaluationCycleSelector = ({ currentCycle, onChange }: Props) => {
       defaultValue={currentCycle}
       className="border border-gray-300 rounded px-3 py-1 text-sm text-gray-700"
       onChange={(e) => {
-        const selected = cycles.find(c => c.name === e.target.value);
+        const selectedId = Number(e.target.value);
+        const selected = cycles.find(c => c.id === selectedId);
         if (selected) onChange(selected.id, selected.name);
       }}
     >
-      <option disabled value="">Selecione um ciclo</option>
+      <option disabled value="">
+        Selecione um ciclo
+      </option>
       {cycles.map((cycle) => (
-        <option key={cycle.id} value={cycle.name}>
+        <option key={cycle.id} value={cycle.id}>
           {cycle.name}
         </option>
       ))}
