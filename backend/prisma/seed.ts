@@ -340,8 +340,8 @@ async function main() {
       email: 'bob@example.com',
       password: passwordHash2,
       active: true,
-      positionId: position2.id,
-      unitId: unit2.id,
+      positionId: position1.id,
+      unitId: unit1.id, 
       trackId: track2.id,
       roles: {
         create: [
@@ -418,7 +418,7 @@ async function main() {
       password: passwordHash5,
       active: true,
       positionId: position2.id,
-      unitId: unit2.id,
+      unitId: unit1.id,
       trackId: track3.id,
       roles: {
         create: [

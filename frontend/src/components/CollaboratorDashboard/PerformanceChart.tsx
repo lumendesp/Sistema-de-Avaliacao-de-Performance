@@ -1,24 +1,73 @@
+import { useEffect, useState } from 'react';
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import type { BarChartData, BarChartOptions } from '../../types/DashboardCollaboratorTypes/performanceChart';
+import { useAuth } from '../../context/AuthContext';
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
 
 const PerformanceChart = () => {
-  const data: BarChartData = {
-    labels: ['2023.1', '2023.2', '2024.1', '2024.2'],
+  const { token, user } = useAuth();
+  const [chartData, setChartData] = useState<number[]>([]);
+  const [labels, setLabels] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/ciclos', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const ciclos = await response.json();
+
+        const ciclosOrdenados = ciclos
+          .filter((c: any) => c.status === 'PUBLISHED')
+          .sort((a: any, b: any) => b.id - a.id); 
+
+        const notas: number[] = [];
+        const nomes: string[] = [];
+
+        for (const ciclo of ciclosOrdenados) {
+          try {
+            const res = await fetch(
+              `http://localhost:3000/final-scores/user/${user.id}/cycle/${ciclo.id}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (res.ok) {
+              const notaData = await res.json();
+              notas.push(notaData.finalScore);
+              nomes.push(ciclo.name);
+            }
+          } catch (e) {
+            console.warn(`Erro ao buscar nota para ciclo ${ciclo.name}`, e);
+          }
+        }
+
+        setChartData(notas);
+        setLabels(nomes);
+      } catch (error) {
+        console.error('Erro ao buscar dados do gráfico:', error);
+      }
+    };
+
+    fetchChartData();
+  }, [token, user]);
+
+  const data = {
+    labels,
     datasets: [
       {
-        label: 'Nota',
-        data: [3.5, 3.3, 4.2, 4.6],
-        backgroundColor: ['#FACC15', '#FACC15', '#14B8A6', '#22C55E'],
+        data: chartData,
+        backgroundColor: chartData.map(n =>
+          n >= 4.5 ? '#22C55E' : n >= 4 ? '#14B8A6' : '#FACC15'
+        ),
         borderRadius: 6,
         barThickness: 40,
       },
     ],
   };
 
-  const options: BarChartOptions = {
+  const options = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
@@ -58,14 +107,11 @@ const PerformanceChart = () => {
 
   return (
     <div className="w-full bg-white rounded-xl p-5 shadow flex flex-col gap-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <h2 className="text-base font-semibold text-gray-800">Desempenho</h2>
-        <select className="text-sm border border-gray-300 rounded-md px-3 py-1 text-gray-700">
-          <option>Filtrar por</option>
-        </select>
       </div>
 
-      <div className="h-64">
+      <div className="h-64 sm:h-72 min-h-[250px]">
         <Bar data={data} options={options} />
       </div>
     </div>

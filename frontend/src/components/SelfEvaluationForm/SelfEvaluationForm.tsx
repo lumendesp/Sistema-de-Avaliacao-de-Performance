@@ -20,8 +20,8 @@ const SelfEvaluationForm = ({
   const answeredCount = criteria.filter((c) => c.score && c.justification?.trim()).length;
 
   return (
-    <div className="bg-white rounded-xl shadow p-6 w-full mb-6">
-      <div className="flex justify-between items-center mb-4 pb-3">
+    <div className="bg-white rounded-xl shadow p-4 sm:p-6 w-full mb-6">
+     <div className="flex flex-wrap justify-between items-center gap-2 sm:gap-4 mb-4 pb-3">
         <h3 className="text-bg font-semibold text-green-main">{title}</h3>
         <div className="flex items-center gap-4">
           <ScoreBox score={averageScore ?? 0} />
