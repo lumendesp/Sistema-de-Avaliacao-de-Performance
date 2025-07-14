@@ -33,10 +33,9 @@ function decrypt(text: string): string {
     return decrypted;
   } catch (error) {
     console.warn('Falha ao descriptografar:', error.message);
-    return '[ERRO DE DESCRIPTOGRAFIA]'; 
+    return '[ERRO DE DESCRIPTOGRAFIA]';
   }
 }
-
 
 type SelfWithItems = {
   items: {
@@ -75,6 +74,21 @@ export class AiSummaryService {
     });
 
     return summary?.text || null;
+  }
+
+  async getAllSummariesByCycle(cycleId: number) {
+    return this.prisma.aISummary.findMany({
+      where: { cycleId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true, 
+          },
+        },
+      },
+    });
   }
 
   async generateSummary({

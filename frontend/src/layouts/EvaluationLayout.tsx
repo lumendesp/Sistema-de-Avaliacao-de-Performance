@@ -29,7 +29,7 @@ const EvaluationLayout = () => {
 
   return (
     <div className="h-full flex flex-col pt-12 sm:pt-6">
-      <div className="p-3 md:p-6 pb-0 m-0">
+      <div className="p-3 md:p-6 md:pb-0 pb-0 m-0">
         <header className="flex justify-between items-center">
           <h1 className="text-xl font-semibold">Ciclo 2025.1</h1>
           <div className="flex flex-col-reverse items-end md:items-center md:flex-row gap-2 md:gap-5">
