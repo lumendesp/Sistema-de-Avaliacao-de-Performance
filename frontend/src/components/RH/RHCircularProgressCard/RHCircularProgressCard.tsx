@@ -24,7 +24,7 @@ const RHCircularProgressCard: React.FC<RHCircularProgressCardProps> = ({
         <h2 className="text-lg font-semibold text-gray-700">
           {title || "Preenchimento de Avaliação"}
         </h2>
-        <p className="text-sm text-gray-500 mt-1">{description}</p>
+        <p className="text-sm text-gray-500 mt-1 max-w-[200px]">{description}</p>
       </div>
       <div className="relative" style={{ width: sqSize, height: sqSize }}>
         <svg width={sqSize} height={sqSize} viewBox={viewBox}>

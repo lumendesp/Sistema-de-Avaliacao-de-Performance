@@ -3,30 +3,20 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   getClimateSurveyById,
   closeClimateSurvey,
-  getClimateSurveyResponses,
 } from "../../../services/api";
-import {
-  IoArrowBack,
-  IoCalendar,
-  IoPeople,
-  IoEye,
-} from "react-icons/io5";
+import { IoArrowBack, IoCalendar, IoPeople, } from "react-icons/io5";
 import type {
   ClimateSurvey,
-  ClimateSurveyResponse,
 } from "../../../types/climateSurvey";
-import { getMotivationLevelText } from "../../../types/climateSurvey";
 import SurveyStatusBadge from "../../../components/RH/SurveyStatusBadge/SurveyStatusBadge";
+import AIIcon from "../../../assets/committee/AI_icon.svg"
 
 const RHClimateSurveyDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [survey, setSurvey] = useState<ClimateSurvey | null>(null);
-  const [responses, setResponses] = useState<ClimateSurveyResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [responsesLoading, setResponsesLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [showResponses, setShowResponses] = useState(false);
 
   useEffect(() => {
     const loadSurvey = async () => {
@@ -87,28 +77,6 @@ const RHClimateSurveyDetail = () => {
   //     setActionLoading(false);
   //   }
   // };
-
-  const loadResponses = async () => {
-    if (!id) return;
-
-    try {
-      setResponsesLoading(true);
-      const responsesData = await getClimateSurveyResponses(parseInt(id));
-      setResponses(responsesData);
-    } catch (error) {
-      console.error("Erro ao carregar respostas:", error);
-      alert("Erro ao carregar respostas");
-    } finally {
-      setResponsesLoading(false);
-    }
-  };
-
-  const toggleResponses = () => {
-    if (!showResponses && responses.length === 0) {
-      loadResponses();
-    }
-    setShowResponses(!showResponses);
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("pt-BR");
@@ -208,6 +176,18 @@ const RHClimateSurveyDetail = () => {
         </div>
       </div>
 
+      {/* Resumo estilo IA */}
+      <div className="bg-white rounded-lg p-4 border border-gray-300 border-l-4 border-l-[#08605F] pl-6 mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <img src={AIIcon} alt="IA Icon" className="w-4 h-4" />
+          <span className="font-semibold text-[#08605F]">Resumo</span>
+        </div>
+        <div className=" text-gray-700 whitespace-pre-wrap">
+          {/* {summary || "Resumo não disponível."} */}
+          <p>Aqui vai o resumo da IA</p>
+        </div>
+      </div>
+
       {survey.description && (
         <div className="border border-gray-300 rounded-lg bg-white mb-6">
           <div className="p-4 border-b border-gray-200">
@@ -228,7 +208,7 @@ const RHClimateSurveyDetail = () => {
         <div className="p-4">
           <div className="space-y-4">
             {survey.questions.map((question, index) => (
-              <div key={question.id} className="flex items-start gap-3">
+              <div key={question.id} className="flex items-center gap-3">
                 <div className="flex-shrink-0 w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium text-gray-600 mt-1">
                   {index + 1}
                 </div>
@@ -245,72 +225,6 @@ const RHClimateSurveyDetail = () => {
             </p>
           )}
         </div>
-      </div>
-
-      <div className="border border-gray-300 rounded-lg bg-white mt-6">
-        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-[#08605F]">
-            Respostas ({survey._count?.responses || 0})
-          </h2>
-          <button
-            onClick={toggleResponses}
-            className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-100 text-[#08605F] rounded hover:bg-gray-200 transition-colors"
-          >
-            <IoEye size={16} />
-            {showResponses ? "Ocultar" : "Visualizar"} Respostas
-          </button>
-        </div>
-
-        {showResponses && (
-          <div className="p-4">
-            {responsesLoading ? (
-              <div className="text-center py-4 text-gray-500">
-                Carregando respostas...
-              </div>
-            ) : responses.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
-                Nenhuma resposta encontrada
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {responses.map((response, idx) => (
-                  <div
-                    key={response.id}
-                    className="border border-gray-200 rounded-lg p-4"
-                  >
-                    <div className="mb-3">
-                      <h4 className="font-semibold text-gray-800">
-                        Resposta #{idx + 1}
-                      </h4>
-                    </div>
-                    <div className="space-y-3">
-                      {response.answers.map((answer) => (
-                        <div
-                          key={answer.id}
-                          className="border-l-4 border-[#08605F] pl-3"
-                        >
-                          <p className="text-sm font-medium text-gray-700 mb-1">
-                            {answer.question.text}
-                          </p>
-                          <div className="space-y-2">
-                            <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                              <strong>Nível:</strong>{" "}
-                              {getMotivationLevelText(answer.level)}
-                            </p>
-                            <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                              <strong>Justificativa:</strong>{" "}
-                              {answer.justification}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import {
   getClimateSurveys,
   countCollaborators,
   getClimateSurveyResponses,
+  getClimateSurveyAverages,
 } from "../../../services/api";
 import type { SurveyStatus } from "../../../types/surveyStatus";
 import type { ClimateSurvey } from "../../../types/climateSurvey";
@@ -16,11 +17,18 @@ import { IoAddCircle } from "react-icons/io5";
 
 const RHClimateSurvey = () => {
   const navigate = useNavigate();
-  const [selectedYear, setSelectedYear] = useState("2025");
   const [loading, setLoading] = useState(true);
   const [surveys, setSurveys] = useState<ClimateSurvey[]>([]);
   const [collaboratorCount, setCollaboratorCount] = useState<number>(0);
   const [activeResponsesCount, setActiveResponsesCount] = useState<number>(0);
+  const [surveyAverages, setSurveyAverages] = useState<
+    {
+      id: number;
+      title: string;
+      endDate: string;
+      averageScore: number | null;
+    }[]
+  >([]);
 
   const activeSurvey = surveys.find((survey) => survey.isActive);
 
@@ -96,6 +104,19 @@ const RHClimateSurvey = () => {
     loadSurveys();
   }, []);
 
+  useEffect(() => {
+    const loadAverages = async () => {
+      try {
+        const data = await getClimateSurveyAverages();
+        setSurveyAverages(data);
+      } catch (error) {
+        console.log(error);
+        setSurveyAverages([]); // fallback vazio
+      }
+    };
+    loadAverages();
+  }, []);
+
   const formatSurveyDate = (survey: ClimateSurvey) => {
     if (survey.isActive) {
       return `Aberta desde ${new Date(survey.createdAt).toLocaleDateString(
@@ -134,11 +155,13 @@ const RHClimateSurvey = () => {
 
             <RHColoredMetricCard
               title="Fechamento da Pesquisa"
-              description={`Faltam ${daysLeft} dias para o fechamento do ciclo, no dia ${new Date(
+              description={`Falta${daysLeft === 1 ? "" : "m"} ${daysLeft} dia${
+                daysLeft === 1 ? "" : "s"
+              } para o fechamento do ciclo, no dia ${new Date(
                 activeSurvey.endDate
               ).toLocaleDateString("pt-BR")}`}
               value={daysLeft}
-              unit="dias"
+              unit={daysLeft === 1 ? "dia" : "dias"}
             />
           </>
         ) : (
@@ -165,7 +188,6 @@ const RHClimateSurvey = () => {
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-
         <div className="lg:col-span-1 bg-white rounded-xl shadow-md p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-800">
@@ -204,15 +226,20 @@ const RHClimateSurvey = () => {
         <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
           <SatisfactionChartCard
             title="Satisfação ao longo do tempo"
-            selectedYear={selectedYear}
-            onYearChange={setSelectedYear}
-            availableYears={["2025", "2024", "2023"]}
             chartData={{
-              labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"],
+              labels: surveyAverages.map((s) => {
+                const date = new Date(s.endDate);
+                const month = date
+                  .toLocaleDateString("pt-BR", { month: "short" })
+                  .replace(".", "")
+                  .toUpperCase();
+                return `${month}/${date.getFullYear()}`;
+              }),
+
               datasets: [
                 {
                   label: "Nota média (1 a 5)",
-                  data: [4.2, 3.9, 4.5, 4.0, 4.3, 4.1],
+                  data: surveyAverages.map((s) => s.averageScore),
                   backgroundColor: "#5A67D8",
                   borderRadius: 5,
                   maxBarThickness: 40,

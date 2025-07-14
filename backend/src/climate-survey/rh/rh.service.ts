@@ -177,4 +177,52 @@ export class RhService {
       },
     });
   }
+
+  async getSurveyAverages(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { roles: true },
+    });
+
+    if (!user || !user.roles.some((r) => r.role === 'HR')) {
+      throw new ForbiddenException('Apenas RH pode visualizar pesquisas');
+    }
+
+    // Mapeamento ClimateLevel para escala 1 a 5
+    const climateLevelMap = {
+      DISCORDO_TOTALMENTE: 1,
+      DISCORDO_PARCIALMENTE: 2,
+      NEUTRO: 3,
+      CONCORDO_PARCIALMENTE: 4,
+      CONCORDO_TOTALMENTE: 5,
+    };
+
+    const surveys = await this.prisma.climateSurvey.findMany({
+      where: { isActive: false, createdById: userId },
+      include: {
+        responses: {
+          where: { isSubmit: true },
+          include: {
+            answers: true,
+          },
+        },
+      },
+      orderBy: { endDate: 'asc' },
+    });
+
+    return surveys.map((survey) => {
+      const allAnswers = survey.responses.flatMap((r) => r.answers);
+      const allScores = allAnswers.map((a) => climateLevelMap[a.level]);
+      const averageScore = allScores.length
+        ? allScores.reduce((sum, v) => sum + v, 0) / allScores.length
+        : null;
+      return {
+        id: survey.id,
+        title: survey.title,
+        endDate: survey.endDate,
+        averageScore:
+          averageScore !== null ? Number(averageScore.toFixed(2)) : null,
+      };
+    });
+  }
 }

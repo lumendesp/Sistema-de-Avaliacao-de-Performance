@@ -70,20 +70,23 @@ export const fetchActiveEvaluationCycle = async (role?: string) => {
   let mainRole = role;
   if (!mainRole) {
     // Buscar o usuário do localStorage para obter o role
-    const userStr = localStorage.getItem('user');
-    mainRole = 'COLLABORATOR'; // default
+    const userStr = localStorage.getItem("user");
+    mainRole = "COLLABORATOR"; // default
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
-        mainRole = user.roles?.[0] || 'COLLABORATOR';
+        mainRole = user.roles?.[0] || "COLLABORATOR";
       } catch (error) {
-        console.error('Erro ao parsear usuário do localStorage:', error);
+        console.error("Erro ao parsear usuário do localStorage:", error);
       }
     }
   }
-  const res = await fetch(`${API_URL}/evaluation-cycle/active?type=${mainRole}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `${API_URL}/evaluation-cycle/active?type=${mainRole}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   if (!res.ok) {
     throw new Error("Erro ao buscar ciclo ativo");
   }
@@ -436,10 +439,13 @@ export const getUsersWithEvaluationsForCommittee = async () => {
 
 // Get significant drops for a user in a specific cycle
 export const getSignificantDrops = async (userId: number, cycleId: number) => {
-  const response = await fetch(`${API_URL}/users/${userId}/significant-drops/${cycleId}`, {
-    method: 'GET',
-    headers: getAuthHeaders(),
-  });
+  const response = await fetch(
+    `${API_URL}/users/${userId}/significant-drops/${cycleId}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
   if (!response.ok) {
     if (response.status === 404) {
       return null; // No significant drops found
@@ -1066,9 +1072,12 @@ export const getClimateSurveyById = async (surveyId: number) => {
 };
 
 export const getClimateSurveyResponses = async (surveyId: number) => {
-  const res = await fetch(`${API_URL}/rh/climate-survey/${surveyId}/responses`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `${API_URL}/rh/climate-survey/${surveyId}/responses`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
 
   if (!res.ok) {
     const error = await res.json();
@@ -1078,7 +1087,10 @@ export const getClimateSurveyResponses = async (surveyId: number) => {
   return res.json();
 };
 
-export const closeClimateSurvey = async (surveyId: number, endDate?: string) => {
+export const closeClimateSurvey = async (
+  surveyId: number,
+  endDate?: string
+) => {
   const res = await fetch(`${API_URL}/rh/climate-survey/${surveyId}/close`, {
     method: "PATCH",
     headers: getAuthHeaders(),
@@ -1120,4 +1132,13 @@ export const countCollaborators = async () => {
   return res.json(); // vai retornar algo como: { count: 42 }
 };
 
-
+export const getClimateSurveyAverages = async () => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/averages`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Erro ao buscar médias das pesquisas");
+  }
+  return res.json();
+};
