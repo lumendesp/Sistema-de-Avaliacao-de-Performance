@@ -41,8 +41,25 @@ const CollaboratorHistory = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const histData = await histRes.json();
-
         const historicoMap = new Map(histData.map((c: any) => [c.cycle, c]));
+
+        const fetchLeanSummary = async (cycleId: string) => {
+          try {
+            const response = await fetch(
+              `${API_URL}/ai-summary/lean?userId=${id}&cycleId=${cycleId}`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
+            if (response.ok) {
+              const text = await response.text();
+              return text.trim();
+            }
+          } catch (error) {
+            console.error(`Erro ao buscar resumo do ciclo ${cycleId}:`, error);
+          }
+          return '-';
+        };
 
         const ciclosCompletos = await Promise.all(
           allCycles.map(async (cycle: any) => {
@@ -50,9 +67,12 @@ const CollaboratorHistory = () => {
 
             let peerScore = '-';
             try {
-              const peerRes = await fetch(`${API_URL}/peer-evaluations/average/cycle/${cycle.id}/user/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-              });
+              const peerRes = await fetch(
+                `${API_URL}/peer-evaluations/average/cycle/${cycle.id}/user/${id}`,
+                {
+                  headers: { Authorization: `Bearer ${token}` },
+                }
+              );
               if (peerRes.ok) {
                 const peerData = await peerRes.json();
                 peerScore = peerData?.average?.toFixed(1) ?? '-';
@@ -61,15 +81,17 @@ const CollaboratorHistory = () => {
               console.error(`Erro ao buscar avaliação 360 do ciclo ${cycle.name}:`, err);
             }
 
-            if (historico) {
+            const summary = await fetchLeanSummary(cycle.id);
+
+            if (historico || cycle.status === 'PUBLISHED') {
               return {
                 cycle: cycle.name,
-                status: cycle.status === 'PUBLISHED' ? 'Finalizado' : 'Em andamento',
-                self: historico.self ?? '-',
+                status: 'Finalizado',
+                self: historico?.self ?? '-',
                 exec: peerScore,
-                posture: historico.posture ?? '-',
-                final: historico.final ?? '-',
-                summary: historico.summary ?? '-',
+                posture: historico?.posture ?? '-',
+                final: historico?.final ?? '-',
+                summary,
               };
             } else if (cycle.status === 'IN_PROGRESS_COLLABORATOR') {
               return {

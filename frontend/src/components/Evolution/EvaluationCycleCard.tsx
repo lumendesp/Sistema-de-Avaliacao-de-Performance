@@ -96,7 +96,7 @@ const EvaluationCycleCard: React.FC<EvaluationCycleCardProps> = ({
         <span className="text-sm font-semibold text-gray-700">Resumo</span>
       </div>
       <div className="text-sm text-gray-700 whitespace-pre-wrap">
-        {summary || "Resumo não disponível."}
+        {summary && summary !== '-' ? summary : 'Resumo não disponível.'}
       </div>
     </div>
   </div>
