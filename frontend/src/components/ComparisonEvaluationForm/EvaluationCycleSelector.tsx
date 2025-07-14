@@ -16,9 +16,23 @@ const EvaluationCycleSelector = ({ currentCycle, onChange }: Props) => {
   useEffect(() => {
     const fetchCycles = async () => {
       try {
-        const res = await fetch("http://localhost:3000/evaluation-cycle/closed");
+        const token = localStorage.getItem("token");
+
+        const res = await fetch("http://localhost:3000/evaluation-cycle/closed", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         const data = await res.json();
-        setCycles(data);
+
+        // Garante que `data` seja sempre array
+        if (Array.isArray(data)) {
+          setCycles(data);
+        } else {
+          console.error("Resposta inesperada da API:", data);
+          setCycles([]);
+        }
       } catch (err) {
         console.error("Erro ao buscar ciclos fechados:", err);
       }
