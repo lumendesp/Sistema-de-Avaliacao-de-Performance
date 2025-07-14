@@ -17,9 +17,33 @@ const ComparisonLayout = () => {
   // ao entrar na página, pega o ciclo do location.state se houver
   useEffect(() => {
     const state = location.state as { selectedCycleName?: string };
+
     if (state?.selectedCycleName) {
       setSelectedCycleName(state.selectedCycleName);
-      // você pode buscar o ID pelo nome mais tarde no `ComparisonEvaluation.tsx`
+
+      // Buscar o ID correspondente ao nome do ciclo
+      const fetchCycleIdByName = async () => {
+        const token = localStorage.getItem("token");
+
+        try {
+          const res = await fetch("http://localhost:3000/evaluation-cycle/closed", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await res.json();
+
+          const matched = data.find((cycle: any) => cycle.name === state.selectedCycleName);
+          if (matched) {
+            setSelectedCycleId(matched.id);
+          }
+        } catch (err) {
+          console.error("Erro ao buscar ciclos fechados:", err);
+        }
+      };
+
+      fetchCycleIdByName();
     }
   }, [location.state]);
 

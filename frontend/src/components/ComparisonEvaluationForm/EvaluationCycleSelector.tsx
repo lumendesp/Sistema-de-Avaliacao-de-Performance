@@ -19,7 +19,7 @@ const EvaluationCycleSelector = ({ currentCycle, onChange }: Props) => {
       try {
         const token = localStorage.getItem("token");
 
-        const res = await fetch("http://localhost:3000/evaluation-cycle/closed", {
+        const res = await fetch("http://localhost:3000/ciclos", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -39,7 +39,7 @@ const EvaluationCycleSelector = ({ currentCycle, onChange }: Props) => {
           setCycles([]);
         }
       } catch (err) {
-        console.error("Erro ao buscar ciclos fechados:", err);
+        console.error("Erro ao buscar ciclos:", err);
       }
     };
 
