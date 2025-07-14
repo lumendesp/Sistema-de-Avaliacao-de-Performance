@@ -1,7 +1,22 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createClimateSurvey } from "../../../services/api";
-import { IoTrash, IoArrowBack } from "react-icons/io5";
+import { IoTrash, IoArrowBack, IoClose } from "react-icons/io5";
+import {
+  BsEmojiAngry,
+  BsEmojiFrown,
+  BsEmojiNeutral,
+  BsEmojiSmile,
+  BsEmojiLaughing,
+} from "react-icons/bs";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { registerLocale } from "react-datepicker";
+import { ptBR } from "date-fns/locale";
+import { CustomDateInput } from "./CustomDateInput";
+import { FaInfoCircle } from "react-icons/fa";
+
+registerLocale("pt-BR", ptBR);
 
 interface Question {
   id: string;
@@ -10,10 +25,11 @@ interface Question {
 
 const RHCreateClimateSurvey = () => {
   const navigate = useNavigate();
+  const [showExampleModal, setShowExampleModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [questions, setQuestions] = useState<Question[]>([
     { id: "1", text: "" },
   ]);
@@ -33,6 +49,8 @@ const RHCreateClimateSurvey = () => {
     setQuestions(questions.map((q) => (q.id === id ? { ...q, text } : q)));
   };
 
+  const validQuestions = questions.filter((q) => q.text.trim());
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -46,18 +64,12 @@ const RHCreateClimateSurvey = () => {
       return;
     }
 
-    const validQuestions = questions.filter((q) => q.text.trim());
-    if (validQuestions.length === 0) {
-      alert("Por favor, adicione pelo menos uma pergunta");
-      return;
-    }
-
     try {
       setLoading(true);
       await createClimateSurvey({
         title: title.trim(),
         description: description.trim() || undefined,
-        endDate,
+        endDate: endDate?.toISOString(),
         questions: validQuestions.map((q) => ({ text: q.text.trim() })),
       });
 
@@ -72,8 +84,7 @@ const RHCreateClimateSurvey = () => {
   };
 
   const getMinDate = () => {
-    const today = new Date();
-    return today.toISOString().split("T")[0];
+    return new Date();
   };
 
   return (
@@ -93,7 +104,7 @@ const RHCreateClimateSurvey = () => {
         <button
           className="bg-[#08605F] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-50"
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={loading || validQuestions.length === 0}
         >
           {loading ? "Criando..." : "Criar Pesquisa"}
         </button>
@@ -108,22 +119,42 @@ const RHCreateClimateSurvey = () => {
           </div>
 
           <div className="p-4 space-y-4">
-            <div>
-              <label
-                htmlFor="title"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Título da Pesquisa *
-              </label>
-              <input
-                type="text"
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F] focus:border-transparent"
-                placeholder="Ex: Clima Organizacional 2025.1"
-                required
-              />
+            <div className="flex w-full gap-4">
+              <div className="w-3/4">
+                <label
+                  htmlFor="title"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Título da Pesquisa *
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F] focus:border-transparent"
+                  placeholder="Ex: Clima Organizacional 2025.1"
+                  required
+                />
+              </div>
+              <div className="w-1/4">
+                <label
+                  htmlFor="endDate"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Data de Encerramento *
+                </label>
+                <DatePicker
+                  selected={endDate}
+                  onChange={(date: Date | null) => setEndDate(date)}
+                  dateFormat="dd/MM/yyyy"
+                  minDate={getMinDate()}
+                  locale="pt-BR"
+                  customInput={<CustomDateInput />}
+                  wrapperClassName="w-full"
+                  popperPlacement="bottom-start"
+                />
+              </div>
             </div>
 
             <div>
@@ -138,26 +169,8 @@ const RHCreateClimateSurvey = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F] focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F] focus:border-transparent resize-none"
                 placeholder="Descreva o objetivo desta pesquisa..."
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="endDate"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Data de Encerramento *
-              </label>
-              <input
-                type="date"
-                id="endDate"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                min={getMinDate()}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F] focus:border-transparent"
-                required
               />
             </div>
           </div>
@@ -165,9 +178,17 @@ const RHCreateClimateSurvey = () => {
 
         <div className="border border-gray-300 rounded-lg bg-white">
           <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-[#08605F]">
-              Perguntas da Pesquisa
-            </h2>
+            <div className="flex items-center gap-3 font-semibold">
+              <h2 className="text-lg font-semibold text-[#08605F]">
+                Perguntas da Pesquisa
+              </h2>
+              <>
+                <FaInfoCircle
+                  onClick={() => setShowExampleModal(true)}
+                  className="text-green-main hover:text-gray-600 cursor-pointer w-4.5 h-4.5"
+                />
+              </>
+            </div>
             <button
               type="button"
               onClick={addQuestion}
@@ -191,7 +212,7 @@ const RHCreateClimateSurvey = () => {
                         updateQuestion(question.id, e.target.value)
                       }
                       rows={2}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F] focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F] focus:border-transparent text-sm resize-none"
                       placeholder={`Pergunta ${index + 1}...`}
                     />
                   </div>
@@ -216,6 +237,68 @@ const RHCreateClimateSurvey = () => {
           </div>
         </div>
       </form>
+
+      {showExampleModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-[700px] p-6 relative">
+            <div className="flex justify-between">
+              <div className="flex flex-col mb-4 gap-1">
+                <h2 className="text-lg font-bold text-[#08605F]">
+                  Exemplo de pergunta e resposta
+                </h2>
+                <p className="text-gray-400 text-sm">
+                  As perguntas devem ser formuladas no formato abaixo, alinhadas
+                  ao padrão de resposta demonstrado. O colaborador também pode
+                  acrescentar um campo de justificativa.
+                </p>
+              </div>
+              <IoClose
+                onClick={() => setShowExampleModal(false)}
+                size={30}
+                className="cursor-pointer"
+              />
+            </div>
+            <p className="mb-3 font-semibold">Formato de pergunta:</p>
+            <p className="mb-4 text-gray-700">
+              “Sinto que meu trabalho é reconhecido pela liderança.”
+            </p>
+
+            <p className="mb-3 font-semibold">Formato de resposta:</p>
+            <div className="flex w-full">
+              <div className="flex flex-col items-center gap-1">
+                <BsEmojiAngry className="text-3xl text-red-500" />
+                <span className="text-center min-w-[130px] max-w-[130px]">
+                  Discordo totalmente
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <BsEmojiFrown className="text-3xl text-orange-500" />
+                <span className="text-center  min-w-[130px] max-w-[130px]">
+                  Discordo parcialmente
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <BsEmojiNeutral className="text-3xl text-yellow-500" />
+                <span className="text-center  min-w-[130px] max-w-[130px]">
+                  Neutro
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <BsEmojiSmile className="text-3xl text-green-500" />
+                <span className="text-center  min-w-[130px] max-w-[130px]">
+                  Concordo parcialmente
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <BsEmojiLaughing className="text-3xl text-emerald-500" />
+                <span className="text-center  min-w-[130px] max-w-[130px]">
+                  Concordo totalmente
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

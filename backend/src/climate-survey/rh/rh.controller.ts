@@ -33,10 +33,15 @@ export class RhController {
     return this.rhService.getSurveySummaries(userId);
   }
 
-  
   @Get('count')
   countCollaborators() {
     return this.rhService.countCollaborators();
+  }
+
+  @Get('averages')
+  async getAverages(@Req() req) {
+    const userId = req.user.userId;
+    return this.rhService.getSurveyAverages(userId);
   }
 
   @Get(':id')
@@ -65,5 +70,4 @@ export class RhController {
   async reopen(@Param('id') id: string) {
     return this.rhService.reopenSurvey(Number(id));
   }
-
 }
