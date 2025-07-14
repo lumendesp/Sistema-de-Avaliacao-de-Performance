@@ -107,49 +107,9 @@ export default function ManagerEvaluationLayout() {
         }
       }
     } else {
-      // Ao clicar em editar, volta status para draft e libera edição
-      if (!evaluationId) {
-        window.alert(
-          "[DEBUG] Não existe evaluationId para editar!\nTalvez a avaliação ainda não foi criada ou houve erro ao buscar."
-        );
-        return;
-      }
-      // Busca avaliação atual para pegar os grupos e ciclo
-      const evaluation = await fetchManagerEvaluation(Number(id));
-      if (evaluation && evaluation.groups) {
-        // Monta os grupos apenas com os campos essenciais em cada item
-        const groups = evaluation.groups.map((group: any) => ({
-          groupId: group.groupId,
-          items: group.items.map((item: any) => ({
-            criterionId: item.criterionId,
-            score: item.score,
-            justification: item.justification,
-            ...(item.scoreDescription
-              ? { scoreDescription: item.scoreDescription }
-              : {}),
-          })),
-        }));
-        const payload = {
-          status: "draft",
-          groups,
-          cycleId: evaluation.cycleId, // sempre envia
-          evaluateeId: Number(id), // sempre envia
-        };
-        await updateManagerEvaluation(evaluationId, payload);
-        // Após update, busca avaliação atualizada para garantir status draft
-        const updated = await fetchManagerEvaluation(Number(id));
-        console.log(
-          "[DEBUG] Status retornado do backend após editar:",
-          updated?.status
-        );
-        setEvaluationStatus(updated?.status || "draft");
-        setIsEditing(true); // libera edição
-        setHasSent(false);
-        console.log("[DEBUG] isEditing após editar:", true);
-        // editKey será atualizado pelo useEffect acima
-      } else {
-        window.alert("Erro ao buscar avaliação para editar.");
-      }
+      // Ao clicar em editar, apenas libera o formulário para edição (não envia nada para o backend)
+      setIsEditing(true);
+      setHasSent(false);
     }
   };
 
@@ -183,7 +143,8 @@ export default function ManagerEvaluationLayout() {
             <div className="flex items-center gap-2">
               {createdAt && (
                 <span className="text-xs text-gray-500 whitespace-nowrap">
-                  Último envio: {new Date(createdAt).toLocaleString("pt-BR")}
+                  Última modificação:{" "}
+                  {new Date(createdAt).toLocaleString("pt-BR")}
                 </span>
               )}
               <button
