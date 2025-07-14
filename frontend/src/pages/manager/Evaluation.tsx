@@ -14,6 +14,7 @@ import axios from "axios";
 
 type OutletContextType = {
   setSubmit: (fn: () => Promise<boolean>, isUpdate: boolean) => void;
+  isEditing?: boolean;
 };
 
 type Group = {
@@ -45,6 +46,7 @@ export default function CollaboratorEvaluation() {
   const [loading, setLoading] = useState(true);
   const [selfEvaluation, setSelfEvaluation] = useState<any>(null);
   const outletContext = useOutletContext<OutletContextType>();
+  const isEditing = outletContext?.isEditing !== false;
   const { token } = useAuth();
   const [cycleId, setCycleId] = useState<number | null>(null);
   const [cycleStatus, setCycleStatus] = useState<string | null>(null);
@@ -359,6 +361,7 @@ export default function CollaboratorEvaluation() {
               onCriterionChange={(i, upd) =>
                 handleCriterionChange(group.id, i, upd)
               }
+              readOnly={!isEditing}
             />
           </div>
         );

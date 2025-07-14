@@ -9,12 +9,14 @@ interface CriteriaSectionProps {
     index: number,
     updated: Partial<EvaluationCriterion>
   ) => void;
+  readOnly?: boolean;
 }
 
 export default function CriteriaSection({
   title,
   criteria,
   onCriterionChange,
+  readOnly = false,
 }: CriteriaSectionProps) {
   // Calcula quantos critérios estão preenchidos
   const filledCount = criteria.filter(
@@ -67,6 +69,7 @@ export default function CriteriaSection({
           criterion={criterion}
           index={idx}
           onChange={(updated) => onCriterionChange(idx, updated)}
+          readOnly={readOnly}
         />
       ))}
     </section>

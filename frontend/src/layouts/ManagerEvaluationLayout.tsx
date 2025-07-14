@@ -10,6 +10,8 @@ export default function ManagerEvaluationLayout() {
   const { user } = useAuth();
   const [collaborator, setCollaborator] = useState<Collaborator | null>(null);
   const [isUpdate, setIsUpdate] = useState(false);
+  const [hasSent, setHasSent] = useState(false); // controla se já enviou pelo menos uma vez
+  const [isEditing, setIsEditing] = useState(true); // começa editável
   // Ref para acessar a função de submit do filho
   const submitRef = useRef<(() => Promise<boolean>) | null>(null);
 
@@ -39,14 +41,22 @@ export default function ManagerEvaluationLayout() {
     setIsUpdate(updateFlag);
   };
 
+  const [lastSent, setLastSent] = useState<Date | null>(null);
   const handleSend = async () => {
-    if (submitRef.current) {
-      const ok = await submitRef.current();
-      if (ok) {
-        window.alert("Avaliação enviada com sucesso!");
-      } else {
-        window.alert("Erro ao enviar avaliação.");
+    if (isEditing) {
+      if (submitRef.current) {
+        const ok = await submitRef.current();
+        if (ok) {
+          setLastSent(new Date());
+          setIsEditing(false); // bloqueia após envio
+          setHasSent(true); // marca que já enviou pelo menos uma vez
+          window.alert("Avaliação enviada com sucesso!");
+        } else {
+          window.alert("Erro ao enviar avaliação.");
+        }
       }
+    } else {
+      setIsEditing(true); // libera edição ao clicar em editar
     }
   };
 
@@ -77,12 +87,23 @@ export default function ManagerEvaluationLayout() {
                 <p className="text-sm text-gray-500 truncate">COLABORADOR</p>
               </div>
             </div>
-            <button
-              className="bg-[#8CB7B7] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap"
-              onClick={handleSend}
-            >
-              {isUpdate ? "Atualizar" : "Concluir e enviar"}
-            </button>
+            <div className="flex items-center gap-2">
+              {lastSent && (
+                <span className="text-xs text-gray-500 whitespace-nowrap">
+                  Último envio: {lastSent.toLocaleString("pt-BR")}
+                </span>
+              )}
+              <button
+                className="bg-[#8CB7B7] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap"
+                onClick={handleSend}
+              >
+                {isEditing
+                  ? !hasSent
+                    ? "Enviar"
+                    : "Atualizar"
+                  : "Editar avaliação"}
+              </button>
+            </div>
           </div>
           <nav className="bg-white border-b border-gray-100">
             <ul className="flex px-8 pt-4 gap-16 text-lg text-gray-600 font-semibold">
@@ -130,7 +151,7 @@ export default function ManagerEvaluationLayout() {
         {/* Espaço para não cobrir o conteúdo pelo bloco fixo */}
         <main className="flex-1 flex justify-center items-start p-2 sm:p-4">
           <div className="w-full max-w-7xl">
-            <Outlet context={{ setSubmit: handleSetSubmit }} />
+            <Outlet context={{ setSubmit: handleSetSubmit, isEditing }} />
           </div>
         </main>
       </div>
