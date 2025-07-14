@@ -4,6 +4,7 @@ import EvaluationComparisonGroupList from "../../../components/ComparisonEvaluat
 import { useAuth } from "../../../context/AuthContext";
 import type { TrackWithGroups } from "../../../types/selfEvaluation";
 import SelfEvaluationGroupReadOnlyList from "../../../components/SelfEvaluationForm/ReadOnly/SelfEvaluationGroupListReadOnly";
+import axios from "axios";
 
 type OutletContextType = {
   selectedCycleId: number | null;
@@ -23,14 +24,16 @@ interface Cycle {
 
 export default function ComparisonEvaluation() {
   const { token, user } = useAuth();
-  const { selectedCycleId } = useOutletContext<OutletContextType>();
+  const { selectedCycleId, selectedCycleName } = useOutletContext<OutletContextType>();
   const [trackData, setTrackData] = useState<TrackWithGroups | null>(null);
   const [cycle, setCycle] = useState<Cycle | null>(null);
+  const [hasMentorEvaluation, setHasMentorEvaluation] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Buscar trilha
         const resTrack = await fetch("http://localhost:3000/rh-criteria/tracks/with-criteria", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -38,31 +41,52 @@ export default function ComparisonEvaluation() {
         const userTrack = tracks.find((t) => t.id === user?.trackId);
         if (userTrack) setTrackData(userTrack);
 
-        if (selectedCycleId) {
-          const cleanCycleId = parseInt(
-            typeof selectedCycleId === "string"
-              ? selectedCycleId.split(":")[0]
-              : String(selectedCycleId),
-            10
-          );
+        // Buscar ciclos
+        const resAll = await fetch("http://localhost:3000/ciclos", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const allCycles: Cycle[] = await resAll.json();
 
-          const resAll = await fetch("http://localhost:3000/ciclos", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+        // Selecionar ciclo por nome ou ID
+        let selected: Cycle | undefined;
+        if (selectedCycleName) {
+          selected = allCycles.find((c) => c.name === selectedCycleName);
+        } else if (selectedCycleId) {
+          const cleanCycleId = typeof selectedCycleId === "string"
+            ? parseInt(selectedCycleId.split(":")[0], 10)
+            : Number(selectedCycleId);
+          selected = allCycles.find((c) => c.id === cleanCycleId);
+        }
 
-          const allCycles: Cycle[] = await resAll.json();
-          const selected = allCycles.find((c) => c.id === cleanCycleId);
-          if (selected) setCycle(selected);
+        if (selected) {
+          setCycle(selected);
+
+          // Verifica se há avaliação de gestor
+          try {
+            const managerRes = await axios.get(
+              `http://localhost:3000/manager-evaluation/${user?.id}`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
+            const evaluations = managerRes.data;
+            const hasForSelectedCycle = evaluations.some(
+              (ev: any) => ev.cycleId === selected?.id
+            );
+            setHasMentorEvaluation(hasForSelectedCycle);
+          } catch (error) {
+            console.warn("Erro ao buscar avaliação do gestor:", error);
+          }
         }
       } catch (err) {
-        // Silencia erros em produção
+        console.warn("Erro ao buscar dados iniciais:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [token, user?.trackId, selectedCycleId]);
+  }, [token, user?.trackId, user?.id, selectedCycleId, selectedCycleName]);
 
   if (loading) {
     return <div className="bg-[#f1f1f1] h-screen w-full" />;
@@ -78,7 +102,7 @@ export default function ComparisonEvaluation() {
     );
   }
 
-  if (!selectedCycleId || !cycle) {
+  if (!cycle) {
     return (
       <div className="bg-[#f1f1f1] h-screen w-full p-3 flex items-center justify-center">
         <p className="text-sm text-gray-400 text-start">
@@ -88,7 +112,7 @@ export default function ComparisonEvaluation() {
     );
   }
 
-  if (cycle.status === "PUBLISHED") {
+  if (cycle.status === "PUBLISHED" && hasMentorEvaluation) {
     return <EvaluationComparisonGroupList cycleId={cycle.id} trackData={trackData} />;
   } else {
     return (

@@ -1,5 +1,5 @@
-import { NavLink, Outlet } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, NavLink, Outlet } from "react-router-dom";
 import EvaluationCycleSelector from "../components/ComparisonEvaluationForm/EvaluationCycleSelector";
 
 const tabs = [
@@ -10,8 +10,18 @@ const tabs = [
 ];
 
 const ComparisonLayout = () => {
+  const location = useLocation();
   const [selectedCycleId, setSelectedCycleId] = useState<number | null>(null);
   const [selectedCycleName, setSelectedCycleName] = useState<string>("");
+
+  // ao entrar na página, pega o ciclo do location.state se houver
+  useEffect(() => {
+    const state = location.state as { selectedCycleName?: string };
+    if (state?.selectedCycleName) {
+      setSelectedCycleName(state.selectedCycleName);
+      // você pode buscar o ID pelo nome mais tarde no `ComparisonEvaluation.tsx`
+    }
+  }, [location.state]);
 
   const handleCycleChange = (id: number, name: string) => {
     setSelectedCycleId(id);
@@ -44,7 +54,7 @@ const ComparisonLayout = () => {
           ))}
         </nav>
       </div>
-      <Outlet context={{ selectedCycleId, selectedCycleName }} /> {/* 👈 IMPORTANTE */}
+      <Outlet context={{ selectedCycleId, selectedCycleName }} />
     </div>
   );
 };

@@ -12,6 +12,7 @@ interface Cycle {
 
 const EvaluationCycleSelector = ({ currentCycle, onChange }: Props) => {
   const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [selectedId, setSelectedId] = useState<number | "">("");
 
   useEffect(() => {
     const fetchCycles = async () => {
@@ -28,6 +29,11 @@ const EvaluationCycleSelector = ({ currentCycle, onChange }: Props) => {
 
         if (Array.isArray(data)) {
           setCycles(data);
+
+          const match = data.find((c) => c.name === currentCycle);
+          if (match) {
+            setSelectedId(match.id);
+          }
         } else {
           console.error("Resposta inesperada da API:", data);
           setCycles([]);
@@ -38,27 +44,45 @@ const EvaluationCycleSelector = ({ currentCycle, onChange }: Props) => {
     };
 
     fetchCycles();
-  }, []);
+  }, [currentCycle]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = Number(e.target.value);
+    const selected = cycles.find((c) => c.id === id);
+    if (selected) {
+      setSelectedId(id);
+      onChange(selected.id, selected.name);
+    }
+  };
 
   return (
-    <select
-      defaultValue={currentCycle}
-      className="border border-gray-300 rounded px-3 py-1 text-sm text-gray-700"
-      onChange={(e) => {
-        const selectedId = Number(e.target.value);
-        const selected = cycles.find(c => c.id === selectedId);
-        if (selected) onChange(selected.id, selected.name);
-      }}
-    >
-      <option disabled value="">
-        Selecione um ciclo
-      </option>
-      {cycles.map((cycle) => (
-        <option key={cycle.id} value={cycle.id}>
-          {cycle.name}
+    <div className="relative w-36">
+      <select
+        value={selectedId}
+        onChange={handleChange}
+        className="w-full appearance-none rounded-md border border-gray-300 bg-white py-1.5 pl-3 pr-8 text-sm font-semibold text-gray-900 shadow-sm focus:border-green-main focus:outline-none focus:ring-1 focus:ring-green-main"
+      >
+        <option disabled value="">
+          Selecione um ciclo
         </option>
-      ))}
-    </select>
+        {cycles.map((cycle) => (
+          <option key={cycle.id} value={cycle.id}>
+            {cycle.name}
+          </option>
+        ))}
+      </select>
+      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400">
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+    </div>
   );
 };
 
