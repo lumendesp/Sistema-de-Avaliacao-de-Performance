@@ -234,11 +234,11 @@ const ColaboradoresList: React.FC = () => {
             return (
               <button
                 key={colab.id || idx}
-                className="w-full flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3 hover:bg-gray-100 transition cursor-pointer"
+                className="w-full flex flex-col sm:flex-row sm:items-center justify-between bg-gray-50 rounded-lg px-2 sm:px-4 py-3 hover:bg-gray-100 transition cursor-pointer min-w-0"
                 onClick={() => navigate(`/manager/avaliacao/${colab.id}`)}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 text-lg">
+                <div className="flex items-center gap-2 sm:gap-4 min-w-0 w-full sm:w-auto">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 text-lg sm:text-xl overflow-hidden">
                     {colab.name
                       ? colab.name
                           .split(" ")
@@ -248,54 +248,52 @@ const ColaboradoresList: React.FC = () => {
                           .slice(0, 2)
                       : "C"}
                   </div>
-                  <div>
-                    <div className="font-semibold text-gray-900 leading-tight">
-                      {colab.name}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 min-w-0">
+                      <span className="font-semibold text-gray-900 text-base sm:text-lg truncate max-w-[10rem] sm:max-w-xs block">
+                        {colab.name}
+                      </span>
+                      <span className={`mt-1 sm:mt-0 sm:ml-2 px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${statusStyles[status]}`}>{status}</span>
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500 truncate max-w-[8rem] sm:max-w-xs">
                       {colab.role || "Departamento"}
                     </div>
                   </div>
-                  <span
-                    className={`ml-4 px-2 py-0.5 rounded text-xs font-medium ${statusStyles[status]}`}
-                  >
-                    {status}
-                  </span>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-xs text-gray-500">
-                    Autoavaliação{" "}
-                    <span className="ml-1 font-semibold text-gray-900">
+                <div className="flex flex-row sm:flex-col gap-3 sm:gap-1 mt-2 sm:mt-0 items-end sm:items-end justify-between sm:justify-end w-full sm:w-auto">
+                  <div className="text-xs text-gray-500 whitespace-nowrap">
+                    <span className="font-semibold text-gray-900">
                       {selfScore !== null && selfScore !== undefined
                         ? selfScore.toFixed(1)
                         : "-"}
                     </span>
+                    <span className="ml-1">Autoavaliação</span>
                   </div>
-                  <div className="text-xs text-gray-500">
-                    Nota gestor{" "}
-                    <span className="ml-1 font-semibold text-gray-900">
+                  <div className="text-xs text-gray-500 whitespace-nowrap">
+                    <span className="font-semibold text-gray-900">
                       {managerScore !== null && managerScore !== undefined
                         ? managerScore.toFixed(1)
                         : "-"}
                     </span>
+                    <span className="ml-1">Nota gestor</span>
                   </div>
-                  <span className="ml-2 text-gray-400 hover:text-teal-700">
-                    <svg
-                      width="20"
-                      height="20"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </span>
                 </div>
+                <span className="hidden sm:flex ml-2 text-gray-400 hover:text-teal-700 flex-shrink-0">
+                  <svg
+                    width="20"
+                    height="20"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </span>
               </button>
             );
           })

@@ -28,7 +28,7 @@ export default function Dashboard() {
         console.log("Página de colaborador - buscando ciclo do tipo:", mainRole);
 
         const response = await axios.get<Cycle>(
-          `http://localhost:3000/ciclos/current?type=${mainRole}`,
+          `http://localhost:3000/ciclos/current?status=IN_PROGRESS_COLLABORATOR`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -60,7 +60,7 @@ export default function Dashboard() {
     console.log("Mapeando status:", status);
     const mappedStatus = (() => {
       switch (status) {
-        case "IN_PROGRESS":
+        case "IN_PROGRESS_COLLABORATOR":
           return "aberto";
         case "CLOSED":
           return "emBreve";

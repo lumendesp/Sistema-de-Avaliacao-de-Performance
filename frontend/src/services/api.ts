@@ -81,13 +81,43 @@ export const fetchActiveEvaluationCycle = async (role?: string) => {
       }
     }
   }
-  const res = await fetch(`${API_URL}/evaluation-cycle/active?type=${mainRole}`, {
+
+  // Mapeamento de role para status
+  let status = 'IN_PROGRESS_COLLABORATOR';
+  if (mainRole === 'MANAGER') status = 'IN_PROGRESS_MANAGER';
+  else if (mainRole === 'COMMITTEE') status = 'IN_PROGRESS_COMMITTEE';
+  else if (mainRole === 'HR') status = 'IN_PROGRESS_COMMITTEE'; // HR também usa COMMITTEE status
+
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error("Token de autenticação não encontrado. Faça login novamente.");
+  }
+
+  const res = await fetch(`${API_URL}/evaluation-cycle/active?status=${status}`, {
     headers: getAuthHeaders(),
   });
-  if (!res.ok) {
-    throw new Error("Erro ao buscar ciclo ativo");
+  
+  if (res.status === 401) {
+    throw new Error("Sessão expirada. Faça login novamente.");
   }
-  return res.json();
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('Erro na resposta:', res.status, errorText);
+    throw new Error(`Erro ao buscar ciclo ativo: ${res.status} - ${errorText}`);
+  }
+  
+  const responseText = await res.text();
+  if (!responseText) {
+    throw new Error("Resposta vazia do servidor");
+  }
+  
+  try {
+    return JSON.parse(responseText);
+  } catch (error) {
+    console.error('Erro ao fazer parse da resposta:', responseText);
+    throw new Error("Resposta inválida do servidor");
+  }
 };
 
 export const fetchEvaluationCompletionStatus = async (cycleId: number) => {
