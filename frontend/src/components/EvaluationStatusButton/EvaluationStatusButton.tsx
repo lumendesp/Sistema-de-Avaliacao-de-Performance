@@ -17,7 +17,9 @@ function EvaluationStatusButton({
     if (status === 'aberto') {
       navigate('/collaborator/evaluation');
     } else {
-      navigate('/collaborator/evaluation-comparison');
+      navigate('/collaborator/evaluation-comparison', {
+        state: { selectedCycleName: ciclo }, // 👈 envia o ciclo atual
+      });
     }
   };
 
