@@ -1,12 +1,19 @@
-import { IsInt, IsArray, ValidateNested, IsString, IsOptional } from 'class-validator';
+import {
+  IsInt,
+  IsArray,
+  ValidateNested,
+  IsString,
+  IsOptional,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ManagerEvaluationItemDto {
   @IsInt()
   criterionId: number;
 
+  @IsOptional()
   @IsInt()
-  score: number;
+  score?: number;
 
   @IsString()
   @IsOptional()

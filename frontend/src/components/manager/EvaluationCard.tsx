@@ -10,6 +10,7 @@ interface Props {
   criterion: EvaluationCriterion;
   index: number;
   onChange?: (updated: Partial<EvaluationCriterion>) => void;
+  readOnly?: boolean;
 }
 
 // Função utilitária para formatar nomes de critérios
@@ -21,7 +22,12 @@ function formatCriterionName(name: string) {
     .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
-export default function EvaluationCard({ criterion, index, onChange }: Props) {
+export default function EvaluationCard({
+  criterion,
+  index,
+  onChange,
+  readOnly = false,
+}: Props) {
   const [open, setOpen] = useState(true);
   // Considera preenchido se managerRating > 0 e há justificativa
   const isFilled =
@@ -113,8 +119,13 @@ export default function EvaluationCard({ criterion, index, onChange }: Props) {
             </span>
             <RatingStars
               value={criterion.managerRating ?? 0}
-              onChange={(val: number) => onChange?.({ managerRating: val })}
+              onChange={
+                readOnly
+                  ? undefined
+                  : (val: number) => onChange?.({ managerRating: val })
+              }
               size={28}
+              readOnly={readOnly}
             />
             {/* Espaço reservado para alinhar com a descrição da nota da autoavaliação */}
             <span className="text-xs text-gray-500 font-medium mt-1 mb-1 min-h-[20px]">
@@ -127,9 +138,12 @@ export default function EvaluationCard({ criterion, index, onChange }: Props) {
               className="w-full p-2 text-sm border rounded min-h-[80px]"
               placeholder="Justifique sua nota"
               value={criterion.managerJustification || ""}
-              onChange={(e) =>
-                onChange?.({ managerJustification: e.target.value })
+              onChange={
+                readOnly
+                  ? undefined
+                  : (e) => onChange?.({ managerJustification: e.target.value })
               }
+              readOnly={readOnly}
             />
           </div>
         </div>
