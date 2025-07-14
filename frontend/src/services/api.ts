@@ -529,12 +529,13 @@ export const getUserById = async (id: number) => {
 // Gestor (avaliações)
 
 export const fetchManagerCollaborators = async (managerId: number) => {
-  const res = await fetch(`${API_URL}/manager/${managerId}/collaborators`, {
+  const res = await fetch(`${API_URL}/managers/${managerId}`, {
     method: "GET",
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error("Erro ao buscar colaboradores");
-  return res.json();
+  const data = await res.json();
+  return data.collaborators || [];
 };
 
 export const fetchManagerEvaluation = async (collaboratorId: number) => {
@@ -1045,5 +1046,73 @@ export const getMyManagerEvaluations = async (cycleId?: number) => {
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error("Erro ao buscar minhas avaliações de gestor");
+  return res.json();
+};
+
+// --- PDI API ---
+export const fetchPdiByUser = async (userId: number) => {
+  const res = await fetch(`${API_URL}/pdi/user/${userId}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Erro ao buscar PDI');
+  return res.json();
+};
+
+export const createPdi = async (data: { userId: number; title: string; description?: string }) => {
+  const res = await fetch(`${API_URL}/pdi`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Erro ao criar PDI');
+  return res.json();
+};
+
+export const updatePdi = async (id: number, data: { title?: string; description?: string }) => {
+  const res = await fetch(`${API_URL}/pdi/${id}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Erro ao atualizar PDI');
+  return res.json();
+};
+
+export const deletePdi = async (id: number) => {
+  const res = await fetch(`${API_URL}/pdi/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Erro ao deletar PDI');
+  return res.json();
+};
+
+export const createPdiAction = async (data: any) => {
+  const res = await fetch(`${API_URL}/pdi/action`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Erro ao criar ação do PDI');
+  return res.json();
+};
+
+export const updatePdiAction = async (id: number, data: any) => {
+  const res = await fetch(`${API_URL}/pdi/action/${id}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Erro ao atualizar ação do PDI');
+  return res.json();
+};
+
+export const deletePdiAction = async (id: number) => {
+  const res = await fetch(`${API_URL}/pdi/action/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Erro ao deletar ação do PDI');
   return res.json();
 };

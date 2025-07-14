@@ -130,6 +130,7 @@ model User {
   manages             ManagerCollaborator[] @relation("ManagerToCollaborator")
   managedBy           ManagerCollaborator[] @relation("CollaboratorToManager")
   EvaluationCycleUser EvaluationCycleUser[]
+  pdis                PDI[]
 }
 
 // ---------------- HISTÓRICO DE TRILHAS -----------------
@@ -428,4 +429,29 @@ model BrutalFactsCache {
   cycleId   Int      @unique
   data      Json
   createdAt DateTime @default(now())
+}
+
+model PDI {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  user        User        @relation(fields: [userId], references: [id])
+  title       String
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  actions     PDIAction[]
+}
+
+model PDIAction {
+  id          Int      @id @default(autoincrement())
+  pdiId       Int
+  pdi         PDI      @relation(fields: [pdiId], references: [id])
+  title       String
+  description String
+  category    String   // skill | knowledge | behavior | career
+  priority    String   // low | medium | high
+  status      String   // planned | in_progress | completed
+  dueDate     DateTime
+  progress    Int      // 0-100
+  goals       Json?    // array de metas: [{ id, descricao, concluida }]
 }
