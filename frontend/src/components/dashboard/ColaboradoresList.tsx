@@ -131,42 +131,37 @@ const ColaboradoresList: React.FC = () => {
   function getStatusAndScore(collaboratorId: number) {
     const evaluation = evaluations[collaboratorId];
     const selfEval = selfEvaluations[collaboratorId];
-    const allCriteria = (evaluation?.groups || []).flatMap(
-      (g) => g.items || []
-    );
-    // Critérios com nota preenchida
-    const withScore = allCriteria.filter(
-      (c) => c.score !== null && c.score !== undefined
-    );
-    // Critérios com nota E justificativa preenchidas
-    const filled = allCriteria.filter(
-      (c) =>
-        c.score !== null &&
-        c.score !== undefined &&
-        c.justification &&
-        c.justification.trim() !== ""
-    );
-    const total = allCriteria.length;
     let managerScore: number | null = null;
-    if (withScore.length > 0) {
-      managerScore =
-        withScore.reduce((sum, c) => sum + (c.score || 0), 0) /
-        withScore.length;
-    }
-    // Calcula média da autoavaliação
     let selfScore: number | null = null;
+    if (evaluation && evaluation.groups) {
+      const allCriteria = (evaluation.groups || []).flatMap(
+        (g) => g.items || []
+      );
+      const withScore = allCriteria.filter(
+        (c) => c.score !== null && c.score !== undefined
+      );
+      if (withScore.length > 0) {
+        managerScore =
+          withScore.reduce((sum, c) => sum + (c.score || 0), 0) /
+          withScore.length;
+      }
+    }
     if (selfEval && selfEval.items && selfEval.items.length > 0) {
       selfScore =
         selfEval.items.reduce((sum, item) => sum + item.score, 0) /
         selfEval.items.length;
     }
-    if (!evaluation || total === 0 || withScore.length === 0) {
+    if (!evaluation) {
       return { status: "Pendente" as const, managerScore: null, selfScore };
     }
-    if (filled.length < total) {
+    if (evaluation.status === "submitted") {
+      return { status: "Finalizado" as const, managerScore, selfScore };
+    }
+    if (evaluation.status === "draft") {
       return { status: "Em andamento" as const, managerScore, selfScore };
     }
-    return { status: "Finalizado" as const, managerScore, selfScore };
+    // fallback para casos inesperados
+    return { status: "Pendente" as const, managerScore, selfScore };
   }
 
   if (loading)
@@ -214,13 +209,26 @@ const ColaboradoresList: React.FC = () => {
         {colaboradores.length === 0 ? (
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              <svg
+                className="w-8 h-8 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum colaborador associado</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Nenhum colaborador associado
+            </h3>
             <p className="text-gray-500 text-sm">
-              Você ainda não possui colaboradores associados ao seu perfil de gestor.
+              Você ainda não possui colaboradores associados ao seu perfil de
+              gestor.
             </p>
             <p className="text-gray-400 text-xs mt-1">
               Entre em contato com o RH para associar colaboradores ao seu time.
@@ -253,7 +261,11 @@ const ColaboradoresList: React.FC = () => {
                       <span className="font-semibold text-gray-900 text-base sm:text-lg truncate max-w-[10rem] sm:max-w-xs block">
                         {colab.name}
                       </span>
-                      <span className={`mt-1 sm:mt-0 sm:ml-2 px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${statusStyles[status]}`}>{status}</span>
+                      <span
+                        className={`mt-1 sm:mt-0 sm:ml-2 px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${statusStyles[status]}`}
+                      >
+                        {status}
+                      </span>
                     </div>
                     <div className="text-xs text-gray-500 truncate max-w-[8rem] sm:max-w-xs">
                       {colab.role || "Departamento"}
