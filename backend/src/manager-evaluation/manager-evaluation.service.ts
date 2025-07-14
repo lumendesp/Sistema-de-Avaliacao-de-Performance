@@ -45,29 +45,31 @@ export class ManagerEvaluationService {
         'Já existe avaliação deste gestor para este colaborador neste ciclo',
       );
     }
-    // Salva o groupId em cada item
+    // Só cria itens com score preenchido
+    const itemsToCreate = dto.groups.flatMap((group) =>
+      group.items
+        .filter((item) => Number.isInteger(item.score))
+        .map((item) => {
+          const data: any = {
+            criterion: { connect: { id: item.criterionId } },
+            justification: encrypt(item.justification || ''),
+            groupId: group.groupId,
+            score: item.score,
+            scoreDescription: this.getScoreDescription(item.score as number),
+          };
+          return data;
+        }),
+    );
+    if (itemsToCreate.length === 0) {
+      throw new ConflictException('Nenhum critério preenchido para avaliação.');
+    }
     return this.prisma.managerEvaluation.create({
       data: {
         evaluatorId,
         evaluateeId: dto.evaluateeId,
         cycleId: dto.cycleId,
         items: {
-          create: dto.groups.flatMap((group) =>
-            group.items.map((item) => {
-              const data: any = {
-                criterion: { connect: { id: item.criterionId } },
-                justification: encrypt(item.justification || ''),
-                groupId: group.groupId,
-              };
-              if (Number.isInteger(item.score)) {
-                data.score = item.score;
-                data.scoreDescription = this.getScoreDescription(
-                  item.score as number,
-                );
-              }
-              return data;
-            }),
-          ),
+          create: itemsToCreate,
         },
       },
       include: { items: true },
@@ -76,30 +78,32 @@ export class ManagerEvaluationService {
 
   async update(id: number, dto: UpdateManagerEvaluationDto) {
     const groups = (dto as any).groups;
+    // Só atualiza se houver pelo menos um item com score preenchido
+    const itemsToUpdate = groups
+      ? groups.flatMap((group) =>
+          group.items
+            .filter((item) => Number.isInteger(item.score))
+            .map((item) => ({
+              criterion: { connect: { id: item.criterionId } },
+              justification: encrypt(item.justification || ''),
+              groupId: group.groupId,
+              score: item.score,
+              scoreDescription: this.getScoreDescription(item.score as number),
+            })),
+        )
+      : [];
+    if (!itemsToUpdate.length) {
+      throw new ConflictException(
+        'Nenhum critério preenchido para atualização.',
+      );
+    }
     return this.prisma.managerEvaluation.update({
       where: { id },
       data: {
-        ...(groups && {
-          items: {
-            deleteMany: {},
-            create: groups.flatMap((group) =>
-              group.items.map((item) => {
-                const data: any = {
-                  criterion: { connect: { id: item.criterionId } },
-                  justification: encrypt(item.justification || ''),
-                  groupId: group.groupId,
-                };
-                if (Number.isInteger(item.score)) {
-                  data.score = item.score;
-                  data.scoreDescription = this.getScoreDescription(
-                    item.score as number,
-                  );
-                }
-                return data;
-              }),
-            ),
-          },
-        }),
+        items: {
+          deleteMany: {},
+          create: itemsToUpdate,
+        },
       },
       include: { items: true },
     });
