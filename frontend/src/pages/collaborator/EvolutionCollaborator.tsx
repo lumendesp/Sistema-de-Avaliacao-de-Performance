@@ -23,65 +23,75 @@ const CollaboratorHistory = () => {
       try {
         const token = localStorage.getItem('token');
 
-        // Buscar nome do colaborador
         const userRes = await fetch(`${API_URL}/users/${id}`, {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         });
         const userData = await userRes.json();
         setCollaboratorName(userData.name);
 
-        // Buscar todos os ciclos
         const ciclosRes = await fetch(`${API_URL}/ciclos`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const allCycles = await ciclosRes.json();
 
-        // Buscar histórico do colaborador
         const histRes = await fetch(`${API_URL}/ciclos/historico/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const histData = await histRes.json();
 
-        // Mapear históricos pelo nome do ciclo
-        const historicoMap = new Map(
-          histData.map((c: any) => [c.cycle, c])
+        const historicoMap = new Map(histData.map((c: any) => [c.cycle, c]));
+
+        const ciclosCompletos = await Promise.all(
+          allCycles.map(async (cycle: any) => {
+            const historico = historicoMap.get(cycle.name);
+
+            let peerScore = '-';
+            try {
+              const peerRes = await fetch(`${API_URL}/peer-evaluations/average/cycle/${cycle.id}/user/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (peerRes.ok) {
+                const peerData = await peerRes.json();
+                peerScore = peerData?.average?.toFixed(1) ?? '-';
+              }
+            } catch (err) {
+              console.error(`Erro ao buscar avaliação 360 do ciclo ${cycle.name}:`, err);
+            }
+
+            if (historico) {
+              return {
+                cycle: cycle.name,
+                status: cycle.status === 'PUBLISHED' ? 'Finalizado' : 'Em andamento',
+                self: historico.self ?? '-',
+                exec: peerScore,
+                posture: historico.posture ?? '-',
+                final: historico.final ?? '-',
+                summary: historico.summary ?? '-',
+              };
+            } else if (cycle.status === 'IN_PROGRESS_COLLABORATOR') {
+              return {
+                cycle: cycle.name,
+                status: 'Em andamento',
+                self: '-',
+                exec: peerScore,
+                posture: '-',
+                final: '-',
+                summary: '-',
+              };
+            }
+
+            return null;
+          })
         );
 
-        const ciclosCompletos = allCycles.map((cycle: any) => {
-          const historico = historicoMap.get(cycle.name);
+        const filtrados = ciclosCompletos.filter(Boolean);
+        setCycles(filtrados.sort((a, b) => b.cycle.localeCompare(a.cycle)));
+        setTotalEvaluations(filtrados.length);
 
-          if (historico) {
-            return {
-              cycle: cycle.name,
-              status: cycle.status === 'PUBLISHED' ? 'Finalizado' : 'Em andamento',
-              self: historico.self ?? '-',
-              exec: historico.exec ?? '-',
-              posture: historico.posture ?? '-',
-              final: historico.final ?? '-',
-              summary: historico.summary ?? '-',
-            };
-          } else if (cycle.status === 'IN_PROGRESS_COLLABORATOR') {
-            return {
-              cycle: cycle.name,
-              status: 'Em andamento',
-              self: '-',
-              exec: '-',
-              posture: '-',
-              final: '-',
-              summary: '-',
-            };
-          }
-
-          return null;
-        }).filter(Boolean); // Remove nulos
-
-        setCycles(ciclosCompletos.sort((a, b) => b.cycle.localeCompare(a.cycle)));
-        setTotalEvaluations(ciclosCompletos.length);
-
-        const perf = ciclosCompletos
+        const perf = filtrados
           .filter((c: any) => typeof c.final === 'number')
           .map((c: any) => ({ cycle: c.cycle, score: c.final }));
 
