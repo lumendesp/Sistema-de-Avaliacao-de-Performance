@@ -68,7 +68,7 @@ export class PeerEvaluationController {
     @Param('evaluateeId', ParseIntPipe) evaluateeId: number,
   ) {
     const evaluatorId = req.user.userId;
-    const activeCycle = await this.cycleService.findActiveCycle();
+    const activeCycle = await this.cycleService.findActiveCycle('IN_PROGRESS_COLLABORATOR' as any);
 
     if (!activeCycle) {
       throw new Error('No active evaluation cycle found');

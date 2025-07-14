@@ -30,8 +30,10 @@ enum MotivationLevel {
 }
 
 enum CycleStatus {
-  IN_PROGRESS
+  IN_PROGRESS_COLLABORATOR
+  IN_PROGRESS_MANAGER
   CLOSED
+  IN_PROGRESS_COMMITTEE
   PUBLISHED
 }
 
@@ -125,8 +127,9 @@ model User {
   aiSummaries    AISummary[]
   finalScores    FinalScore[]
 
-  manages   ManagerCollaborator[] @relation("ManagerToCollaborator")
-  managedBy ManagerCollaborator[] @relation("CollaboratorToManager")
+  manages             ManagerCollaborator[] @relation("ManagerToCollaborator")
+  managedBy           ManagerCollaborator[] @relation("CollaboratorToManager")
+  EvaluationCycleUser EvaluationCycleUser[]
 }
 
 // ---------------- HISTÓRICO DE TRILHAS -----------------
@@ -188,24 +191,38 @@ model ConfiguredCriterion {
 
 // ---------- CICLOS ----------
 model EvaluationCycle {
-  id          Int         @id @default(autoincrement())
-  name        String
-  startDate   DateTime
-  endDate     DateTime
-  status      CycleStatus
-  submittedAt DateTime?
-  isSubmit    Boolean     @default(false)
+  id        Int         @id @default(autoincrement())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  status    CycleStatus
+  createdAt DateTime    @default(now())
 
   // Todas as avaliações ligadas ao ciclo
-  selfEvaluations    SelfEvaluation[]
-  peerEvaluations    PeerEvaluation[]
-  mentorEvaluations  MentorEvaluation[]
-  references         Reference[]
-  finalScores        FinalScore[]
-  discrepancies      Discrepancy[]
-  aiSummaries        AISummary[]
-  committeeNotes     CommitteeNote[]
-  managerEvaluations ManagerEvaluation[]
+  selfEvaluations     SelfEvaluation[]
+  peerEvaluations     PeerEvaluation[]
+  mentorEvaluations   MentorEvaluation[]
+  references          Reference[]
+  finalScores         FinalScore[]
+  discrepancies       Discrepancy[]
+  aiSummaries         AISummary[]
+  committeeNotes      CommitteeNote[]
+  managerEvaluations  ManagerEvaluation[]
+  EvaluationCycleUser EvaluationCycleUser[]
+}
+
+model EvaluationCycleUser {
+  id     Int  @id @default(autoincrement())
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  cycle   EvaluationCycle @relation(fields: [cycleId], references: [id])
+  cycleId Int
+
+  submittedAt DateTime?
+  isSubmit    Boolean   @default(false)
+
+  @@unique([userId, cycleId]) // garante 1 submissão por user por ciclo
 }
 
 // ---------- FORMULÁRIOS DE AVALIAÇÃO ----------
@@ -404,4 +421,11 @@ model ManagerCollaborator {
   collaborator User @relation("CollaboratorToManager", fields: [collaboratorId], references: [id])
 
   @@id([managerId, collaboratorId])
+}
+
+model BrutalFactsCache {
+  id        Int      @id @default(autoincrement())
+  cycleId   Int      @unique
+  data      Json
+  createdAt DateTime @default(now())
 }

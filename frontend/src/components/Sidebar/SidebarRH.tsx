@@ -1,6 +1,7 @@
 import { useNavigate, NavLink } from 'react-router-dom';
 import { FiLogOut, FiMenu, FiX } from 'react-icons/fi';
 import { useState } from 'react';
+import { FlagIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 import dashboardIcon from '../../assets/dashboard.svg';
 import collaboratorsIcon from '../../assets/collaborators.svg';
@@ -21,6 +22,16 @@ const menuItems = [
     path: '/rh/criteria',
     label: 'Critérios de Avaliação',
     icon: <img src={configIcon} alt="Critérios de Avaliação" className="w-5 h-5" />,
+  },
+  {
+    path: '/rh/okr',
+    label: 'OKR',
+    icon: <FlagIcon className="w-5 h-5" />,
+  },
+  {
+    path: '/rh/pdi',
+    label: 'PDI',
+    icon: <UserGroupIcon className="w-5 h-5" />,
   },
 ];
 

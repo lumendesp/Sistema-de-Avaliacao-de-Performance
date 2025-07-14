@@ -38,9 +38,12 @@ const EvaluationComparisonGroupList = ({ cycleId, trackData }: Props) => {
     const fetchData = async () => {
       try {
         // 1. Buscar dados da autoavaliação
-        const selfRes = await axios.get(`http://localhost:3000/self-evaluation?cycleId=${cycleId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const selfRes = await axios.get(
+          `http://localhost:3000/self-evaluation?cycleId=${cycleId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         const selfData = selfRes.data.find((e: any) => e.cycle.id === cycleId);
         if (!selfData) return;
@@ -48,9 +51,12 @@ const EvaluationComparisonGroupList = ({ cycleId, trackData }: Props) => {
         const groups: GroupedData[] = [];
 
         // 2. Buscar avaliação do gestor
-        const managerRes = await axios.get(`http://localhost:3000/manager-evaluation/${user?.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const managerRes = await axios.get(
+          `http://localhost:3000/manager-evaluation/${user?.id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         const managerData = managerRes.data;
 
@@ -78,12 +84,15 @@ const EvaluationComparisonGroupList = ({ cycleId, trackData }: Props) => {
             selfScore: item.score,
             finalScore: 0,
           });
+          
         });
 
         // 4. Preencher finalScore com base na avaliação do gestor, sem alterar justificativas
         managerData.items?.forEach((item: any) => {
           const group = groups.find((g) => g.groupId === item.groupId);
-          const criterion = group?.criteria.find((c) => c.criterionId === item.criterionId);
+          const criterion = group?.criteria.find(
+            (c) => c.criterionId === item.criterionId
+          );
           if (criterion) {
             criterion.finalScore = item.score;
           }
@@ -91,8 +100,13 @@ const EvaluationComparisonGroupList = ({ cycleId, trackData }: Props) => {
 
         // 5. Calcular média final por grupo
         groups.forEach((group) => {
-          const total = group.criteria.reduce((sum, c) => sum + c.finalScore, 0);
-          group.finalAverageScore = group.criteria.length ? total / group.criteria.length : 0;
+          const total = group.criteria.reduce(
+            (sum, c) => sum + c.finalScore,
+            0
+          );
+          group.finalAverageScore = group.criteria.length
+            ? total / group.criteria.length
+            : 0;
         });
 
         setGrouped(groups);

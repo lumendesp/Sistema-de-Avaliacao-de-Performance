@@ -1,26 +1,50 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { PiSparkleBold } from 'react-icons/pi';
 import type { EvaluationCardMiniProps } from '../../types/DashboardCollaboratorTypes/evaluationCardMini';
 import { getEvaluationColor } from '../../utils/getEvaluationColor';
 
-const EvaluationCardMini = ({ ciclo, nota, status, resumo, destaque }: EvaluationCardMiniProps) => {
+const EvaluationCardMini = ({
+  ciclo,
+  nota,
+  status,
+  statusReal, 
+  resumo,
+  destaque
+}: EvaluationCardMiniProps) => {
+  const navigate = useNavigate();
+  const notaColor = getEvaluationColor(nota);
+
+  const handleClick = () => {
+    if (statusReal === 'IN_PROGRESS_COLLABORATOR') {
+      navigate('/collaborator/evaluation');
+    } else {
+      navigate('/collaborator/evaluation-comparison', {
+        state: {
+          selectedCycleName: ciclo,
+        },
+      });
+    }
+  };
+
   const statusClass =
     status === 'Finalizado'
       ? 'bg-green-100 text-green-700'
       : 'bg-yellow-100 text-yellow-700';
 
-  const notaColor = getEvaluationColor(nota);
-
   return (
-    <Link to="/collaborator/evaluation-comparison" className="block">
+    <button onClick={handleClick} className="w-full text-left">
       <div className="flex rounded-xl border border-gray-200 bg-white p-4 gap-4 items-start shadow-sm hover:shadow-md transition">
-        <div className="flex flex-col items-center justify-center bg-gray-50 px-4 py-2 rounded-md min-w-[72px]">
-          <span className={`text-2xl font-bold ${notaColor}`}>
-            {nota !== undefined ? nota.toFixed(1) : '-'}
-          </span>
-          {destaque && (
-            <span className={`text-sm font-semibold ${notaColor}`}>{destaque}</span>
-          )}
+        <div className="flex flex-col items-center bg-gray-50 px-4 py-2 rounded-md min-w-[72px] h-full">
+          <div className="mt-auto flex flex-col items-center">
+            <span className={`text-xl sm:text-2xl font-bold leading-tight ${notaColor}`}>
+              {nota !== undefined ? nota.toFixed(1) : '-'}
+            </span>
+            {destaque && (
+              <span className={`text-xs sm:text-sm font-medium ${notaColor}`}>
+                {destaque}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex-1 flex flex-col gap-2">
           <div className="flex justify-between items-center">
@@ -40,7 +64,7 @@ const EvaluationCardMini = ({ ciclo, nota, status, resumo, destaque }: Evaluatio
           )}
         </div>
       </div>
-    </Link>
+    </button>
   );
 };
 

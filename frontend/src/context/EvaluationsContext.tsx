@@ -25,6 +25,8 @@ interface EvaluationContextProps {
   isSubmit: boolean;
   setIsSubmit: (value: boolean) => void;
   unlockAllEvaluations: () => Promise<void>;
+  resetEvaluationContext: () => void;
+  activeCycle: { id: number } | null;
 }
 
 const EvaluationContext = createContext<EvaluationContextProps | undefined>(
@@ -32,7 +34,7 @@ const EvaluationContext = createContext<EvaluationContextProps | undefined>(
 );
 
 export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
-  const { token } = useAuth(); // pega o token do usuário logado
+  const { token, user } = useAuth(); // pega o token e usuário logado
   const [activeCycle, setActiveCycle] = useState<{ id: number } | null>(null);
   const [lastSubmittedAt, setLastSubmittedAt] = useState<string | null>(null);
   const [isSubmit, setIsSubmit] = useState(false);
@@ -49,7 +51,7 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const [initialTabCompletion, setInitialTabCompletion] = useState<
+const [initialTabCompletion, setInitialTabCompletion] = useState<
     TabStateMap<boolean>
   >({
     self: false,
@@ -97,12 +99,38 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
     setTabCompletion((prev) => ({ ...prev, [key]: value }));
   };
 
+  const resetEvaluationContext = () => {
+    setActiveCycle(null);
+    setLastSubmittedAt(null);
+    setIsSubmit(false);
+    setIsComplete(false);
+    setTabCompletion({
+      self: false,
+      peer: false,
+      mentor: false,
+      reference: false,
+    });
+  };
+
   useEffect(() => {
     if (!token) return;
 
     const loadCompletionStatus = async () => {
       try {
-        const cycle = await fetchActiveEvaluationCycle();
+        // Determinar o role baseado nos roles do usuário autenticado
+        let role = "COLLABORATOR"; // default
+
+        if (user?.roles?.includes("MANAGER")) {
+          role = "MANAGER";
+        } else if (user?.roles?.includes("COMMITTEE")) {
+          role = "COMMITTEE";
+        } else if (user?.roles?.includes("HR")) {
+          role = "HR";
+        } else {
+          role = "COLLABORATOR";
+        }
+
+        const cycle = await fetchActiveEvaluationCycle(role);
         setActiveCycle(cycle); // Salva ciclo ativo
 
         const statusResponse = await fetchEvaluationCompletionStatus(cycle.id);
@@ -141,6 +169,8 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
         isSubmit,
         setIsSubmit,
         unlockAllEvaluations,
+        resetEvaluationContext,
+        activeCycle,
       }}
     >
       {children}

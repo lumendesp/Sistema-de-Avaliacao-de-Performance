@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma.service';
 import { EvaluationCycleService } from '../evaluation-cycle/evaluation-cycle.service';
 import { CreateMentorEvaluationDto } from './dto/create-mentor-evaluation.dto';
 import { encrypt, decrypt } from '../utils/encryption';
+import { CycleStatus } from '@prisma/client';
 
 @Injectable()
 export class MentorEvaluationService {
@@ -71,8 +72,8 @@ export class MentorEvaluationService {
       throw new ForbiddenException('Only collaborators can evaluate mentors.');
     }
 
-    // busca o ciclo de avaliação ativo
-    const activeCycle = await this.cycleService.findActiveCycle();
+    // busca o ciclo de avaliação ativo para COLLABORATOR
+    const activeCycle = await this.cycleService.findActiveCycle('IN_PROGRESS_COLLABORATOR' as CycleStatus);
 
     // se não tiver nenhum ciclo ativo
     if (!activeCycle) {
@@ -127,7 +128,7 @@ export class MentorEvaluationService {
     }
 
     // Verifica se o ciclo está ativo para permitir atualização
-    if (evaluation.cycle.status !== 'IN_PROGRESS') {
+    if (!evaluation.cycle.status.startsWith('IN_PROGRESS')) {
       throw new BadRequestException(
         'Cannot update evaluation after cycle is finished.',
       );
