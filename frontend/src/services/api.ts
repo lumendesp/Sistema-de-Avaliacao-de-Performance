@@ -570,6 +570,7 @@ export const createManagerEvaluation = async (data: {
   evaluateeId: number;
   cycleId: number;
   groups: any[];
+  status?: string;
 }) => {
   // Log para debug
   console.log("Payload enviado para manager-evaluation:", data);

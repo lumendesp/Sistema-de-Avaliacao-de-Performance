@@ -97,14 +97,21 @@ export class ManagerEvaluationService {
         'Nenhum critério preenchido para atualização.',
       );
     }
+
+    // Se status=submitted, atualiza status e o createdAt (sobrescreve data de criação)
+    const updateData: any = {
+      items: {
+        deleteMany: {},
+        create: itemsToUpdate,
+      },
+    };
+    if (dto.status === 'submitted') {
+      updateData.status = 'submitted';
+      updateData.createdAt = new Date();
+    }
     return this.prisma.managerEvaluation.update({
       where: { id },
-      data: {
-        items: {
-          deleteMany: {},
-          create: itemsToUpdate,
-        },
-      },
+      data: updateData,
       include: { items: true },
     });
   }

@@ -47,6 +47,7 @@ export default function CollaboratorEvaluation() {
   const [selfEvaluation, setSelfEvaluation] = useState<any>(null);
   const outletContext = useOutletContext<OutletContextType>();
   const isEditing = outletContext?.isEditing !== false;
+  console.log("[DEBUG] isEditing recebido no filho:", isEditing);
   const { token } = useAuth();
   const [cycleId, setCycleId] = useState<number | null>(null);
   const [cycleStatus, setCycleStatus] = useState<string | null>(null);
@@ -295,6 +296,7 @@ export default function CollaboratorEvaluation() {
           // Update
           await updateManagerEvaluation(Number(collaboratorId), {
             groups: groupsPayload,
+            status: "submitted",
           });
         } else {
           // Create
@@ -302,6 +304,7 @@ export default function CollaboratorEvaluation() {
             evaluateeId: Number(collaboratorId),
             cycleId: cycleId as number,
             groups: groupsPayload,
+            status: "submitted",
           });
         }
         return true;

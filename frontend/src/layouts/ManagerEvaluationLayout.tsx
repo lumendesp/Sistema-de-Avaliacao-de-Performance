@@ -1,3 +1,7 @@
+import {
+  fetchManagerEvaluation,
+  updateManagerEvaluation,
+} from "../services/api";
 import React, { useEffect, useRef, useState } from "react";
 import { Outlet, NavLink, useParams } from "react-router-dom";
 import type { Collaborator } from "../types/collaboratorStatus";
@@ -10,8 +14,11 @@ export default function ManagerEvaluationLayout() {
   const { user } = useAuth();
   const [collaborator, setCollaborator] = useState<Collaborator | null>(null);
   const [isUpdate, setIsUpdate] = useState(false);
-  const [hasSent, setHasSent] = useState(false); // controla se já enviou pelo menos uma vez
-  const [isEditing, setIsEditing] = useState(true); // começa editável
+  const [hasSent, setHasSent] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
+  const [evaluationStatus, setEvaluationStatus] = useState<string | null>(null);
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
+  const [evaluationId, setEvaluationId] = useState<number | null>(null);
   // Ref para acessar a função de submit do filho
   const submitRef = useRef<(() => Promise<boolean>) | null>(null);
 
@@ -35,28 +42,114 @@ export default function ManagerEvaluationLayout() {
     }
   }, [user, id]);
 
+  // Busca avaliação para status/createdAt
+  useEffect(() => {
+    async function fetchEval() {
+      if (!id) return;
+      try {
+        const evaluation = await fetchManagerEvaluation(Number(id));
+        if (evaluation) {
+          setEvaluationStatus(evaluation.status || null);
+          setCreatedAt(evaluation.createdAt || null);
+          setEvaluationId(evaluation.id || null);
+          setIsEditing(evaluation.status !== "submitted");
+          setHasSent(evaluation.status === "submitted");
+        } else {
+          setEvaluationStatus(null);
+          setCreatedAt(null);
+          setEvaluationId(null);
+          setIsEditing(true);
+          setHasSent(false);
+        }
+      } catch {
+        setEvaluationStatus(null);
+        setCreatedAt(null);
+        setEvaluationId(null);
+        setIsEditing(true);
+        setHasSent(false);
+      }
+    }
+    fetchEval();
+  }, [id]);
+
   // Recebe do filho se é update ou create
   const handleSetSubmit = (fn: () => Promise<boolean>, updateFlag: boolean) => {
     submitRef.current = fn;
     setIsUpdate(updateFlag);
   };
 
-  const [lastSent, setLastSent] = useState<Date | null>(null);
+  // Sempre que isEditing mudar, editKey também muda para forçar remount do Outlet
+  const [editKey, setEditKey] = useState(0);
+  useEffect(() => {
+    setEditKey((k) => k + 1);
+  }, [isEditing]);
+
   const handleSend = async () => {
     if (isEditing) {
+      // Envia avaliação normalmente (submit)
       if (submitRef.current) {
         const ok = await submitRef.current();
         if (ok) {
-          setLastSent(new Date());
-          setIsEditing(false); // bloqueia após envio
-          setHasSent(true); // marca que já enviou pelo menos uma vez
+          // Atualiza status/createdAt após envio
+          if (id) {
+            const evaluation = await fetchManagerEvaluation(Number(id));
+            if (evaluation) {
+              setEvaluationStatus(evaluation.status || null);
+              setCreatedAt(evaluation.createdAt || null);
+              setEvaluationId(evaluation.id || null);
+              setIsEditing(evaluation.status !== "submitted");
+              setHasSent(evaluation.status === "submitted");
+            }
+          }
           window.alert("Avaliação enviada com sucesso!");
         } else {
           window.alert("Erro ao enviar avaliação.");
         }
       }
     } else {
-      setIsEditing(true); // libera edição ao clicar em editar
+      // Ao clicar em editar, volta status para draft e libera edição
+      if (!evaluationId) {
+        window.alert(
+          "[DEBUG] Não existe evaluationId para editar!\nTalvez a avaliação ainda não foi criada ou houve erro ao buscar."
+        );
+        return;
+      }
+      // Busca avaliação atual para pegar os grupos e ciclo
+      const evaluation = await fetchManagerEvaluation(Number(id));
+      if (evaluation && evaluation.groups) {
+        // Monta os grupos apenas com os campos essenciais em cada item
+        const groups = evaluation.groups.map((group: any) => ({
+          groupId: group.groupId,
+          items: group.items.map((item: any) => ({
+            criterionId: item.criterionId,
+            score: item.score,
+            justification: item.justification,
+            ...(item.scoreDescription
+              ? { scoreDescription: item.scoreDescription }
+              : {}),
+          })),
+        }));
+        const payload = {
+          status: "draft",
+          groups,
+          cycleId: evaluation.cycleId, // sempre envia
+          evaluateeId: Number(id), // sempre envia
+        };
+        await updateManagerEvaluation(evaluationId, payload);
+        // Após update, busca avaliação atualizada para garantir status draft
+        const updated = await fetchManagerEvaluation(Number(id));
+        console.log(
+          "[DEBUG] Status retornado do backend após editar:",
+          updated?.status
+        );
+        setEvaluationStatus(updated?.status || "draft");
+        setIsEditing(true); // libera edição
+        setHasSent(false);
+        console.log("[DEBUG] isEditing após editar:", true);
+        // editKey será atualizado pelo useEffect acima
+      } else {
+        window.alert("Erro ao buscar avaliação para editar.");
+      }
     }
   };
 
@@ -88,20 +181,20 @@ export default function ManagerEvaluationLayout() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {lastSent && (
+              {createdAt && (
                 <span className="text-xs text-gray-500 whitespace-nowrap">
-                  Último envio: {lastSent.toLocaleString("pt-BR")}
+                  Último envio: {new Date(createdAt).toLocaleString("pt-BR")}
                 </span>
               )}
               <button
                 className="bg-[#8CB7B7] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap"
                 onClick={handleSend}
               >
-                {isEditing
-                  ? !hasSent
-                    ? "Enviar"
-                    : "Atualizar"
-                  : "Editar avaliação"}
+                {evaluationStatus === "submitted" && !isEditing
+                  ? "Editar avaliação"
+                  : isEditing && hasSent
+                  ? "Atualizar"
+                  : "Enviar"}
               </button>
             </div>
           </div>
@@ -151,7 +244,10 @@ export default function ManagerEvaluationLayout() {
         {/* Espaço para não cobrir o conteúdo pelo bloco fixo */}
         <main className="flex-1 flex justify-center items-start p-2 sm:p-4">
           <div className="w-full max-w-7xl">
-            <Outlet context={{ setSubmit: handleSetSubmit, isEditing }} />
+            <Outlet
+              key={editKey}
+              context={{ setSubmit: handleSetSubmit, isEditing }}
+            />
           </div>
         </main>
       </div>
