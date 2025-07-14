@@ -8,6 +8,7 @@ interface Props {
 interface Cycle {
   id: number;
   name: string;
+  status: string;
 }
 
 const EvaluationCycleSelector = ({ currentCycle, onChange }: Props) => {
@@ -28,9 +29,11 @@ const EvaluationCycleSelector = ({ currentCycle, onChange }: Props) => {
         const data = await res.json();
 
         if (Array.isArray(data)) {
-          setCycles(data);
+          // Filtra para excluir ciclo com status IN_PROGRESS_COLLABORATOR
+          const filtered = data.filter((c) => c.status !== "IN_PROGRESS_COLLABORATOR");
+          setCycles(filtered);
 
-          const match = data.find((c) => c.name === currentCycle);
+          const match = filtered.find((c) => c.name === currentCycle);
           if (match) {
             setSelectedId(match.id);
           }

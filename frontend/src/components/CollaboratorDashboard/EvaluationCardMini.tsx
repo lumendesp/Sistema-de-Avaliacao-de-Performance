@@ -3,16 +3,27 @@ import { PiSparkleBold } from 'react-icons/pi';
 import type { EvaluationCardMiniProps } from '../../types/DashboardCollaboratorTypes/evaluationCardMini';
 import { getEvaluationColor } from '../../utils/getEvaluationColor';
 
-const EvaluationCardMini = ({ ciclo, nota, status, resumo, destaque }: EvaluationCardMiniProps) => {
+const EvaluationCardMini = ({
+  ciclo,
+  nota,
+  status,
+  statusReal, 
+  resumo,
+  destaque
+}: EvaluationCardMiniProps) => {
   const navigate = useNavigate();
   const notaColor = getEvaluationColor(nota);
 
   const handleClick = () => {
-    navigate('/collaborator/evaluation-comparison', {
-      state: {
-        selectedCycleName: ciclo,
-      },
-    });
+    if (statusReal === 'IN_PROGRESS_COLLABORATOR') {
+      navigate('/collaborator/evaluation');
+    } else {
+      navigate('/collaborator/evaluation-comparison', {
+        state: {
+          selectedCycleName: ciclo,
+        },
+      });
+    }
   };
 
   const statusClass =

@@ -25,48 +25,48 @@ const EvaluationCardList = () => {
           ciclosData
             .sort((a, b) => b.id - a.id)
             .map(async (ciclo: any) => {
+              const isFinalizado = ciclo.status === 'PUBLISHED';
 
-            const isFinalizado = ciclo.status === 'PUBLISHED';
+              let nota: number | undefined;
+              let destaque: string | undefined;
 
-            let nota: number | undefined;
-            let destaque: string | undefined;
+              if (isFinalizado) {
+                try {
+                  const notaRes = await fetch(
+                    `http://localhost:3000/final-scores/user/${user.id}/cycle/${ciclo.id}`,
+                    {
+                      headers: { Authorization: `Bearer ${token}` },
+                    }
+                  );
 
-            if (isFinalizado) {
-              try {
-                const notaRes = await fetch(
-                  `http://localhost:3000/final-scores/user/${user.id}/cycle/${ciclo.id}`,
-                  {
-                    headers: { Authorization: `Bearer ${token}` },
+                  if (notaRes.ok) {
+                    const notaData = await notaRes.json();
+                    nota = notaData.finalScore;
+
+                    if (typeof nota === 'number') {
+                      if (nota >= 4.5) destaque = 'Excelente';
+                      else if (nota >= 4) destaque = 'Muito bom';
+                      else if (nota >= 3.5) destaque = 'Bom';
+                      else if (nota >= 3) destaque = 'Normal';
+                      else if (nota >= 2) destaque = 'Ruim';
+                      else if (nota >= 1) destaque = 'Péssimo';
+                      else destaque = 'Sem avaliação';
+                    }
                   }
-                );
-
-                if (notaRes.ok) {
-                  const notaData = await notaRes.json();
-                  nota = notaData.finalScore;
-
-                  if (typeof nota === 'number') {
-                    if (nota >= 4.5) destaque = 'Excelente';
-                    else if (nota >= 4) destaque = 'Muito bom';
-                    else if (nota >= 3.5) destaque = 'Bom';
-                    else if (nota >= 3) destaque = 'Normal';
-                    else if (nota >= 2) destaque = 'Ruim';
-                    else if (nota >= 1) destaque = 'Péssimo';
-                    else destaque = 'Sem avaliação';
-                  }
+                } catch (e) {
+                  console.warn(`Erro ao buscar nota para ciclo ${ciclo.name}`, e);
                 }
-              } catch (e) {
-                console.warn(`Erro ao buscar nota para ciclo ${ciclo.name}`, e);
               }
-            }
 
-            return {
-              ciclo: ciclo.name,
-              status: isFinalizado ? 'Finalizado' : 'Em andamento',
-              nota,
-              destaque,
-              resumo: 'Você se autoavaliou bem por conta dessa etapa',
-            };
-          })
+              return {
+                ciclo: ciclo.name,
+                status: isFinalizado ? 'Finalizado' : 'Em andamento',
+                statusReal: ciclo.status,
+                nota,
+                destaque,
+                resumo: 'Você se autoavaliou bem por conta dessa etapa',
+              };
+            })
         );
 
         setCiclos(ciclosComNotas);

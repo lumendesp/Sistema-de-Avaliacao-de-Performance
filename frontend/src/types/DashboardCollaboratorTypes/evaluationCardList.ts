@@ -1,7 +1,8 @@
 export interface CicloProps {
   ciclo: string;
+  status: string;
+  statusReal?: string;
   nota?: number;
-  status: 'Em andamento' | 'Finalizado';
-  resumo?: string;
   destaque?: string;
+  resumo?: string;
 }
