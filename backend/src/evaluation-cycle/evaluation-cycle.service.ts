@@ -7,22 +7,21 @@ export class EvaluationCycleService {
   constructor(private prisma: PrismaService) {}
 
   async findActiveCycle(type?: Role) {
-    // For committee, look for closed cycles that are available for equalization
+    // For committee, look for in-progress cycles for equalization
     if (type === Role.COMMITTEE) {
       return this.prisma.evaluationCycle.findFirst({
-        where: { 
-          status: 'CLOSED',
+        where: {
+          status: 'IN_PROGRESS',
           type: Role.COMMITTEE
         },
         orderBy: {
-          endDate: 'desc'
+          startDate: 'desc'
         }
       });
     }
-    
     // For other roles, look for cycles in progress
     return this.prisma.evaluationCycle.findFirst({
-      where: { 
+      where: {
         status: 'IN_PROGRESS',
         ...(type ? { type } : {})
       },

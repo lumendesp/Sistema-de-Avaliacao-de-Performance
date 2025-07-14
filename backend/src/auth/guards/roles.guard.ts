@@ -38,12 +38,6 @@ export class RolesGuard implements CanActivate {
       }).filter(Boolean);
     }
 
-    console.log('RolesGuard Debug:', {
-      requiredRoles,
-      userRoles,
-      user: { id: user.userId, email: user.email }
-    });
-
     // Check if user has any of the required roles
     const hasRequiredRole = requiredRoles.some((role) => userRoles.includes(role));
     

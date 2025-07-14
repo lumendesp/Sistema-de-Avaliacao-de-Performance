@@ -1171,3 +1171,11 @@ export const debugUserInfo = async () => {
   if (!res.ok) throw new Error("Erro ao buscar informações do usuário");
   return res.json();
 };
+
+export const getClosedCycles = async () => {
+  const res = await fetch(`${API_URL}/evaluation-cycle/closed`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Erro ao buscar ciclos fechados');
+  return res.json();
+};

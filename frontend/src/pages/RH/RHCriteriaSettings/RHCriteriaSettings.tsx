@@ -607,21 +607,6 @@ function RhCriteriaSettings() {
                 </button>
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-gray-300 mb-4 sm:mb-6">
-                <button
-                    className={`px-3 sm:px-4 py-2 text-sm font-medium ${activeTab === 'track' ? 'border-b-2 border-[#08605F] text-[#08605F]' : 'text-gray-500'}`}
-                    onClick={() => setActiveTab('track')}
-                >
-                    Trilha
-                </button>
-                <button
-                    className={`px-3 sm:px-4 py-2 text-sm font-medium ${activeTab === 'unit' ? 'border-b-2 border-[#08605F] text-[#08605F]' : 'text-gray-500'}`}
-                    onClick={() => setActiveTab('unit')}
-                >
-                    Unidade
-                </button>
-            </div>
 
             {/* Content */}
             {activeTab === 'track' && (
@@ -710,12 +695,6 @@ function RhCriteriaSettings() {
                             </div>
                         )}
                     </div>
-                </div>
-            )}
-
-            {activeTab === 'unit' && (
-                <div className="text-center p-6 sm:p-8">
-                    <h2 className="text-lg sm:text-xl text-gray-500">A seção Unidade está em desenvolvimento.</h2>
                 </div>
             )}
         </div>
