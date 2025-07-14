@@ -58,16 +58,17 @@ const PerformanceChart = () => {
 
   return (
     <div className="w-full bg-white rounded-xl p-5 shadow flex flex-col gap-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <h2 className="text-base font-semibold text-gray-800">Desempenho</h2>
-        <select className="text-sm border border-gray-300 rounded-md px-3 py-1 text-gray-700">
+        <select className="hidden sm:block text-sm border border-gray-300 rounded-md px-3 py-1 text-gray-700">
           <option>Filtrar por</option>
         </select>
       </div>
 
-      <div className="h-64">
+      <div className="h-64 sm:h-72 min-h-[250px]">
         <Bar data={data} options={options} />
       </div>
+
     </div>
   );
 };
