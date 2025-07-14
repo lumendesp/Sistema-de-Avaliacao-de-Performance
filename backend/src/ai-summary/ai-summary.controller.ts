@@ -21,6 +21,15 @@ export class AiSummaryController {
     return this.aiSummaryService.getAllSummariesByCycle(Number(cycleId));
   }
 
+  @Get('lean')
+  getLeanSummary(
+    @Query('userId') userId: string,
+    @Query('cycleId') cycleId: string,
+  ) {
+    return this.aiSummaryService.getLeanSummary(Number(userId), Number(cycleId));
+  }
+
+
   @Get()
   getSummary(
     @Query('userId') userId: string,

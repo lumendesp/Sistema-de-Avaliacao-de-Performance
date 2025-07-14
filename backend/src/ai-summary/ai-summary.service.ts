@@ -63,6 +63,13 @@ export class AiSummaryService {
     return summary?.text || null;
   }
 
+  async getLeanSummary(userId: number, cycleId: number): Promise<string | null> {
+    const summary = await this.prisma.aISummary.findUnique({
+      where: { userId_cycleId: { userId, cycleId } },
+    });
+    return summary?.leanText || null;
+  }
+
   async getAllSummariesByCycle(cycleId: number) {
     return this.prisma.aISummary.findMany({
       where: { cycleId },
@@ -71,7 +78,7 @@ export class AiSummaryService {
           select: {
             id: true,
             name: true,
-            email: true, 
+            email: true,
           },
         },
       },
@@ -126,10 +133,9 @@ export class AiSummaryService {
 
     const prompt = `Reescreva o texto abaixo como uma mensagem final para o colaborador, com no máximo 2 frases. Seja direto e destaque apenas os principais pontos positivos, como: "Você se destacou em X e Y". Não use sugestões, perguntas nem linguagem técnica.
 
-    ${summary}
+${summary}
 
-    Mensagem final:`;
-
+Mensagem final:`;
 
     const leanText = await this.geminiService.generate(prompt);
 
@@ -149,7 +155,7 @@ export class AiSummaryService {
     manager: (ManagerEvaluation & ManagerWithItems)[],
     references: Reference[],
   ): string {
-    let prompt = `Você é um sistema de RH. Abaixo estão avaliações de desempenho de um colaborador. Analise e gere um resumo objetivo (máximo 5 linhas), focando apenas nos principais pontos fortes, pontos de desenvolvimento e recomendações mais relevantes.\n Sua resposta deve ser apenas o resumo, sem introduções como "Com base nas avaliações..." ou "Resumo:".\n\n`;
+    let prompt = `Você é um sistema de RH. Abaixo estão avaliações de desempenho de um colaborador. Analise e gere um resumo objetivo (máximo 5 linhas), focando apenas nos principais pontos fortes, pontos de desenvolvimento e recomendações mais relevantes.\nSua resposta deve ser apenas o resumo, sem introduções como "Com base nas avaliações..." ou "Resumo:".\n\n`;
 
     if (self.length) {
       prompt += `Autoavaliação:\n`;
