@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import CriteriaSection from "../../components/manager/CriteriaSection";
 import type { EvaluationCriterion } from "../../types/EvaluationManager.tsx";
 import { useParams, useOutletContext } from "react-router-dom";
@@ -38,6 +38,10 @@ export default function CollaboratorEvaluation() {
     Record<number, EvaluationCriterion[]>
   >({});
   const [evaluationId, setEvaluationId] = useState<number | null>(null);
+  // Estado para controlar se está salvando
+  const [isSaving, setIsSaving] = useState(false);
+  // Ref para debounce
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState(true);
   const [selfEvaluation, setSelfEvaluation] = useState<any>(null);
   const outletContext = useOutletContext<OutletContextType>();
@@ -159,6 +163,8 @@ export default function CollaboratorEvaluation() {
         // Busca avaliação já existente
         const evaluation = await fetchManagerEvaluation(Number(collaboratorId));
         if (evaluation && evaluation.groups) {
+          // Se já existe avaliação, seta evaluationId para garantir update
+          if (evaluation.id) setEvaluationId(evaluation.id);
           const newState: Record<number, EvaluationCriterion[]> = {
             ...initialState,
           };
@@ -211,7 +217,49 @@ export default function CollaboratorEvaluation() {
     });
   };
 
-  // Função para montar o payload e enviar avaliação do gestor
+  // Função de auto-save: envia todos os critérios, mesmo incompletos
+  const autoSave = useCallback(async () => {
+    if (!collaboratorId || !cycleId) return;
+    const groupsPayload = groups.map((group) => ({
+      groupId: group.id,
+      groupName: group.name,
+      items: (criteriaState[group.id] || []).map((crit) => ({
+        criterionId: crit.id,
+        score: crit.managerRating,
+        justification: crit.managerJustification,
+      })),
+    }));
+    if (groupsPayload.length === 0) return;
+    try {
+      if (evaluationId) {
+        await updateManagerEvaluation(Number(collaboratorId), {
+          groups: groupsPayload,
+        });
+      } else {
+        const res = await createManagerEvaluation({
+          evaluateeId: Number(collaboratorId),
+          cycleId: cycleId as number,
+          groups: groupsPayload,
+        });
+        if (res && res.id) setEvaluationId(res.id);
+      }
+    } catch (e) {
+      // Não alerta, só loga
+      console.error("Erro ao auto-salvar avaliação do gestor:", e);
+    }
+  }, [criteriaState, groups, collaboratorId, evaluationId, cycleId]);
+
+  // Auto-save: dispara a mesma lógica do botão sempre que criteriaState mudar
+  useEffect(() => {
+    if (!collaboratorId || !cycleId) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      autoSave();
+    }, 500);
+    return () => debounceRef.current && clearTimeout(debounceRef.current);
+  }, [criteriaState, collaboratorId, cycleId, autoSave]);
+
+  // Mantém o submit manual para envio final (com validação)
   useEffect(() => {
     if (!outletContext?.setSubmit) return;
     outletContext.setSubmit(async () => {

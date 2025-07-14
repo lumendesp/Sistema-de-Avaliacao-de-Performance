@@ -53,13 +53,20 @@ export class ManagerEvaluationService {
         cycleId: dto.cycleId,
         items: {
           create: dto.groups.flatMap((group) =>
-            group.items.map((item) => ({
-              criterion: { connect: { id: item.criterionId } },
-              score: item.score,
-              justification: encrypt(item.justification || ''), // justification criptografada
-              scoreDescription: this.getScoreDescription(item.score),
-              groupId: group.groupId,
-            })),
+            group.items.map((item) => {
+              const data: any = {
+                criterion: { connect: { id: item.criterionId } },
+                justification: encrypt(item.justification || ''),
+                groupId: group.groupId,
+              };
+              if (Number.isInteger(item.score)) {
+                data.score = item.score;
+                data.scoreDescription = this.getScoreDescription(
+                  item.score as number,
+                );
+              }
+              return data;
+            }),
           ),
         },
       },
@@ -76,13 +83,20 @@ export class ManagerEvaluationService {
           items: {
             deleteMany: {},
             create: groups.flatMap((group) =>
-              group.items.map((item) => ({
-                criterion: { connect: { id: item.criterionId } },
-                score: item.score, // score como number
-                justification: encrypt(item.justification || ''), // justification criptografada
-                scoreDescription: this.getScoreDescription(item.score),
-                groupId: group.groupId,
-              })),
+              group.items.map((item) => {
+                const data: any = {
+                  criterion: { connect: { id: item.criterionId } },
+                  justification: encrypt(item.justification || ''),
+                  groupId: group.groupId,
+                };
+                if (Number.isInteger(item.score)) {
+                  data.score = item.score;
+                  data.scoreDescription = this.getScoreDescription(
+                    item.score as number,
+                  );
+                }
+                return data;
+              }),
             ),
           },
         }),
