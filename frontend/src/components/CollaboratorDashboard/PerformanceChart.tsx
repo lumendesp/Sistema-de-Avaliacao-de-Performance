@@ -5,6 +5,14 @@ import { useAuth } from '../../context/AuthContext';
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
 
+export const getEvaluationColor = (nota?: number): string => {
+  if (nota === undefined) return '#D1D5DB'; // gray-300
+  if (nota >= 4.5) return '#166534';        // green-800
+  if (nota >= 4.0) return '#0F766E';        // teal-600
+  if (nota >= 3.0) return '#CA8A04';        // yellow-600
+  return '#DC2626';                         // red-600
+};
+
 const PerformanceChart = () => {
   const { token, user } = useAuth();
   const [chartData, setChartData] = useState<number[]>([]);
@@ -58,9 +66,7 @@ const PerformanceChart = () => {
     datasets: [
       {
         data: chartData,
-        backgroundColor: chartData.map(n =>
-          n >= 4.5 ? '#22C55E' : n >= 4 ? '#14B8A6' : '#FACC15'
-        ),
+        backgroundColor: chartData.map((n) => getEvaluationColor(n)),
         borderRadius: 6,
         barThickness: 40,
       },
@@ -101,6 +107,11 @@ const PerformanceChart = () => {
         bodyColor: '#fff',
         cornerRadius: 4,
         padding: 8,
+        callbacks: {
+          label: function (context: any) {
+            return `Nota: ${context.parsed.y.toFixed(2)}`;
+          },
+        },
       },
     },
   };
