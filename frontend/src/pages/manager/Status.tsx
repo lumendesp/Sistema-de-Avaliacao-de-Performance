@@ -124,30 +124,29 @@ export default function Collaborators() {
   function getStatusAndScore(collaboratorId: number) {
     const evaluation = evaluations[collaboratorId];
     const selfEval = selfEvaluations[collaboratorId];
-    const allCriteria = (evaluation?.groups || []).flatMap((g: any) => g.items || []);
-    // Critérios com nota preenchida
-    const withScore = allCriteria.filter((c: any) => c.score !== null && c.score !== undefined);
-    // Critérios com nota E justificativa preenchidas
-    const filled = allCriteria.filter((c: any) =>
-      c.score !== null && c.score !== undefined && c.justification && c.justification.trim() !== ""
-    );
-    const total = allCriteria.length;
     let managerScore = null;
-    if (withScore.length > 0) {
-      managerScore = withScore.reduce((sum: number, c: any) => sum + (c.score || 0), 0) / withScore.length;
-    }
-    // Calcula média da autoavaliação
     let selfScore = null;
+    if (evaluation && evaluation.groups) {
+      const allCriteria = (evaluation.groups || []).flatMap((g: any) => g.items || []);
+      const withScore = allCriteria.filter((c: any) => c.score !== null && c.score !== undefined);
+      if (withScore.length > 0) {
+        managerScore = withScore.reduce((sum: number, c: any) => sum + (c.score || 0), 0) / withScore.length;
+      }
+    }
     if (selfEval && selfEval.items && selfEval.items.length > 0) {
       selfScore = selfEval.items.reduce((sum: number, item: any) => sum + item.score, 0) / selfEval.items.length;
     }
-    if (!evaluation || total === 0 || withScore.length === 0) {
+    if (!evaluation) {
       return { status: "Pendente" as const, managerScore: null, selfScore };
     }
-    if (filled.length < total) {
+    if (evaluation.status === "submitted") {
+      return { status: "Finalizado" as const, managerScore, selfScore };
+    }
+    if (evaluation.status === "draft") {
       return { status: "Em andamento" as const, managerScore, selfScore };
     }
-    return { status: "Finalizado" as const, managerScore, selfScore };
+    // fallback para casos inesperados
+    return { status: "Pendente" as const, managerScore, selfScore };
   }
 
   // Mostra searchResults se houver busca, senão lista completa
