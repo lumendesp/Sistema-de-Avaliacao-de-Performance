@@ -4,6 +4,7 @@ import { CreateFinalScoreDto } from './dto/create-final-score.dto';
 import { UpdateFinalScoreDto } from './dto/update-final-score.dto';
 import { EvaluationCycleService } from '../evaluation-cycle/evaluation-cycle.service';
 import { encrypt, decrypt } from '../utils/encryption';
+import { CycleStatus } from '@prisma/client';
 
 @Injectable()
 export class FinalScoreService {
@@ -24,9 +25,9 @@ export class FinalScoreService {
       console.log('Adjuster roles:', adjuster?.roles);
 
 
-      // Get active cycle
+      // Get active cycle for Committee (antigo HR)
       console.log('Looking for active cycle...');
-      const activeCycle = await this.cycleService.findActiveCycle();
+      const activeCycle = await this.cycleService.findActiveCycle('IN_PROGRESS_COMMITTEE' as CycleStatus);
       console.log('Active cycle found:', activeCycle);
       
       if (!activeCycle) {
@@ -84,7 +85,7 @@ export class FinalScoreService {
 
   async testActiveCycle() {
     try {
-      const activeCycle = await this.cycleService.findActiveCycle();
+      const activeCycle = await this.cycleService.findActiveCycle('IN_PROGRESS_COMMITTEE' as CycleStatus);
       return {
         activeCycle,
         message: activeCycle ? 'Active cycle found' : 'No active cycle found'

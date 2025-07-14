@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { FiLogOut, FiMenu, FiX } from 'react-icons/fi';
 import { useState } from 'react';
+import { FlagIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 import dashboardIcon from '../../assets/dashboard.svg';
 import equalizationsIcon from '../../assets/equalization.svg';
@@ -16,6 +17,16 @@ const menuItems = [
     label: 'Equalizações',
     icon: <img src={equalizationsIcon} alt="Equalizações" className="w-5 h-5" />,
     badge: true,
+  },
+  {
+    path: '/committee/okr',
+    label: 'OKR',
+    icon: <FlagIcon className="w-5 h-5" />,
+  },
+  {
+    path: '/committee/pdi',
+    label: 'PDI',
+    icon: <UserGroupIcon className="w-5 h-5" />,
   },
 ];
 

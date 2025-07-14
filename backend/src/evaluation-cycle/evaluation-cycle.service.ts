@@ -1,18 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { CycleStatus } from '@prisma/client';
 
 @Injectable()
 export class EvaluationCycleService {
   constructor(private prisma: PrismaService) {}
 
-  async findActiveCycle() {
+  async findActiveCycle(status?: CycleStatus) {
+    if (!status) {
+      throw new Error('Status do ciclo deve ser especificado!');
+    }
     return this.prisma.evaluationCycle.findFirst({
-      where: { status: 'IN_PROGRESS' },
+      where: { 
+        status: status,
+      },
     });
   }
  
   async getClosedCycles() {
-    const activeCycle = await this.findActiveCycle();
+    // Busca o ciclo mais recente de qualquer status IN_PROGRESS_*
+    const activeCycle = await this.prisma.evaluationCycle.findFirst({
+      where: {
+        status: {
+          in: [
+            'IN_PROGRESS_COLLABORATOR',
+            'IN_PROGRESS_MANAGER',
+            'IN_PROGRESS_COMMITTEE',
+          ] as unknown as CycleStatus[],
+        },
+      },
+      orderBy: { startDate: 'desc' },
+    });
 
     return this.prisma.evaluationCycle.findMany({
       where: {
@@ -20,7 +38,7 @@ export class EvaluationCycleService {
           not: activeCycle?.id,
         },
         status: {
-          in: ['CLOSED', 'PUBLISHED'], // <== AQUI A MÁGICA
+          in: ['CLOSED', 'PUBLISHED'] as unknown as CycleStatus[],
         },
       },
       orderBy: {
@@ -37,5 +55,7 @@ export class EvaluationCycleService {
       },
     });
   }
+
+  
 }
 

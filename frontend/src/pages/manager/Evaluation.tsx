@@ -7,6 +7,7 @@ import {
   createManagerEvaluation,
   updateManagerEvaluation,
   getTracksWithCriteria,
+  fetchActiveEvaluationCycle,
 } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
@@ -42,9 +43,19 @@ export default function CollaboratorEvaluation() {
   const [loaded, setLoaded] = useState(false);
   const outletContext = useOutletContext<OutletContextType>();
   const { token } = useAuth();
+  const [cycleId, setCycleId] = useState<number | null>(null);
 
-  // Exemplo: cicloId fixo, ajuste conforme necessário
-  const cycleId = 1;
+  useEffect(() => {
+    const fetchCycle = async () => {
+      try {
+        const cycle = await fetchActiveEvaluationCycle('MANAGER');
+        setCycleId(cycle?.id || null);
+      } catch (err) {
+        setCycleId(null);
+      }
+    };
+    fetchCycle();
+  }, []);
 
   // Busca grupos e critérios dinâmicos do colaborador
   useEffect(() => {
@@ -223,7 +234,7 @@ export default function CollaboratorEvaluation() {
           // Create
           await createManagerEvaluation({
             evaluateeId: Number(collaboratorId),
-            cycleId,
+            cycleId: cycleId as number,
             groups: groupsPayload,
           });
         }
@@ -247,7 +258,7 @@ export default function CollaboratorEvaluation() {
     )
   );
 
-  if (loading || !loaded) return <div>Carregando...</div>;
+  if (loading || !loaded || !cycleId || typeof cycleId !== 'number') return <div>Carregando...</div>;
   if (!groups.length)
     return <div>Nenhum critério configurado para este colaborador.</div>;
 

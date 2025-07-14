@@ -63,6 +63,21 @@ export class AiSummaryService {
     return summary?.text || null;
   }
 
+  async getAllSummariesByCycle(cycleId: number) {
+    return this.prisma.aISummary.findMany({
+      where: { cycleId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true, 
+          },
+        },
+      },
+    });
+  }
+
   async generateSummary({
     userId,
     cycleId,

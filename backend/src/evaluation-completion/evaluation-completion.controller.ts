@@ -40,7 +40,10 @@ export class EvaluationCompletionController {
       );
 
     const cycleSubmission =
-      await this.evaluationCompletionService.getCycleSubmissionInfo(cycleId);
+      await this.evaluationCompletionService.getCycleSubmissionInfo(
+        userId,
+        cycleId,
+      );
 
     return {
       completionStatus: {

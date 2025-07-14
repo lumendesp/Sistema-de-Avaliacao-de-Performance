@@ -239,7 +239,7 @@ const SelfEvaluationGroupList = ({ trackData, cycleId }: Props) => {
   }, [ratings, justifications]);
 
   return (
-    <div className="pb-24">
+    <div className="pb-24 px-3 sm:px-0">
       {trackData.CriterionGroup.map((group) => (
         <SelfEvaluationForm
           key={group.id}

@@ -65,16 +65,59 @@ export const submitMentorEvaluation = async (
   return res.json();
 };
 
-export const fetchActiveEvaluationCycle = async () => {
-  const res = await fetch(`${API_URL}/evaluation-cycle/active`, {
-    headers: getAuthHeaders(),
-  });
-
-  if (!res.ok) {
-    throw new Error("Erro ao buscar ciclo ativo");
+// Agora aceita um parâmetro opcional de role
+export const fetchActiveEvaluationCycle = async (role?: string) => {
+  let mainRole = role;
+  if (!mainRole) {
+    // Buscar o usuário do localStorage para obter o role
+    const userStr = localStorage.getItem('user');
+    mainRole = 'COLLABORATOR'; // default
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        mainRole = user.roles?.[0] || 'COLLABORATOR';
+      } catch (error) {
+        console.error('Erro ao parsear usuário do localStorage:', error);
+      }
+    }
   }
 
-  return res.json();
+  // Mapeamento de role para status
+  let status = 'IN_PROGRESS_COLLABORATOR';
+  if (mainRole === 'MANAGER') status = 'IN_PROGRESS_MANAGER';
+  else if (mainRole === 'COMMITTEE') status = 'IN_PROGRESS_COMMITTEE';
+  else if (mainRole === 'HR') status = 'IN_PROGRESS_COMMITTEE'; // HR também usa COMMITTEE status
+
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error("Token de autenticação não encontrado. Faça login novamente.");
+  }
+
+  const res = await fetch(`${API_URL}/evaluation-cycle/active?status=${status}`, {
+    headers: getAuthHeaders(),
+  });
+  
+  if (res.status === 401) {
+    throw new Error("Sessão expirada. Faça login novamente.");
+  }
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('Erro na resposta:', res.status, errorText);
+    throw new Error(`Erro ao buscar ciclo ativo: ${res.status} - ${errorText}`);
+  }
+  
+  const responseText = await res.text();
+  if (!responseText) {
+    throw new Error("Resposta vazia do servidor");
+  }
+  
+  try {
+    return JSON.parse(responseText);
+  } catch (error) {
+    console.error('Erro ao fazer parse da resposta:', responseText);
+    throw new Error("Resposta inválida do servidor");
+  }
 };
 
 export const fetchEvaluationCompletionStatus = async (cycleId: number) => {

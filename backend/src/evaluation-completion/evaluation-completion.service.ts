@@ -81,18 +81,6 @@ export class EvaluationCompletionService {
     };
   }
 
-  async getLastSubmittedAt(
-    userId: number,
-    cycleId: number,
-  ): Promise<string | null> {
-    const cycle = await this.prisma.evaluationCycle.findUnique({
-      where: { id: cycleId },
-      select: { submittedAt: true },
-    });
-
-    return cycle?.submittedAt?.toISOString() ?? null;
-  }
-
   async submitEvaluation(userId: number, cycleId: number) {
     const completionStatus = await this.getCompletionStatus(userId, cycleId);
 
@@ -102,10 +90,16 @@ export class EvaluationCompletionService {
       );
     }
 
-    // Marca ciclo como enviado
-    await this.prisma.evaluationCycle.update({
-      where: { id: cycleId },
-      data: {
+    // Marca ciclo como enviado para o usuário
+    await this.prisma.evaluationCycleUser.upsert({
+      where: { userId_cycleId: { userId, cycleId } },
+      update: {
+        submittedAt: new Date(),
+        isSubmit: true,
+      },
+      create: {
+        userId,
+        cycleId,
         submittedAt: new Date(),
         isSubmit: true,
       },
@@ -117,9 +111,15 @@ export class EvaluationCompletionService {
   }
 
   async unlockEvaluation(userId: number, cycleId: number) {
-    await this.prisma.evaluationCycle.update({
-      where: { id: cycleId },
-      data: {
+    await this.prisma.evaluationCycleUser.upsert({
+      where: { userId_cycleId: { userId, cycleId } },
+      update: {
+        submittedAt: null,
+        isSubmit: false,
+      },
+      create: {
+        userId,
+        cycleId,
         submittedAt: null,
         isSubmit: false,
       },
@@ -132,15 +132,15 @@ export class EvaluationCompletionService {
     return { message: 'Avaliações desbloqueadas com sucesso' };
   }
 
-  async getCycleSubmissionInfo(cycleId: number) {
-    const cycle = await this.prisma.evaluationCycle.findUnique({
-      where: { id: cycleId },
+  async getCycleSubmissionInfo(userId: number, cycleId: number) {
+    const cycleUser = await this.prisma.evaluationCycleUser.findUnique({
+      where: { userId_cycleId: { userId, cycleId } },
       select: {
         submittedAt: true,
         isSubmit: true,
       },
     });
 
-    return cycle;
+    return cycleUser;
   }
 }
