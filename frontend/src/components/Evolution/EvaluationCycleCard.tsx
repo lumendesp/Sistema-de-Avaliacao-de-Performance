@@ -9,6 +9,9 @@ interface EvaluationCycleCardProps {
   peerEvaluation?: number;
   finalScore?: number;
   summary: string;
+  selfColor?: string;
+  peerColor?: string;
+  finalColor?: string;
 }
 
 const getColor = (score: number) => {
@@ -17,13 +20,13 @@ const getColor = (score: number) => {
   return '#DC2626';
 };
 
-const ProgressBar = ({ value }: { value?: number }) => (
+const ProgressBar = ({ value, color }: { value?: number; color?: string }) => (
   <div className="w-full h-2 bg-gray-200 rounded-full">
     <div
       className="h-2 rounded-full"
       style={{
         width: value !== undefined ? `${(value / 5) * 100}%` : '0%',
-        backgroundColor: value !== undefined ? getColor(value) : '#d1d5db',
+        backgroundColor: value !== undefined ? (color || getColor(value)) : '#d1d5db',
       }}
     />
   </div>
@@ -35,7 +38,10 @@ const EvaluationCycleCard: React.FC<EvaluationCycleCardProps> = ({
   selfEvaluation,
   peerEvaluation,
   finalScore,
-  summary
+  summary,
+  selfColor,
+  peerColor,
+  finalColor
 }) => (
   <div className="border rounded-lg p-4 bg-white shadow-sm space-y-4">
     {/* Header */}
@@ -61,7 +67,7 @@ const EvaluationCycleCard: React.FC<EvaluationCycleCardProps> = ({
             {typeof selfEvaluation === 'number' ? selfEvaluation.toFixed(1) : '-'}
           </span>
         </div>
-        <ProgressBar value={selfEvaluation} />
+        <ProgressBar value={selfEvaluation} color={selfColor} />
       </div>
       <div className="flex-1">
         <div className="flex justify-between mb-1">
@@ -70,7 +76,7 @@ const EvaluationCycleCard: React.FC<EvaluationCycleCardProps> = ({
             {typeof peerEvaluation === 'number' ? peerEvaluation.toFixed(1) : '-'}
           </span>
         </div>
-        <ProgressBar value={peerEvaluation} />
+        <ProgressBar value={peerEvaluation} color={peerColor} />
       </div>
       <div className="flex-1">
         <div className="flex justify-between mb-1">
@@ -79,7 +85,7 @@ const EvaluationCycleCard: React.FC<EvaluationCycleCardProps> = ({
             {typeof finalScore === 'number' ? finalScore.toFixed(1) : '-'}
           </span>
         </div>
-        <ProgressBar value={finalScore} />
+        <ProgressBar value={finalScore} color={finalColor} />
       </div>
     </div>
 
