@@ -33,9 +33,9 @@ const EvaluationCardMini = ({
 
   return (
     <button onClick={handleClick} className="w-full text-left">
-      <div className="flex rounded-xl border border-gray-200 bg-white p-4 gap-4 items-start shadow-sm hover:shadow-md transition">
-        <div className="flex flex-col items-center bg-gray-50 px-4 py-2 rounded-md min-w-[72px] h-full">
-          <div className="mt-auto flex flex-col items-center">
+      <div className="flex rounded-xl items-center border border-gray-200 bg-white p-4 gap-4 shadow-sm hover:shadow-md transition">
+        <div className="flex flex-col justify-center items-center bg-gray-50 px-4 py-2 rounded-md min-w-[72px] h-full">
+          <div className="flex flex-col items-center">
             <span className={`text-xl sm:text-2xl font-bold leading-tight ${notaColor}`}>
               {nota !== undefined ? nota.toFixed(1) : '-'}
             </span>

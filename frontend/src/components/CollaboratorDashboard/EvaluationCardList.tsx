@@ -29,15 +29,18 @@ const EvaluationCardList = () => {
 
               let nota: number | undefined;
               let destaque: string | undefined;
+              let resumo: string | undefined;
 
               if (isFinalizado) {
                 try {
-                  const notaRes = await fetch(
-                    `http://localhost:3000/final-scores/user/${user.id}/cycle/${ciclo.id}`,
-                    {
+                  const [notaRes, resumoRes] = await Promise.all([
+                    fetch(`http://localhost:3000/final-scores/user/${user.id}/cycle/${ciclo.id}`, {
                       headers: { Authorization: `Bearer ${token}` },
-                    }
-                  );
+                    }),
+                    fetch(`http://localhost:3000/ai-summary/lean?userId=${user.id}&cycleId=${ciclo.id}`, {
+                      headers: { Authorization: `Bearer ${token}` },
+                    }),
+                  ]);
 
                   if (notaRes.ok) {
                     const notaData = await notaRes.json();
@@ -53,19 +56,26 @@ const EvaluationCardList = () => {
                       else destaque = 'Sem avaliação';
                     }
                   }
+
+                  if (resumoRes.ok) {
+                    resumo = await resumoRes.text();
+                  }
                 } catch (e) {
-                  console.warn(`Erro ao buscar nota para ciclo ${ciclo.name}`, e);
+                  console.warn(`Erro ao buscar dados para ciclo ${ciclo.name}`, e);
                 }
               }
 
-              return {
+              const cicloObj: CicloProps = {
                 ciclo: ciclo.name,
                 status: isFinalizado ? 'Finalizado' : 'Em andamento',
                 statusReal: ciclo.status,
                 nota,
                 destaque,
-                resumo: 'Você se autoavaliou bem por conta dessa etapa',
+                resumo: resumo || 'Resumo não disponível.',
               };
+
+              console.log('Ciclo carregado:', cicloObj);
+              return cicloObj;
             })
         );
 
