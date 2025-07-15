@@ -1,5 +1,5 @@
 import StatusBadge from '../StatusBadge/StatusBadge';
-import { type CollaboratorStatus } from '../../../services/rhApiService';
+import { type CollaboratorStatus } from '../../../types/rh';
 
 interface CollaboratorRowProps {
     collaborator: CollaboratorStatus;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getRhCollaborators, type RhCollaborator } from '../../../services/rhApiService';
+import { getRhCollaborators } from '../../../services/api';
+import { type RhCollaborator } from '../../../types/rh';
 import RHCollaboratorInfoCard from '../../../components/RH/RHCollaboratorInfoCard/RHCollaboratorInfoCard';
 import RHCollaboratorSearchBar from '../../../components/RH/RHCollaboratorSearchBar/RHCollaboratorSearchBar';
 import { IoFunnel } from "react-icons/io5";

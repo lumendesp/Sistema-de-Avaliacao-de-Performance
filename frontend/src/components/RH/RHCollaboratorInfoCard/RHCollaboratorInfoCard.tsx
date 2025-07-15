@@ -1,5 +1,5 @@
 import React from 'react';
-import { type RhCollaborator } from '../../../services/rhApiService';
+import { type RhCollaborator } from '../../../types/rh';
 import StatusBadge from '../StatusBadge/StatusBadge';
 import AssessmentPreview from '../AssessmentPreview/AssessmentPreview';
 import { ChevronRightIcon } from '@heroicons/react/24/solid';

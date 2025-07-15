@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { RHDashboardDto, CollaboratorStatusDto } from './dto/rh-dashboard.dto';
 import { RhCollaboratorDto } from './dto/rh-collaborator.dto';
+import { CycleStatus } from '@prisma/client';
 
 @Injectable()
 export class RHDashboardService {
@@ -10,7 +11,17 @@ export class RHDashboardService {
     async getRHDashboardStatus(cycleId?: number): Promise<RHDashboardDto> {
         // Encontra o ciclo de avaliação ativo
         const activeCycle = await this.prisma.evaluationCycle.findFirst({
-            where: cycleId ? { id: cycleId } : { status: 'IN_PROGRESS' },
+            where: cycleId
+                ? { id: cycleId }
+                : {
+                    status: {
+                        in: [
+                            CycleStatus.IN_PROGRESS_COLLABORATOR,
+                            CycleStatus.IN_PROGRESS_MANAGER,
+                            CycleStatus.IN_PROGRESS_COMMITTEE,
+                        ],
+                    },
+                },
         });
 
         if (!activeCycle) {
@@ -111,7 +122,17 @@ export class RHDashboardService {
 
     async getCollaboratorsList(cycleId?: number): Promise<RhCollaboratorDto[]> {
         const activeCycle = await this.prisma.evaluationCycle.findFirst({
-            where: cycleId ? { id: cycleId } : { status: 'IN_PROGRESS' },
+            where: cycleId
+                ? { id: cycleId }
+                : {
+                    status: {
+                        in: [
+                            CycleStatus.IN_PROGRESS_COLLABORATOR,
+                            CycleStatus.IN_PROGRESS_MANAGER,
+                            CycleStatus.IN_PROGRESS_COMMITTEE,
+                        ],
+                    },
+                },
         });
 
         if (!activeCycle) {

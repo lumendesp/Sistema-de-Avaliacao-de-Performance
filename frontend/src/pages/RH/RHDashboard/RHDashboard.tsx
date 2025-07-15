@@ -5,7 +5,8 @@ import RHBarChart from '../../../components/RH/RHBarChart/RHBarChart';
 import CustomCalendarIcon from '../../../components/RH/icons/CalendarIcons';
 import CustomDocumentIcon from '../../../components/RH/icons/DocumentIcon';
 import { useEffect, useState } from 'react';
-import { getRHDashboardData, type RHDashboardData } from '../../../services/rhApiService';
+import { getRHDashboardData } from '../../../services/api';
+import { type RHDashboardData } from '../../../types/rh'
 
 function RHDashboard() {
 

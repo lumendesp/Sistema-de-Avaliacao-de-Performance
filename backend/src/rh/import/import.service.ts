@@ -522,6 +522,7 @@ export class ImportService {
             }
 
             return {
+                userName: user.name,
                 message: `Histórico de ${user.name} importado e ${existingEvaluation ? 'ATUALIZADO' : 'CRIADO'} com sucesso!`,
                 selfEvaluationItemsProcessed: groupedData.size,
                 peerEvaluationsImported,

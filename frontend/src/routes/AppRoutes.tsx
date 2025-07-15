@@ -43,8 +43,10 @@ import RHCollaboratorsPage from "../pages/RH/RHCollaborators/RHCollaborators";
 import RHCriteriaSettingsPage from "../pages/RH/RHCriteriaSettings/RHCriteriaSettings";
 import OKRRH from "../pages/RH/OKR";
 import PDIRH from "../pages/RH/PDI";
+import RHImport from "../pages/RH/RHImport/RHImport.tsx";
 
 import BrutalFacts from "../pages/manager/BrutalFacts";
+
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -84,11 +86,11 @@ const AppRoutes = () => (
           <Route path="self-evaluation" element={<SelfEvaluation />} />
           <Route path="peer-evaluation" element={<PeerEvaluationPage />} />
           <Route path="mentor-evaluation" element={<MentorEvaluation />} />
-                  <Route
-          path="reference-evaluation"
-          element={<ReferenceEvaluation />}
-        />
-      </Route>
+          <Route
+            path="reference-evaluation"
+            element={<ReferenceEvaluation />}
+          />
+        </Route>
         <Route path="okr" element={<OKRCollaborator />} />
         <Route path="pdi" element={<PDICollaborator />} />
         <Route
@@ -192,16 +194,14 @@ const AppRoutes = () => (
           </ProtectedRoute>
         }
       >
-        {/* Rota Padrão para /rh -> Renderiza o Dashboard */}
         <Route index element={<RHDashboard />} />
 
-        {/* Rota para /rh/collaborators -> Renderiza a Página de Colaboradores */}
         <Route path="collaborators" element={<RHCollaboratorsPage />} />
 
-        {/* No futuro, a rota para /rh/criteria viria aqui */}
         <Route path="criteria" element={<RHCriteriaSettingsPage />} />
         <Route path="okr" element={<OKRRH />} />
         <Route path="pdi" element={<PDIRH />} />
+        <Route path="import" element={<RHImport />} />
       </Route>
       <Route path="/perfil" element={<Profile />} />
     </Routes>

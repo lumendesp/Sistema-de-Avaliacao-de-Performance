@@ -96,22 +96,22 @@ export const fetchActiveEvaluationCycle = async (role?: string) => {
   const res = await fetch(`${API_URL}/evaluation-cycle/active?status=${status}`, {
     headers: getAuthHeaders(),
   });
-  
+
   if (res.status === 401) {
     throw new Error("Sessão expirada. Faça login novamente.");
   }
-  
+
   if (!res.ok) {
     const errorText = await res.text();
     console.error('Erro na resposta:', res.status, errorText);
     throw new Error(`Erro ao buscar ciclo ativo: ${res.status} - ${errorText}`);
   }
-  
+
   const responseText = await res.text();
   if (!responseText) {
     throw new Error("Resposta vazia do servidor");
   }
-  
+
   try {
     return JSON.parse(responseText);
   } catch (error) {
@@ -1045,5 +1045,98 @@ export const getMyManagerEvaluations = async (cycleId?: number) => {
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error("Erro ao buscar minhas avaliações de gestor");
+  return res.json();
+};
+
+// Função para fazer o upload de um único arquivo .xlsx
+export const importSingleHistoryRequest = async (file: File, cycleId: number) => {
+  const formData = new FormData();
+  formData.append('cycleId', String(cycleId));
+  formData.append('file', file, file.name);
+
+  const res = await fetch(`${API_URL}/rh/import/history`, { // <-- Chama o endpoint correto
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${getAuthToken()}`,
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    throw new Error(errorBody?.message || 'Erro ao importar o arquivo.');
+  }
+
+  return res.json();
+};
+
+// Função para fazer o upload de um arquivo .zip
+export const importBulkHistoryRequest = async (file: File, cycleId: number) => {
+  const formData = new FormData();
+  formData.append('cycleId', String(cycleId));
+  formData.append('file', file, file.name);
+
+  const res = await fetch(`${API_URL}/rh/import/bulk-history`, {
+    method: 'POST',
+
+    headers: {
+      Authorization: `Bearer ${getAuthToken()}`,
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    // Tenta pegar uma mensagem de erro mais específica do backend
+    const errorBody = await res.json().catch(() => ({}));
+    const message = errorBody?.message || 'Erro ao importar o arquivo.';
+    throw new Error(message);
+  }
+
+  return res.json();
+};
+
+// Busca os dados para o Dashboard de RH
+export const getRHDashboardData = async (cycleId?: number) => {
+  const url = cycleId
+    ? `${API_URL}/rh/dashboard/status?cycleId=${cycleId}`
+    : `${API_URL}/rh/dashboard/status`;
+
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error('Erro ao buscar dados do dashboard de RH');
+  }
+  return res.json();
+};
+
+// Busca a lista completa de colaboradores para a página do RH
+export const getRhCollaborators = async (cycleId?: number) => {
+  const url = cycleId
+    ? `${API_URL}/rh/dashboard/collaborators?cycleId=${cycleId}`
+    : `${API_URL}/rh/dashboard/collaborators`;
+
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error('Erro ao buscar lista de colaboradores');
+  }
+  return res.json();
+};
+
+// Busca todos os ciclos de avaliação disponíveis
+export const getEvaluationCycles = async () => {
+  const res = await fetch(`${API_URL}/ciclos`, {
+    method: 'GET',
+  });
+
+  if (!res.ok) {
+    throw new Error('Erro ao buscar ciclos de avaliação');
+  }
   return res.json();
 };
