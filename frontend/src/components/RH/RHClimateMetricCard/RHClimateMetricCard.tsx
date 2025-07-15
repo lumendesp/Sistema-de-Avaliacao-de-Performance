@@ -29,9 +29,7 @@ const RHClimateMetricCard: React.FC<RHClimateMetricCardProps> = ({
             }`}
           ></div>
           {description && (
-            <p className="text-xs text-gray-600 max-w-[340px]">
-              {description}
-            </p>
+            <p className="text-xs text-gray-600 max-w-[340px]">{description}</p>
           )}
         </div>
       </div>

@@ -51,9 +51,9 @@ export class RhService {
     }
 
     return this.prisma.climateSurvey.findMany({
-      where: {
-        createdById: userId,
-      },
+      // where: {
+      //   createdById: userId,
+      // },
       orderBy: {
         createdAt: 'desc',
       },
@@ -83,7 +83,7 @@ export class RhService {
     const survey = await this.prisma.climateSurvey.findUnique({
       where: {
         id: surveyId,
-        createdById: userId,
+        // createdById: userId,
       },
       include: {
         questions: true,

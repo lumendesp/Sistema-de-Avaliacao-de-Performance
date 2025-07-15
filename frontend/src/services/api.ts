@@ -1142,3 +1142,131 @@ export const getClimateSurveyAverages = async () => {
   }
   return res.json();
 };
+
+export const getLastCompletedSurveyData = async () => {
+  try {
+    console.log("🔍 Buscando dados da última pesquisa finalizada...");
+
+    // Busca todas as pesquisas
+    const surveys = await getClimateSurveys();
+    console.log("Pesquisas encontradas:", surveys.length);
+
+    // Filtra apenas as pesquisas finalizadas (não ativas) e ordena por data de criação
+    const completedSurveys = surveys
+      .filter((s: any) => !s.isActive)
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+    console.log("Pesquisas finalizadas:", completedSurveys.length);
+
+    if (completedSurveys.length === 0) {
+      console.log("Nenhuma pesquisa finalizada encontrada");
+      return { satisfactionScore: null, shortText: null };
+    }
+
+    // Pega a pesquisa mais recente finalizada
+    const lastCompletedSurvey = completedSurveys[0];
+    console.log("Última pesquisa finalizada:", lastCompletedSurvey);
+
+    // Busca o resumo de IA da última pesquisa finalizada
+    console.log("Buscando resumo para pesquisa ID:", lastCompletedSurvey.id);
+    const summary = await getClimateAISummary(lastCompletedSurvey.id);
+    console.log("Resumo completo:", summary);
+    console.log("Score de satisfação:", summary.satisfactionScore);
+    console.log("Resumo curto:", summary.shortText);
+
+    return {
+      satisfactionScore: summary.satisfactionScore,
+      shortText: summary.shortText,
+    };
+  } catch (error) {
+    console.error(
+      "Erro ao buscar dados da última pesquisa finalizada:",
+      error
+    );
+    return { satisfactionScore: null, shortText: null };
+  }
+};
+
+export const getClimateAISummary = async (surveyId: number) => {
+  const res = await fetch(
+    `${API_URL}/ai-climate-summary?surveyId=${surveyId}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Erro ao buscar resumo de IA da pesquisa");
+  }
+
+  const data = await res.json();
+  return {
+    text: data.text || null,
+    shortText: data.shortText || null,
+    satisfactionScore: data.satisfactionScore || null,
+    status: data.status || "pending",
+  };
+};
+
+export const generateClimateAISummary = async (surveyId: number) => {
+  const res = await fetch(`${API_URL}/ai-climate-summary`, {
+    method: "POST",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ surveyId }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    const errorMessage =
+      error.message || "Erro ao gerar resumo de IA da pesquisa";
+
+    // Verificar se é um erro relacionado à configuração da API
+    if (
+      errorMessage.includes("API") ||
+      errorMessage.includes("Gemini") ||
+      errorMessage.includes("chave")
+    ) {
+      throw new Error(
+        "API do Google Gemini não está configurada. Verifique a documentação para configurar a GEMINI_API_KEY."
+      );
+    }
+
+    // Verificar se é um erro de resumo já em processamento
+    if (errorMessage.includes("já existe um resumo sendo gerado")) {
+      throw new Error("Resumo já está sendo gerado. Aguarde a conclusão.");
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  const data = await res.json();
+
+  // Verificar se a resposta está vazia ou malformada
+  if (!data || typeof data.text !== "string" || data.text.trim() === "") {
+    throw new Error(
+      "A IA retornou uma resposta vazia. Verifique se a API está configurada corretamente."
+    );
+  }
+
+  return {
+    text: data.text,
+    shortText: data.shortText,
+    satisfactionScore: data.satisfactionScore,
+    status: data.status || "completed",
+  };
+};
+
+export const getAllClimateAISummaries = async () => {
+  const res = await fetch(`${API_URL}/ai-climate-summary/all`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar resumos de IA das pesquisas");
+  return res.json();
+};
