@@ -128,23 +128,29 @@ const RHImport: React.FC = () => {
                         <div className="mt-4 space-y-2">
                             <h3 className="font-semibold text-gray-700">Arquivos Selecionados:</h3>
 
-                            <div className="flex items-center px-3 py-2 border-b text-xs font-bold text-gray-500 uppercase bg-gray-50 rounded-t-md">
+                            <div className="hidden md:flex items-center px-3 py-2 border-b text-xs font-bold text-gray-500 uppercase bg-gray-50 rounded-t-md">
                                 <div className="flex-1">Nome do arquivo</div>
                                 <div className="w-24 text-right">Tamanho</div>
                                 <div className="w-20 text-center">Excluir</div>
                             </div>
 
-                            <ul className="border border-t-0 rounded-b-md divide-y">
+                            <ul className="border rounded-md divide-y">
                                 {selectedFiles.map(file => (
-                                    <li key={file.name} className="p-3 flex justify-between items-center text-sm hover:bg-gray-50">
+                                    <li key={file.name} className="p-3 flex flex-col md:flex-row md:justify-between md:items-center text-sm hover:bg-gray-50">
 
-                                        <span className="flex-1 font-medium text-gray-800 truncate pr-4">{file.name}</span>
-
-                                        <div className="w-24 text-right text-gray-500">
-                                            {formatBytes(file.size)}
+                                        <div className="flex-1 min-w-0 pr-4">
+                                            {/* Versão curta, visível apenas em telas pequenas */}
+                                            <span className="font-medium text-gray-800 md:hidden">
+                                                {file.name.length > 15 ? `${file.name.substring(0, 15)}...` : file.name}
+                                            </span>
+                                            {/* Versão completa, visível apenas em telas médias e maiores */}
+                                            <span className="font-medium text-gray-800 hidden md:inline">
+                                                {file.name}
+                                            </span>
                                         </div>
 
-                                        <div className="w-20 flex justify-center">
+                                        <div className="flex items-center justify-between w-full md:w-auto md:gap-3">
+                                            <span className="text-gray-500">{formatBytes(file.size)}</span>
                                             <button onClick={() => handleRemoveFile(file.name)} className="text-red-400 hover:text-red-600 transition-colors">
                                                 <TrashIcon className="h-5 w-5" />
                                             </button>
@@ -172,8 +178,9 @@ const RHImport: React.FC = () => {
                     <h2 className="text-xl font-bold mb-4">Resultado da Importação</h2>
 
                     {/* Resumo Geral */}
-                    <div className="flex items-center gap-6 p-4 rounded-lg bg-gray-50 border">
-                        <div className="flex-shrink-0">
+                    <div className={'flex flex-col md:flex-row md:items-center md:gap-6 p-4 rounded-lg bg-gray-50 border'}>
+
+                        <div className="flex-shrink-0 mx-auto md:mx-0">
                             {summary.errorCount === 0 && (
                                 <CheckCircleIcon className="h-10 w-10 text-green-500" />
                             )}
@@ -185,23 +192,25 @@ const RHImport: React.FC = () => {
                             )}
                         </div>
 
-                        <div>
+                        <div className="flex-1 text-center md:text-left mt-4 md:mt-0">
                             <p className="font-semibold text-gray-800">
                                 {summary.errorCount === 0
                                     ? `Todos os ${summary.successCount} arquivos foram importados com sucesso!`
-                                    : `${summary.successCount} de ${summary.successCount + summary.errorCount} arquivos importados com sucesso.`}
+                                    : `${summary.successCount} de ${importResult.totalFiles} arquivos importados com sucesso.`}
                             </p>
                             {summary.errorCount > 0 && (
                                 <p className="text-sm text-red-600">{summary.errorCount} arquivo(s) falhou(aram).</p>
                             )}
                         </div>
 
-                        <button
-                            onClick={() => setShowDetails(prev => !prev)}
-                            className="ml-auto px-4 py-2 text-sm font-medium text-[#08605F] hover:bg-[#08605F]/5 rounded-md"
-                        >
-                            {showDetails ? 'Ocultar Detalhes' : 'Ver Detalhes'}
-                        </button>
+                        <div className="text-center md:text-left mt-4 md:mt-0">
+                            <button
+                                onClick={() => setShowDetails(prev => !prev)}
+                                className="px-4 py-2 text-sm font-medium text-[#08605F] hover:bg-[#08605F]/5 rounded-md"
+                            >
+                                {showDetails ? 'Ocultar Detalhes' : 'Ver Detalhes'}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Lista Detalhada */}
@@ -209,7 +218,14 @@ const RHImport: React.FC = () => {
                         <ul className="mt-4 space-y-2 border-t pt-4">
                             {importResult.results.map((res, index) => (
                                 <li key={index} className={`p-3 rounded-md ${res.status === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-                                    <p className="font-semibold">{res.fileName}</p>
+                                    <div>
+                                        <p className="font-semibold md:hidden">
+                                            {res.fileName.length > 15 ? `${res.fileName.substring(0, 15)}...` : res.fileName}
+                                        </p>
+                                        <p className="font-semibold hidden md:block">
+                                            {res.fileName}
+                                        </p>
+                                    </div>
                                     <p className="text-sm">{res.status === 'success' ? `Sucesso: ${res.data?.message}` : `Erro: ${res.reason}`}</p>
                                 </li>
                             ))}
