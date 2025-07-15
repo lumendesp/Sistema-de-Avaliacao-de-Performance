@@ -88,4 +88,26 @@ export class CollaboratorService {
 
     return { total: total.length };
   }
+
+  async findAnsweredSurveysByUser(userId: number) {
+    const responses = await this.prisma.climateSurveyResponse.findMany({
+        where: {
+        userId,
+        isSubmit: true,
+        },
+        distinct: ['surveyId'],
+        include: {
+        survey: {
+            select: {
+            id: true,
+            title: true,
+            endDate: true,
+            },
+        },
+        },
+    });
+
+    // Retorna apenas as pesquisas (sem o objeto de response)
+    return responses.map((r) => r.survey);
+    }
 }

@@ -42,4 +42,12 @@ export class CollaboratorController {
     const userId = req.user.userId;
     return this.collaboratorService.countAnsweredByUser(userId);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('climate-surveys/answered')
+  async getAnsweredSurveys(@Req() req) {
+    const userId = req.user.userId;
+    return this.collaboratorService.findAnsweredSurveysByUser(userId);
+  }
+
 }
