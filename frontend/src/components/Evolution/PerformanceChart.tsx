@@ -19,20 +19,24 @@ interface PerformanceChartProps {
   performance: PerformanceItem[];
 }
 
-const PerformanceChart: React.FC<PerformanceChartProps> = ({ performance }) => {
-  // Preenche com barras "vazias" se houver menos de 5 ciclos
-  const MAX_BARS = 5;
-  const BAR_COLORS = ['#22C55E', '#0EA5E9', '#FACC15', '#A78BFA', '#F472B6'];
+const getEvaluationColor = (score: number): string => {
+  if (score >= 4.5) return '#065F46'; // verde escuro
+  if (score >= 4.0) return '#0F766E'; // teal escuro
+  if (score >= 3.0) return '#CA8A04'; // amarelo escuro
+  if (score > 0) return '#DC2626';    // vermelho
+  return '#E5E7EB';                   // cinza claro para vazios
+};
 
-  // Ordena os ciclos em ordem crescente e garante que as barras reais fiquem à esquerda
+const PerformanceChart: React.FC<PerformanceChartProps> = ({ performance }) => {
+  const MAX_BARS = 5;
+
   const realBars = performance.slice().sort((a, b) => {
     const aNum = Number(a.cycle);
     const bNum = Number(b.cycle);
-    if (!isNaN(aNum) && !isNaN(bNum)) {
-      return aNum - bNum;
-    }
+    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
     return a.cycle.localeCompare(b.cycle, 'pt-BR', { numeric: true });
   });
+
   const emptyBars = Array(MAX_BARS - realBars.length).fill({ cycle: '', score: 0 });
   const sortedBars = [...realBars, ...emptyBars];
 
@@ -42,7 +46,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ performance }) => {
       {
         label: 'Nota',
         data: sortedBars.map((item) => item.score),
-        backgroundColor: sortedBars.map((item, idx) => item.score > 0 ? BAR_COLORS[idx % BAR_COLORS.length] : '#E5E7EB'),
+        backgroundColor: sortedBars.map((item) => getEvaluationColor(item.score)),
         borderRadius: 6,
         barThickness: 40,
       },
@@ -84,7 +88,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ performance }) => {
         cornerRadius: 4,
         padding: 8,
         callbacks: {
-          label: function(context: any) {
+          label: function (context: any) {
             return `Nota: ${context.parsed.y.toFixed(2)}`;
           },
         },
@@ -102,4 +106,4 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ performance }) => {
   );
 };
 
-export default PerformanceChart; 
+export default PerformanceChart;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import searchIcon from "../../assets/search.png";
-import CollaboratorCard from "../../components/mentor/CollaboratorCard";
+import CollaboratorCard from "../../components/Mentor/CollaboratorCard.tsx";
 import type { Collaborator } from "../../types/collaboratorStatus.tsx";
 import { useAuth } from "../../context/AuthContext";
 import {

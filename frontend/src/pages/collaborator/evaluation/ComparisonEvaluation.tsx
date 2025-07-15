@@ -69,11 +69,11 @@ export default function ComparisonEvaluation() {
                 headers: { Authorization: `Bearer ${token}` },
               }
             );
-            const evaluations = managerRes.data;
-            const hasForSelectedCycle = evaluations.some(
-              (ev: any) => ev.cycleId === selected?.id
-            );
-            setHasMentorEvaluation(hasForSelectedCycle);
+
+            const evaluation = managerRes.data;
+
+            const isSameCycle = evaluation?.cycle?.id === selected.id;
+            setHasMentorEvaluation(isSameCycle);
           } catch (error) {
             console.warn("Erro ao buscar avaliação do gestor:", error);
           }
