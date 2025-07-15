@@ -15,15 +15,8 @@ const Login = () => {
     logout();
   }, []);
 
-  const getHighestRoleRoute = (roles: string[] = []) => {
-    if (roles.includes("ADMIN")) return "/manager";
-    if (roles.includes("HR")) return "/rh";
-    if (roles.includes("COMMITTEE")) return "/committee";
-    if (roles.includes("MANAGER")) return "/manager";
-    if (roles.includes("MENTOR")) return "/mentor";
-    if (roles.includes("COLLABORATOR")) return "/collaborator";
-    return "/collaborator";
-  };
+  // Sempre redireciona para colaborador após login
+  const getHighestRoleRoute = () => "/collaborator";
 
   const handleLogin = async () => {
     const success = await login(email, password);
@@ -39,7 +32,7 @@ const Login = () => {
             : [];
         } catch {}
       }
-      navigate(getHighestRoleRoute(roles));
+      navigate(getHighestRoleRoute());
     } else setError("Invalid credentials");
   };
 

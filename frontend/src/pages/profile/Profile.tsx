@@ -52,6 +52,17 @@ const Profile: React.FC = () => {
       "COMMITTEE",
       "HR",
     ];
+    const previousPath =
+      window.history.state?.usr?.pathname || document.referrer || "";
+    // Se veio do login/logout, sempre colaborador
+    if (
+      !previousPath ||
+      previousPath.endsWith("/login") ||
+      previousPath.endsWith("/")
+    ) {
+      sessionStorage.removeItem("lastProfileAccount");
+      return "COLLABORATOR";
+    }
     if (
       lastAccount &&
       (isAdmin
@@ -64,8 +75,6 @@ const Profile: React.FC = () => {
     if (isAdmin && roleNames.includes("COLLABORATOR")) {
       return "COLLABORATOR";
     }
-    const previousPath =
-      window.history.state?.usr?.pathname || document.referrer;
     if (previousPath.includes("manager"))
       return (
         profile.roles.find((a) => a.role.toLowerCase().includes("gestor"))

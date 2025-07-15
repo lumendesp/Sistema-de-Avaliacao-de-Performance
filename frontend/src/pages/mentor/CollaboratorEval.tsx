@@ -14,6 +14,7 @@ const MentorSelfEvaluationReadOnly = () => {
   const [loading, setLoading] = useState(true);
   const [cycleId, setCycleId] = useState<number | null>(null);
   const [selfEval, setSelfEval] = useState<any>(null);
+  const [cycleStatus, setCycleStatus] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -21,6 +22,7 @@ const MentorSelfEvaluationReadOnly = () => {
       try {
         const cycle = await fetchActiveEvaluationCycle("MANAGER");
         setCycleId(cycle?.id || null);
+        setCycleStatus(cycle?.status || null);
         if (!id || !cycle?.id) {
           setTrackGroups(null);
           setSelfEval(null);
@@ -90,10 +92,10 @@ const MentorSelfEvaluationReadOnly = () => {
         Carregando autoavaliação do colaborador...
       </div>
     );
-  if (!trackGroups || !cycleId || !selfEval)
+  if (!cycleId || cycleStatus !== "IN_PROGRESS_MANAGER")
     return (
       <div className="text-red-500 text-center mt-10 font-semibold bg-red-100 border border-red-300 rounded p-4 max-w-xl mx-auto">
-        Nenhum ciclo de avaliação de gestor em andamento.
+        Nenhum ciclo de avaliação de mentor em andamento.
         <br />
         <span className="text-gray-700 text-sm font-normal">
           A autoavaliação deste colaborador só estará disponível durante o ciclo

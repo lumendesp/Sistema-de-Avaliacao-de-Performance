@@ -56,11 +56,11 @@ const PeerEvaluationMentor = () => {
   if (!cycleId)
     return (
       <div className="text-red-500 text-center mt-10 font-semibold bg-red-100 border border-red-300 rounded p-4 max-w-xl mx-auto">
-        Nenhum ciclo de avaliação de gestor em andamento.
+        Nenhum ciclo de avaliação de mentor em andamento.
         <br />
         <span className="text-gray-700 text-sm font-normal">
           As avaliações 360 deste colaborador só estarão disponíveis durante o
-          ciclo de avaliação do gestor.
+          ciclo de avaliação do mentor.
         </span>
       </div>
     );
