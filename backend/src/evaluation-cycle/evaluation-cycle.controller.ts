@@ -9,22 +9,25 @@ export class EvaluationCycleController {
     private readonly evaluationCycleService: EvaluationCycleService,
   ) {}
 
+  // Retorna um ciclo com status específico (ex: IN_PROGRESS_COLLABORATOR)
   @UseGuards(JwtAuthGuard)
   @Get('active')
   async getActiveCycle(@Query('status') status?: string) {
-    // Validar se o status é válido
     if (status && !Object.values(CycleStatus).includes(status as CycleStatus)) {
       throw new Error(`Invalid cycle status: ${status}`);
     }
-    
+
     return this.evaluationCycleService.findActiveCycle(status as CycleStatus);
   }
 
+  // Retorna ciclos fechados (excluindo o em progresso mais recente)
+  @UseGuards(JwtAuthGuard)
   @Get('closed')
   getClosedCycles() {
     return this.evaluationCycleService.getClosedCycles();
   }
 
+  // Retorna o ciclo mais recente (qualquer status)
   @UseGuards(JwtAuthGuard)
   @Get('recent')
   getMostRecentCycle() {

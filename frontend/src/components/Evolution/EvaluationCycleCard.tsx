@@ -1,29 +1,118 @@
-import React from 'react';
+import React from "react";
+import AIIcon from "../../assets/committee/AI-icon.png";
+import ColoredScoreBox from "./ColoredScoreBox";
 
 interface EvaluationCycleCardProps {
   cycle: string;
   status: string;
-  self: string | number;
-  exec: string | number;
-  posture: string | number;
-  final: string | number;
+  selfEvaluation?: number;
+  peerEvaluation?: number;
+  finalScore?: number;
   summary: string;
+  selfColor?: string;
+  peerColor?: string;
+  finalColor?: string;
 }
 
-const EvaluationCycleCard: React.FC<EvaluationCycleCardProps> = ({ cycle, status, self, exec, posture, final, summary }) => (
-  <div className="border rounded p-4 bg-gray-50">
-    <div className="flex items-center gap-4 mb-2">
-      <span className="font-bold">Ciclo {cycle.replace(/^Ciclo\s*/i, "")}</span>
-      <span className={`text-xs px-2 py-1 rounded ${status === 'Finalizado' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{status}</span>
-      <span className="ml-auto font-bold text-lg">{final !== '-' ? final : ''}</span>
-    </div>
-    <div className="flex gap-4 text-sm mb-2">
-      <span>Autoavaliação: <b>{self}</b></span>
-      <span>Avaliação final - Execução: <b>{exec}</b></span>
-      <span>Avaliação final - Postura: <b>{posture}</b></span>
-    </div>
-    <div className="text-xs text-gray-600">Resumo: {summary}</div>
+const getColor = (score: number) => {
+  if (score >= 4) return "#08605F";
+  if (score >= 3) return "#F5C130";
+  return "#DC2626";
+};
+
+const ProgressBar = ({ value, color }: { value?: number; color?: string }) => (
+  <div className="w-full h-2 bg-gray-200 rounded-full">
+    <div
+      className="h-2 rounded-full"
+      style={{
+        width: value !== undefined ? `${(value / 5) * 100}%` : "0%",
+        backgroundColor:
+          value !== undefined ? color || getColor(value) : "#d1d5db",
+      }}
+    />
   </div>
 );
 
-export default EvaluationCycleCard; 
+const EvaluationCycleCard: React.FC<EvaluationCycleCardProps> = ({
+  cycle,
+  status,
+  selfEvaluation,
+  peerEvaluation,
+  finalScore,
+  summary,
+  selfColor,
+  peerColor,
+  finalColor,
+}) => (
+  <div className="border rounded-lg p-4 bg-white shadow-sm space-y-4 w-full overflow-x-hidden">
+    {/* Header */}
+    <div className="flex justify-between items-center">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-gray-800">
+          Ciclo {cycle.replace(/^Ciclo\s*/i, "")}
+        </span>
+        <span
+          className={`text-xs px-2 py-0.5 rounded ${
+            status === "Finalizado"
+              ? "bg-green-100 text-green-700"
+              : "bg-yellow-100 text-yellow-700"
+          }`}
+        >
+          {status}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-600 font-medium">Nota final</span>
+        <ColoredScoreBox score={finalScore} />
+      </div>
+    </div>
+
+    {/* Avaliações com barra */}
+    <div className="flex flex-col sm:flex-row gap-4 text-sm w-full overflow-x-hidden">
+      <div className="flex-1">
+        <div className="flex justify-between mb-1">
+          <span className="text-gray-600">Autoavaliação</span>
+          <span className="font-medium text-gray-800">
+            {typeof selfEvaluation === "number"
+              ? selfEvaluation.toFixed(1)
+              : "-"}
+          </span>
+        </div>
+        <ProgressBar value={selfEvaluation} color={selfColor} />
+      </div>
+      <div className="flex-1">
+        <div className="flex justify-between mb-1">
+          <span className="text-gray-600">Avaliação 360</span>
+          <span className="font-medium text-gray-800">
+            {typeof peerEvaluation === "number"
+              ? peerEvaluation.toFixed(1)
+              : "-"}
+          </span>
+        </div>
+        <ProgressBar value={peerEvaluation} color={peerColor} />
+      </div>
+      <div className="flex-1">
+        <div className="flex justify-between mb-1">
+          <span className="text-gray-600">Nota final</span>
+          <span className="font-medium text-gray-800">
+            {typeof finalScore === "number" ? finalScore.toFixed(1) : "-"}
+          </span>
+        </div>
+        <ProgressBar value={finalScore} color={finalColor} />
+      </div>
+    </div>
+
+    {/* Resumo estilo IA */}
+    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 border-l-4 border-l-[#08605F] pl-6">
+      <div className="flex items-center gap-2 mb-2">
+        <img src={AIIcon} alt="IA Icon" className="w-4 h-4" />
+        <span className="text-sm font-semibold text-gray-700">Resumo</span>
+      </div>
+      <div className="text-sm text-gray-700 whitespace-pre-wrap">
+        {summary && summary !== "-" ? summary : "Resumo não disponível."}
+      </div>
+    </div>
+  </div>
+);
+
+export default EvaluationCycleCard;

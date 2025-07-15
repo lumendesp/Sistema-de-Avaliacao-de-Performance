@@ -11,7 +11,12 @@ interface Cycle {
   name: string;
   startDate: string;
   endDate: string;
-  status: "IN_PROGRESS" | "CLOSED" | "PUBLISHED";
+  status:
+    | "IN_PROGRESS_COLLABORATOR"
+    | "IN_PROGRESS_MANAGER"
+    | "IN_PROGRESS_COMMITTEE"
+    | "CLOSED"
+    | "PUBLISHED";
 }
 
 export default function Dashboard() {
@@ -22,17 +27,18 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchCycle = async () => {
       try {
-        // Na página de colaborador, sempre buscar ciclo do tipo COLLABORATOR
-        const mainRole = "COLLABORATOR";
         console.log("User roles:", user?.roles);
-        console.log("Página de colaborador - buscando ciclo do tipo:", mainRole);
+        console.log("Página de colaborador - buscando ciclo mais recente");
 
         const response = await axios.get<Cycle>(
-          `http://localhost:3000/ciclos/current?status=IN_PROGRESS_COLLABORATOR`,
+          `http://localhost:3000/evaluation-cycle/recent`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
+
+        console.log("Resposta completa da API:", response);
+        console.log("Dados (response.data):", response.data);
 
         const cicloMaisRecente = response.data;
         console.log("Ciclo recebido do backend:", cicloMaisRecente);
@@ -54,14 +60,17 @@ export default function Dashboard() {
     fetchCycle();
   }, [token, user]);
 
+
   const mapCycleStatusToUIStatus = (
-    status: string
+    status: Cycle["status"]
   ): "aberto" | "emBreve" | "disponivel" => {
     console.log("Mapeando status:", status);
     const mappedStatus = (() => {
       switch (status) {
         case "IN_PROGRESS_COLLABORATOR":
           return "aberto";
+        case "IN_PROGRESS_MANAGER":
+        case "IN_PROGRESS_COMMITTEE":
         case "CLOSED":
           return "emBreve";
         case "PUBLISHED":
@@ -74,6 +83,7 @@ export default function Dashboard() {
     return mappedStatus;
   };
 
+
   return (
     <div className="w-full flex flex-col gap-4 p-10 bg-[#f1f1f1]">
       <DashboardHeader name={user?.name ?? "Usuário"} />
@@ -84,7 +94,7 @@ export default function Dashboard() {
           diasRestantes={diasRestantes}
         />
       )}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <EvaluationCardList />
         <PerformanceChart />
       </div>

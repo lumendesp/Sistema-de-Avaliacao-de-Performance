@@ -32,8 +32,8 @@ enum MotivationLevel {
 enum CycleStatus {
   IN_PROGRESS_COLLABORATOR
   IN_PROGRESS_MANAGER
-  IN_PROGRESS_COMMITTEE
   CLOSED
+  IN_PROGRESS_COMMITTEE
   PUBLISHED
 }
 
@@ -129,6 +129,8 @@ model User {
 
   manages             ManagerCollaborator[] @relation("ManagerToCollaborator")
   managedBy           ManagerCollaborator[] @relation("CollaboratorToManager")
+  mentorToCollaboratorEvaluationsGiven MentorToCollaboratorEvaluation[] @relation("MentorToCollaboratorEvaluator")
+  mentorToCollaboratorEvaluationsReceived MentorToCollaboratorEvaluation[] @relation("MentorToCollaboratorEvaluatee")
   EvaluationCycleUser EvaluationCycleUser[]
   pdis                PDI[]
 
@@ -212,6 +214,8 @@ model EvaluationCycle {
   aiSummaries         AISummary[]
   committeeNotes      CommitteeNote[]
   managerEvaluations  ManagerEvaluation[]
+
+  mentorToCollaboratorEvaluations MentorToCollaboratorEvaluation[] @relation("MentorToCollaboratorCycle")
   EvaluationCycleUser EvaluationCycleUser[]
 }
 
@@ -396,13 +400,14 @@ model Discrepancy {
 }
 
 model AISummary {
-  id      Int    @id @default(autoincrement())
-  userId  Int
-  cycleId Int
-  text    String
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  cycleId     Int
+  text        String
+  leanText    String?
 
-  user  User            @relation(fields: [userId], references: [id])
-  cycle EvaluationCycle @relation(fields: [cycleId], references: [id])
+  user        User            @relation(fields: [userId], references: [id])
+  cycle       EvaluationCycle @relation(fields: [cycleId], references: [id])
 
   @@unique([userId, cycleId])
 }
@@ -425,6 +430,20 @@ model ManagerCollaborator {
   collaborator User @relation("CollaboratorToManager", fields: [collaboratorId], references: [id])
 
   @@id([managerId, collaboratorId])
+}
+
+model MentorToCollaboratorEvaluation {
+  id            Int      @id @default(autoincrement())
+  evaluatorId   Int
+  evaluateeId   Int
+  cycleId       Int
+  createdAt     DateTime @default(now())
+  score         Int
+  justification String
+
+  evaluator User @relation("MentorToCollaboratorEvaluator", fields: [evaluatorId], references: [id])
+  evaluatee User @relation("MentorToCollaboratorEvaluatee", fields: [evaluateeId], references: [id])
+  cycle     EvaluationCycle @relation("MentorToCollaboratorCycle", fields: [cycleId], references: [id])
 }
 
 model BrutalFactsCache {

@@ -56,7 +56,7 @@ export default function SelfEvaluationPage() {
   }
 
   return (
-    <div className="p-3 bg-[#f1f1f1] mt-0">
+    <div className="p-3 sm:p-3 bg-[#f1f1f1] mt-0 min-h-screen">
       {isSubmit ? (
         <SelfEvaluationGroupReadOnlyList
           trackData={trackGroups}
