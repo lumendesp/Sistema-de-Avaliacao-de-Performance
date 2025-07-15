@@ -33,11 +33,22 @@ export class PdiService {
   }
 
   async updatePdiAction(id: number, data: { title?: string; description?: string; category?: string; priority?: string; status?: string; dueDate?: string; progress?: number; goals?: any }) {
-    const updateData = { ...data };
+    const updateData: any = { ...data };
+    if (typeof updateData.goals === 'undefined') {
+      delete updateData.goals;
+    }
     return this.prisma.pDIAction.update({ where: { id }, data: updateData });
   }
 
   async deletePdiAction(id: number) {
-    return this.prisma.pDIAction.delete({ where: { id } });
+    try {
+      return await this.prisma.pDIAction.delete({ where: { id } });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        // Registro não encontrado para deletar
+        return null;
+      }
+      throw error;
+    }
   }
 } 

@@ -1116,3 +1116,71 @@ export const deletePdiAction = async (id: number) => {
   if (!res.ok) throw new Error('Erro ao deletar ação do PDI');
   return res.json();
 };
+
+// --- OKR API ---
+export const fetchOkrsByUser = async (userId: number) => {
+  const res = await fetch(`${API_URL}/okrs/user/${userId}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Erro ao buscar OKRs');
+  return res.json();
+};
+
+export const createOkr = async (data: { userId: number; objective: string; dueDate: string; keyResults: string[] }) => {
+  const res = await fetch(`${API_URL}/okrs`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Erro ao criar OKR');
+  return res.json();
+};
+
+export const updateOkr = async (id: number, data: { objective?: string; dueDate?: string; progress?: number; status?: string }) => {
+  const res = await fetch(`${API_URL}/okrs/${id}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Erro ao atualizar OKR');
+  return res.json();
+};
+
+export const deleteOkr = async (id: number) => {
+  const res = await fetch(`${API_URL}/okrs/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Erro ao deletar OKR');
+  return res.json();
+};
+
+export const addKeyResult = async (okrId: number, description: string) => {
+  const res = await fetch(`${API_URL}/okrs/${okrId}/key-result`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ description }),
+  });
+  if (!res.ok) throw new Error('Erro ao adicionar resultado-chave');
+  return res.json();
+};
+
+export const updateKeyResult = async (id: number, description: string) => {
+  const res = await fetch(`${API_URL}/okrs/key-result/${id}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ description }),
+  });
+  if (!res.ok) throw new Error('Erro ao atualizar resultado-chave');
+  return res.json();
+};
+
+export const deleteKeyResult = async (id: number) => {
+  const res = await fetch(`${API_URL}/okrs/key-result/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Erro ao deletar resultado-chave');
+  return res.json();
+};

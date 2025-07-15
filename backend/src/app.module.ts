@@ -27,6 +27,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { EvaluationCompletionModule } from './evaluation-completion/evaluation-completion.module';
 import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
 import { PdiModule } from './pdi/pdi.module';
+import { OkrModule } from './okr/okr.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { PdiModule } from './pdi/pdi.module';
     EvaluationCompletionModule,
     AiBrutalFactsModule,
     PdiModule,
+    OkrModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

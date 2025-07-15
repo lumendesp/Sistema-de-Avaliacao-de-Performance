@@ -42,6 +42,7 @@ const PDI: React.FC<PDIProps> = ({
   title = 'PDI - Plano de Desenvolvimento Individual',
   description = 'Acompanhe o desenvolvimento dos seus colaboradores'
 }) => {
+  console.log('userRole:', userRole);
   const { user } = useAuth();
   const [collaborators, setCollaborators] = useState<PDICollaborator[]>([]);
   const [selectedCollaborator, setSelectedCollaborator] = useState<string | null>(null);
@@ -54,8 +55,9 @@ const PDI: React.FC<PDIProps> = ({
     category: 'skill' as const,
     priority: 'medium' as const,
     dueDate: '',
-    goals: [] as PDIGoal[],
+    goals: [{ id: Date.now().toString(), descricao: '', concluida: false }] as PDIGoal[],
   });
+  const [actionErrors, setActionErrors] = useState<{[key: string]: string}>({});
   // Novo estado para criação de PDI
   const [showCreatePdi, setShowCreatePdi] = useState(false);
   const [newPdi, setNewPdi] = useState({ title: '', description: '' });
@@ -69,35 +71,35 @@ const PDI: React.FC<PDIProps> = ({
   // Adicionar estado para filtro de busca de colaborador
   const [managerCollaboratorFilter, setManagerCollaboratorFilter] = useState('');
   const [showManagerCollaboratorList, setShowManagerCollaboratorList] = useState(false);
+  const [editActionData, setEditActionData] = useState<null | (PDIAction & {collaboratorId: string})>(null);
+  const [showCreatePdiForCollaborator, setShowCreatePdiForCollaborator] = useState(false);
+  const [newPdiForCollaborator, setNewPdiForCollaborator] = useState({ title: '', description: '' });
+  // Novo estado para seleção de PDI do colaborador (para manager)
+  const [selectedCollaboratorPdis, setSelectedCollaboratorPdis] = useState<any[]>([]); // lista de PDIs do colaborador selecionado
+  const [selectedCollaboratorPdiId, setSelectedCollaboratorPdiId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
       fetchPdiByUser(user.id).then((pdis) => {
         setUserPdis(pdis);
         if (pdis.length > 0) {
-          // Se só houver um PDI, seleciona automaticamente
-          setSelectedPdiId(pdis.length === 1 ? pdis[0].id.toString() : null);
-          // Atualiza colaboradores para o PDI selecionado (se só houver um)
-          if (pdis.length === 1) {
-            const pdi = pdis[0];
-            setCollaborators([
-              {
-                id: user.id.toString(),
-                name: user.name,
-                position: user.position || '',
-                department: user.unit || '',
-                pdiId: pdi.id,
-                actions: pdi.actions.map((a: any) => ({
-                  ...a,
-                  id: a.id.toString(),
-                })),
-              },
-            ]);
-            setSelectedCollaborator(user.id.toString());
-          } else {
-            setCollaborators([]);
-            setSelectedCollaborator(null);
-          }
+          // Seleciona o PDI mais recente por padrão (último da lista)
+          const mostRecentPdi = pdis[pdis.length - 1];
+          setSelectedPdiId(mostRecentPdi.id.toString());
+          setCollaborators([
+            {
+              id: user.id.toString(),
+              name: user.name,
+              position: '',
+              department: '',
+              pdiId: mostRecentPdi.id,
+              actions: mostRecentPdi.actions.map((a: any) => ({
+                ...a,
+                id: a.id.toString(),
+              })),
+            },
+          ]);
+          setSelectedCollaborator(user.id.toString());
         } else {
           setUserPdis([]);
           setCollaborators([]);
@@ -112,14 +114,19 @@ const PDI: React.FC<PDIProps> = ({
     if (selectedPdiId && userPdis.length > 0 && user) {
       const pdi = userPdis.find((p) => p.id.toString() === selectedPdiId);
       if (pdi) {
-        setCollaborators(collaborators.map(collab => 
-          collab.id === selectedCollaborator
-            ? { ...collab, actions: pdi.actions.map((a: any) => ({
-                  ...a,
-                  id: a.id.toString(),
-                })) }
-            : collab
-        ));
+        setCollaborators([
+          {
+            id: user.id.toString(),
+            name: user.name,
+            position: user.position || '',
+            department: user.unit || '',
+            pdiId: pdi.id,
+            actions: pdi.actions.map((a: any) => ({
+              ...a,
+              id: a.id.toString(),
+            })),
+          },
+        ]);
         setSelectedCollaborator(user.id.toString());
       }
     }
@@ -133,34 +140,82 @@ const PDI: React.FC<PDIProps> = ({
         if (collabs.length > 0) {
           setSelectedManagerCollaboratorId(collabs[0].id.toString());
         }
+        // Buscar os PDIs de todos os colaboradores do manager
+        Promise.all(
+          collabs.map((collab: any) =>
+            fetchPdiByUser(Number(collab.id)).then((pdis) => ({
+              ...collab,
+              pdiId: pdis[0]?.id,
+              actions: pdis[0]?.actions?.map((a: any) => ({ ...a, id: a.id.toString() })) || [],
+            }))
+          )
+        ).then((collaboratorsWithPdi) => {
+          setCollaborators(collaboratorsWithPdi);
+        });
       });
     }
   }, [userRole, user]);
+
   // Corrigir chamada de fetchPdiByUser para receber number
   useEffect(() => {
     if (userRole === 'manager' && selectedManagerCollaboratorId) {
       fetchPdiByUser(Number(selectedManagerCollaboratorId)).then((pdis) => {
-        setUserPdis(pdis);
-        if (pdis.length > 0) {
-          setSelectedPdiId(pdis[0].id.toString());
-          setCollaborators([
-            {
-              id: selectedManagerCollaboratorId,
-              name: managerCollaborators.find(c => c.id.toString() === selectedManagerCollaboratorId)?.name || '',
-              position: managerCollaborators.find(c => c.id.toString() === selectedManagerCollaboratorId)?.position || '',
-              department: managerCollaborators.find(c => c.id.toString() === selectedManagerCollaboratorId)?.department || '',
-              pdiId: pdis[0].id,
-              actions: pdis[0].actions.map((a: any) => ({ ...a, id: a.id.toString() })),
-            },
-          ]);
-          setSelectedCollaborator(selectedManagerCollaboratorId);
-        } else {
-          setCollaborators([]);
-          setSelectedCollaborator(null);
-        }
+        // Não sobrescrever userPdis nem selectedPdiId do próprio usuário
+        // Atualizar apenas o colaborador selecionado no array collaborators
+        setCollaborators(prev => prev.map(collab =>
+          collab.id === selectedManagerCollaboratorId
+            ? {
+                ...collab,
+                pdiId: pdis[0]?.id,
+                actions: pdis[0]?.actions?.map((a: any) => ({ ...a, id: a.id.toString() })) || [],
+              }
+            : collab
+        ));
+        // Garante que o colaborador selecionado está atualizado
+        setSelectedCollaborator(selectedManagerCollaboratorId);
       });
     }
   }, [userRole, selectedManagerCollaboratorId, managerCollaborators]);
+
+  // Atualizar os PDIs do colaborador selecionado quando mudar
+  useEffect(() => {
+    if (userRole === 'manager' && selectedCollaborator) {
+      fetchPdiByUser(Number(selectedCollaborator)).then((pdis) => {
+        setSelectedCollaboratorPdis(pdis);
+        if (pdis.length > 0) {
+          setSelectedCollaboratorPdiId(pdis[0].id.toString());
+          // Atualiza o colaborador selecionado no array
+          setCollaborators(prev => prev.map(collab =>
+            collab.id === selectedCollaborator
+              ? {
+                  ...collab,
+                  pdiId: pdis[0].id,
+                  actions: pdis[0].actions.map((a: any) => ({ ...a, id: a.id.toString() })),
+                }
+              : collab
+          ));
+        }
+      });
+    }
+  }, [userRole, selectedCollaborator]);
+
+  // Quando trocar o PDI selecionado do colaborador, atualizar as ações
+  useEffect(() => {
+    if (userRole === 'manager' && selectedCollaborator && selectedCollaboratorPdiId && selectedCollaboratorPdis.length > 0) {
+      const pdi = selectedCollaboratorPdis.find(p => p.id.toString() === selectedCollaboratorPdiId);
+      if (pdi) {
+        setCollaborators(prev => prev.map(collab =>
+          collab.id === selectedCollaborator
+            ? {
+                ...collab,
+                pdiId: pdi.id,
+                actions: pdi.actions.map((a: any) => ({ ...a, id: a.id.toString() })),
+            }
+          : collab
+        ));
+      }
+    }
+  }, [userRole, selectedCollaborator, selectedCollaboratorPdiId, selectedCollaboratorPdis]);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -258,7 +313,16 @@ const PDI: React.FC<PDIProps> = ({
 
   // 4. Atualizar handleAddAction para enviar metas e calcular progresso
   const handleAddAction = () => {
-    if (newAction.title.trim() && selectedCollaborator) {
+    const errors: {[key: string]: string} = {};
+    if (!newAction.title.trim()) errors.title = 'Título obrigatório';
+    // descrição não é mais obrigatória
+    if (!newAction.dueDate) errors.dueDate = 'Data obrigatória';
+    if (!newAction.category) errors.category = 'Categoria obrigatória';
+    if (!newAction.priority) errors.priority = 'Prioridade obrigatória';
+    if (!newAction.goals.length || newAction.goals.some(g => !g.descricao.trim())) errors.goals = 'Preencha todas as metas';
+    setActionErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    if (selectedCollaborator && user) {
       const pdiId = collaborators.find(c => c.id === selectedCollaborator)?.pdiId;
       if (!pdiId) return;
       const dueDateISO = newAction.dueDate ? new Date(newAction.dueDate).toISOString() : new Date().toISOString();
@@ -280,29 +344,54 @@ const PDI: React.FC<PDIProps> = ({
         progress,
         goals: newAction.goals,
       }).then((created) => {
-        setCollaborators(collaborators.map(collab =>
-          collab.id === selectedCollaborator
-            ? { ...collab, actions: [...collab.actions, {
-                id: created.id.toString(),
-                title: newAction.title,
-                description: newAction.description,
-                category: newAction.category,
-                priority: newAction.priority,
-                status: 'planned',
-                dueDate: dueDateISO,
-                progress,
-                goals: newAction.goals,
-              }] }
-            : collab
-        ));
+        if (userRole === 'manager') {
+          fetchPdiByUser(Number(selectedCollaborator)).then((pdis: any[]) => {
+            const pdi = pdis[0];
+            setCollaborators(collaborators.map(collab =>
+              collab.id === selectedCollaborator
+                ? {
+                    ...collab,
+                    pdiId: pdi.id,
+                    actions: pdi.actions.map((a: any) => ({ ...a, id: a.id.toString() })),
+                  }
+                : collab
+            ));
+            setSelectedCollaboratorPdis(pdis);
+            setSelectedCollaboratorPdiId(pdi.id.toString());
+          });
+        } else {
+          fetchPdiByUser(user.id).then((pdis: any[]) => {
+            setUserPdis(pdis);
+            if (selectedPdiId) {
+              const pdi = pdis.find((p: any) => p.id.toString() === selectedPdiId);
+              if (pdi) {
+                setCollaborators([
+                  {
+                    id: user.id.toString(),
+                    name: user.name,
+                    position: '',
+                    department: '',
+                    pdiId: pdi.id,
+                    actions: pdi.actions.map((a: any) => ({
+                      ...a,
+                      id: a.id.toString(),
+                    })),
+                  },
+                ]);
+                setSelectedCollaborator(user.id.toString());
+              }
+            }
+          });
+        }
         setNewAction({
           title: '',
           description: '',
           category: 'skill',
           priority: 'medium',
           dueDate: '',
-          goals: [],
+          goals: [{ id: Date.now().toString(), descricao: '', concluida: false }],
         });
+        setActionErrors({});
         setShowAddAction(false);
       });
     }
@@ -348,21 +437,49 @@ const PDI: React.FC<PDIProps> = ({
     // Refaz o fetch para atualizar
     fetchPdiByUser(user.id).then((pdis) => {
       if (pdis.length > 0) {
-        const pdi = pdis[0];
+        const mostRecentPdi = pdis[pdis.length - 1];
+        setUserPdis(pdis);
+        setSelectedPdiId(mostRecentPdi.id.toString());
         setCollaborators([
           {
             id: user.id.toString(),
             name: user.name,
-            position: user.position || '',
-            department: user.unit || '',
-            pdiId: pdi.id,
-            actions: pdi.actions.map((a: any) => ({
+            position: '',
+            department: '',
+            pdiId: mostRecentPdi.id,
+            actions: mostRecentPdi.actions.map((a: any) => ({
               ...a,
               id: a.id.toString(),
             })),
           },
         ]);
         setSelectedCollaborator(user.id.toString());
+      }
+    });
+  };
+
+  // Função para criar PDI para colaborador (gestor)
+  const handleCreatePdiForCollaborator = async () => {
+    if (!selectedCollaborator) return;
+    if (!newPdiForCollaborator.title.trim()) return;
+    await createPdi({ userId: Number(selectedCollaborator), title: newPdiForCollaborator.title, description: newPdiForCollaborator.description });
+    setShowCreatePdiForCollaborator(false);
+    setNewPdiForCollaborator({ title: '', description: '' });
+    // Refaz o fetch para atualizar
+    fetchPdiByUser(Number(selectedCollaborator)).then((pdis) => {
+      if (pdis.length > 0) {
+        setCollaborators(collaborators.map(collab =>
+          collab.id === selectedCollaborator
+            ? {
+                ...collab,
+                pdiId: pdis[0].id,
+                actions: pdis[0].actions.map((a: any) => ({ ...a, id: a.id.toString() })),
+              }
+            : collab
+        ));
+        setSelectedCollaborator(selectedCollaborator);
+        setSelectedCollaboratorPdis(pdis);
+        setSelectedCollaboratorPdiId(pdis[0].id.toString());
       }
     });
   };
@@ -396,6 +513,96 @@ const PDI: React.FC<PDIProps> = ({
     });
   };
 
+  // Funções para edição de ação
+  const handleEditActionClick = (collaboratorId: string, action: PDIAction) => {
+    setEditingActionId(action.id);
+    setEditActionData({ ...action, collaboratorId });
+  };
+
+  const handleEditActionChange = (field: keyof PDIAction, value: any) => {
+    if (!editActionData) return;
+    setEditActionData({ ...editActionData, [field]: value });
+  };
+
+  const handleEditGoalChange = (goalId: string, value: string) => {
+    if (!editActionData) return;
+    setEditActionData({
+      ...editActionData,
+      goals: editActionData.goals?.map(g => g.id === goalId ? { ...g, descricao: value } : g) || [],
+    });
+  };
+
+  const handleEditAddGoal = () => {
+    if (!editActionData) return;
+    setEditActionData({
+      ...editActionData,
+      goals: [
+        ...(editActionData.goals || []),
+        { id: Date.now().toString(), descricao: '', concluida: false },
+      ],
+    });
+  };
+
+  const handleEditRemoveGoal = (goalId: string) => {
+    if (!editActionData) return;
+    setEditActionData({
+      ...editActionData,
+      goals: (editActionData.goals || []).filter(g => g.id !== goalId),
+    });
+  };
+
+  const handleEditActionSave = () => {
+    if (!editActionData) return;
+    // Validação simples
+    const errors: {[key: string]: string} = {};
+    if (!editActionData.title.trim()) errors.title = 'Título obrigatório';
+    if (!editActionData.dueDate) errors.dueDate = 'Data obrigatória';
+    if (!editActionData.category) errors.category = 'Categoria obrigatória';
+    if (!editActionData.priority) errors.priority = 'Prioridade obrigatória';
+    if (!editActionData.goals?.length || editActionData.goals.some(g => !g.descricao.trim())) errors.goals = 'Preencha todas as metas';
+    setActionErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    // Calcular progresso baseado nas metas
+    let progress = 0;
+    if (editActionData.goals && editActionData.goals.length > 0) {
+      const total = editActionData.goals.length;
+      const done = editActionData.goals.filter(g => g.concluida).length;
+      progress = Math.round((done / total) * 100);
+    }
+    updatePdiAction(Number(editActionData.id), {
+      title: editActionData.title,
+      description: editActionData.description,
+      category: editActionData.category,
+      priority: editActionData.priority,
+      dueDate: editActionData.dueDate,
+      goals: editActionData.goals,
+      progress,
+    }).then(() => {
+      // Atualiza localmente
+      setCollaborators(collaborators.map(collab =>
+        collab.id === editActionData.collaboratorId
+          ? {
+              ...collab,
+              actions: collab.actions.map(a =>
+                a.id === editActionData.id
+                  ? { ...editActionData, progress }
+                  : a
+            )
+          }
+        : collab
+      ));
+      setEditingActionId(null);
+      setEditActionData(null);
+      setActionErrors({});
+    });
+  };
+
+  const handleEditActionCancel = () => {
+    setEditingActionId(null);
+    setEditActionData(null);
+    setActionErrors({});
+  };
+
   return (
     <div className="pt-16 px-2 sm:px-4 md:px-6 max-w-7xl mx-auto">
       <div className="flex flex-col gap-4 sm:gap-6">
@@ -416,6 +623,7 @@ const PDI: React.FC<PDIProps> = ({
               <span className="font-bold text-lg">
                 {selectedPdiId && userPdis.find(pdi => pdi.id.toString() === selectedPdiId)?.title}
               </span>
+              {/* Sempre mostrar o dropdown para navegar entre PDIs */}
               <div className="relative inline-block ml-2">
                 <button
                   className="text-sm text-green-700 border border-green-600 rounded px-2 py-1 hover:bg-green-50 transition-colors"
@@ -489,7 +697,7 @@ const PDI: React.FC<PDIProps> = ({
                           </div>
                         </div>
                         <div className="mt-2 text-xs text-gray-500">
-                          {collab.actions.length} ação{collab.actions.length !== 1 ? 'ões' : ''}
+                          {collab.actions.length} {collab.actions.length === 1 ? 'ação' : 'ações'}
                         </div>
                       </button>
                     ))
@@ -554,269 +762,485 @@ const PDI: React.FC<PDIProps> = ({
             ) : (
               selectedCollaboratorData ? (
                 <div>
-                  <div className="bg-white rounded-lg shadow-md p-6 mb-6 w-full max-w-full">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-600 text-lg">
-                        {selectedCollaboratorData.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                          {userRole === 'collaborator' && selectedPdiId
-                            ? (userPdis.find(pdi => pdi.id.toString() === selectedPdiId)?.title || 'Plano de Desenvolvimento')
-                            : selectedCollaboratorData.name}
-                        </h2>
-                        <p className="text-gray-600">{selectedCollaboratorData.position} • {selectedCollaboratorData.department}</p>
-                      </div>
-                    </div>
-                    {/* Botão Nova Ação dentro do card do PDI */}
-                    {selectedCollaborator && (
+                  {/* Botão de novo PDI sempre visível para gestor */}
+                  {userRole === 'manager' && selectedCollaboratorData && (
+                    <div className="flex justify-end mb-4">
                       <button
-                        onClick={() => setShowAddAction(true)}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition-colors mb-6"
+                        className="text-sm text-green-700 border border-dashed border-green-600 rounded px-2 py-1 hover:bg-green-50 transition-colors"
+                        onClick={() => setShowCreatePdiForCollaborator(true)}
+                        type="button"
                       >
-                        <PlusIcon className="w-5 h-5" />
-                        Nova Ação
+                        + Novo Plano
                       </button>
-                    )}
-
-                    {/* Formulário de nova ação */}
-                    {showAddAction && (
-                      <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900">Nova Ação de Desenvolvimento</h3>
-                          <button
-                            onClick={() => setShowAddAction(false)}
-                            className="text-gray-400 hover:text-gray-600"
-                          >
-                            <XMarkIcon className="w-6 h-6" />
-                          </button>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Título da Ação
-                            </label>
-                            <input
-                              type="text"
-                              value={newAction.title}
-                              onChange={(e) => setNewAction({...newAction, title: e.target.value})}
-                              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                              placeholder="Ex: Melhorar habilidades de liderança"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Categoria
-                            </label>
-                            <select
-                              value={newAction.category}
-                              onChange={(e) => setNewAction({...newAction, category: e.target.value as any})}
-                              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            >
-                              <option value="skill">Habilidade</option>
-                              <option value="knowledge">Conhecimento</option>
-                              <option value="behavior">Comportamento</option>
-                              <option value="career">Carreira</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Prioridade
-                            </label>
-                            <select
-                              value={newAction.priority}
-                              onChange={(e) => setNewAction({...newAction, priority: e.target.value as any})}
-                              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            >
-                              <option value="low">Baixa</option>
-                              <option value="medium">Média</option>
-                              <option value="high">Alta</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Data de Conclusão
-                            </label>
-                            <input
-                              type="date"
-                              value={newAction.dueDate}
-                              onChange={(e) => setNewAction({...newAction, dueDate: e.target.value})}
-                              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            />
-                          </div>
-
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Descrição
-                            </label>
-                            <textarea
-                              value={newAction.description}
-                              onChange={(e) => setNewAction({...newAction, description: e.target.value})}
-                              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                              rows={3}
-                              placeholder="Descreva a ação de desenvolvimento..."
-                            />
-                          </div>
-
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Metas (Checklist)
-                            </label>
-                            {newAction.goals.map((goal, idx) => (
-                              <div key={goal.id} className="flex items-center gap-2 mb-2">
-                                <input
-                                  type="text"
-                                  value={goal.descricao}
-                                  onChange={e => handleGoalChange(goal.id, e.target.value)}
-                                  className="flex-1 p-2 border border-gray-300 rounded-lg"
-                                  placeholder={`Meta ${idx + 1}`}
-                                />
-                                <button type="button" onClick={() => handleRemoveGoal(goal.id)} className="text-red-500 px-2">Remover</button>
-                              </div>
-                            ))}
-                            <button type="button" onClick={handleAddGoal} className="text-green-600 font-medium mt-2">+ Adicionar Meta</button>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-3 pt-4">
-                          <button
-                            onClick={handleAddAction}
-                            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                          >
-                            Salvar Ação
-                          </button>
-                          <button
-                            onClick={() => setShowAddAction(false)}
-                            className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
+                    </div>
+                  )}
+                  {/* Formulário de novo PDI para gestor */}
+                  {userRole === 'manager' && showCreatePdiForCollaborator && selectedCollaboratorData && (
+                    <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6 mb-6">
+                      <h3 className="text-lg font-semibold mb-4">Novo PDI para {selectedCollaboratorData.name}</h3>
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
+                        <input
+                          type="text"
+                          value={newPdiForCollaborator.title}
+                          onChange={e => setNewPdiForCollaborator({ ...newPdiForCollaborator, title: e.target.value })}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Ex: Plano 2024"
+                        />
                       </div>
-                    )}
-
-                    {/* Lista de Ações */}
-                    <div className="space-y-4">
-                      {selectedCollaboratorData.actions.length > 0 ? (
-                        <div className="flex flex-col gap-8 items-center w-full">
-                          {selectedCollaboratorData.actions.map((action) => (
-                            <div
-                              key={action.id}
-                              className="bg-white border border-gray-200 rounded-2xl p-12 min-h-[180px] w-full max-w-full flex flex-col justify-between shadow-md"
-                            >
-                              <div className="flex justify-between items-start mb-3">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    {getCategoryIcon(action.category)}
-                                    <h3 className="text-xl font-bold text-gray-900">{action.title}</h3>
-                                  </div>
-                                  <p className="text-gray-600 text-base mb-3">{action.description}</p>
-                                  <div className="flex items-center gap-3 text-xs">
-                                    <span className={`px-2 py-1 rounded-full font-medium ${getCategoryText(action.category)}`}>
-                                      {getCategoryText(action.category)}
-                                    </span>
-                                    <span className={`px-2 py-1 rounded-full font-medium ${getPriorityColor(action.priority)}`}>
-                                      {action.priority === 'high' ? 'Alta' : action.priority === 'medium' ? 'Média' : 'Baixa'}
-                                    </span>
-                                    <span className={`px-2 py-1 rounded-full font-medium ${getStatusColor(action.status)}`}>
-                                      {getStatusText(action.status)}
-                                    </span>
-                                    <span className="text-gray-500">
-                                      Vencimento: {new Date(action.dueDate).toLocaleDateString('pt-BR')}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => setEditingActionId(editingActionId === action.id ? null : action.id)}
-                                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                                  >
-                                    <PencilIcon className="w-5 h-5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteAction(selectedCollaboratorData.id, action.id)}
-                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                                  >
-                                    <TrashIcon className="w-5 h-5" />
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Progresso */}
-                              <div className="mb-3">
-                                <div className="flex justify-between items-center mb-2">
-                                  <span className="text-sm font-medium text-gray-700">Progresso</span>
-                                  <span className="text-sm text-gray-600">{action.progress}%</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                  <div
-                                    className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${action.progress}%` }}
-                                  />
-                                </div>
-                                {editingActionId === action.id && (
-                                  <div className="mt-2">
-                                    <input
-                                      type="range"
-                                      min="0"
-                                      max="100"
-                                      value={action.progress}
-                                      onChange={(e) => handleUpdateActionProgress(selectedCollaboratorData.id, action.id, parseInt(e.target.value))}
-                                      className="w-full"
-                                    />
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                        <textarea
+                          value={newPdiForCollaborator.description}
+                          onChange={e => setNewPdiForCollaborator({ ...newPdiForCollaborator, description: e.target.value })}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          rows={3}
+                          placeholder="Descreva o objetivo de desenvolvimento..."
+                        />
+                      </div>
+                      <button
+                        onClick={handleCreatePdiForCollaborator}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors w-full"
+                      >
+                        Salvar PDI
+                      </button>
+                      <button
+                        onClick={() => setShowCreatePdiForCollaborator(false)}
+                        className="mt-2 w-full text-gray-500 hover:text-gray-700"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  )}
+                  {/* Mensagem para gestor se colaborador não tem PDI */}
+                  {userRole === 'manager' && !selectedCollaboratorData.pdiId && !showCreatePdiForCollaborator && (
+                    <div className="text-center py-8 text-gray-500">
+                      Este colaborador ainda não possui um PDI cadastrado.
+                    </div>
+                  )}
+                  {selectedCollaboratorData.pdiId && (
+                    <div className="bg-white rounded-lg shadow-md p-6 mb-6 w-full max-w-full">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-600 text-lg">
+                          {selectedCollaboratorData.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                            {selectedCollaboratorData.name}
+                            {userRole === 'manager' && selectedCollaboratorData.pdiId && (
+                              <span className="ml-2 text-gray-700 text-base font-normal px-2 py-0.5">
+                                Plano: {selectedCollaboratorPdis.find(pdi => pdi.id.toString() === selectedCollaboratorPdiId)?.title || 'PDI Atual'}
+                              </span>
+                            )}
+                            {/* Dropdown de seleção de PDI do colaborador para manager */}
+                            {userRole === 'manager' && selectedCollaboratorPdis.length > 1 && (
+                              <div className="relative inline-block ml-2">
+                                <button
+                                  className="text-sm text-green-700 border border-green-600 rounded px-2 py-1 hover:bg-green-50 transition-colors"
+                                  onClick={e => setShowPdiDropdown(v => !v)}
+                                  type="button"
+                                >
+                                  Mudar Plano
+                                </button>
+                                {showPdiDropdown && (
+                                  <div className="absolute z-10 mt-2 bg-white border rounded shadow-lg min-w-[180px]">
+                                    {selectedCollaboratorPdis.map((pdi) => (
+                                      <button
+                                        key={pdi.id}
+                                        onClick={() => {
+                                          setSelectedCollaboratorPdiId(pdi.id.toString());
+                                          setShowPdiDropdown(false);
+                                        }}
+                                        className={`block w-full text-left px-4 py-2 hover:bg-green-100 ${selectedCollaboratorPdiId === pdi.id.toString() ? 'bg-green-50 font-bold' : ''}`}
+                                      >
+                                        {pdi.title}
+                                      </button>
+                                    ))}
                                   </div>
                                 )}
                               </div>
-
-                              {/* Metas (Checklist) */}
-                              {action.goals && action.goals.length > 0 && (
-                                <div className="mt-4">
-                                  <h4 className="font-semibold mb-2">Checklist</h4>
-                                  <ul className="space-y-2">
-                                    {action.goals.map((goal, idx) => (
-                                      <li key={goal.id} className="flex items-center gap-2">
-                                        <input
-                                          type="checkbox"
-                                          checked={goal.concluida}
-                                          onChange={e => handleToggleGoal(selectedCollaboratorData.id, action.id, goal.id, e.target.checked)}
-                                        />
-                                        <span className={goal.concluida ? 'line-through text-gray-400' : ''}>{goal.descricao}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                            )}
+                          </h2>
+                          <p className="text-gray-600">{selectedCollaboratorData.position} • {selectedCollaboratorData.department}</p>
                         </div>
-                      ) : (
-                        <div className="text-center py-12">
-                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <PlusIcon className="w-8 h-8 text-gray-400" />
+                        {/* Botão Nova Ação no topo direito */}
+                        {(userRole === 'manager' || userRole === 'collaborator') && selectedCollaborator && (
+                          <div className="ml-auto">
+                            <button
+                              onClick={() => {
+                                const collab = collaborators.find(c => c.id === selectedCollaborator);
+                                if (collab && !collab.pdiId) {
+                                  setShowCreatePdiForCollaborator(true);
+                                } else {
+                                  setShowAddAction(true);
+                                }
+                              }}
+                              className={`bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition-colors mb-0 ${(() => { const collab = collaborators.find(c => c.id === selectedCollaborator); return !collab || !collab.pdiId ? 'opacity-50 cursor-not-allowed' : '' })()}`}
+                              disabled={(() => { const collab = collaborators.find(c => c.id === selectedCollaborator); return !collab || !collab.pdiId })()}
+                            >
+                              <PlusIcon className="w-5 h-5" />
+                              Nova Ação
+                            </button>
                           </div>
-                          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Nenhuma ação de desenvolvimento</h3>
-                          <p className="text-sm text-gray-500 mb-4">
-                            Comece criando ações de desenvolvimento
-                          </p>
+                        )}
+                      </div>
+
+                      {/* Formulário de nova ação */}
+                      {showAddAction && (
+                        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                          <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900">Nova Ação de Desenvolvimento</h3>
+                            <button
+                              onClick={() => setShowAddAction(false)}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <XMarkIcon className="w-6 h-6" />
+                            </button>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Título da Ação <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={newAction.title}
+                                onChange={(e) => setNewAction({...newAction, title: e.target.value})}
+                                className={`w-full p-3 border ${actionErrors.title ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                                placeholder="Ex: Melhorar habilidades de liderança"
+                              />
+                             {actionErrors.title && <span className="text-red-500 text-xs">{actionErrors.title}</span>}
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Categoria <span className="text-red-500">*</span>
+                              </label>
+                              <select
+                                value={newAction.category}
+                                onChange={(e) => setNewAction({...newAction, category: e.target.value as any})}
+                                className={`w-full p-3 border ${actionErrors.category ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                              >
+                                <option value="skill">Habilidade</option>
+                                <option value="knowledge">Conhecimento</option>
+                                <option value="behavior">Comportamento</option>
+                                <option value="career">Carreira</option>
+                              </select>
+                             {actionErrors.category && <span className="text-red-500 text-xs">{actionErrors.category}</span>}
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Prioridade <span className="text-red-500">*</span>
+                              </label>
+                              <select
+                                value={newAction.priority}
+                                onChange={(e) => setNewAction({...newAction, priority: e.target.value as any})}
+                                className={`w-full p-3 border ${actionErrors.priority ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                              >
+                                <option value="low">Baixa</option>
+                                <option value="medium">Média</option>
+                                <option value="high">Alta</option>
+                              </select>
+                             {actionErrors.priority && <span className="text-red-500 text-xs">{actionErrors.priority}</span>}
+                            </div>
+
+                            <div>
+                              <label htmlFor="dueDateInput" className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
+                                Data de Conclusão <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                id="dueDateInput"
+                                type="date"
+                                value={newAction.dueDate}
+                                onChange={(e) => setNewAction({...newAction, dueDate: e.target.value})}
+                                className={`w-full p-3 border ${actionErrors.dueDate ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent cursor-pointer`}
+                              />
+                            {actionErrors.dueDate && <span className="text-red-500 text-xs">{actionErrors.dueDate}</span>}
+                            </div>
+
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Descrição
+                              </label>
+                              <textarea
+                                value={newAction.description}
+                                onChange={(e) => setNewAction({...newAction, description: e.target.value})}
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                rows={3}
+                                placeholder="Descreva a ação de desenvolvimento..."
+                              />
+                            </div>
+
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Metas<span className="text-red-500">*</span>
+                              </label>
+                              {newAction.goals.map((goal, idx) => (
+                                <div key={goal.id} className="flex items-center gap-2 mb-2">
+                                  <input
+                                    type="text"
+                                    value={goal.descricao}
+                                    onChange={e => handleGoalChange(goal.id, e.target.value)}
+                                    className={`flex-1 p-2 border ${actionErrors.goals && !goal.descricao.trim() ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
+                                    placeholder={`Meta ${idx + 1}`}
+                                  />
+                                  <button type="button" onClick={() => handleRemoveGoal(goal.id)} className="text-red-500 px-2">Remover</button>
+                                </div>
+                              ))}
+                             {actionErrors.goals && <span className="text-red-500 text-xs">{actionErrors.goals}</span>}
+                              <button type="button" onClick={handleAddGoal} className="text-green-600 font-medium mt-2">+ Adicionar Meta</button>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3 pt-4">
+                            <button
+                              onClick={handleAddAction}
+                              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              Salvar Ação
+                            </button>
+                            <button
+                              onClick={() => setShowAddAction(false)}
+                              className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
                         </div>
                       )}
+
+                      {/* Lista de Ações */}
+                      <div className="space-y-4">
+                        {selectedCollaboratorData.actions.length > 0 ? (
+                          <div className="flex flex-col gap-8 items-center w-full">
+                            {selectedCollaboratorData.actions.map((action) => (
+                              <div
+                                key={action.id}
+                                className="bg-white border border-gray-200 rounded-2xl p-12 min-h-[180px] w-full max-w-full flex flex-col justify-between shadow-md"
+                              >
+                                {editingActionId === action.id && editActionData ? (
+                                  <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                      <h3 className="text-lg font-semibold text-gray-900">Editar Ação de Desenvolvimento</h3>
+                                      <button
+                                        onClick={handleEditActionCancel}
+                                        className="text-gray-400 hover:text-gray-600"
+                                      >
+                                        <XMarkIcon className="w-6 h-6" />
+                                      </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                          Título da Ação <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                          type="text"
+                                          value={editActionData.title}
+                                          onChange={e => handleEditActionChange('title', e.target.value)}
+                                          className={`w-full p-3 border ${actionErrors.title ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                                          placeholder="Ex: Melhorar habilidades de liderança"
+                                        />
+                                        {actionErrors.title && <span className="text-red-500 text-xs">{actionErrors.title}</span>}
+                                      </div>
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                          Categoria <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                          value={editActionData.category}
+                                          onChange={e => handleEditActionChange('category', e.target.value)}
+                                          className={`w-full p-3 border ${actionErrors.category ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                                        >
+                                          <option value="skill">Habilidade</option>
+                                          <option value="knowledge">Conhecimento</option>
+                                          <option value="behavior">Comportamento</option>
+                                          <option value="career">Carreira</option>
+                                        </select>
+                                        {actionErrors.category && <span className="text-red-500 text-xs">{actionErrors.category}</span>}
+                                      </div>
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                          Prioridade <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                          value={editActionData.priority}
+                                          onChange={e => handleEditActionChange('priority', e.target.value)}
+                                          className={`w-full p-3 border ${actionErrors.priority ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+                                        >
+                                          <option value="low">Baixa</option>
+                                          <option value="medium">Média</option>
+                                          <option value="high">Alta</option>
+                                        </select>
+                                        {actionErrors.priority && <span className="text-red-500 text-xs">{actionErrors.priority}</span>}
+                                      </div>
+                                      <div>
+                                        <label htmlFor="editDueDateInput" className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
+                                          Data de Conclusão <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                          id="editDueDateInput"
+                                          type="date"
+                                          value={editActionData.dueDate}
+                                          onChange={e => handleEditActionChange('dueDate', e.target.value)}
+                                          className={`w-full p-3 border ${actionErrors.dueDate ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent cursor-pointer`}
+                                        />
+                                        {actionErrors.dueDate && <span className="text-red-500 text-xs">{actionErrors.dueDate}</span>}
+                                      </div>
+                                      <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                          Descrição
+                                        </label>
+                                        <textarea
+                                          value={editActionData.description}
+                                          onChange={e => handleEditActionChange('description', e.target.value)}
+                                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                          rows={3}
+                                          placeholder="Descreva a ação de desenvolvimento..."
+                                        />
+                                      </div>
+                                      <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                          Metas<span className="text-red-500">*</span>
+                                        </label>
+                                        {editActionData.goals && editActionData.goals.map((goal, idx) => (
+                                          <div key={goal.id} className="flex items-center gap-2 mb-2">
+                                            <input
+                                              type="text"
+                                              value={goal.descricao}
+                                              onChange={e => handleEditGoalChange(goal.id, e.target.value)}
+                                              className={`flex-1 p-2 border ${actionErrors.goals && !goal.descricao.trim() ? 'border-red-500' : 'border-gray-300'} rounded-lg`}
+                                              placeholder={`Meta ${idx + 1}`}
+                                            />
+                                            <button type="button" onClick={() => handleEditRemoveGoal(goal.id)} className="text-red-500 px-2">Remover</button>
+                                          </div>
+                                        ))}
+                                        {actionErrors.goals && <span className="text-red-500 text-xs">{actionErrors.goals}</span>}
+                                        <button type="button" onClick={handleEditAddGoal} className="text-green-600 font-medium mt-2">+ Adicionar Meta</button>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-3 pt-4">
+                                      <button
+                                        onClick={handleEditActionSave}
+                                        className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                                      >
+                                        Salvar Alterações
+                                      </button>
+                                      <button
+                                        onClick={handleEditActionCancel}
+                                        className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                                      >
+                                        Cancelar
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="flex justify-between items-start mb-3">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          {getCategoryIcon(action.category)}
+                                          <h3 className="text-xl font-bold text-gray-900">{action.title}</h3>
+                                        </div>
+                                        <p className="text-gray-600 text-base mb-3">{action.description}</p>
+                                        <div className="flex items-center gap-3 text-xs">
+                                          <span className={`px-2 py-1 rounded-full font-medium ${getCategoryText(action.category)}`}>{getCategoryText(action.category)}</span>
+                                          <span className={`px-2 py-1 rounded-full font-medium ${getPriorityColor(action.priority)}`}>{action.priority === 'high' ? 'Alta' : action.priority === 'medium' ? 'Média' : 'Baixa'}</span>
+                                          <span className={`px-2 py-1 rounded-full font-medium ${getStatusColor(action.status)}`}>{getStatusText(action.status)}</span>
+                                          <span className="text-gray-500">Vencimento: {new Date(action.dueDate).toLocaleDateString('pt-BR')}</span>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => handleEditActionClick(selectedCollaboratorData.id, action)}
+                                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                                        >
+                                          <PencilIcon className="w-5 h-5" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteAction(selectedCollaboratorData.id, action.id)}
+                                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                        >
+                                          <TrashIcon className="w-5 h-5" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                    {/* Progresso e metas (mantém igual) */}
+                                    <div className="mb-3">
+                                      <div className="flex justify-between items-center mb-2">
+                                        <span className="text-sm font-medium text-gray-700">Progresso</span>
+                                        <span className="text-sm text-gray-600">{action.progress}%</span>
+                                      </div>
+                                      <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                                          style={{ width: `${action.progress}%` }}
+                                        />
+                                      </div>
+                                      {editingActionId === action.id && (
+                                        <div className="mt-2">
+                                          <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={action.progress}
+                                            onChange={(e) => handleUpdateActionProgress(selectedCollaboratorData.id, action.id, parseInt(e.target.value))}
+                                            className="w-full"
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                    {action.goals && action.goals.length > 0 && (
+                                      <div className="mt-4">
+                                        <h4 className="font-semibold mb-2">Checklist</h4>
+                                        <ul className="space-y-2">
+                                          {action.goals.map((goal, idx) => (
+                                            <li key={goal.id} className="flex items-center gap-2">
+                                              <input
+                                                type="checkbox"
+                                                checked={goal.concluida}
+                                                onChange={e => handleToggleGoal(selectedCollaboratorData.id, action.id, goal.id, e.target.checked)}
+                                              />
+                                              <span className={goal.concluida ? 'line-through text-gray-400' : ''}>{goal.descricao}</span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-12">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <PlusIcon className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Nenhuma ação de desenvolvimento</h3>
+                            <p className="text-sm text-gray-500 mb-4">
+                              Comece criando ações de desenvolvimento
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <UserIcon className="w-8 h-8 text-gray-400" />
+                userRole === 'manager' && (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <UserIcon className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Selecione um colaborador</h3>
+                    <p className="text-sm text-gray-500">
+                      Busque um de seus colaboradores para visualizar e gerenciar seu PDI.
+                    </p>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Selecione um colaborador</h3>
-                  <p className="text-sm text-gray-500">
-                    Escolha um colaborador da lista para visualizar e gerenciar seu PDI.
-                  </p>
-                </div>
+                )
               )
             )}
           </div>
