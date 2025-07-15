@@ -7,6 +7,7 @@ import CommitteeLayout from "../layouts/CommitteeLayout";
 import RHLayout from "../layouts/RHLayout";
 import EvaluationLayout from "../layouts/EvaluationLayout";
 import ComparisonLayout from "../layouts/ComparisonLayout"; // novo
+import MentorLayout from "../layouts/MentorLayout";
 
 import Dashboard from "../pages/collaborator/Dashboard";
 import SelfEvaluation from "../pages/collaborator/evaluation/SelfEvaluation";
@@ -30,6 +31,16 @@ import DashboardManagerPage from "../pages/DashboardManagerPage";
 import CollaboratorEvaluation from "../pages/manager/Evaluation.tsx";
 import EvolutionManager from "../pages/manager/EvolutionManager.tsx";
 import PeerEvaluationManager from "../pages/manager/Evaluation360.tsx";
+
+/* Adicione aqui embaixo os imports do mentor*/
+import MentorEvaluationLayout from "../layouts/MentorEvaluationLayout.tsx";
+import DashboardMentorPage from "../pages/mentor/DashboardMentorPage";
+import MentorStatus from "../pages/mentor/Status";
+import EvolutionMentor from "../pages/mentor/EvolutionMentor";
+import PeerEvaluationMentor from "../pages/mentor/Evaluation360";
+import BrutalFactsMentor from "../pages/mentor/BrutalFacts";
+import MentorEvaluationPage from "../pages/mentor/Evaluation";
+import MentorSelfEvaluationReadOnly from "../pages/mentor/CollaboratorEval";
 import OKRManager from "../pages/manager/OKR";
 import PDIManager from "../pages/manager/PDI";
 
@@ -84,11 +95,11 @@ const AppRoutes = () => (
           <Route path="self-evaluation" element={<SelfEvaluation />} />
           <Route path="peer-evaluation" element={<PeerEvaluationPage />} />
           <Route path="mentor-evaluation" element={<MentorEvaluation />} />
-                  <Route
-          path="reference-evaluation"
-          element={<ReferenceEvaluation />}
-        />
-      </Route>
+          <Route
+            path="reference-evaluation"
+            element={<ReferenceEvaluation />}
+          />
+        </Route>
         <Route path="okr" element={<OKRCollaborator />} />
         <Route path="pdi" element={<PDICollaborator />} />
         <Route
@@ -147,25 +158,24 @@ const AppRoutes = () => (
         path="/mentor"
         element={
           <ProtectedRoute allowedRoles={["MENTOR", "ADMIN"]}>
-            <ManagerLayout />
+            <MentorLayout />
           </ProtectedRoute>
         }
       >
-        <Route index element={<DashboardManagerPage />} />
-        <Route path="collaborators" element={<Collaborators />} />
-        <Route path="avaliacao/:id" element={<ManagerEvaluationLayout />}>
-          <Route index element={<CollaboratorEvaluation />} />
-          <Route path="historico" element={<EvolutionCollaborator />} />
+        <Route index element={<DashboardMentorPage />} />
+        <Route path="collaborators" element={<MentorStatus />} />
+        <Route path="avaliacao/:id" element={<MentorEvaluationLayout />}>
+          <Route index element={<MentorEvaluationPage />} />
+          <Route path="" element={<div>Selecione uma aba</div>} />
+          <Route path="360" element={<PeerEvaluationMentor />} />
           <Route
-            path="360"
-            element={
-              <ProtectedRoute allowedRoles={["MENTOR", "ADMIN"]}>
-                <PeerEvaluationManager />
-              </ProtectedRoute>
-            }
+            path="autoavaliacao"
+            element={<MentorSelfEvaluationReadOnly />}
           />
+          <Route path="historico" element={<EvolutionMentor />} />
         </Route>
-        <Route path="historico" element={<EvolutionManager />} />
+        <Route path="historico" element={<EvolutionMentor />} />
+        <Route path="brutal-facts" element={<BrutalFactsMentor />} />
         <Route path="okr" element={<OKRManager />} />
         <Route path="pdi" element={<PDIManager />} />
       </Route>

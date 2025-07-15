@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { API_URL, getAuthHeaders } from "../../services/api";
+import {
+  API_URL,
+  getAuthHeaders,
+  fetchMentorMentees,
+  fetchMentorToCollaboratorEvaluationsByCollaborator,
+} from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import type { Collaborator as CollaboratorStatus } from "../../types/collaboratorStatus";
@@ -44,26 +49,18 @@ const ColaboradoresList: React.FC = () => {
   const [selfEvaluations, setSelfEvaluations] = useState<
     Record<number, SelfEvaluation | null>
   >({});
+  const [mentorEvaluations, setMentorEvaluations] = useState<
+    Record<number, any>
+  >({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Carrega todos os colaboradores do manager ao entrar na página
+  // Carrega todos os mentorados do mentor ao entrar na página
   useEffect(() => {
     if (user && user.id) {
-      fetch(`${API_URL}/managers/${user.id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          const parsed: CollaboratorStatus[] = (data.collaborators || []).map(
-            (c: { id: number; name: string; roles?: { role: string }[] }) => ({
-              id: c.id,
-              name: c.name,
-              role: c.roles?.[0]?.role || "Colaborador",
-              status: "Em andamento",
-              selfScore: 0,
-              managerScore: null,
-            })
-          );
-          setColaboradores(parsed);
+      fetchMentorMentees(user.id)
+        .then((mentees) => {
+          setColaboradores(mentees || []);
           setLoading(false);
         })
         .catch(() => {
@@ -112,56 +109,96 @@ const ColaboradoresList: React.FC = () => {
               return { id, selfEval: latest };
             })
             .catch(() => ({ id, selfEval: null })),
+          fetchMentorToCollaboratorEvaluationsByCollaborator(id).catch(
+            () => null
+          ),
         ])
       )
     ).then((results) => {
       const evalMap: Record<number, ManagerEvaluation | null> = {};
       const selfEvalMap: Record<number, SelfEvaluation | null> = {};
-      results.forEach((pairArr) => {
-        const [{ id, evaluation }, { selfEval }] = pairArr;
+      const mentorEvalMap: Record<number, any> = {};
+      results.forEach((tripleArr) => {
+        const [{ id, evaluation }, { selfEval }, mentorEval] = tripleArr;
         evalMap[id] = evaluation;
         selfEvalMap[id] = selfEval;
+        mentorEvalMap[id] = mentorEval;
       });
       setEvaluations(evalMap);
       setSelfEvaluations(selfEvalMap);
+      setMentorEvaluations(mentorEvalMap);
     });
   }, [colaboradores]);
 
-  // Função para calcular status, nota do gestor e nota de autoavaliação
+  // Função para calcular status, nota do gestor, nota do mentor e autoavaliação
   function getStatusAndScore(collaboratorId: number) {
     const evaluation = evaluations[collaboratorId];
     const selfEval = selfEvaluations[collaboratorId];
+    const mentorEval = mentorEvaluations[collaboratorId];
+    const allCriteria = (evaluation?.groups || []).flatMap(
+      (g) => g.items || []
+    );
+    // Critérios com nota preenchida
+    const withScore = allCriteria.filter(
+      (c) => c.score !== null && c.score !== undefined
+    );
+    // Critérios com nota E justificativa preenchidas
+    const filled = allCriteria.filter(
+      (c) =>
+        c.score !== null &&
+        c.score !== undefined &&
+        c.justification &&
+        c.justification.trim() !== ""
+    );
+    const total = allCriteria.length;
     let managerScore: number | null = null;
-    let selfScore: number | null = null;
-    if (evaluation && evaluation.groups) {
-      const allCriteria = (evaluation.groups || []).flatMap(
-        (g) => g.items || []
-      );
-      const withScore = allCriteria.filter(
-        (c) => c.score !== null && c.score !== undefined
-      );
-      if (withScore.length > 0) {
-        managerScore =
-          withScore.reduce((sum, c) => sum + (c.score || 0), 0) /
-          withScore.length;
-      }
+    if (withScore.length > 0) {
+      managerScore =
+        withScore.reduce((sum, c) => sum + (c.score || 0), 0) /
+        withScore.length;
     }
+    // Calcula média da autoavaliação
+    let selfScore: number | null = null;
     if (selfEval && selfEval.items && selfEval.items.length > 0) {
       selfScore =
         selfEval.items.reduce((sum, item) => sum + item.score, 0) /
         selfEval.items.length;
     }
-    if (!evaluation) {
-      return { status: "Pendente" as const, managerScore: null, selfScore };
+    // Nota do mentor
+    let mentorScore: number | null = null;
+    if (mentorEval && Array.isArray(mentorEval) && mentorEval.length > 0) {
+      // Se vier array, pega a nota do ciclo mais recente
+      const latest = mentorEval.reduce((prev, curr) =>
+        prev.cycleId && curr.cycleId && prev.cycleId > curr.cycleId
+          ? prev
+          : curr
+      );
+      mentorScore = latest.score ?? null;
+    } else if (mentorEval && mentorEval.score !== undefined) {
+      mentorScore = mentorEval.score;
     }
-    if (evaluation.status === "submitted") {
-      return { status: "Finalizado" as const, managerScore, selfScore };
+    if (!evaluation || total === 0 || withScore.length === 0) {
+      return {
+        status: "Pendente" as const,
+        managerScore: null,
+        selfScore,
+        mentorScore,
+      };
     }
-    if (evaluation.status === "draft") {
-      return { status: "Em andamento" as const, managerScore, selfScore };
+    if (filled.length < total) {
+      return {
+        status: "Em andamento" as const,
+        managerScore,
+        selfScore,
+        mentorScore,
+      };
     }
-    // fallback para casos inesperados
-    return { status: "Pendente" as const, managerScore, selfScore };
+    return {
+      status: "Finalizado" as const,
+      managerScore,
+      selfScore,
+      mentorScore,
+    };
   }
 
   if (loading)
@@ -206,91 +243,56 @@ const ColaboradoresList: React.FC = () => {
         </a>
       </div>
       <div className="space-y-4">
-        {colaboradores.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Nenhum colaborador associado
-            </h3>
-            <p className="text-gray-500 text-sm">
-              Você ainda não possui colaboradores associados ao seu perfil de
-              gestor.
-            </p>
-            <p className="text-gray-400 text-xs mt-1">
-              Entre em contato com o RH para associar colaboradores ao seu time.
-            </p>
-          </div>
-        ) : (
-          colaboradores.map((colab, idx) => {
-            const { status, selfScore, managerScore } = getStatusAndScore(
-              colab.id
-            );
-            return (
-              <button
-                key={colab.id || idx}
-                className="w-full flex flex-col sm:flex-row sm:items-center justify-between bg-gray-50 rounded-lg px-2 sm:px-4 py-3 hover:bg-gray-100 transition cursor-pointer min-w-0"
-                onClick={() => navigate(`/manager/avaliacao/${colab.id}`)}
-              >
-                <div className="flex items-center gap-2 sm:gap-4 min-w-0 w-full sm:w-auto">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 text-lg sm:text-xl overflow-hidden">
-                    {colab.name
-                      ? colab.name
-                          .split(" ")
-                          .map((n: string) => n[0])
-                          .join("")
-                          .toUpperCase()
-                          .slice(0, 2)
-                      : "C"}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 min-w-0">
-                      <span className="font-semibold text-gray-900 text-base sm:text-lg truncate max-w-[10rem] sm:max-w-xs block">
-                        {colab.name}
-                      </span>
-                      <span
-                        className={`mt-1 sm:mt-0 sm:ml-2 px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${statusStyles[status]}`}
-                      >
-                        {status}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-500 truncate max-w-[8rem] sm:max-w-xs">
-                      {colab.role || "Departamento"}
-                    </div>
-                  </div>
+        {colaboradores.map((colab, idx) => {
+          const { status, selfScore, managerScore, mentorScore } =
+            getStatusAndScore(colab.id);
+          return (
+            <button
+              key={colab.id || idx}
+              className="w-full flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3 hover:bg-gray-100 transition cursor-pointer"
+              onClick={() => navigate(`/mentor/avaliacao/${colab.id}`)}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 text-lg">
+                  {colab.name
+                    ? colab.name
+                        .split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2)
+                    : "C"}
                 </div>
-                <div className="flex flex-row sm:flex-col gap-3 sm:gap-1 mt-2 sm:mt-0 items-end sm:items-end justify-between sm:justify-end w-full sm:w-auto">
-                  <div className="text-xs text-gray-500 whitespace-nowrap">
-                    <span className="font-semibold text-gray-900">
-                      {selfScore !== null && selfScore !== undefined
-                        ? selfScore.toFixed(1)
-                        : "-"}
-                    </span>
-                    <span className="ml-1">Autoavaliação</span>
+                <div>
+                  <div className="font-semibold text-gray-900 leading-tight">
+                    {colab.name}
                   </div>
-                  <div className="text-xs text-gray-500 whitespace-nowrap">
-                    <span className="font-semibold text-gray-900">
-                      {managerScore !== null && managerScore !== undefined
-                        ? managerScore.toFixed(1)
-                        : "-"}
-                    </span>
-                    <span className="ml-1">Nota gestor</span>
-                  </div>
+                  <div className="text-xs text-gray-500">{colab.role}</div>
                 </div>
-                <span className="hidden sm:flex ml-2 text-gray-400 hover:text-teal-700 flex-shrink-0">
+                <span
+                  className={`ml-4 px-2 py-0.5 rounded text-xs font-medium ${statusStyles[status]}`}
+                >
+                  {status}
+                </span>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="text-xs text-gray-500">
+                  Autoavaliação{" "}
+                  <span className="ml-1 font-semibold text-gray-900">
+                    {selfScore !== null && selfScore !== undefined
+                      ? selfScore.toFixed(1)
+                      : "-"}
+                  </span>
+                </div>
+                <div className="text-xs text-gray-500">
+                  Nota mentor{" "}
+                  <span className="ml-1 font-semibold text-gray-900">
+                    {mentorScore !== null && mentorScore !== undefined
+                      ? mentorScore.toFixed(1)
+                      : "-"}
+                  </span>
+                </div>
+                <span className="ml-2 text-gray-400 hover:text-teal-700">
                   <svg
                     width="20"
                     height="20"
@@ -306,10 +308,10 @@ const ColaboradoresList: React.FC = () => {
                     />
                   </svg>
                 </span>
-              </button>
-            );
-          })
-        )}
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

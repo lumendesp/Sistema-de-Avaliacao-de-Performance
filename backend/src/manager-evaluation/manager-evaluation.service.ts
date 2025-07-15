@@ -45,22 +45,31 @@ export class ManagerEvaluationService {
         'Já existe avaliação deste gestor para este colaborador neste ciclo',
       );
     }
-    // Salva o groupId em cada item
+    // Só cria itens com score preenchido
+    const itemsToCreate = dto.groups.flatMap((group) =>
+      group.items
+        .filter((item) => Number.isInteger(item.score))
+        .map((item) => {
+          const data: any = {
+            criterion: { connect: { id: item.criterionId } },
+            justification: encrypt(item.justification || ''),
+            groupId: group.groupId,
+            score: item.score,
+            scoreDescription: this.getScoreDescription(item.score as number),
+          };
+          return data;
+        }),
+    );
+    if (itemsToCreate.length === 0) {
+      throw new ConflictException('Nenhum critério preenchido para avaliação.');
+    }
     return this.prisma.managerEvaluation.create({
       data: {
         evaluatorId,
         evaluateeId: dto.evaluateeId,
         cycleId: dto.cycleId,
         items: {
-          create: dto.groups.flatMap((group) =>
-            group.items.map((item) => ({
-              criterion: { connect: { id: item.criterionId } },
-              score: item.score,
-              justification: encrypt(item.justification || ''), // justification criptografada
-              scoreDescription: this.getScoreDescription(item.score),
-              groupId: group.groupId,
-            })),
-          ),
+          create: itemsToCreate,
         },
       },
       include: { items: true },
@@ -69,24 +78,40 @@ export class ManagerEvaluationService {
 
   async update(id: number, dto: UpdateManagerEvaluationDto) {
     const groups = (dto as any).groups;
+    // Só atualiza se houver pelo menos um item com score preenchido
+    const itemsToUpdate = groups
+      ? groups.flatMap((group) =>
+          group.items
+            .filter((item) => Number.isInteger(item.score))
+            .map((item) => ({
+              criterion: { connect: { id: item.criterionId } },
+              justification: encrypt(item.justification || ''),
+              groupId: group.groupId,
+              score: item.score,
+              scoreDescription: this.getScoreDescription(item.score as number),
+            })),
+        )
+      : [];
+    if (!itemsToUpdate.length) {
+      throw new ConflictException(
+        'Nenhum critério preenchido para atualização.',
+      );
+    }
+
+    // Se status=submitted, atualiza status e o createdAt (sobrescreve data de criação)
+    const updateData: any = {
+      items: {
+        deleteMany: {},
+        create: itemsToUpdate,
+      },
+    };
+    if (dto.status === 'submitted') {
+      updateData.status = 'submitted';
+      updateData.createdAt = new Date();
+    }
     return this.prisma.managerEvaluation.update({
       where: { id },
-      data: {
-        ...(groups && {
-          items: {
-            deleteMany: {},
-            create: groups.flatMap((group) =>
-              group.items.map((item) => ({
-                criterion: { connect: { id: item.criterionId } },
-                score: item.score, // score como number
-                justification: encrypt(item.justification || ''), // justification criptografada
-                scoreDescription: this.getScoreDescription(item.score),
-                groupId: group.groupId,
-              })),
-            ),
-          },
-        }),
-      },
+      data: updateData,
       include: { items: true },
     });
   }

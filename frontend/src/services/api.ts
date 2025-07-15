@@ -70,54 +70,67 @@ export const fetchActiveEvaluationCycle = async (role?: string) => {
   let mainRole = role;
   if (!mainRole) {
     // Buscar o usuário do localStorage para obter o role
-    const userStr = localStorage.getItem('user');
-    mainRole = 'COLLABORATOR'; // default
+    const userStr = localStorage.getItem("user");
+    mainRole = "COLLABORATOR"; // default
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
-        mainRole = user.roles?.[0] || 'COLLABORATOR';
+        mainRole = user.roles?.[0] || "COLLABORATOR";
       } catch (error) {
-        console.error('Erro ao parsear usuário do localStorage:', error);
+        console.error("Erro ao parsear usuário do localStorage:", error);
       }
     }
   }
 
   // Mapeamento de role para status
-  let status = 'IN_PROGRESS_COLLABORATOR';
-  if (mainRole === 'MANAGER') status = 'IN_PROGRESS_MANAGER';
-  else if (mainRole === 'COMMITTEE') status = 'IN_PROGRESS_COMMITTEE';
-  else if (mainRole === 'HR') status = 'IN_PROGRESS_COMMITTEE'; // HR também usa COMMITTEE status
+  let status = "IN_PROGRESS_COLLABORATOR";
+  if (mainRole === "MANAGER") status = "IN_PROGRESS_MANAGER";
+  else if (mainRole === "COMMITTEE") status = "IN_PROGRESS_COMMITTEE";
+  else if (mainRole === "HR") status = "IN_PROGRESS_COMMITTEE"; // HR também usa COMMITTEE status
 
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Token de autenticação não encontrado. Faça login novamente.");
+    throw new Error(
+      "Token de autenticação não encontrado. Faça login novamente."
+    );
   }
 
-  const res = await fetch(`${API_URL}/evaluation-cycle/active?status=${status}`, {
-    headers: getAuthHeaders(),
-  });
-  
+  const res = await fetch(
+    `${API_URL}/evaluation-cycle/active?status=${status}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+
   if (res.status === 401) {
     throw new Error("Sessão expirada. Faça login novamente.");
   }
-  
+
   if (!res.ok) {
     const errorText = await res.text();
-    console.error('Erro na resposta:', res.status, errorText);
+    console.error("Erro na resposta:", res.status, errorText);
     throw new Error(`Erro ao buscar ciclo ativo: ${res.status} - ${errorText}`);
   }
-  
+
   const responseText = await res.text();
   if (!responseText) {
     throw new Error("Resposta vazia do servidor");
   }
-  
+
   try {
     return JSON.parse(responseText);
   } catch (error) {
-    console.error('Erro ao fazer parse da resposta:', responseText);
+    console.error("Erro ao fazer parse da resposta:", responseText);
     throw new Error("Resposta inválida do servidor");
   }
+};
+
+export const fetchMostRecentEvaluationCycle = async () => {
+  const res = await fetch(`${API_URL}/evaluation-cycle/recent`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar ciclo mais recente");
+  return res.json();
 };
 
 export const fetchEvaluationCompletionStatus = async (cycleId: number) => {
@@ -466,10 +479,13 @@ export const getUsersWithEvaluationsForCommittee = async () => {
 
 // Get significant drops for a user in a specific cycle
 export const getSignificantDrops = async (userId: number, cycleId: number) => {
-  const response = await fetch(`${API_URL}/users/${userId}/significant-drops/${cycleId}`, {
-    method: 'GET',
-    headers: getAuthHeaders(),
-  });
+  const response = await fetch(
+    `${API_URL}/users/${userId}/significant-drops/${cycleId}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
   if (!response.ok) {
     if (response.status === 404) {
       return null; // No significant drops found
@@ -554,6 +570,7 @@ export const createManagerEvaluation = async (data: {
   evaluateeId: number;
   cycleId: number;
   groups: any[];
+  status?: string;
 }) => {
   // Log para debug
   console.log("Payload enviado para manager-evaluation:", data);
@@ -1045,5 +1062,127 @@ export const getMyManagerEvaluations = async (cycleId?: number) => {
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error("Erro ao buscar minhas avaliações de gestor");
+  return res.json();
+};
+
+// Busca mentorados de um mentor
+export const fetchMentorMentees = async (mentorId: number) => {
+  const res = await fetch(`${API_URL}/mentors/${mentorId}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar mentorados");
+  const data = await res.json();
+  return data.mentees || [];
+};
+
+// Busca autoavaliação do colaborador
+export const fetchSelfEvaluation = async (collaboratorId: number) => {
+  const res = await fetch(`${API_URL}/self-evaluation/user/${collaboratorId}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar autoavaliação");
+  return res.json();
+};
+
+// Busca avaliações de pares recebidas pelo colaborador
+export const fetchPeerEvaluations = async (collaboratorId: number) => {
+  const res = await fetch(
+    `${API_URL}/peer-evaluation/by-evaluatee/${collaboratorId}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!res.ok) throw new Error("Erro ao buscar avaliações 360");
+  return res.json();
+};
+
+// Busca histórico de ciclos e desempenho do colaborador
+export const fetchCollaboratorCyclesHistory = async (
+  collaboratorId: number
+) => {
+  const res = await fetch(`${API_URL}/ciclos/historico/${collaboratorId}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar histórico de ciclos");
+  return res.json();
+};
+
+// Avaliação de mentor para colaborador (mentor-to-collaborator)
+export const createMentorToCollaboratorEvaluation = async ({
+  evaluateeId,
+  cycleId,
+  score,
+  justification,
+}: {
+  evaluateeId: number;
+  cycleId: number;
+  score: number;
+  justification: string;
+}) => {
+  const res = await fetch(`${API_URL}/mentor-to-collaborator-evaluations`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ evaluateeId, cycleId, score, justification }),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(
+      error.message || "Erro ao enviar avaliação de mentor para colaborador"
+    );
+  }
+  return res.json();
+};
+
+export const fetchMentorToCollaboratorEvaluations = async (
+  mentorId: number
+) => {
+  const res = await fetch(
+    `${API_URL}/mentor-to-collaborator-evaluations/mentor/${mentorId}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(
+      error.message || "Erro ao buscar avaliações enviadas pelo mentor"
+    );
+  }
+  return res.json();
+};
+
+export const fetchMentorToCollaboratorEvaluationsByCollaborator = async (
+  collaboratorId: number
+) => {
+  const res = await fetch(
+    `${API_URL}/mentor-to-collaborator-evaluations/collaborator/${collaboratorId}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(
+      error.message || "Erro ao buscar avaliações recebidas pelo colaborador"
+    );
+  }
+  return res.json();
+};
+
+// Busca avaliações de pares recebidas pelo colaborador em um ciclo
+export const fetchPeerEvaluationsReceived = async (
+  cycleId: number,
+  userId: number
+) => {
+  const res = await fetch(
+    `${API_URL}/peer-evaluations/cycle/${cycleId}/user/${userId}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!res.ok) throw new Error("Erro ao buscar avaliações 360 recebidas");
   return res.json();
 };

@@ -14,7 +14,7 @@ const motivationLabels: Record<string, string> = {
   DISCORDO_TOTALMENTE: "Discordo Totalmente",
 };
 
-const PeerEvaluationManager = () => {
+const PeerEvaluationMentor = () => {
   const { id } = useParams();
   const [peerEvaluations, setPeerEvaluations] = useState<PeerEvaluationType[]>(
     []
@@ -66,8 +66,7 @@ const PeerEvaluationManager = () => {
     );
 
   return (
-    <div className="bg-[#f1f1f1] h-screen w-full flex flex-col gap-4 p-3">
-      {loading && <div>Carregando avaliações 360...</div>}
+    <div className="bg-[#f1f1f1] min-h-screen w-full flex flex-col gap-4 p-3">
       {!loading && peerEvaluations.length === 0 && (
         <div className="text-gray-500 text-center mt-10 font-semibold bg-yellow-100 border border-yellow-300 rounded p-4 max-w-xl mx-auto">
           Nenhuma avaliação 360 encontrada para este colaborador.
@@ -93,4 +92,4 @@ const PeerEvaluationManager = () => {
   );
 };
 
-export default PeerEvaluationManager;
+export default PeerEvaluationMentor;
