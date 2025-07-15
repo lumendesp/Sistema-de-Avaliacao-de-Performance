@@ -97,27 +97,11 @@ function Admin() {
         const recentLogsData = await getRecentLogs(5);
         setLogs(recentLogsData);
 
-        // Fetch system status
-        const statusData = await getSystemStatus();
-        setSystemStatus(statusData);
+
 
         setLoading(false);
       } catch (error) {
         console.error('Error fetching admin data:', error);
-        // Fallback to mock data if API fails
-        setStats({
-          totalUsers: 156,
-          activeUsers: 142,
-          totalTracks: 3,
-          activeTracks: 3,
-          totalEvaluations: 1247,
-          completedEvaluations: 1189,
-          trackDistribution: [
-            { trackName: 'Backend', userCount: 45 },
-            { trackName: 'Frontend', userCount: 38 },
-            { trackName: 'Trilha de Liderança', userCount: 23 },
-          ],
-        });
         setLoading(false);
       }
     };
