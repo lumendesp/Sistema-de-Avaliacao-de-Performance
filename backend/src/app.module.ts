@@ -28,6 +28,9 @@ import { EvaluationCompletionModule } from './evaluation-completion/evaluation-c
 import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
 import { RHDashboardModule } from './rh/dashboard/dashboard.module';
 import { ImportModule } from './rh/import/import.module';
+import { PdiModule } from './pdi/pdi.module';
+import { OkrModule } from './okr/okr.module';
+import { MentorToCollaboratorEvaluationModule } from './mentor-to-collaborator-evaluation/mentor-to-collaborator-evaluation.module';
 
 @Module({
   imports: [
@@ -63,6 +66,9 @@ import { ImportModule } from './rh/import/import.module';
     AiBrutalFactsModule,
     RHDashboardModule,
     ImportModule,
+    PdiModule,
+    OkrModule,
+    MentorToCollaboratorEvaluationModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

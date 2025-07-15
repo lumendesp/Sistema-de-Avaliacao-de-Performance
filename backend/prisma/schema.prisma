@@ -32,8 +32,8 @@ enum MotivationLevel {
 enum CycleStatus {
   IN_PROGRESS_COLLABORATOR
   IN_PROGRESS_MANAGER
-  IN_PROGRESS_COMMITTEE
   CLOSED
+  IN_PROGRESS_COMMITTEE
   PUBLISHED
 }
 
@@ -130,7 +130,13 @@ model User {
 
   manages             ManagerCollaborator[] @relation("ManagerToCollaborator")
   managedBy           ManagerCollaborator[] @relation("CollaboratorToManager")
+  mentorToCollaboratorEvaluationsGiven MentorToCollaboratorEvaluation[] @relation("MentorToCollaboratorEvaluator")
+  mentorToCollaboratorEvaluationsReceived MentorToCollaboratorEvaluation[] @relation("MentorToCollaboratorEvaluatee")
   EvaluationCycleUser EvaluationCycleUser[]
+  pdis                PDI[]
+
+  // --- OKR ---
+  okrs Okr[]
 }
 
 // ---------------- HISTÓRICO DE TRILHAS -----------------
@@ -209,6 +215,8 @@ model EvaluationCycle {
   aiSummaries         AISummary[]
   committeeNotes      CommitteeNote[]
   managerEvaluations  ManagerEvaluation[]
+
+  mentorToCollaboratorEvaluations MentorToCollaboratorEvaluation[] @relation("MentorToCollaboratorCycle")
   EvaluationCycleUser EvaluationCycleUser[]
 }
 
@@ -393,13 +401,14 @@ model Discrepancy {
 }
 
 model AISummary {
-  id      Int    @id @default(autoincrement())
-  userId  Int
-  cycleId Int
-  text    String
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  cycleId     Int
+  text        String
+  leanText    String?
 
-  user  User            @relation(fields: [userId], references: [id])
-  cycle EvaluationCycle @relation(fields: [cycleId], references: [id])
+  user        User            @relation(fields: [userId], references: [id])
+  cycle       EvaluationCycle @relation(fields: [cycleId], references: [id])
 
   @@unique([userId, cycleId])
 }
@@ -424,9 +433,75 @@ model ManagerCollaborator {
   @@id([managerId, collaboratorId])
 }
 
+model MentorToCollaboratorEvaluation {
+  id            Int      @id @default(autoincrement())
+  evaluatorId   Int
+  evaluateeId   Int
+  cycleId       Int
+  createdAt     DateTime @default(now())
+  score         Int
+  justification String
+
+  evaluator User @relation("MentorToCollaboratorEvaluator", fields: [evaluatorId], references: [id])
+  evaluatee User @relation("MentorToCollaboratorEvaluatee", fields: [evaluateeId], references: [id])
+  cycle     EvaluationCycle @relation("MentorToCollaboratorCycle", fields: [cycleId], references: [id])
+}
+
 model BrutalFactsCache {
   id        Int      @id @default(autoincrement())
   cycleId   Int      @unique
   data      Json
   createdAt DateTime @default(now())
+}
+
+model PDI {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  user        User        @relation(fields: [userId], references: [id])
+  title       String
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  actions     PDIAction[]
+}
+
+model PDIAction {
+  id          Int      @id @default(autoincrement())
+  pdiId       Int
+  pdi         PDI      @relation(fields: [pdiId], references: [id])
+  title       String
+  description String
+  category    String   // skill | knowledge | behavior | career
+  priority    String   // low | medium | high
+  status      String   // planned | in_progress | completed
+  dueDate     DateTime
+  progress    Int      // 0-100
+  goals       Json?    // array de metas: [{ id, descricao, concluida }]
+}
+
+// --- OKR ---
+enum OKRStatus {
+  ACTIVE
+  COMPLETED
+  OVERDUE
+}
+
+model Okr {
+  id         Int          @id @default(autoincrement())
+  userId     Int
+  user       User         @relation(fields: [userId], references: [id])
+  objective  String
+  progress   Float        @default(0)
+  status     OKRStatus    @default(ACTIVE)
+  dueDate    DateTime
+  keyResults KeyResult[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model KeyResult {
+  id          Int      @id @default(autoincrement())
+  okrId       Int
+  okr         Okr      @relation(fields: [okrId], references: [id], onDelete: Cascade)
+  description String
 }
