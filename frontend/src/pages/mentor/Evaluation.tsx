@@ -39,11 +39,11 @@ export default function MentorEvaluationPage() {
   if (!cycleId || cycleStatus !== "IN_PROGRESS_MANAGER")
     return (
       <div className="text-red-500 text-center mt-10 font-semibold bg-red-100 border border-red-300 rounded p-4 max-w-xl mx-auto">
-        Nenhum ciclo de avaliação de gestor em andamento.
+        Nenhum ciclo de avaliação de mentor em andamento.
         <br />
         <span className="text-gray-700 text-sm font-normal">
           A avaliação de mentor só estará disponível durante o ciclo de
-          avaliação do gestor.
+          avaliação do mentor.
         </span>
       </div>
     );
