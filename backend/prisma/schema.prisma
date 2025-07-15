@@ -396,13 +396,14 @@ model Discrepancy {
 }
 
 model AISummary {
-  id      Int    @id @default(autoincrement())
-  userId  Int
-  cycleId Int
-  text    String
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  cycleId     Int
+  text        String
+  leanText    String?
 
-  user  User            @relation(fields: [userId], references: [id])
-  cycle EvaluationCycle @relation(fields: [cycleId], references: [id])
+  user        User            @relation(fields: [userId], references: [id])
+  cycle       EvaluationCycle @relation(fields: [cycleId], references: [id])
 
   @@unique([userId, cycleId])
 }

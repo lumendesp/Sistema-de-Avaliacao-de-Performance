@@ -38,27 +38,15 @@ function decrypt(text: string): string {
 }
 
 type SelfWithItems = {
-  items: {
-    criterionId: number;
-    justification: string;
-    score: number;
-  }[];
+  items: { criterionId: number; justification: string; score: number }[];
 };
 
 type MentorWithItems = {
-  items: {
-    criterionId: number;
-    justification: string;
-    score: number;
-  }[];
+  items: { criterionId: number; justification: string; score: number }[];
 };
 
 type ManagerWithItems = {
-  items: {
-    criterionId: number;
-    justification: string;
-    score: number;
-  }[];
+  items: { criterionId: number; justification: string; score: number }[];
 };
 
 @Injectable()
@@ -72,8 +60,14 @@ export class AiSummaryService {
     const summary = await this.prisma.aISummary.findUnique({
       where: { userId_cycleId: { userId, cycleId } },
     });
-
     return summary?.text || null;
+  }
+
+  async getLeanSummary(userId: number, cycleId: number): Promise<string | null> {
+    const summary = await this.prisma.aISummary.findUnique({
+      where: { userId_cycleId: { userId, cycleId } },
+    });
+    return summary?.leanText || null;
   }
 
   async getAllSummariesByCycle(cycleId: number) {
@@ -84,7 +78,7 @@ export class AiSummaryService {
           select: {
             id: true,
             name: true,
-            email: true, 
+            email: true,
           },
         },
       },
@@ -119,7 +113,6 @@ export class AiSummaryService {
     });
 
     const prompt = this.buildPrompt(self, peer, mentor, manager, references);
-
     const response = await this.geminiService.generate(prompt);
 
     await this.prisma.aISummary.upsert({
@@ -131,6 +124,30 @@ export class AiSummaryService {
     return response;
   }
 
+  async generateLeanSummary({
+    userId,
+    cycleId,
+  }: CreateSummaryDto): Promise<string> {
+    const summary = await this.getSummary(userId, cycleId);
+    if (!summary) throw new Error('Resumo técnico ainda não gerado');
+
+    const prompt = `Reescreva o texto abaixo como uma mensagem final para o colaborador, com no máximo 2 frases. Seja direto e destaque apenas os principais pontos positivos, como: "Você se destacou em X e Y". Não use sugestões, perguntas nem linguagem técnica.
+
+${summary}
+
+Mensagem final:`;
+
+    const leanText = await this.geminiService.generate(prompt);
+
+    await this.prisma.aISummary.upsert({
+      where: { userId_cycleId: { userId, cycleId } },
+      update: { leanText },
+      create: { userId, cycleId, text: '', leanText },
+    });
+
+    return leanText;
+  }
+
   private buildPrompt(
     self: (SelfEvaluation & SelfWithItems)[],
     peer: PeerEvaluation[],
@@ -138,7 +155,7 @@ export class AiSummaryService {
     manager: (ManagerEvaluation & ManagerWithItems)[],
     references: Reference[],
   ): string {
-    let prompt = `Você é um sistema de RH. Abaixo estão avaliações de desempenho de um colaborador. Analise e gere um resumo objetivo (máximo 5 linhas), focando apenas nos principais pontos fortes, pontos de desenvolvimento e recomendações mais relevantes.\n Sua resposta deve ser apenas o resumo, sem introduções como "Com base nas avaliações..." ou "Resumo:".\n\n`;
+    let prompt = `Você é um sistema de RH. Abaixo estão avaliações de desempenho de um colaborador. Analise e gere um resumo objetivo (máximo 5 linhas), focando apenas nos principais pontos fortes, pontos de desenvolvimento e recomendações mais relevantes.\nSua resposta deve ser apenas o resumo, sem introduções como "Com base nas avaliações..." ou "Resumo:".\n\n`;
 
     if (self.length) {
       prompt += `Autoavaliação:\n`;
