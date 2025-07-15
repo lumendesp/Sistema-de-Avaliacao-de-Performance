@@ -16,6 +16,7 @@ export class LogInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse();
     
+    console.log('[LogInterceptor] Intercepting:', request.method, request.url);
     // Skip logging for health checks and noise
     if (this.shouldSkipLogging(request)) {
       return next.handle();
@@ -55,7 +56,7 @@ export class LogInterceptor implements NestInterceptor {
           });
         } catch (error) {
           // Don't let logging errors break the application
-          console.error('Error creating log entry:', error);
+          console.error('[LogInterceptor] Error creating log entry:', error);
         }
       }),
       catchError(async (error) => {
@@ -78,8 +79,9 @@ export class LogInterceptor implements NestInterceptor {
             },
           });
         } catch (logError) {
-          console.error('Error creating error log entry:', logError);
+          console.error('[LogInterceptor] Error creating error log entry:', logError);
         }
+        console.error('[LogInterceptor] Request error:', error);
         throw error;
       }),
     );

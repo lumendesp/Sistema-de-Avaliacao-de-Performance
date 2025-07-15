@@ -475,11 +475,24 @@ export const getSignificantDrops = async (userId: number, cycleId: number) => {
   });
   if (!response.ok) {
     if (response.status === 404) {
+      console.log(`[getSignificantDrops] No significant drops for user ${userId} in cycle ${cycleId} (404)`);
       return null; // No significant drops found
     }
     throw new Error("Failed to fetch significant drops");
   }
-  return response.json();
+  const text = await response.text();
+  if (!text) {
+    console.log(`[getSignificantDrops] Empty response for user ${userId} in cycle ${cycleId}`);
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(text);
+    console.log(`[getSignificantDrops] Drops for user ${userId} in cycle ${cycleId}:`, parsed);
+    return parsed;
+  } catch (e) {
+    console.log(`[getSignificantDrops] Invalid JSON for user ${userId} in cycle ${cycleId}:`, text);
+    return null;
+  }
 };
 
 // Creates a new final evaluation
@@ -1169,5 +1182,13 @@ export const debugUserInfo = async () => {
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error("Erro ao buscar informações do usuário");
+  return res.json();
+};
+
+export const getClosedCycles = async () => {
+  const res = await fetch(`${API_URL}/evaluation-cycle/closed`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Erro ao buscar ciclos fechados');
   return res.json();
 };

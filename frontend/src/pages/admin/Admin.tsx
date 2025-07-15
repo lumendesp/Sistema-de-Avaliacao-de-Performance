@@ -97,27 +97,11 @@ function Admin() {
         const recentLogsData = await getRecentLogs(5);
         setLogs(recentLogsData);
 
-        // Fetch system status
-        const statusData = await getSystemStatus();
-        setSystemStatus(statusData);
+
 
         setLoading(false);
       } catch (error) {
         console.error('Error fetching admin data:', error);
-        // Fallback to mock data if API fails
-        setStats({
-          totalUsers: 156,
-          activeUsers: 142,
-          totalTracks: 3,
-          activeTracks: 3,
-          totalEvaluations: 1247,
-          completedEvaluations: 1189,
-          trackDistribution: [
-            { trackName: 'Backend', userCount: 45 },
-            { trackName: 'Frontend', userCount: 38 },
-            { trackName: 'Trilha de Liderança', userCount: 23 },
-          ],
-        });
         setLoading(false);
       }
     };
@@ -250,7 +234,7 @@ function Admin() {
           Painel Administrativo
         </h1>
         <p className="text-gray-600">
-          Bem-vindo, {user?.name}. Gerencie o sistema de avaliação de performance.
+          Bem-vindo, {user?.name}.
         </p>
       </div>
 
@@ -695,44 +679,6 @@ function Admin() {
                   className="bg-purple-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${systemStatus.diskUsage}%` }}
                 ></div>
-              </div>
-            </div>
-          </div>
-
-          {/* System Services */}
-          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Serviços do Sistema</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                  <span className="font-medium">Servidor Web</span>
-                </div>
-                <span className="text-sm text-green-600 font-medium">Online</span>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                  <span className="font-medium">Database</span>
-                </div>
-                <span className="text-sm text-green-600 font-medium">Conectado</span>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                  <span className="font-medium">Cache Redis</span>
-                </div>
-                <span className="text-sm text-green-600 font-medium">Ativo</span>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                  <span className="font-medium">Email Service</span>
-                </div>
-                <span className="text-sm text-green-600 font-medium">Funcionando</span>
               </div>
             </div>
           </div>

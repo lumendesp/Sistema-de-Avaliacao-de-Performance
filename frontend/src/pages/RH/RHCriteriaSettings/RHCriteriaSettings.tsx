@@ -26,6 +26,8 @@ import {
     deleteCriterionGroup
 } from '../../../services/api';
 import type { Track } from '../../../types/track';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Criterion {
     id: number;
@@ -104,10 +106,20 @@ function RhCriteriaSettings() {
     // Track last update time
     const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
 
-    // Helper function to update last update time
+    // Helper function to update last update time and persist in localStorage
     const updateLastModifiedTime = () => {
-        setLastUpdateTime(new Date());
+        const now = new Date();
+        setLastUpdateTime(now);
+        localStorage.setItem('rhCriteriaLastUpdate', now.toISOString());
     };
+
+    // On mount, load last update time from localStorage
+    useEffect(() => {
+        const stored = localStorage.getItem('rhCriteriaLastUpdate');
+        if (stored) {
+            setLastUpdateTime(new Date(stored));
+        }
+    }, []);
 
     // Load data from backend
     useEffect(() => {
@@ -181,7 +193,8 @@ function RhCriteriaSettings() {
             };
             
             setTracksWithCriteria(prev => [newTrackWithCriteria, ...prev]);
-            setOpenBoxIndex(0);
+            // Do NOT expand any track after creation
+            setOpenBoxIndex(null);
             
             // Refresh data to get the complete structure
             const updatedTracks = await getTracksWithCriteria();
@@ -594,7 +607,7 @@ function RhCriteriaSettings() {
                     <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Critérios de Avaliação</h1>
                     {lastUpdateTime && (
                         <span className="text-sm text-gray-500 mt-1">
-                            Última atualização: {lastUpdateTime.toLocaleDateString('pt-BR')}
+                            Última atualização: {format(lastUpdateTime, 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                         </span>
                     )}
                 </div>
@@ -607,21 +620,6 @@ function RhCriteriaSettings() {
                 </button>
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-gray-300 mb-4 sm:mb-6">
-                <button
-                    className={`px-3 sm:px-4 py-2 text-sm font-medium ${activeTab === 'track' ? 'border-b-2 border-[#08605F] text-[#08605F]' : 'text-gray-500'}`}
-                    onClick={() => setActiveTab('track')}
-                >
-                    Trilha
-                </button>
-                <button
-                    className={`px-3 sm:px-4 py-2 text-sm font-medium ${activeTab === 'unit' ? 'border-b-2 border-[#08605F] text-[#08605F]' : 'text-gray-500'}`}
-                    onClick={() => setActiveTab('unit')}
-                >
-                    Unidade
-                </button>
-            </div>
 
             {/* Content */}
             {activeTab === 'track' && (
@@ -710,12 +708,6 @@ function RhCriteriaSettings() {
                             </div>
                         )}
                     </div>
-                </div>
-            )}
-
-            {activeTab === 'unit' && (
-                <div className="text-center p-6 sm:p-8">
-                    <h2 className="text-lg sm:text-xl text-gray-500">A seção Unidade está em desenvolvimento.</h2>
                 </div>
             )}
         </div>
