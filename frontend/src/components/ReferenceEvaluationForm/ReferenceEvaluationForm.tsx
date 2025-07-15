@@ -157,84 +157,73 @@ const ReferenceEvaluationForm = ({
                     Justificativa enviada
                   </p>
                   <textarea
-                    className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm bg-gray-100 text-[#1D1D1D] styled-scrollbar"
-                    value={ref.justification || ref.feedback}
+                    className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm bg-gray-100 text-[#1D1D1D]"
+                    value={ref.justification ?? ""}
                     disabled
                   />
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : selectedCollaborators.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">
-          Você não adicionou nenhuma referência ainda.
-        </p>
-      ) : null}
-
-      {/* permite selecionar vários colaboradores e enviar de uma só vez */}
-      {selectedCollaborators.length > 0 && (
-        <form onSubmit={handleSubmitAll} className="flex flex-col gap-4">
-          {selectedCollaborators.map((collaborator) => (
-            <div
-              key={collaborator.id}
-              className="bg-white w-full flex flex-col px-6 py-9 rounded-xl"
-            >
-              <div className="flex justify-between items-center mb-5">
-                <div className="flex justify-center items-center gap-3">
-                  <UserIcon
-                    initials={getInitials(collaborator.name)}
-                    size={40}
-                  />
-                  <div className="flex flex-col">
-                    <p className="text-sm font-bold ">{collaborator.name}</p>
-                    <p className="text-xs font-normal text-opacity-75 text-[#1D1D1D]">
-                      {collaborator.email}
+            ))
+          ) : (
+            <p className="text-sm text-gray-400 text-center py-8">
+              Nenhuma referência enviada.
+            </p>
+          )}
+        </>
+      ) : (
+        // Ciclo aberto: mostra referências pendentes para edição
+        <>
+          {myReferences.length > 0 ? (
+            <form className="flex flex-col gap-4">
+              {myReferences.map((ref) => (
+                <div
+                  key={ref.id}
+                  className="bg-white w-full flex flex-col px-6 py-9 rounded-xl"
+                >
+                  <div className="flex justify-between items-center mb-5">
+                    <div className="flex items-center gap-3">
+                      <UserIcon
+                        initials={getInitials(ref.receiver?.name || "")}
+                        size={40}
+                      />
+                      <div className="flex flex-col">
+                        <p className="text-sm font-bold">
+                          {ref.receiver?.name || ref.receiverId}
+                        </p>
+                        <p className="text-xs text-[#1D1D1D] text-opacity-75">
+                          {ref.receiver?.email || ""}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveReference(ref.id)}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <FaTrash className="text-[#F33E3E]" />
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <p className="font-medium text-xs text-[#1D1D1D] text-opacity-75">
+                      Justifique sua referência
                     </p>
+                    <textarea
+                      className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a]"
+                      placeholder="Justifique sua referência..."
+                      value={formData[ref.id] ?? ref.justification ?? ""}
+                      onChange={(e) =>
+                        handleInputChange(ref.id, e.target.value)
+                      }
+                      required
+                    />
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveCollaborator(collaborator.id)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <FaTrash className="text-[#F33E3E]" />
-                </button>
-              </div>
-              <div className="flex flex-col gap-1 flex-1">
-                <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-                  Justifique sua nota
-                </p>
-                <textarea
-                  className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal styled-scrollbar"
-                  placeholder="Justifique sua nota..."
-                  value={formData[collaborator.id] || ""}
-                  onChange={(e) =>
-                    handleInputChange(collaborator.id, e.target.value)
-                  }
-                  required
-                ></textarea>
-              </div>
-            </div>
-          ))}
-
-          {/* botão de envio (depois vai ser removido) */}
-          <button
-            type="submit"
-            className="bg-[#08605E] text-white rounded px-4 py-2 mt-2 disabled:opacity-50 w-full"
-            disabled={loading}
-          >
-            {loading
-              ? "Enviando..."
-              : `Enviar ${selectedCollaborators.length} referência${
-                  selectedCollaborators.length > 1 ? "s" : ""
-                }`}
-          </button>
-
-          {error && <p className="text-red-500 text-xs">{error}</p>}
-          {success && (
-            <p className="text-green-600 text-xs">
-              Referências enviadas com sucesso!
+              ))}
+              {error && <p className="text-red-500 text-xs">{error}</p>}
+            </form>
+          ) : (
+            <p className="text-sm text-gray-400 text-center py-8">
+              Você ainda não selecionou colaboradores para avaliação.
             </p>
           )}
         </>

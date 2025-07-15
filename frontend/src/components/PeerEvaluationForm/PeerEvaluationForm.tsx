@@ -288,44 +288,38 @@ export default function PeerEvaluationForm({
                     />
                   )}
                 </div>
-
-                <div className="flex gap-2 mb-4">
-                  <div className="flex flex-col gap-1 flex-1">
-                    <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-                      Pontos fortes
-                    </p>
-                    <textarea
-                      className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal styled-scrollbar"
-                      placeholder="Justifique sua nota..."
-                      value={data.strengths}
-                      onChange={(e) =>
-                        handleInputChange(
-                          collaborator.id,
-                          "strengths",
-                          e.target.value
-                        )
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1 flex-1">
-                    <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
-                      Pontos de melhoria
-                    </p>
-                    <textarea
-                      className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal styled-scrollbar"
-                      placeholder="Justifique sua nota..."
-                      value={data.improvements}
-                      onChange={(e) =>
-                        handleInputChange(
-                          collaborator.id,
-                          "improvements",
-                          e.target.value
-                        )
-                      }
-                      required
-                    />
-                  </div>
+                <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                  {["strengths", "improvements"].map((field) => (
+                    <div className="flex flex-col gap-1 flex-1" key={field}>
+                      <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
+                        {field === "strengths"
+                          ? "Pontos fortes"
+                          : "Pontos de melhoria"}
+                      </p>
+                      <textarea
+                        className={`w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm ${
+                          readonly
+                            ? "bg-gray-100 text-[#1D1D1D]"
+                            : "focus:outline-[#08605e4a]"
+                        }`}
+                        placeholder={
+                          field === "strengths"
+                            ? "Descreva os pontos fortes..."
+                            : "Descreva os pontos de melhoria..."
+                        }
+                        value={data[field]}
+                        onChange={(e) =>
+                          handleInputChange(
+                            evaluation.id,
+                            field,
+                            e.target.value
+                          )
+                        }
+                        disabled={readonly}
+                        required
+                      />
+                    </div>
+                  ))}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <div className="flex flex-col gap-1 flex-1">
