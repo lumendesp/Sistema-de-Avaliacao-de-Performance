@@ -98,7 +98,8 @@ const MentorSelfEvaluationReadOnly = () => {
         Nenhum ciclo de avaliação de mentor em andamento.
         <br />
         <span className="text-gray-700 text-sm font-normal">
-          A autoavaliação deste colaborador só estará disponível durante o ciclo de avaliação do gestor.
+          A autoavaliação deste colaborador só estará disponível durante o ciclo
+          de avaliação do gestor.
         </span>
       </div>
     );

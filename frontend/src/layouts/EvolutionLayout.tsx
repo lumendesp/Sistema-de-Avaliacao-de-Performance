@@ -1,7 +1,7 @@
 import React from "react";
-import HistorySummaryCards from '../components/Evolution/HistorySummaryCards';
-import PerformanceChart from '../components/Evolution/PerformanceChart';
-import EvaluationCyclesList from '../components/Evolution/EvaluationCyclesList';
+import HistorySummaryCards from "../components/Evolution/HistorySummaryCards";
+import PerformanceChart from "../components/Evolution/PerformanceChart";
+import EvaluationCyclesList from "../components/Evolution/EvaluationCyclesList";
 
 interface Performance {
   cycle: string;
@@ -35,8 +35,8 @@ const EvolutionLayout: React.FC<EvolutionLayoutProps> = ({
   performance,
   cycles,
 }) => (
-  <div className="p-6">
-    <h1 className="text-2xl font-bold mb-4">{title}</h1>
+  <div className="p-4 sm:p-6 w-full min-h-screen overflow-x-hidden sm:overflow-x-hidden md:overflow-x-hidden lg:overflow-x-hidden xl:overflow-x-hidden 2xl:overflow-x-hidden mx-auto sm:max-w-4xl">
+    <h1 className="text-xl sm:text-2xl font-bold mb-4">{title}</h1>
     <HistorySummaryCards
       currentScore={currentScore}
       growth={growth}
@@ -47,4 +47,4 @@ const EvolutionLayout: React.FC<EvolutionLayoutProps> = ({
   </div>
 );
 
-export default EvolutionLayout; 
+export default EvolutionLayout;

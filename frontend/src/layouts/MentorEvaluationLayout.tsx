@@ -13,6 +13,20 @@ export default function MentorEvaluationLayout() {
   // Ref para acessar a função de submit do filho
   const submitRef = useRef<(() => Promise<boolean>) | null>(null);
 
+  // Espaço dinâmico para compensar header/nav fixos
+  const [spacerHeight, setSpacerHeight] = useState(145);
+  const headerBlockRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function updateSpacer() {
+      if (headerBlockRef.current) {
+        setSpacerHeight(headerBlockRef.current.offsetHeight || 0);
+      }
+    }
+    updateSpacer();
+    window.addEventListener("resize", updateSpacer);
+    return () => window.removeEventListener("resize", updateSpacer);
+  }, []);
+
   useEffect(() => {
     if (user && user.id && id) {
       fetch(`${API_URL}/mentors/${user.id}`)
@@ -62,38 +76,46 @@ export default function MentorEvaluationLayout() {
     .join("");
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
+    <div className="min-h-screen flex bg-gray-100 overflow-x-hidden">
       <div className="flex-1 flex flex-col">
-        <div className="fixed top-0 left-64 right-0 w-[calc(100%-16rem)] bg-white shadow-md z-30">
-          <div className="px-8 py-5 flex flex-row items-center border-b border-gray-200 justify-between">
-            <div className="flex items-center gap-4 min-w-0">
-              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-lg font-bold text-gray-600">
+        <div
+          ref={headerBlockRef}
+          className="fixed top-0 left-0 right-0 w-full sm:left-64 sm:w-[calc(100%-16rem)] bg-white shadow-md z-30 max-w-screen overflow-x-auto box-border"
+        >
+          <div className="px-2 sm:px-8 py-3 sm:py-5 flex flex-col sm:flex-row items-start sm:items-center border-b border-gray-200 justify-between gap-2 sm:gap-3 w-full box-border">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 w-full">
+              <div className="hidden sm:flex w-12 h-12 rounded-full bg-gray-100 items-center justify-center text-lg font-bold text-gray-600">
                 {initials}
               </div>
-              <div className="truncate">
-                <h1 className="text-xl font-bold text-gray-900 leading-tight truncate">
+              <div className="truncate w-full flex flex-col items-center justify-center text-center sm:items-start sm:justify-start sm:text-left">
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight truncate">
                   {name}
                 </h1>
-                <p className="text-sm text-gray-500 truncate">COLABORADOR</p>
+                <p className="text-xs sm:text-sm text-gray-500 truncate">
+                  COLABORADOR
+                </p>
               </div>
             </div>
-            <button
-              className="bg-[#8CB7B7] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap"
-              onClick={handleSend}
-            >
-              {isUpdate ? "Atualizar" : "Concluir e enviar"}
-            </button>
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2 w-full sm:w-auto text-center sm:text-left mt-2 sm:mt-0">
+              <button
+                className="bg-[#8CB7B7] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap"
+                onClick={handleSend}
+              >
+                {isUpdate ? "Atualizar" : "Enviar"}
+              </button>
+            </div>
           </div>
-          <nav className="bg-white border-b border-gray-100">
-            <ul className="flex px-8 pt-4 gap-16 text-lg text-gray-600 font-semibold">
+          {/* Navegação responsiva */}
+          <nav className="bg-white border-b border-gray-100 w-full overflow-x-auto max-w-screen box-border">
+            <ul className="flex flex-col sm:flex-row px-2 sm:px-8 pt-2 sm:pt-4 gap-1 sm:gap-10 text-base sm:text-lg text-gray-600 font-semibold w-full box-border">
               <li>
                 <NavLink
                   to=""
                   end
                   className={({ isActive }) =>
                     isActive
-                      ? "border-b-2 border-teal-700 pb-3 text-teal-700 flex items-center gap-2"
-                      : "pb-3 flex items-center gap-2"
+                      ? "border-b-2 border-teal-700 pb-2 sm:pb-3 text-teal-700 flex items-center gap-2"
+                      : "pb-2 sm:pb-3 flex items-center gap-2"
                   }
                 >
                   Avaliação
@@ -104,11 +126,11 @@ export default function MentorEvaluationLayout() {
                   to="autoavaliacao"
                   className={({ isActive }) =>
                     isActive
-                      ? "border-b-2 border-teal-700 pb-3 text-teal-700 flex items-center gap-2"
-                      : "pb-3 flex items-center gap-2"
+                      ? "border-b-2 border-teal-700 pb-2 sm:pb-3 text-teal-700 flex items-center gap-2"
+                      : "pb-2 sm:pb-3 flex items-center gap-2"
                   }
                 >
-                  Autoavaliação 
+                  Autoavaliação
                 </NavLink>
               </li>
               <li>
@@ -116,8 +138,8 @@ export default function MentorEvaluationLayout() {
                   to="360"
                   className={({ isActive }) =>
                     isActive
-                      ? "border-b-2 border-teal-700 pb-3 text-teal-700 flex items-center gap-2"
-                      : "pb-3 flex items-center gap-2"
+                      ? "border-b-2 border-teal-700 pb-2 sm:pb-3 text-teal-700 flex items-center gap-2"
+                      : "pb-2 sm:pb-3 flex items-center gap-2"
                   }
                 >
                   Avaliação 360
@@ -128,8 +150,8 @@ export default function MentorEvaluationLayout() {
                   to="historico"
                   className={({ isActive }) =>
                     isActive
-                      ? "border-b-2 border-teal-700 pb-3 text-teal-700 flex items-center gap-2"
-                      : "pb-3 flex items-center gap-2"
+                      ? "border-b-2 border-teal-700 pb-2 sm:pb-3 text-teal-700 flex items-center gap-2"
+                      : "pb-2 sm:pb-3 flex items-center gap-2"
                   }
                 >
                   Histórico
@@ -138,10 +160,11 @@ export default function MentorEvaluationLayout() {
             </ul>
           </nav>
         </div>
-        <div className="h-[145px]" />
+        {/* Espaço dinâmico para não cobrir o conteúdo pelo header/nav fixos */}
+        <div style={{ width: "100%", height: spacerHeight }} />
         {/* Espaço para não cobrir o conteúdo pelo bloco fixo */}
-        <main className="flex-1 flex justify-center items-start p-2 sm:p-4">
-          <div className="w-full max-w-7xl">
+        <main className="flex-1 flex justify-center items-start p-2 sm:p-4 w-full overflow-x-auto max-w-screen box-border">
+          <div className="w-full max-w-full sm:max-w-7xl box-border">
             <Outlet context={{ setSubmit: handleSetSubmit }} />
           </div>
         </main>

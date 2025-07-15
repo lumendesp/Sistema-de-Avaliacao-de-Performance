@@ -79,19 +79,19 @@ const MentorToCollaboratorEvaluationForm = ({
 
   // Sempre mostrar o formulário de edição, mesmo se já houver avaliação enviada
   return (
-    <div className="bg-white w-full flex flex-col px-6 py-9 rounded-xl">
-      <div className="flex flex-col mb-4 gap-3">
+    <div className="bg-white w-full flex flex-col px-6 py-9 rounded-xl overflow-x-hidden">
+      <div className="flex flex-col mb-4 gap-3 w-full overflow-x-hidden">
         <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
           Dê uma avaliação de 1 a 5 ao colaborador
         </p>
-        <div>
+        <div className="w-full overflow-x-hidden">
           <StarRating
             score={score ?? 0}
             onChange={(newScore: number) => setScore(newScore)}
           />
         </div>
       </div>
-      <div className="flex flex-col gap-1 flex-1">
+      <div className="flex flex-col gap-1 flex-1 w-full overflow-x-hidden">
         <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
           Justifique sua nota
         </p>
