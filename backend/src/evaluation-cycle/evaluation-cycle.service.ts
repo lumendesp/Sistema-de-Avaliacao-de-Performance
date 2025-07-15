@@ -1,27 +1,44 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { CycleStatus } from '@prisma/client';
 
 @Injectable()
 export class EvaluationCycleService {
   constructor(private prisma: PrismaService) {}
 
-  // função para buscar o ciclo atual (o que está ativo)
-  async findActiveCycle() {
+  async findActiveCycle(status?: CycleStatus) {
+    if (!status) {
+      throw new Error('Status do ciclo deve ser especificado!');
+    }
     return this.prisma.evaluationCycle.findFirst({
-      where: { status: 'IN_PROGRESS' },
+      where: { 
+        status: status,
+      },
     });
   }
  
   async getClosedCycles() {
-    const activeCycle = await this.findActiveCycle();
+    // Busca o ciclo mais recente de qualquer status IN_PROGRESS_*
+    const activeCycle = await this.prisma.evaluationCycle.findFirst({
+      where: {
+        status: {
+          in: [
+            'IN_PROGRESS_COLLABORATOR',
+            'IN_PROGRESS_MANAGER',
+            'IN_PROGRESS_COMMITTEE',
+          ] as unknown as CycleStatus[],
+        },
+      },
+      orderBy: { startDate: 'desc' },
+    });
 
     return this.prisma.evaluationCycle.findMany({
       where: {
         id: {
-          not: activeCycle?.id, // Exclui o ativo
+          not: activeCycle?.id,
         },
-        startDate: {
-          lt: activeCycle?.startDate, // Só os anteriores
+        status: {
+          in: ['CLOSED', 'PUBLISHED'] as unknown as CycleStatus[],
         },
       },
       orderBy: {
@@ -29,5 +46,16 @@ export class EvaluationCycleService {
       },
     });
   }
+
+
+  async getMostRecentCycle() {
+    return this.prisma.evaluationCycle.findFirst({
+      orderBy: {
+        startDate: 'desc',
+      },
+    });
+  }
+
+  
 }
 

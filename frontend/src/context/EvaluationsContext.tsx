@@ -1,59 +1,176 @@
 import { createContext, useContext, useRef, useState } from "react";
+import {
+  fetchEvaluationCompletionStatus,
+  submitEvaluation,
+  fetchActiveEvaluationCycle,
+  unlockEvaluations,
+} from "../services/api";
+import { useAuth } from "./AuthContext";
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 
-// Interface do contexto que define tudo que pode ser acessado globalmente nos formulários de avaliação
+export type EvaluationTabKey = "self" | "peer" | "mentor" | "reference";
+
+type TabStateMap<T> = Record<EvaluationTabKey, T>;
+
 interface EvaluationContextProps {
-  // Indica se o formulário atual está completamente preenchido
   isComplete: boolean;
-
-  // Indica se a avaliação está sendo atualizada (true) ou criada (false)
-  isUpdate: boolean;
-
-  // Função para atualizar o estado de preenchimento
   setIsComplete: (value: boolean) => void;
-
-  // Função para definir se é uma atualização
-  setIsUpdate: (value: boolean) => void;
-
-  // Registro de função de envio para um formulário específico (ex: "self-evaluation")
   registerSubmitHandler: (key: string, handler: () => Promise<void>) => void;
-
-  // Função que dispara o envio de todos os formulários registrados
   submitAll: () => Promise<void>;
+  tabCompletion: TabStateMap<boolean>;
+  updateTabCompletion: (key: EvaluationTabKey, value: boolean) => void;
+  lastSubmittedAt: string | null;
+  setLastSubmittedAt: (value: string | null) => void;
+  isSubmit: boolean;
+  setIsSubmit: (value: boolean) => void;
+  unlockAllEvaluations: () => Promise<void>;
+  resetEvaluationContext: () => void;
+  activeCycle: { id: number } | null;
 }
 
-// Criação do contexto em si
-const EvaluationContext = createContext<EvaluationContextProps | undefined>(undefined);
+const EvaluationContext = createContext<EvaluationContextProps | undefined>(
+  undefined
+);
 
-// Componente provider que envolve o app e disponibiliza os dados acima
 export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
-  const [isComplete, setIsComplete] = useState(false); // Estado global de preenchimento
-  const [isUpdate, setIsUpdate] = useState(false);     // Estado global se é atualização ou novo envio
+  const { token, user } = useAuth(); // pega o token e usuário logado
+  const [activeCycle, setActiveCycle] = useState<{ id: number } | null>(null);
+  const [lastSubmittedAt, setLastSubmittedAt] = useState<string | null>(null);
+  const [isSubmit, setIsSubmit] = useState(false);
 
-  // Guarda as funções de envio registradas por tipo de formulário
+  const [isComplete, setIsComplete] = useState(false);
+
+  const unlockAllEvaluations = async () => {
+    if (!activeCycle) return;
+    try {
+      await unlockEvaluations(activeCycle.id);
+      setIsSubmit(false);
+    } catch (error) {
+      console.error("Erro ao desbloquear avaliações:", error);
+    }
+  };
+
+const [initialTabCompletion, setInitialTabCompletion] = useState<
+    TabStateMap<boolean>
+  >({
+    self: false,
+    peer: false,
+    mentor: false,
+    reference: false,
+  });
+
+  const [tabCompletion, setTabCompletion] = useState<TabStateMap<boolean>>({
+    self: false,
+    peer: false,
+    mentor: false,
+    reference: false,
+  });
+
+  const submitAll = async () => {
+    if (!activeCycle) throw new Error("Ciclo ativo não carregado");
+
+    try {
+      const result = await submitEvaluation(activeCycle.id);
+
+      setIsSubmit(true);
+      setLastSubmittedAt(result.submittedAt);
+
+      setIsComplete(true);
+      setTabCompletion({
+        self: true,
+        peer: true,
+        mentor: true,
+        reference: true,
+      });
+    } catch (error) {
+      console.error("Erro ao enviar avaliações:", error);
+      throw error;
+    }
+  };
+
   const submitHandlers = useRef<Record<string, () => Promise<void>>>({});
 
-  // Registra a função de submit para um formulário específico
   const registerSubmitHandler = (key: string, handler: () => Promise<void>) => {
     submitHandlers.current[key] = handler;
   };
 
-  // Envia todos os formulários registrados
-  const submitAll = async () => {
-    for (const handler of Object.values(submitHandlers.current)) {
-      await handler();
-    }
+  const updateTabCompletion = (key: EvaluationTabKey, value: boolean) => {
+    setTabCompletion((prev) => ({ ...prev, [key]: value }));
   };
+
+  const resetEvaluationContext = () => {
+    setActiveCycle(null);
+    setLastSubmittedAt(null);
+    setIsSubmit(false);
+    setIsComplete(false);
+    setTabCompletion({
+      self: false,
+      peer: false,
+      mentor: false,
+      reference: false,
+    });
+  };
+
+  useEffect(() => {
+    if (!token) return;
+
+    const loadCompletionStatus = async () => {
+      try {
+        // Determinar o role baseado nos roles do usuário autenticado
+        let role = "COLLABORATOR"; // default
+
+        if (user?.roles?.includes("MANAGER")) {
+          role = "MANAGER";
+        } else if (user?.roles?.includes("COMMITTEE")) {
+          role = "COMMITTEE";
+        } else if (user?.roles?.includes("HR")) {
+          role = "HR";
+        } else {
+          role = "COLLABORATOR";
+        }
+
+        const cycle = await fetchActiveEvaluationCycle(role);
+        setActiveCycle(cycle); // Salva ciclo ativo
+
+        const statusResponse = await fetchEvaluationCompletionStatus(cycle.id);
+
+        setInitialTabCompletion(statusResponse.completionStatus);
+        setTabCompletion(statusResponse.completionStatus);
+        setIsComplete(
+          Object.values(statusResponse.completionStatus).every(Boolean)
+        );
+        setLastSubmittedAt(statusResponse.lastSubmittedAt || null);
+        setIsSubmit(statusResponse.isSubmit);
+      } catch (error) {
+        console.error("Erro ao carregar status da avaliação:", error);
+      }
+    };
+
+    loadCompletionStatus();
+  }, [token]);
+
+  // useEffect(() => {
+  //   console.log("DEBUG => isSubmit:", isSubmit);
+  //   console.log("DEBUG => tabCompletion:", tabCompletion);
+  // }, [isSubmit, tabCompletion]);
 
   return (
     <EvaluationContext.Provider
       value={{
         isComplete,
         setIsComplete,
-        isUpdate,
-        setIsUpdate,
         registerSubmitHandler,
         submitAll,
+        tabCompletion,
+        updateTabCompletion,
+        lastSubmittedAt,
+        setLastSubmittedAt,
+        isSubmit,
+        setIsSubmit,
+        unlockAllEvaluations,
+        resetEvaluationContext,
+        activeCycle,
       }}
     >
       {children}
@@ -61,7 +178,6 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Hook customizado para acessar o contexto facilmente nos componentes
 export const useEvaluation = () => {
   const context = useContext(EvaluationContext);
   if (!context) {

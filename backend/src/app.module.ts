@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CiclosModule } from './ciclos/ciclos.module';
-import { NotasModule } from './notas/notas.module';
+import { FinalScoreModule } from './final-score/final-score.module';
 import { PrismaService } from './prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma.module';
@@ -21,14 +21,21 @@ import { ReferenceModule } from './reference/reference.module';
 import { PeerEvaluationModule } from './collaborator/peer-evaluation/peer-evaluation.module';
 import { AiSummaryModule } from './ai-summary/ai-summary.module';
 import { GeminiModule } from './ai/ai.module';
-import { FinalScoreModule } from './final-score/final-score.module';
 import { ManagerEvaluationModule } from './manager-evaluation/manager-evaluation.module';
 import { ManagerModule } from './manager/manager.module';
+import { ProjectsModule } from './projects/projects.module';
+import { EvaluationCompletionModule } from './evaluation-completion/evaluation-completion.module';
+import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
+import { RHDashboardModule } from './rh/dashboard/dashboard.module';
+import { ImportModule } from './rh/import/import.module';
+import { PdiModule } from './pdi/pdi.module';
+import { OkrModule } from './okr/okr.module';
+import { MentorToCollaboratorEvaluationModule } from './mentor-to-collaborator-evaluation/mentor-to-collaborator-evaluation.module';
 
 @Module({
   imports: [
     CiclosModule,
-    NotasModule,
+    FinalScoreModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -52,9 +59,16 @@ import { ManagerModule } from './manager/manager.module';
     PeerEvaluationModule,
     AiSummaryModule,
     GeminiModule,
-    FinalScoreModule,
     ManagerEvaluationModule,
     ManagerModule,
+    ProjectsModule,
+    EvaluationCompletionModule,
+    AiBrutalFactsModule,
+    RHDashboardModule,
+    ImportModule,
+    PdiModule,
+    OkrModule,
+    MentorToCollaboratorEvaluationModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

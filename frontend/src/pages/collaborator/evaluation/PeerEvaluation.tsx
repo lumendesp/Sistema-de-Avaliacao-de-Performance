@@ -1,25 +1,37 @@
+import { useEffect, useState } from "react";
 import CollaboratorsSearchBar from "../../../components/CollaboratorsSearchBar";
 import PeerEvaluationForm from "../../../components/PeerEvaluationForm/PeerEvaluationForm";
-import { useState, useEffect } from "react";
 import type { Collaborator } from "../../../types/reference";
-import { fetchActiveEvaluationCycle, fetchMyPeerEvaluations } from "../../../services/api";
 import type { PeerEvaluation } from "../../../types/peerEvaluation";
+import {
+  findOrCreateEmptyPeerEvaluation,
+  fetchActiveEvaluationCycle,
+  fetchMyPeerEvaluations,
+} from "../../../services/api";
 import { useAuth } from "../../../context/AuthContext";
+import { useEvaluation } from "../../../context/EvaluationsContext";
+import PeerEvaluationReadOnlyForm from "../../../components/PeerEvaluationForm/PeerEvaluationReadOnlyForm";
 
-const PeerEvaluation = () => {
-  const [selectedCollaborators, setSelectedCollaborators] = useState<
-    Collaborator[]
-  >([]); // lista temporária de colaboradores que o usuário está selecionando para avaliar
-  const [myEvaluations, setMyEvaluations] = useState<PeerEvaluation[]>([]); // lista de avaliações já enviadas do usuário logado
+const PeerEvaluationPage = () => {
+  const motivationLabels: Record<string, string> = {
+    CONCORDO_TOTALMENTE: "Concordo totalmente",
+    CONCORDO_PARCIALMENTE: "Concordo parcialmente",
+    DISCORDO_PARCIALMENTE: "Discordo parcialmente",
+    DISCORDO_TOTALMENTE: "Discordo totalmente",
+  };
+
+  const [myEvaluations, setMyEvaluations] = useState<PeerEvaluation[]>([]);
   const [activeCycleId, setActiveCycleId] = useState<number | null>(null);
+  const [isCycleFinished, setIsCycleFinished] = useState(false);
   const { user } = useAuth();
+  const { isSubmit } = useEvaluation();
 
-  // busca as referências já enviadas do usuário logado
   useEffect(() => {
     const loadActiveCycle = async () => {
       try {
-        const cycle = await fetchActiveEvaluationCycle();
+        const cycle = await fetchActiveEvaluationCycle('COLLABORATOR');
         setActiveCycleId(cycle.id);
+        setIsCycleFinished(cycle.status === "FINISHED");
       } catch (err) {
         console.error("Erro ao carregar ciclo ativo:", err);
       }
@@ -44,47 +56,91 @@ const PeerEvaluation = () => {
     loadEvaluations();
   }, [user, activeCycleId]);
 
-  // adiciona um colaborador à lista temporária (somente se ainda não estiver na lista)
-  const handleAddCollaborator = (collaborator: Collaborator) => {
-    if (!selectedCollaborators.some((c) => c.id === collaborator.id)) {
-      setSelectedCollaborators((prev) => [...prev, collaborator]);
+  const handleAddCollaborator = async (collaborator: Collaborator) => {
+    if (!activeCycleId) return;
+
+    // Evita duplicidade se já foi criada
+    const alreadyExists = myEvaluations.some(
+      (evaluation) => evaluation.evaluateeId === collaborator.id
+    );
+    if (alreadyExists) return;
+
+    try {
+      const newEvaluation = await findOrCreateEmptyPeerEvaluation(
+        collaborator.id
+      );
+
+      const newEvaluationWithEvaluatee = {
+        ...newEvaluation,
+        evaluatee: collaborator,
+      };
+
+      setMyEvaluations((prev) => [...prev, newEvaluationWithEvaluatee]);
+    } catch (error) {
+      console.error("Erro ao criar avaliação:", error);
     }
   };
 
-  // remove um colaborador da lista temporária
-  const handleRemoveCollaborator = (collaboratorId: number) => {
-    setSelectedCollaborators((prev) =>
-      prev.filter((c) => c.id !== collaboratorId)
-    );
-  };
+  const excludeIds = myEvaluations.map((evaluation) => evaluation.evaluateeId);
 
-  // pega os IDs dos colaboradores que já receberam avaliação OU estão selecionados, evitando que o usuário selecione um colaborador que já tenha recebido avaliação sua ou que já esteja na lista temporária
-  const excludeIds = [
-    ...myEvaluations.map((ev) => ev.evaluateeId),
-    ...selectedCollaborators.map((c) => c.id),
-  ];
+  if (!activeCycleId) {
+    return (
+      <p className="text-center text-gray-500 mt-10">
+        Nenhum ciclo ativo encontrado.
+      </p>
+    );
+  }
 
   return (
-    <div className="bg-[#f1f1f1] w-full flex flex-col gap-4 p-3 min-h-screen">
+    <div className="bg-[#f1f1f1] min-h-screen w-full flex flex-col gap-4 p-3">
       <CollaboratorsSearchBar
         onSelect={handleAddCollaborator}
         excludeIds={excludeIds}
       />
-      {selectedCollaborators.length === 0 && myEvaluations.length === 0 && (
-        <p className="text-sm text-gray-400 text-center py-8">
-          Selecione um colaborador na barra de busca para começar uma avaliação.
-        </p>
+      {isSubmit ? (
+        myEvaluations.map((evaluation) => (
+          <PeerEvaluationReadOnlyForm
+            key={evaluation.id}
+            collaboratorName={evaluation.evaluatee?.name || "Sem nome"}
+            collaboratorEmail={evaluation.evaluatee?.email || "Sem e-mail"}
+            initials={
+              evaluation.evaluatee?.name
+                ?.split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase() || "??"
+            }
+            score={evaluation.score ?? 0}
+            strengths={evaluation.strengths || ""}
+            improvements={evaluation.improvements || ""}
+            motivationLabel={
+              motivationLabels[evaluation.motivation] || "Não informado"
+            }
+            projects={
+              evaluation.projects?.length
+                ? evaluation.projects.map((p) => ({
+                    name: p.project?.name || "",
+                    period: p.period || 0,
+                  }))
+                : [
+                    {
+                      name: evaluation.projects?.[0]?.project?.name || "",
+                      period: evaluation.projects?.[0]?.period || 0,
+                    },
+                  ]
+            }
+          />
+        ))
+      ) : (
+        <PeerEvaluationForm
+          myEvaluations={myEvaluations}
+          setMyEvaluations={setMyEvaluations}
+          cycleId={activeCycleId}
+          isCycleFinished={isCycleFinished}
+        />
       )}
-
-      <PeerEvaluationForm
-        selectedCollaborators={selectedCollaborators}
-        onRemoveCollaborator={handleRemoveCollaborator}
-        myEvaluations={myEvaluations}
-        setMyEvaluations={setMyEvaluations}
-        cycleId={activeCycleId!}
-      />
     </div>
   );
 };
 
-export default PeerEvaluation;
+export default PeerEvaluationPage;

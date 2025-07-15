@@ -12,6 +12,8 @@ interface CriterionProps {
 }
 
 const Criterion = ({ name, score }: CriterionProps) => {
+
+
     const getColorClass = (score: number) => {
         if (score >= 4) return 'text-[#419958]';
         if (score >= 3) return 'text-[#F5AA30]';
@@ -24,6 +26,13 @@ const Criterion = ({ name, score }: CriterionProps) => {
         return 'bg-red-600';
     };
 
+    const adjustScoreBar = (score:number) => {
+        if(score > 5){
+            score = 5
+        }
+        return (score / 5) * 100;
+    }
+
     return (
         <div className="flex flex-col items-center gap-2 w-full sm:w-1/3">
             <div className="flex items-center gap-2">
@@ -35,7 +44,7 @@ const Criterion = ({ name, score }: CriterionProps) => {
             <div className="w-full h-2 bg-gray-200 rounded-full">
                 <div 
                     className={`h-full rounded-full ${getBarColorClass(score)}`}
-                    style={{ width: `${(score / 5) * 100}%` }}
+                    style={{ width: `${adjustScoreBar(score)}%` }}
                 />
             </div>
         </div>
@@ -43,6 +52,7 @@ const Criterion = ({ name, score }: CriterionProps) => {
 };
 
 interface EvaluationSummaryProps {
+    userId: number;
     name: string;
     role: string;
     autoAvaliacao: number;
@@ -58,15 +68,16 @@ interface EvaluationSummaryProps {
     currentScore?: number;
     currentJustification?: string;
     isEditing?: boolean;
-    id?: string;
     justificativaAutoAvaliacao?: string;
     justificativaMentor?: string;
     justificativaGestor?: string;
     justificativa360?: string;
     backendData?: any;
+    cycleId: number;
 }
 
 function EvaluationSummary({ 
+    userId,
     name,
     role,
     autoAvaliacao, 
@@ -85,7 +96,8 @@ function EvaluationSummary({
     justificativaMentor = '',
     justificativaGestor = '',
     justificativa360 = '',
-    backendData
+    backendData,
+    cycleId
 }: EvaluationSummaryProps) {
     
     const hasAllGrades =
@@ -177,25 +189,25 @@ function EvaluationSummary({
                 <div style="margin-bottom: 20px;">
                     <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Autoavaliação (${autoAvaliacao.toFixed(1)})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
-                        ${justificativaAutoAvaliacao || 'Justificativa não disponível'}
+                        ${backendData?.justificativaAutoAvaliacao || justificativaAutoAvaliacao || 'Justificativa não disponível'}
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Mentor (${notaMentor.toFixed(1)})</h4>
+                    <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
+                        ${backendData?.justificativaMentor || justificativaMentor || 'Justificativa não disponível'}
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
                     <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Gestor (${notaGestor.toFixed(1)})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
-                        ${justificativaMentor || 'Justificativa não disponível'}
-                    </div>
-                </div>
-                <div style="margin-bottom: 20px;">
-                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Gestor (${notaGestor.toFixed(1)})</h4>
-                    <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
-                        ${justificativaGestor || 'Justificativa não disponível'}
+                        ${backendData?.justificativaGestor || justificativaGestor || 'Justificativa não disponível'}
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
                     <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação 360° (${avaliacao360.toFixed(1)})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
-                        ${justificativa360 || 'Justificativa não disponível'}
+                        ${backendData?.justificativa360 || justificativa360 || 'Justificativa não disponível'}
                     </div>
                 </div>
                 ${typeof notaFinal === 'number' ? `
@@ -262,23 +274,23 @@ function EvaluationSummary({
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             {/* Download Modal */}
             {showDownloadModal && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 w-full max-w-sm flex flex-col items-center">
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 p-2 sm:p-4">
+                    <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 w-full max-w-xs sm:max-w-sm flex flex-col items-center">
                         {!showSpreadsheetOptions ? (
                             <>
-                                <div className="flex flex-col w-full space-y-3">
-                                    <h2 className="text-lg font-semibold mb-4 text-center">Escolha o formato de download</h2>
+                                <div className="flex flex-col w-full space-y-2 sm:space-y-3">
+                                    <h2 className="text-base sm:text-lg font-semibold mb-2 sm:mb-4 text-center">Escolha o formato de download</h2>
                                     <button
-                                        className="px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
+                                        className="px-4 sm:px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
                                         onClick={() => setShowSpreadsheetOptions(true)}
                                     >
                                         Planilha
                                     </button>
                                     <button
-                                        className="mb-3 px-6 py-2 bg-gray-250 text-gray-800 rounded hover:bg-gray-300 w-full"
+                                        className="mb-2 sm:mb-3 px-4 sm:px-6 py-2 bg-gray-250 text-gray-800 rounded hover:bg-gray-300 w-full"
                                         onClick={() => {
                                             handleDownloadPdf();
                                         }}
@@ -286,7 +298,7 @@ function EvaluationSummary({
                                         PDF
                                     </button>
                                     <button
-                                        className="mt-4 text-sm text-gray-500 hover:underline"
+                                        className="mt-2 sm:mt-4 text-xs sm:text-sm text-gray-500 hover:underline"
                                         onClick={handleCloseModals}
                                     >
                                         Cancelar
@@ -295,22 +307,22 @@ function EvaluationSummary({
                             </>
                         ) : (
                             <>
-                                <div className="flex flex-col w-full space-y-3">
-                                    <h2 className="text-lg font-semibold mb-4 text-center">Escolha o formato da planilha</h2>
+                                <div className="flex flex-col w-full space-y-2 sm:space-y-3">
+                                    <h2 className="text-base sm:text-lg font-semibold mb-2 sm:mb-4 text-center">Escolha o formato da planilha</h2>
                                     <button
-                                        className="mb-3 px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
-                                        onClick={() => handleDownloadSpreadsheet('csv')}
-                                    >
-                                        CSV
-                                    </button>
-                                    <button
-                                        className="px-6 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 w-full"
+                                        className="px-4 sm:px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
                                         onClick={() => handleDownloadSpreadsheet('xlsx')}
                                     >
                                         Excel
                                     </button>
                                     <button
-                                        className="mt-4 text-sm text-gray-500 hover:underline"
+                                        className="mb-2 sm:mb-3 px-4 sm:px-6 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 w-full"
+                                        onClick={() => handleDownloadSpreadsheet('csv')}
+                                    >
+                                        CSV
+                                    </button>
+                                    <button
+                                        className="mt-2 sm:mt-4 text-xs sm:text-sm text-gray-500 hover:underline"
                                         onClick={() => setShowSpreadsheetOptions(false)}
                                     >
                                         Voltar
@@ -324,8 +336,8 @@ function EvaluationSummary({
             )}
 
             {/* Content for PDF */}
-            <div ref={printRef} className="space-y-6">
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div ref={printRef} className="space-y-4 sm:space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4">
                     <Criterion name="Autoavaliação" score={autoAvaliacao} />
                     <Criterion name="Avaliação 360" score={avaliacao360} />
                     <Criterion name="Nota Gestor" score={notaGestor} />
@@ -335,14 +347,16 @@ function EvaluationSummary({
                     )}
                 </div>
 
-                <GenAITextBox/>
+                <div className="w-full">
+                    <GenAITextBox userId={userId} cycleId={cycleId}/>
+                </div>
 
             </div>
 
             {(!hasAllGrades || isEditing) ? (
                 <>
                     <div>
-                        <h3 className="text-sm font-semibold mb-2">Dê uma avaliação de 0 à 5</h3>
+                        <h3 className="text-xs sm:text-sm font-semibold mb-1 sm:mb-2">Dê uma avaliação de 0 à 5</h3>
                         <CommitteeStarRating 
                             score={currentScore} 
                             onChange={onStarRating || (() => {})} 
@@ -350,7 +364,7 @@ function EvaluationSummary({
                     </div>
                     
                     <div>
-                        <h3 className="text-sm font-semibold mb-2">Justifique sua nota</h3>
+                        <h3 className="text-xs sm:text-sm font-semibold mb-1 sm:mb-2">Justifique sua nota</h3>
                         <textarea 
                             className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F]"
                             rows={4}
@@ -360,7 +374,7 @@ function EvaluationSummary({
                         />
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4">
                         <button
                             className="px-4 py-2 bg-[#08605F] text-white rounded-md hover:bg-[#064a49] transition-colors"
                             onClick={onConcluir}

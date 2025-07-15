@@ -1,12 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import { CreateCicloDto } from './dto/create-ciclo.dto';
 import { UpdateCicloDto } from './dto/update-ciclo.dto';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, CycleStatus } from '@prisma/client';
+import { GeminiService } from '../ai/ai.service';
+import { AiBrutalFactsService } from '../ai-brutal-facts/ai-brutal-facts.service';
+import { CycleService } from './cycle.service';
+import { CycleTransferService } from './cycle-transfer.service';
+import { AiSummaryService } from 'src/ai-summary/ai-summary.service';
 
 const prisma = new PrismaClient();
 
 @Injectable()
 export class CiclosService {
+  constructor(
+    private readonly geminiService: GeminiService,
+    private readonly aiBrutalFactsService: AiBrutalFactsService,
+    private readonly cycleService: CycleService,
+    private readonly cycleTransferService: CycleTransferService,
+    private aiSummaryService: AiSummaryService,
+  ) {}
+
+  /**
+   * Gera nome de ciclo baseado no semestre
+   */
+  private generateSemesterCycleName(date: Date, suffix?: string): string {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const semester = month <= 6 ? 1 : 2;
+    return suffix ? `${year}.${semester} - ${suffix}` : `${year}.${semester}`;
+  }
+
   async create(createCicloDto: CreateCicloDto) {
     return prisma.evaluationCycle.create({
       data: {
@@ -27,17 +50,66 @@ export class CiclosService {
   }
 
   async update(id: number, updateCicloDto: UpdateCicloDto) {
-    return prisma.evaluationCycle.update({
+    // Converte datas string para Date
+    const dataToUpdate: any = { ...updateCicloDto };
+    if (dataToUpdate.startDate && typeof dataToUpdate.startDate === 'string') {
+      dataToUpdate.startDate = new Date(dataToUpdate.startDate);
+    }
+    if (dataToUpdate.endDate && typeof dataToUpdate.endDate === 'string') {
+      dataToUpdate.endDate = new Date(dataToUpdate.endDate);
+    }
+
+    const updatedCycle = await prisma.evaluationCycle.update({
       where: { id },
       data: {
-        ...updateCicloDto,
+        ...dataToUpdate,
         status: updateCicloDto.status as any,
       },
     });
+
+    // Se o ciclo foi fechado (CLOSED ou PUBLISHED), acionar geração de insight
+    if (
+      updateCicloDto.status === 'CLOSED' ||
+      updateCicloDto.status === 'PUBLISHED'
+    ) {
+      // Chama o método de geração de insight do serviço de Brutal Facts
+      await this.aiBrutalFactsService.getInsightForLastCompletedCycle();
+    }
+
+    return updatedCycle;
   }
 
   async remove(id: number) {
     return prisma.evaluationCycle.delete({ where: { id } });
+  }
+
+  async getCurrentCycle(status?: string) {
+    // Buscar o ciclo mais recente do status especificado (independente do status)
+    const currentCycle = await prisma.evaluationCycle.findFirst({
+      where: {
+        ...(status ? { status: status as any } : {}),
+      },
+      orderBy: { startDate: 'desc' },
+    });
+
+    if (!currentCycle) {
+      return null;
+    }
+
+    const today = new Date();
+    const endDate = new Date(currentCycle.endDate);
+    const diffTime = endDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return {
+      id: currentCycle.id,
+      name: currentCycle.name,
+      startDate: currentCycle.startDate,
+      endDate: currentCycle.endDate,
+      status: currentCycle.status,
+      daysRemaining: Math.max(0, diffDays),
+      isOverdue: diffDays < 0,
+    };
   }
 
   async getHistoricoCiclos(userId: number) {
@@ -52,18 +124,20 @@ export class CiclosService {
       include: { items: true },
     });
 
-    return notas.map(nota => {
-      const selfEval = selfEvals.find(se => se.cycleId === nota.cycleId);
+    return notas.map((nota) => {
+      const selfEval = selfEvals.find((se) => se.cycleId === nota.cycleId);
       let self = '-';
       if (selfEval && selfEval.items && selfEval.items.length > 0) {
         // Calcula a média dos scores dos items
-        const scores = selfEval.items.map(item => item.score);
+        const scores = selfEval.items.map((item) => item.score);
         const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
         self = avg.toFixed(2);
       }
       return {
         cycle: nota.cycle.name,
-        status: nota.cycle.status === 'IN_PROGRESS' ? 'Em andamento' : 'Finalizado',
+        status: nota.cycle.status.startsWith('IN_PROGRESS')
+          ? 'Em andamento'
+          : 'Finalizado',
         self,
         exec: nota.executionScore ?? '-',
         posture: nota.postureScore ?? '-',
@@ -73,144 +147,164 @@ export class CiclosService {
     });
   }
 
-  async getManagerDashboardStats() {
-    // Buscar o ciclo atual (mais recente)
-    const currentCycle = await prisma.evaluationCycle.findFirst({
-      orderBy: { startDate: 'desc' }
-    });
+  async getManagerDashboardStats(managerId: number) {
+    // Buscar o ciclo atual usando o método existente com status IN_PROGRESS_MANAGER
+    const currentCycle = await this.getCurrentCycle('IN_PROGRESS_MANAGER');
 
     if (!currentCycle) {
       return {
-        totalEvaluations: "0",
-        evaluatedCollaborators: "0",
-        pendingCollaborators: "0",
-        averageScore: "0.0/5",
-        evaluationTrend: "0% este mês",
-        collaboratorTrend: "0% este mês",
-        scoreTrend: "0.0 este mês",
-        totalCollaborators: "0"
+        totalEvaluations: '0',
+        evaluatedCollaborators: '0',
+        pendingCollaborators: '0',
+        averageScore: '0.0/5',
+        evaluationTrend: '0% este mês',
+        collaboratorTrend: '0% este mês',
+        scoreTrend: '0.0 este mês',
+        totalCollaborators: '0',
       };
     }
 
-    // Buscar todos os usuários colaboradores
-    const collaborators = await prisma.user.findMany({
-      where: {
-        roles: {
-          some: {
-            role: 'COLLABORATOR'
-          }
-        },
-        active: true
-      },
+    // Buscar o gestor e seus colaboradores
+    const manager = await prisma.user.findUnique({
+      where: { id: managerId },
       include: {
-        roles: true,
-        unit: true,
-        position: true,
-        finalScores: {
-          where: {
-            cycleId: currentCycle.id
-          }
+        manages: {
+          include: {
+            collaborator: {
+              include: {
+                roles: true,
+                finalScores: {
+                  where: { cycleId: currentCycle.id },
+                },
+                selfEvaluations: {
+                  where: { cycleId: currentCycle.id },
+                },
+                managerEvaluationsReceived: {
+                  where: { cycleId: currentCycle.id },
+                },
+              },
+            },
+          },
         },
-        selfEvaluations: {
-          where: {
-            cycleId: currentCycle.id
-          }
-        },
-        managerEvaluationsReceived: {
-          where: {
-            cycleId: currentCycle.id
-          }
-        }
-      }
+      },
     });
 
-    // Calcular estatísticas para o ciclo atual
+    if (!manager) {
+      return {
+        totalEvaluations: '0',
+        evaluatedCollaborators: '0',
+        pendingCollaborators: '0',
+        averageScore: '0.0/5',
+        evaluationTrend: '0% este mês',
+        collaboratorTrend: '0% este mês',
+        scoreTrend: '0.0 este mês',
+        totalCollaborators: '0',
+      };
+    }
+
+    // Lista de colaboradores do gestor, exceto ele mesmo e apenas ativos
+    const collaborators = manager.manages
+      .map((m) => m.collaborator)
+      .filter((c) => c.id !== managerId && c.active);
+
     const totalCollaborators = collaborators.length;
-    
-    // Total de avaliações = total de colaboradores (todas as avaliações que deveriam ser feitas)
     const totalEvaluations = totalCollaborators;
-
-    // Colaboradores com pelo menos uma avaliação final no ciclo atual
-    const evaluatedCollaborators = collaborators.filter(collab => 
-      collab.finalScores.length > 0
+    const evaluatedCollaborators = collaborators.filter(
+      (collab) => collab.finalScores.length > 0,
     ).length;
-
-    // Colaboradores pendentes (sem avaliação final no ciclo atual)
     const pendingCollaborators = totalCollaborators - evaluatedCollaborators;
 
     // Calcular média de desempenho - nota do ciclo atual
     const currentCycleScores = collaborators
-      .filter(collab => collab.finalScores.length > 0)
-      .map(collab => collab.finalScores[0].finalScore!)
-      .filter(score => score !== null && score !== undefined);
+      .filter((collab) => collab.finalScores.length > 0)
+      .map((collab) => collab.finalScores[0].finalScore!)
+      .filter((score) => score !== null && score !== undefined);
 
-    const averageScore = currentCycleScores.length > 0 
-      ? (currentCycleScores.reduce((sum, score) => sum + score, 0) / currentCycleScores.length).toFixed(1)
-      : '0.0';
+    const averageScore =
+      currentCycleScores.length > 0
+        ? (
+            currentCycleScores.reduce((sum, score) => sum + score, 0) /
+            currentCycleScores.length
+          ).toFixed(1)
+        : '0.0';
 
-    // Calcular tendências baseadas em dados reais
+    // Calcular tendências baseadas em dados reais (opcional: pode ser ajustado para comparar só entre colaboradores do gestor)
     // Buscar ciclo anterior para comparação
     const previousCycle = await prisma.evaluationCycle.findMany({
       orderBy: { startDate: 'desc' },
       skip: 1,
-      take: 1
+      take: 1,
     });
 
-    let evaluationTrend = "0% este mês";
-    let collaboratorTrend = "0% este mês";
-    let scoreTrend = "0.0 este mês";
+    let evaluationTrend = '0% este mês';
+    let collaboratorTrend = '0% este mês';
+    let scoreTrend: string | undefined = undefined;
 
     if (previousCycle.length > 0) {
       const prevCycle = previousCycle[0];
-      
-      // Comparar com ciclo anterior
-      const prevTotalCollaborators = await prisma.user.count({
-        where: {
-          roles: {
-            some: {
-              role: 'COLLABORATOR'
-            }
+      // Buscar colaboradores do gestor no ciclo anterior
+      const prevManager = await prisma.user.findUnique({
+        where: { id: managerId },
+        include: {
+          manages: {
+            include: {
+              collaborator: {
+                include: {
+                  roles: true,
+                  finalScores: {
+                    where: { cycleId: prevCycle.id },
+                  },
+                },
+              },
+            },
           },
-          active: true
-        }
-      });
-
-      const prevEvaluatedCollabs = await prisma.finalScore.count({
-        where: { cycleId: prevCycle.id }
-      });
-
-      const prevScores = await prisma.finalScore.findMany({
-        where: { 
-          cycleId: prevCycle.id,
-          finalScore: { not: null }
         },
-        select: { finalScore: true }
       });
-
-      const prevAverageScore = prevScores.length > 0 
-        ? prevScores.reduce((sum, score) => sum + score.finalScore!, 0) / prevScores.length
-        : 0;
-
+      const prevCollaborators = prevManager
+        ? prevManager.manages
+            .map((m) => m.collaborator)
+            .filter((c) => c.id !== managerId && c.active)
+        : [];
+      const prevTotalCollaborators = prevCollaborators.length;
+      const prevEvaluatedCollabs = prevCollaborators.filter(
+        (collab) => collab.finalScores.length > 0,
+      ).length;
+      const prevScores = prevCollaborators
+        .filter((collab) => collab.finalScores.length > 0)
+        .map((collab) => collab.finalScores[0].finalScore!)
+        .filter((score) => score !== null && score !== undefined);
+      const prevAverageScore =
+        prevScores.length > 0
+          ? prevScores.reduce((sum, score) => sum + score, 0) /
+            prevScores.length
+          : 0;
       // Calcular tendências
       if (prevTotalCollaborators > 0) {
-        const evalChange = ((totalEvaluations - prevTotalCollaborators) / prevTotalCollaborators * 100).toFixed(0);
+        const evalChange = (
+          ((totalEvaluations - prevTotalCollaborators) /
+            prevTotalCollaborators) *
+          100
+        ).toFixed(0);
         evaluationTrend = `${evalChange}% este mês`;
       }
-
       if (prevEvaluatedCollabs > 0) {
-        const collabChange = ((evaluatedCollaborators - prevEvaluatedCollabs) / prevEvaluatedCollabs * 100).toFixed(0);
+        const collabChange = (
+          ((evaluatedCollaborators - prevEvaluatedCollabs) /
+            prevEvaluatedCollabs) *
+          100
+        ).toFixed(0);
         collaboratorTrend = `${collabChange}% este mês`;
       }
-
       if (prevAverageScore > 0) {
-        const scoreChange = (parseFloat(averageScore) - prevAverageScore).toFixed(1);
+        const scoreChange = (
+          parseFloat(averageScore) - prevAverageScore
+        ).toFixed(1);
         scoreTrend = `${scoreChange} este mês`;
       }
     } else {
-      // Se não há ciclo anterior, usar valores padrão positivos
-      evaluationTrend = "+12% este mês";
-      collaboratorTrend = "+5% este mês";
-      scoreTrend = "+0.3 este mês";
+      evaluationTrend = '+12% este mês';
+      collaboratorTrend = '+5% este mês';
+      scoreTrend = '+0.3 este mês';
     }
 
     return {
@@ -221,26 +315,19 @@ export class CiclosService {
       evaluationTrend,
       collaboratorTrend,
       scoreTrend,
-      totalCollaborators: totalCollaborators.toString()
+      totalCollaborators: totalCollaborators.toString(),
     };
   }
 
   async getBrutalFactsData() {
-    // Buscar o último ciclo concluído (CLOSED ou PUBLISHED)
-    const lastCompletedCycle = await prisma.evaluationCycle.findFirst({
-      where: {
-        status: {
-          in: ['CLOSED', 'PUBLISHED']
-        }
-      },
-      orderBy: { startDate: 'desc' }
-    });
-
-    if (!lastCompletedCycle) {
+    // Buscar dados já processados do serviço de Brutal Facts
+    const brutalFactsData =
+      await this.aiBrutalFactsService.getBrutalFactsDataForLastCompletedCycle();
+    if (!brutalFactsData) {
       return {
-        insights: "Nenhum ciclo concluído encontrado.",
+        insights: 'Nenhum ciclo concluído encontrado.',
         chartData: [],
-        collaborators: []
+        collaborators: [],
       };
     }
 
@@ -248,175 +335,338 @@ export class CiclosService {
     const completedCycles = await prisma.evaluationCycle.findMany({
       where: {
         status: {
-          in: ['CLOSED', 'PUBLISHED']
-        }
+          in: ['CLOSED', 'PUBLISHED'],
+        },
       },
       orderBy: { startDate: 'desc' },
-      take: 5
+      take: 5,
     });
 
-    const chartData = await Promise.all(completedCycles.map(async (cycle) => {
-      const scores = await prisma.finalScore.findMany({
-        where: { 
-          cycleId: cycle.id,
-          finalScore: { not: null }
-        },
-        select: { finalScore: true }
-      });
+    const chartData = await Promise.all(
+      completedCycles.map(async (cycle) => {
+        const scores = await prisma.finalScore.findMany({
+          where: {
+            cycleId: cycle.id,
+            finalScore: { not: null },
+          },
+          select: { finalScore: true },
+        });
 
-      const averageScore = scores.length > 0 
-        ? scores.reduce((sum, score) => sum + score.finalScore!, 0) / scores.length
-        : 0;
+        const averageScore =
+          scores.length > 0
+            ? scores.reduce((sum, score) => sum + score.finalScore!, 0) /
+              scores.length
+            : 0;
 
-      return {
-        ciclo: cycle.name,
-        valor: parseFloat(averageScore.toFixed(1))
-      };
-    }));
+        return {
+          ciclo: cycle.name,
+          valor: parseFloat(averageScore.toFixed(1)),
+        };
+      }),
+    );
 
-    // Buscar colaboradores com notas finais do último ciclo concluído
-    const collaborators = await prisma.user.findMany({
+    // Calcular aumento em relação ao ciclo anterior (scoreTrend)
+    let scoreTrend: string | undefined = undefined;
+    const lastCycleName = brutalFactsData.cycleName;
+    const previousCycle = await prisma.evaluationCycle.findMany({
       where: {
-        roles: {
-          some: {
-            role: 'COLLABORATOR'
-          }
+        status: {
+          in: ['CLOSED', 'PUBLISHED'],
         },
-        active: true,
-        finalScores: {
-          some: {
-            cycleId: lastCompletedCycle.id
-          }
-        }
+        name: { not: lastCycleName },
       },
-      include: {
-        position: true,
-        finalScores: {
-          where: {
-            cycleId: lastCompletedCycle.id
-          }
-        },
-        selfEvaluations: {
-          where: {
-            cycleId: lastCompletedCycle.id
-          },
-          include: {
-            items: true
-          }
-        },
-        managerEvaluationsReceived: {
-          where: {
-            cycleId: lastCompletedCycle.id
-          },
-          include: {
-            items: true
-          }
-        },
-        peerEvaluationsReceived: {
-          where: {
-            cycleId: lastCompletedCycle.id
-          }
-        }
-      }
+      orderBy: { startDate: 'desc' },
+      take: 1,
     });
-
-    // Calcular médias por tipo de avaliação
-    const autoScores: number[] = [];
-    const managerScores: number[] = [];
-    const peerScores: number[] = [];
-    const finalScores: number[] = [];
-
-    collaborators.forEach(collab => {
-      // Autoavaliação - média dos itens
-      if (collab.selfEvaluations.length > 0 && collab.selfEvaluations[0].items.length > 0) {
-        const avgSelf = collab.selfEvaluations[0].items.reduce((sum, item) => sum + item.score, 0) / collab.selfEvaluations[0].items.length;
-        autoScores.push(avgSelf);
-      }
-
-      // Avaliação do gestor - média dos itens
-      if (collab.managerEvaluationsReceived.length > 0 && collab.managerEvaluationsReceived[0].items.length > 0) {
-        const avgManager = collab.managerEvaluationsReceived[0].items.reduce((sum, item) => sum + item.score, 0) / collab.managerEvaluationsReceived[0].items.length;
-        managerScores.push(avgManager);
-      }
-
-      // Avaliação 360 - média das avaliações dos pares
-      if (collab.peerEvaluationsReceived.length > 0) {
-        const avgPeer = collab.peerEvaluationsReceived.reduce((sum, peerEval) => sum + peerEval.score, 0) / collab.peerEvaluationsReceived.length;
-        peerScores.push(avgPeer);
-      }
-
-      // Nota final (equalização)
-      if (collab.finalScores.length > 0 && collab.finalScores[0].finalScore !== null) {
-        finalScores.push(collab.finalScores[0].finalScore!);
-      }
-    });
-
-    // Calcular médias gerais
-    const averageAuto = autoScores.length > 0 ? (autoScores.reduce((sum, score) => sum + score, 0) / autoScores.length).toFixed(1) : '0.0';
-    const averageManager = managerScores.length > 0 ? (managerScores.reduce((sum, score) => sum + score, 0) / managerScores.length).toFixed(1) : '0.0';
-    const averagePeer = peerScores.length > 0 ? (peerScores.reduce((sum, score) => sum + score, 0) / peerScores.length).toFixed(1) : '0.0';
-    const averageFinal = finalScores.length > 0 ? (finalScores.reduce((sum, score) => sum + score, 0) / finalScores.length).toFixed(1) : '0.0';
-
-    const collaboratorsList = collaborators.map(collab => {
-      // Calcular nota de autoavaliação
-      let autoNota = '-';
-      if (collab.selfEvaluations.length > 0 && collab.selfEvaluations[0].items.length > 0) {
-        const avgSelf = collab.selfEvaluations[0].items.reduce((sum, item) => sum + item.score, 0) / collab.selfEvaluations[0].items.length;
-        autoNota = avgSelf.toFixed(1);
-      }
-
-      // Calcular nota do gestor
-      let managerNota = '-';
-      if (collab.managerEvaluationsReceived.length > 0 && collab.managerEvaluationsReceived[0].items.length > 0) {
-        const avgManager = collab.managerEvaluationsReceived[0].items.reduce((sum, item) => sum + item.score, 0) / collab.managerEvaluationsReceived[0].items.length;
-        managerNota = avgManager.toFixed(1);
-      }
-
-      // Calcular nota 360
-      let peerNota = '-';
-      if (collab.peerEvaluationsReceived.length > 0) {
-        const avgPeer = collab.peerEvaluationsReceived.reduce((sum, peerEval) => sum + peerEval.score, 0) / collab.peerEvaluationsReceived.length;
-        peerNota = avgPeer.toFixed(1);
-      }
-
-      // Nota final (equalização)
-      const finalNota = collab.finalScores[0]?.finalScore?.toFixed(1) || '-';
-
-      return {
-        nome: collab.name,
-        cargo: collab.position?.name || 'Cargo não definido',
-        nota: finalNota,
-        autoNota,
-        managerNota,
-        peerNota,
-        finalNota
-      };
-    });
-
-    // Gerar insights baseados nos dados do último ciclo concluído
-    const topPerformers = collaboratorsList.filter(c => parseFloat(c.nota) >= 4.5).length;
-    const totalEvaluated = collaboratorsList.length;
-    
-    let insights = "";
-    if (topPerformers === 0) {
-      insights = "No employees achieved top performer status (4.5+). This indicates either grade inflation avoidance or a fundamental talent acquisition/development problem.";
-    } else if (topPerformers === totalEvaluated) {
-      insights = "All employees achieved top performer status (4.5+). This might indicate grade inflation and requires attention.";
-    } else {
-      insights = `${topPerformers} out of ${totalEvaluated} employees achieved top performer status (4.5+).`;
+    if (previousCycle.length > 0) {
+      const prevCycle = previousCycle[0];
+      // Buscar notas finais do ciclo anterior
+      const prevScores = await prisma.finalScore.findMany({
+        where: {
+          cycleId: prevCycle.id,
+          finalScore: { not: null },
+        },
+        select: { finalScore: true },
+      });
+      const prevAverageFinal =
+        prevScores.length > 0
+          ? prevScores.reduce((sum, score) => sum + score.finalScore!, 0) /
+            prevScores.length
+          : 0;
+      scoreTrend =
+        (parseFloat(brutalFactsData.averageFinal) - prevAverageFinal)
+          .toFixed(1)
+          .toString() + ' este ciclo';
     }
 
     return {
-      insights,
+      insights: brutalFactsData.insight,
       chartData,
-      collaborators: collaboratorsList,
-      cycleName: lastCompletedCycle.name,
-      averageScore: `${averageFinal}/5`,
-      totalEvaluated: totalEvaluated.toString(),
-      averageAuto: `${averageAuto}/5`,
-      averageManager: `${averageManager}/5`,
-      averagePeer: `${averagePeer}/5`,
-      averageFinal: `${averageFinal}/5`
+      collaborators: brutalFactsData.collaboratorsList,
+      cycleName: brutalFactsData.cycleName,
+      averageScore: `${brutalFactsData.averageFinal}/5`,
+      totalEvaluated: brutalFactsData.totalEvaluated.toString(),
+      averageAuto: `${brutalFactsData.averageAuto}/5`,
+      averageManager: `${brutalFactsData.averageManager}/5`,
+      averagePeer: `${brutalFactsData.averagePeer}/5`,
+      averageFinal: `${brutalFactsData.averageFinal}/5`,
+      scoreTrend,
     };
+  }
+
+  async getDebugCycles() {
+    const allCycles = await prisma.evaluationCycle.findMany({
+      orderBy: { startDate: 'desc' },
+    });
+
+    return allCycles.map((cycle) => ({
+      id: cycle.id,
+      name: cycle.name,
+      status: cycle.status,
+      startDate: cycle.startDate,
+      endDate: cycle.endDate,
+    }));
+  }
+
+  async closeCollaboratorAndCreateManager() {
+    // Buscar o ciclo de colaborador atual
+    const collaboratorCycle = await this.cycleService.getMostRecentCycle(
+      'IN_PROGRESS_COLLABORATOR' as CycleStatus,
+    );
+
+    if (!collaboratorCycle) {
+      throw new Error('Nenhum ciclo de colaborador em andamento encontrado');
+    }
+
+    // Atualizar o ciclo para status de manager e ajustar datas
+    const updatedCycle = await prisma.evaluationCycle.update({
+      where: { id: collaboratorCycle.id },
+      data: {
+        status: 'IN_PROGRESS_MANAGER' as CycleStatus,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias
+      },
+    });
+
+    return {
+      message: 'Ciclo de colaborador alterado para ciclo de manager!',
+      cycleId: updatedCycle.id,
+      cycle: updatedCycle,
+    };
+  }
+
+  async closeManagerAndCreateCommittee() {
+    // Buscar o ciclo de manager atual
+    const managerCycle = await this.cycleService.getMostRecentCycle(
+      'IN_PROGRESS_MANAGER' as CycleStatus,
+    );
+
+    if (!managerCycle) {
+      throw new Error('Nenhum ciclo de manager em andamento encontrado');
+    }
+
+    // Atualizar o ciclo para status de comitê e ajustar datas
+    const updatedCycle = await prisma.evaluationCycle.update({
+      where: { id: managerCycle.id },
+      data: {
+        status: 'IN_PROGRESS_COMMITTEE' as CycleStatus,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias
+      },
+    });
+
+    return {
+      message: 'Ciclo de manager alterado para ciclo de comitê!',
+      cycleId: updatedCycle.id,
+      cycle: updatedCycle,
+    };
+  }
+
+  async closeCommittee() {
+    // Buscar o ciclo de comitê atual
+    const committeeCycle = await this.cycleService.getMostRecentCycle(
+      'IN_PROGRESS_COMMITTEE' as CycleStatus,
+    );
+
+    if (!committeeCycle) {
+      throw new Error('Nenhum ciclo de comitê em andamento encontrado');
+    }
+
+    // Fechar o ciclo
+    const updatedCycle = await prisma.evaluationCycle.update({
+      where: { id: committeeCycle.id },
+      data: { status: 'PUBLISHED' as CycleStatus },
+    });
+
+    // Buscar usuários que participaram desse ciclo (tiveram avaliações)
+    const evaluatedUserIds = await prisma.evaluationCycleUser.findMany({
+      where: { cycleId: committeeCycle.id },
+      select: { userId: true },
+    });
+
+    const uniqueUserIds = [...new Set(evaluatedUserIds.map((u) => u.userId))];
+
+    let generated = 0;
+
+    for (const userId of uniqueUserIds) {
+      try {
+        // Gera resumo completo, se ainda não existir
+        const existing = await this.aiSummaryService.getSummary(userId, committeeCycle.id);
+        if (!existing) {
+          await this.aiSummaryService.generateSummary({
+            userId,
+            cycleId: committeeCycle.id,
+          });
+        }
+
+        // Sempre gera o lean summary atualizado
+        await this.aiSummaryService.generateLeanSummary({
+          userId,
+          cycleId: committeeCycle.id,
+        });
+        generated++;
+      } catch (err) {
+        console.warn(`Erro ao gerar lean summary para user ${userId}:`, err.message);
+      }
+    }
+
+    return {
+      message: `Ciclo de comitê fechado com sucesso! Foram gerados ${generated} resumos finais.`,
+      cycleId: updatedCycle.id,
+      cycle: updatedCycle,
+    };
+  }
+
+
+  /**
+   * Cria um novo ciclo de colaborador.
+   */
+  async createCollaboratorCycle(cycleData?: {
+    name?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }) {
+    // Verificar se já existe um ciclo de colaborador em andamento
+    const existingCycle = await this.cycleService.getMostRecentCycle(
+      'IN_PROGRESS_COLLABORATOR' as CycleStatus,
+    );
+    if (existingCycle) {
+      throw new Error('Já existe um ciclo de colaborador em andamento');
+    }
+
+    // Definir datas padrão se não fornecidas
+    const startDate = cycleData?.startDate || new Date();
+    const endDate =
+      cycleData?.endDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 dias
+
+    // Gerar nome baseado no semestre
+    const name = cycleData?.name || this.generateSemesterCycleName(startDate);
+
+    // Criar o ciclo de colaborador
+    const collaboratorCycle = await this.cycleService.createCycle({
+      name,
+      startDate,
+      endDate,
+      status: 'IN_PROGRESS_COLLABORATOR' as CycleStatus,
+    });
+
+    return {
+      message: 'Ciclo de colaborador criado com sucesso!',
+      collaboratorCycleId: collaboratorCycle.id,
+      cycle: collaboratorCycle,
+    };
+  }
+
+  async updateCycleStatus(id: number, newStatus: CycleStatus) {
+    // Atualiza o status do ciclo
+    const updated = await prisma.evaluationCycle.update({
+      where: { id },
+      data: { status: newStatus },
+    });
+
+    // Exemplo: se fechou colaborador, cria ciclo de manager
+    if (newStatus === 'CLOSED') {
+      // Verifica se era um ciclo de colaborador
+      if (
+        updated.status === 'CLOSED' &&
+        updated.name &&
+        updated.name.toLowerCase().includes('colaborador')
+      ) {
+        // Cria ciclo de manager automaticamente, se necessário
+        // ... lógica opcional ...
+      }
+    }
+
+    // Retorna o ciclo atualizado
+    return updated;
+  }
+
+  async closeManager() {
+    const currentCycle = await prisma.evaluationCycle.findFirst({
+      where: {
+        status: 'IN_PROGRESS_MANAGER',
+      },
+    });
+
+    if (!currentCycle) {
+      throw new Error(
+        'Nenhum ciclo com status IN_PROGRESS_MANAGER foi encontrado.',
+      );
+    }
+
+    // Atualiza o ciclo para CLOSED
+    const updatedCycle = await prisma.evaluationCycle.update({
+      where: { id: currentCycle.id },
+      data: { status: 'CLOSED' },
+    });
+
+    // Busca os colaboradores avaliados nesse ciclo (que possuem qualquer tipo de avaliação)
+    const evaluatedUserIds = await prisma.evaluationCycleUser.findMany({
+      where: { cycleId: currentCycle.id },
+      select: { userId: true },
+    });
+
+    const uniqueUserIds = [...new Set(evaluatedUserIds.map((u) => u.userId))];
+
+    // Gera resumo com IA para cada usuário
+    for (const userId of uniqueUserIds) {
+      try {
+        await this.aiSummaryService.generateSummary({
+          userId,
+          cycleId: currentCycle.id,
+        });
+      } catch (err) {
+        console.warn(`Erro ao gerar resumo para user ${userId}:`, err.message);
+      }
+    }
+
+    return {
+      message: `Ciclo fechado e resumos gerados para ${uniqueUserIds.length} colaboradores.`,
+      cycle: updatedCycle,
+    };
+  }
+
+  async openCommitteePhase() {
+    const closedCycle = await prisma.evaluationCycle.findFirst({
+      where: {
+        status: 'CLOSED',
+      },
+      orderBy: {
+        endDate: 'desc', // ou 'createdAt' se preferir o mais recente
+      },
+    });
+
+    if (!closedCycle) {
+      throw new Error('Nenhum ciclo com status CLOSED foi encontrado.');
+    }
+
+    const updatedCycle = await prisma.evaluationCycle.update({
+      where: { id: closedCycle.id },
+      data: {
+        status: 'IN_PROGRESS_COMMITTEE',
+      },
+    });
+
+    return updatedCycle;
   }
 }

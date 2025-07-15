@@ -1,13 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { getUsersWithEvaluationsForCommittee } from '../../services/api';
+import { Link, useNavigate } from 'react-router-dom';
+import { getUsersWithEvaluationsForCommittee, fetchActiveEvaluationCycle, getSignificantDrops } from '../../services/api';
 import { exportEvaluationToExcel, exportEvaluationToCSV, transformBackendDataToExport } from '../../services/export.service';
 import InfoCard from "../../components/Committee/CommitteeHome/InfoCard";
 import CircularProgress from "../../components/Committee/CirculaProgress";
 import Colaborators from "../../components/Committee/ColaboratorsCommittee";
 import persons from "../../assets/committee/two-persons.png";
 import { UserIcon } from '../../components/UserIcon';
-import { FaDownload } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
+import { IoIosSearch } from 'react-icons/io';
+import { FaChevronRight } from 'react-icons/fa';
+import { translateRole } from '../../utils/roleTranslations';
 
 interface Collaborator {
     id: number;
@@ -21,19 +24,24 @@ interface Collaborator {
     notaGestor: number;
     notaFinal?: number;
     hasAllEvaluations?: boolean;
+    dropInfo?: { text: string; percent: number };
 }
 
 function Committee(){
+    const { user } = useAuth();
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
-    const [showBulkExportOptions, setShowBulkExportOptions] = useState(false);
     const [fullUserData, setFullUserData] = useState<any[]>([]);
+    const [cycle, setCycle] = useState<any>(null);
+    const [remainingDays, setRemainingDays] = useState<number | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const navigate = useNavigate();
 
     const fetchCollaborators = async () => {
         try {
             const users = await getUsersWithEvaluationsForCommittee();
             setFullUserData(users); // Store full data for export
             
-            const formattedCollaborators = users.map((user: any) => {
+            const formattedCollaborators = await Promise.all(users.map(async (user: any) => {
                 const evaluations = user.evaluationsEvaluated || [];
                 
                 const getScore = (type: string): number => {
@@ -49,6 +57,21 @@ function Committee(){
                 const hasAllEvaluations = requiredTypes.every(type => typesPresent.includes(type));
                 const state = hasAllEvaluations ? 'finalizado' : 'pendente';
 
+                // Fetch significant drops if we have an active cycle
+                let dropInfo = undefined;
+                if (cycle?.id) {
+                    try {
+                        const dropData = await getSignificantDrops(user.id, cycle.id);
+                        if (dropData) {
+                            dropInfo = {
+                                text: dropData.message,
+                                percent: dropData.dropPercent
+                            };
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to fetch drops for user ${user.id}:`, error);
+                    }
+                }
 
                 return {
                     id: user.id,
@@ -62,26 +85,43 @@ function Committee(){
                     notaGestor: getScore('MANAGER'),
                     notaFinal: finalEval ? finalEval.score : undefined,
                     hasAllEvaluations: hasAllEvaluations,
+                    dropInfo: dropInfo,
                 };
-            });
+            }));
             setCollaborators(formattedCollaborators);
         } catch (error) {
             console.error("Failed to fetch collaborators:", error);
         }
     };
 
+    const fetchCycle = async () => {
+        try {
+            const data = await fetchActiveEvaluationCycle('HR');
+            setCycle(data);
+            if (data && data.endDate) {
+                const endDate = new Date(data.endDate);
+                const today = new Date();
+                const diffTime = endDate.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                setRemainingDays(Math.max(0, diffDays));
+            }
+        } catch (e) {
+            setCycle(null);
+            setRemainingDays(null);
+        }
+    };
+
     useEffect(() => {
         fetchCollaborators();
+        fetchCycle();
     }, []);
 
-    // Calculate remaining days until July 12, 2025
-    const getRemainingDays = () => {
-        const deadline = new Date('2025-07-12');
-        const today = new Date();
-        const diffTime = deadline.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return Math.max(0, diffDays);
-    };
+    // Refetch collaborators when cycle changes to get drop info
+    useEffect(() => {
+        if (cycle) {
+            fetchCollaborators();
+        }
+    }, [cycle]);
 
     // Calculate statistics
     const stats = useMemo(() => {
@@ -93,83 +133,31 @@ function Committee(){
         return { total, finalized, pending, percentage };
     }, [collaborators]);
 
-    const remainingDays = getRemainingDays();
-
-    // Export functionality for all users
-    const handleBulkExport = (type: 'csv' | 'xlsx') => {
-        fullUserData.forEach((user, index) => {
-            setTimeout(() => {
-                try {
-                    const evaluationData = transformBackendDataToExport(user);
-                    const fileName = `${user.name.replace(/\s+/g, '_')}_${type === 'xlsx' ? 'xlsx' : 'csv'}`;
-                    if (type === 'csv') {
-                        exportEvaluationToCSV(evaluationData, fileName);
-                    } else {
-                        exportEvaluationToExcel(evaluationData, fileName);
-                    }
-                } catch (error) {
-                    console.error(`Error exporting ${user.name}:`, error);
-                }
-            }, index * 100); // 100ms delay 
-        });
-    };
+    // Filtered collaborators for search
+    const filteredCollaborators = useMemo(() => {
+        if (!searchTerm) return collaborators;
+        return collaborators.filter(c =>
+            c.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [collaborators, searchTerm]);
 
     return(
-        <div className="w-full min-h-screen bg-gray-300">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-5 gap-4">
-                <h1 className="text-xl sm:text-2xl">
-                    <span className="font-bold">Olá,</span> comite
+        <div className="w-full min-h-screen bg-[#f1f1f1]">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 sm:p-5 gap-2 sm:gap-4">
+                <h1 className="text-lg sm:text-xl md:text-2xl">
+                    <span className="font-bold">Olá,</span> {user?.name || 'usuário'}
                 </h1>
-                <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowBulkExportOptions(!showBulkExportOptions)}
-                            className="px-3 py-1.5 bg-[#08605F] text-white rounded-md hover:bg-[#064a49] transition-colors flex items-center gap-1.5 text-sm"
-                        >
-                            <FaDownload className="w-3 h-3" />
-                            Exportar tudo
-                        </button>
-                        
-                        {showBulkExportOptions && (
-                            <>
-                                <div 
-                                    className="fixed inset-0 z-40" 
-                                    onClick={() => setShowBulkExportOptions(false)}
-                                />
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
-                                    <div className="py-1">
-                                        <button
-                                            onClick={() => {
-                                                handleBulkExport('xlsx');
-                                                setShowBulkExportOptions(false);
-                                            }}
-                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                        >
-                                            Exportar Excel (.xlsx)
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                handleBulkExport('csv');
-                                                setShowBulkExportOptions(false);
-                                            }}
-                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                        >
-                                            Exportar CSV (.csv)
-                                        </button>
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                    <UserIcon initials="CN" size={40} />
+                <div className="flex items-center gap-2 sm:gap-4">
+                    <UserIcon initials={user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'CN'} size={36} />
                 </div>
             </div>
-
-            <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 m-4 sm:m-5">
+            <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-2 sm:gap-4 m-2 sm:m-5">
                 <InfoCard 
-                    name="Prazo" 
-                    description={`Faltam ${remainingDays} dias para o fechamento das notas, no dia 12/07/2025`} 
-                    number={remainingDays} 
+                    name={cycle ? cycle.name : 'Prazo'} 
+                    description={cycle && remainingDays !== null ?
+                        `Faltam ${remainingDays} dias para o fechamento das notas, de ${new Date(cycle.startDate).toLocaleDateString()} até ${new Date(cycle.endDate).toLocaleDateString()}` :
+                        'Não há ciclo ativo no momento.'}
+                    number={remainingDays !== null ? remainingDays : 0} 
                     subName="dias" 
                 />
                 <InfoCard name="Preechimento de avaliação" description="Quantidade de colaboradores que já fecharam as suas avaliações">
@@ -187,23 +175,36 @@ function Committee(){
                     />
                 </Link>
             </div>
-
-            {/* all members */}
-            <div className="bg-white rounded-lg shadow-md m-4 sm:m-5 p-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 p-4 sm:p-5 gap-2">
-                    <h1 className="text-lg sm:text-xl font-semibold text-gray-800">Resumo de equalizações</h1>
+            <div className="bg-white rounded-lg shadow-md m-2 sm:m-5 p-2 sm:p-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-4 p-2 sm:p-5 gap-1 sm:gap-2">
+                    <h1 className="text-base sm:text-lg md:text-xl font-semibold text-gray-800">Resumo de equalizações</h1>
                     <Link to="/committee/equalizations">
-                        <button className="text-[#08605F] hover:text-green-700 font-medium">ver mais</button>
+                        <button className="text-[#08605F] hover:text-green-700 font-medium text-sm sm:text-base">ver mais</button>
                     </Link>
                 </div>
-                <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
-                    {collaborators.slice(0, 5).map((collab) => {
-                        console.log('Colab:', collab);
-                        return (
+                <div className="flex items-center gap-1 sm:gap-2 rounded-xl py-2 sm:py-4 px-3 sm:px-7 w-full bg-white mb-2 sm:mb-4">
+                    <IoIosSearch size={16} className="text-[#1D1D1D]/75" />
+                    <input
+                        type="text"
+                        placeholder="Buscar por colaboradores"
+                        className="flex-1 outline-none text-xs sm:text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <div className="space-y-2 sm:space-y-4 max-h-[50vh] overflow-x-auto pr-1 sm:pr-2">
+                    {filteredCollaborators.slice(0, 5).map((collab) => (
+                        <div
+                            key={collab.id}
+                            className="relative cursor-pointer hover:bg-gray-100 rounded transition-colors min-w-[260px] sm:min-w-0"
+                            onClick={() => navigate(`/committee/equalizations?expand=${collab.id}`)}
+                        >
                             <Colaborators 
-                                key={collab.id}
                                 name={collab.name} 
-                                role={collab.role} 
+                                role={collab.role
+                                 .split(',')
+                                 .map(r => translateRole(r.trim()))
+                                 .join(', ')} 
                                 initials={collab.initials} 
                                 state={collab.state}
                                 autoAvaliacao={collab.autoAvaliacao}
@@ -211,11 +212,12 @@ function Committee(){
                                 notaMentor={collab.notaMentor}
                                 notaGestor={collab.notaGestor}
                                 notaFinal={collab.notaFinal}
+                                dropInfo={collab.dropInfo}
                             />
-                        );
-                    })}
-                    {collaborators.length === 0 && (
-                        <div className="text-center text-gray-500 py-8">
+                        </div>
+                    ))}
+                    {filteredCollaborators.length === 0 && (
+                        <div className="text-center text-gray-500 py-4 sm:py-8 text-xs sm:text-base">
                             Nenhum colaborador encontrado
                         </div>
                     )}

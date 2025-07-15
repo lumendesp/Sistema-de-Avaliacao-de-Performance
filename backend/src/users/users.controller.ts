@@ -43,6 +43,16 @@ export class UsersController {
     return await this.usersService.findUsersWithEvaluations();
   }
 
+  // retorna informações sobre quedas significativas nas notas de um usuário
+  @Get(':id/significant-drops/:cycleId')
+  @UseGuards(JwtAuthGuard)
+  async getSignificantDrops(
+    @Param('id') id: string,
+    @Param('cycleId') cycleId: string,
+  ) {
+    return await this.usersService.detectSignificantDrops(+id, +cycleId);
+  }
+
   // retorna um usuário em específico, de acordo com o id
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<User> {
@@ -56,6 +66,12 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<User> {
     return await this.usersService.update(+id, updateUserDto);
+  }
+
+  // atualiza a foto do usuário
+  @Patch(':id/photo')
+  async updatePhoto(@Param('id') id: string, @Body('photo') photo: string) {
+    return await this.usersService.update(+id, { photo });
   }
 
   // remove um usuário do banco

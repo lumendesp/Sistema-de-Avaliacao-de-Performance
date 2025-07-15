@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma.service';
 import { CreateFinalScoreDto } from './dto/create-final-score.dto';
 import { UpdateFinalScoreDto } from './dto/update-final-score.dto';
 import { EvaluationCycleService } from '../evaluation-cycle/evaluation-cycle.service';
+import { encrypt, decrypt } from '../utils/encryption';
+import { CycleStatus } from '@prisma/client';
 
 @Injectable()
 export class FinalScoreService {
@@ -22,15 +24,10 @@ export class FinalScoreService {
       console.log('Adjuster ID:', adjusterId);
       console.log('Adjuster roles:', adjuster?.roles);
 
-      // Temporarily disable committee check for debugging
-      // const isCommittee = adjuster?.roles.some((r) => r.role === 'COMMITTEE');
-      // if (!isCommittee) {
-      //   throw new ForbiddenException('Only committee members can create final scores.');
-      // }
 
-      // Get active cycle
+      // Get active cycle for Committee (antigo HR)
       console.log('Looking for active cycle...');
-      const activeCycle = await this.cycleService.findActiveCycle();
+      const activeCycle = await this.cycleService.findActiveCycle('IN_PROGRESS_COMMITTEE' as CycleStatus);
       console.log('Active cycle found:', activeCycle);
       
       if (!activeCycle) {
@@ -52,16 +49,16 @@ export class FinalScoreService {
         throw new ForbiddenException('Final score already exists for this user in this cycle.');
       }
 
-      console.log('Creating final score with data:', {
-        userId: dto.userId,
-        cycleId: activeCycle.id,
-        executionScore: dto.executionScore,
-        postureScore: dto.postureScore,
-        finalScore: dto.finalScore,
-        summary: dto.summary,
-        adjustedBy: adjusterId,
-        justification: dto.justification,
-      });
+      // console.log('Creating final score with data:', {
+      //   userId: dto.userId,
+      //   cycleId: activeCycle.id,
+      //   executionScore: dto.executionScore,
+      //   postureScore: dto.postureScore,
+      //   finalScore: dto.finalScore,
+      //   summary: dto.summary,
+      //   adjustedBy: adjusterId,
+      //   justification: dto.justification,
+      // });
 
       return this.prisma.finalScore.create({
         data: {
@@ -72,7 +69,7 @@ export class FinalScoreService {
           finalScore: dto.finalScore,
           summary: dto.summary,
           adjustedBy: adjusterId,
-          justification: dto.justification,
+          justification: encrypt(dto.justification),
         },
         include: {
           user: true,
@@ -88,7 +85,7 @@ export class FinalScoreService {
 
   async testActiveCycle() {
     try {
-      const activeCycle = await this.cycleService.findActiveCycle();
+      const activeCycle = await this.cycleService.findActiveCycle('IN_PROGRESS_COMMITTEE' as CycleStatus);
       return {
         activeCycle,
         message: activeCycle ? 'Active cycle found' : 'No active cycle found'
@@ -173,6 +170,7 @@ export class FinalScoreService {
       where: { id },
       data: {
         ...dto,
+        justification: dto.justification ? encrypt(dto.justification) : undefined,
         adjustedBy: adjusterId,
       },
       include: {
@@ -181,5 +179,13 @@ export class FinalScoreService {
         adjuster: { select: { id: true, name: true } },
       },
     });
+  }
+
+  async getFinalScoreGradeByUserAndCycle(userId: number, cycleId: number) {
+    const score = await this.prisma.finalScore.findFirst({
+      where: { userId, cycleId },
+      select: { finalScore: true, id: true, userId: true, cycleId: true },
+    });
+    return score;
   }
 } 

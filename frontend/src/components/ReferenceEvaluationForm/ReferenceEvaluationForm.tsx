@@ -1,69 +1,114 @@
 import { UserIcon } from "../UserIcon";
 import { FaTrash } from "react-icons/fa";
 
-import { useState } from "react";
-import { createReference, fetchMyReferences } from "../../services/api";
+import { useEffect, useState, useRef } from "react";
+import {
+  updateReference,
+  fetchMyReferences,
+  deleteReference,
+} from "../../services/api";
 import type { ReferenceEvaluationFormProps } from "../../types/reference";
+import { useEvaluation } from "../../context/EvaluationsContext";
 
 const ReferenceEvaluationForm = ({
-  selectedCollaborators,
-  onRemoveCollaborator,
   myReferences,
   setMyReferences,
-  cycleId
+  cycleId,
+  isCycleFinished,
 }: ReferenceEvaluationFormProps) => {
-
-  const [formData, setFormData] = useState<{ [key: number]: string }>({}); 
+  const [formData, setFormData] = useState<{ [key: number]: string }>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // função para atualizar o estado do formulário quando o usuário digita no textarea
-  const handleInputChange = (collaboratorId: number, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [collaboratorId]: value,
-    }));
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { updateTabCompletion, isSubmit } = useEvaluation();
+
+  useEffect(() => {
+    if (myReferences) {
+      checkIfCompleted(myReferences);
+    }
+  }, [formData, myReferences]);
+
+  const debouncedSave = (referenceId: number, value: string) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    timeoutRef.current = setTimeout(async () => {
+      try {
+        const updated = await updateReference(referenceId, value);
+
+        const updatedReferences = myReferences.map((ref) =>
+          ref.id === referenceId ? { ...ref, ...updated } : ref
+        );
+
+        setMyReferences(updatedReferences);
+        checkIfCompleted(updatedReferences);
+      } catch (err) {
+        console.error("Erro ao salvar justificativa:", err);
+        setError("Erro ao salvar justificativa.");
+      }
+    }, 500);
   };
 
-  // função para enviar todas as referências
-  const handleSubmitAll = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleInputChange = (referenceId: number, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [referenceId]: value,
+    }));
 
-    // verifica se todos os formulários foram preenchidos
-    const emptyForms = selectedCollaborators.filter(
-      (c) => !formData[c.id]?.trim()
-    );
-    if (emptyForms.length > 0) {
-      setError(
-        `Preencha o feedback para: ${emptyForms.map((c) => c.name).join(", ")}`
-      );
-      return;
+    debouncedSave(referenceId, value);
+  };
+
+  const handleRemoveReference = async (referenceId: number) => {
+    try {
+      await deleteReference(referenceId); // chamada para remover no backend
+      setMyReferences((prev) => prev.filter((r) => r.id !== referenceId)); // atualiza front
+    } catch (err) {
+      console.error("Erro ao remover referência:", err);
+      setError("Erro ao remover colaborador.");
     }
+  };
 
+  const checkIfCompleted = (references: any[]) => {
+    setError(null);
+
+    // Verifica se alguma referência (localmente ou no backend) está sem justificativa
+    const hasEmpty = references.some((ref) => {
+      const localJustification = formData[ref.id];
+      const justification =
+        localJustification !== undefined
+          ? localJustification
+          : ref.justification ?? "";
+
+      return !justification?.trim();
+    });
+
+    updateTabCompletion("reference", !hasEmpty);
+  };
+
+  const savePendingReferences = async (references: any[]) => {
     setLoading(true);
     setError(null);
     setSuccess(false);
 
-    // remove forms antes de enviar
-    const collaboratorsToRemove = [...selectedCollaborators];
-    collaboratorsToRemove.forEach((c) => onRemoveCollaborator(c.id));
-    setFormData({});
+    const refsToSend = references.filter((ref) => !ref.justification?.trim());
+
+    // Também pode garantir aqui que formData[ref.id] está preenchido, se quiser
 
     try {
-      // envia todas as referências, em paralelo
-      const promises = selectedCollaborators.map((collaborator) =>
-        createReference(collaborator.id, cycleId, formData[collaborator.id])
+      const promises = refsToSend.map((ref) =>
+        updateReference(ref.id, formData[ref.id])
       );
-
       await Promise.all(promises);
 
       setSuccess(true);
 
-      // atualiza lista de referências
       const updatedRefs = await fetchMyReferences(cycleId);
       setMyReferences(updatedRefs);
-    } catch (err: unknown) { // unknown pode ser qualquer coisa, assim como any, mas é mais seguro por conta da verificação posterior com instanceof Error
+
+      checkIfCompleted(updatedRefs); // atualiza completude após salvar
+    } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao enviar referências";
       setError(errorMessage);
@@ -72,7 +117,6 @@ const ReferenceEvaluationForm = ({
     }
   };
 
-  // função para pegar as iniciais 
   function getInitials(name: string) {
     return name
       .split(" ")
@@ -83,40 +127,40 @@ const ReferenceEvaluationForm = ({
 
   return (
     <div className="flex flex-col gap-4 w-full">
-      {/* lista de cards com referências já existentes */}
-      {myReferences.length > 0 ? (
-        <div className="flex flex-col gap-4">
-          {myReferences.map((ref, idx) => (
-            <div
-              key={idx}
-              className="bg-white w-full flex flex-col px-6 py-9 rounded-xl opacity-80"
-            >
-              <div className="flex flex-col gap-4">
+      {isCycleFinished || isSubmit ? (
+        // Mostrar só referências já enviadas, todas readonly
+        <>
+          {myReferences.length > 0 ? (
+            myReferences.map((ref) => (
+              <div
+                key={ref.id}
+                className="bg-white w-full flex flex-col px-6 py-9 rounded-xl opacity-80"
+              >
                 <div className="flex justify-between items-center mb-5">
-                  <div className="flex justify-center items-center gap-3">
+                  <div className="flex items-center gap-3">
                     <UserIcon
                       initials={getInitials(ref.receiver?.name || "")}
                       size={40}
                     />
                     <div className="flex flex-col">
-                      <p className="text-sm font-bold ">
+                      <p className="text-sm font-bold">
                         {ref.receiver?.name || ref.receiverId}
                       </p>
-                      <p className="text-xs font-normal text-opacity-75 text-[#1D1D1D]">
+                      <p className="text-xs text-[#1D1D1D] text-opacity-75">
                         {ref.receiver?.email || ""}
                       </p>
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col gap-1 flex-1">
-                  <p className="font-medium text-xs text-opacity-75 text-[#1D1D1D]">
+                <div className="flex flex-col gap-1">
+                  <p className="font-medium text-xs text-[#1D1D1D] text-opacity-75">
                     Justificativa enviada
                   </p>
                   <textarea
                     className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm bg-gray-100 text-[#1D1D1D] styled-scrollbar"
                     value={ref.justification || ref.feedback}
                     disabled
-                  ></textarea>
+                  />
                 </div>
               </div>
             </div>
@@ -193,7 +237,7 @@ const ReferenceEvaluationForm = ({
               Referências enviadas com sucesso!
             </p>
           )}
-        </form>
+        </>
       )}
     </div>
   );
