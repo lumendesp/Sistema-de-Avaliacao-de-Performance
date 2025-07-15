@@ -10,7 +10,9 @@ export default function Collaborators() {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [searchResults, setSearchResults] = useState<Collaborator[]>([]);
   const [evaluations, setEvaluations] = useState<Record<number, any>>({});
-  const [selfEvaluations, setSelfEvaluations] = useState<Record<number, any>>({});
+  const [selfEvaluations, setSelfEvaluations] = useState<Record<number, any>>(
+    {}
+  );
   const { user } = useAuth();
 
   // Carrega todos os colaboradores do manager ao entrar na página
@@ -35,44 +37,6 @@ export default function Collaborators() {
     }
   }, [user]);
 
-  // Busca filtrada ao digitar na searchbar
-  useEffect(() => {
-    if (search.trim() !== "" && user && user.id) {
-      const url = `${API_URL}/manager-search-bar/${user.id}?search=${encodeURIComponent(
-        search.trim()
-      )}`;
-      const headers = getAuthHeaders();
-      fetch(url, {
-        method: "GET",
-        headers,
-      })
-        .then(async (res) => {
-          const data = await res.json();
-          if (!res.ok) {
-            return setSearchResults([]);
-          }
-          setSearchResults(
-            (data || []).map((c: any) => ({
-              id: c.id,
-              name: c.name,
-              email: c.email,
-              photo: c.photo,
-              role: "Colaborador",
-              status: "Em andamento",
-              selfScore: 0,
-              managerScore: null,
-            }))
-          );
-        })
-        .catch(() => {
-          setSearchResults([]);
-        });
-    } else {
-      setSearchResults([]);
-    }
-  }, [search, user]);
-
-  // Buscar avaliações dos colaboradores visíveis (tanto lista quanto busca)
   useEffect(() => {
     const currentList = search.trim() !== "" ? searchResults : collaborators;
     const ids = currentList.map((c) => c.id);
@@ -90,8 +54,10 @@ export default function Collaborators() {
               return { id, evaluation };
             })
             .catch(() => ({ id, evaluation: null })),
-          fetch(`${API_URL}/self-evaluation/user/${id}`,
-            { method: "GET", headers: getAuthHeaders() })
+          fetch(`${API_URL}/self-evaluation/user/${id}`, {
+            method: "GET",
+            headers: getAuthHeaders(),
+          })
             .then(async (res) => {
               if (!res.ok) return { id, selfEval: null };
               const selfEval = await res.json();
@@ -110,12 +76,15 @@ export default function Collaborators() {
         let latest = null;
         if (Array.isArray(selfEval) && selfEval.length > 0) {
           latest = selfEval.reduce((prev, curr) =>
-            prev.cycle && curr.cycle && prev.cycle.id > curr.cycle.id ? prev : curr
+            prev.cycle && curr.cycle && prev.cycle.id > curr.cycle.id
+              ? prev
+              : curr
           );
         }
         selfEvalMap[id] = latest;
       });
       setEvaluations(evalMap);
+
       setSelfEvaluations(selfEvalMap);
     });
   }, [search, collaborators, searchResults]);
@@ -127,14 +96,22 @@ export default function Collaborators() {
     let managerScore = null;
     let selfScore = null;
     if (evaluation && evaluation.groups) {
-      const allCriteria = (evaluation.groups || []).flatMap((g: any) => g.items || []);
-      const withScore = allCriteria.filter((c: any) => c.score !== null && c.score !== undefined);
+      const allCriteria = (evaluation.groups || []).flatMap(
+        (g: any) => g.items || []
+      );
+      const withScore = allCriteria.filter(
+        (c: any) => c.score !== null && c.score !== undefined
+      );
       if (withScore.length > 0) {
-        managerScore = withScore.reduce((sum: number, c: any) => sum + (c.score || 0), 0) / withScore.length;
+        managerScore =
+          withScore.reduce((sum: number, c: any) => sum + (c.score || 0), 0) /
+          withScore.length;
       }
     }
     if (selfEval && selfEval.items && selfEval.items.length > 0) {
-      selfScore = selfEval.items.reduce((sum: number, item: any) => sum + item.score, 0) / selfEval.items.length;
+      selfScore =
+        selfEval.items.reduce((sum: number, item: any) => sum + item.score, 0) /
+        selfEval.items.length;
     }
     if (!evaluation) {
       return { status: "Pendente" as const, managerScore: null, selfScore };
@@ -149,50 +126,60 @@ export default function Collaborators() {
     return { status: "Pendente" as const, managerScore, selfScore };
   }
 
-  // Mostra searchResults se houver busca, senão lista completa
+  // Responsivo: Top bar, busca e lista
   const list = search.trim() !== "" ? searchResults : collaborators;
-
   return (
-    <div className="flex flex-col w-full min-h-screen bg-[#F5F6FA]">
-      <div className="h-[20px] w-full" />
-      <h1 className="text-3xl font-bold text-gray-900 tracking-tight ml-0 pl-8">
-        Colaboradores
-      </h1>
-      <div className="h-[60px] w-full" />
-      <div className="flex items-center gap-2 rounded-xl py-4 px-7 w-full bg-white/50 mt-0 mb-4">
-        <input
-          type="text"
-          placeholder="Buscar por colaboradores"
-          className="flex-1 outline-none text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <button className="bg-teal-700 text-white p-2 rounded-md">
-          <img src={searchIcon} alt="Buscar" className="w-5 h-5" />
-        </button>
+    <div className="flex flex-col w-full min-h-screen bg-[#F5F6FA] overflow-x-hidden sm:overflow-x-visible max-w-md sm:max-w-full mx-auto sm:mx-0">
+      {/* Top bar com espaço para ícone da sidebar */}
+      <div className="flex items-center gap-2 px-1 sm:px-6 pt-5 pb-3 justify-center sm:justify-start">
+        {/* Espaço reservado para o ícone da sidebar apenas no desktop */}
+        <div className="hidden sm:flex h-10 items-center justify-center mr-0">
+          {/* O ícone real da sidebar deve ser renderizado pelo layout principal */}
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight truncate text-left">
+          Colaboradores
+        </h1>
       </div>
-      {/* Container de resultados sem overflow horizontal */}
-      <div className="flex flex-col gap-4 w-full px-8">
-        {list.length > 0 ? (
-          list.map((collaborator) => {
-            const { status, managerScore, selfScore } = getStatusAndScore(collaborator.id);
-            return (
-              <CollaboratorCard
-                key={collaborator.id}
-                collaborator={{
-                  ...collaborator,
-                  status,
-                  managerScore,
-                  selfScore,
-                }}
-              />
-            );
-          })
-        ) : (
-          <p className="text-sm text-[#1D1D1D]/50 p-2">
-            Nenhum colaborador encontrado.
-          </p>
-        )}
+      {/* Container unificado para busca e cards */}
+      <div className="w-full px-1 sm:px-6 mx-auto">
+        {/* Barra de busca responsiva */}
+        <div className="flex items-center gap-2 rounded-xl py-3 px-3 bg-white/50 mt-0 mb-6 w-full">
+          <input
+            type="text"
+            placeholder="Buscar por colaboradores"
+            className="flex-1 outline-none text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent min-w-0"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button className="bg-teal-700 text-white p-2 rounded-md">
+            <img src={searchIcon} alt="Buscar" className="w-5 h-5" />
+          </button>
+        </div>
+        {/* Lista responsiva de colaboradores */}
+        <div className="flex flex-col gap-4 sm:gap-6 w-full pb-6">
+          {list.length > 0 ? (
+            list.map((collaborator: any) => {
+              const { status, managerScore, selfScore } = getStatusAndScore(
+                collaborator.id
+              );
+              return (
+                <CollaboratorCard
+                  key={collaborator.id}
+                  collaborator={{
+                    ...collaborator,
+                    status,
+                    managerScore,
+                    selfScore,
+                  }}
+                />
+              );
+            })
+          ) : (
+            <p className="text-sm text-[#1D1D1D]/50 p-2 text-center">
+              Nenhum colaborador encontrado.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
