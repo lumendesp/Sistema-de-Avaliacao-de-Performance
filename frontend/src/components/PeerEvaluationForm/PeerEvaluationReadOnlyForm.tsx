@@ -58,7 +58,7 @@ const PeerEvaluationReadOnlyForm = ({
             Pontos fortes
           </p>
           <textarea
-            className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm bg-gray-100"
+            className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm bg-gray-100 styled-scrollbar"
             value={strengths}
             readOnly
           />
@@ -68,7 +68,7 @@ const PeerEvaluationReadOnlyForm = ({
             Pontos de melhoria
           </p>
           <textarea
-            className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm bg-gray-100"
+            className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm bg-gray-100 styled-scrollbar"
             value={improvements}
             readOnly
           />
