@@ -492,20 +492,51 @@ export class CiclosService {
       throw new Error('Nenhum ciclo de comitê em andamento encontrado');
     }
 
-    // Fechar o ciclo de comitê
+    // Fechar o ciclo
     const updatedCycle = await prisma.evaluationCycle.update({
       where: { id: committeeCycle.id },
-      data: {
-        status: 'PUBLISHED' as CycleStatus,
-      },
+      data: { status: 'PUBLISHED' as CycleStatus },
     });
 
+    // Buscar usuários que participaram desse ciclo (tiveram avaliações)
+    const evaluatedUserIds = await prisma.evaluationCycleUser.findMany({
+      where: { cycleId: committeeCycle.id },
+      select: { userId: true },
+    });
+
+    const uniqueUserIds = [...new Set(evaluatedUserIds.map((u) => u.userId))];
+
+    let generated = 0;
+
+    for (const userId of uniqueUserIds) {
+      try {
+        // Gera resumo completo, se ainda não existir
+        const existing = await this.aiSummaryService.getSummary(userId, committeeCycle.id);
+        if (!existing) {
+          await this.aiSummaryService.generateSummary({
+            userId,
+            cycleId: committeeCycle.id,
+          });
+        }
+
+        // Sempre gera o lean summary atualizado
+        await this.aiSummaryService.generateLeanSummary({
+          userId,
+          cycleId: committeeCycle.id,
+        });
+        generated++;
+      } catch (err) {
+        console.warn(`Erro ao gerar lean summary para user ${userId}:`, err.message);
+      }
+    }
+
     return {
-      message: 'Ciclo de comitê fechado com sucesso!',
+      message: `Ciclo de comitê fechado com sucesso! Foram gerados ${generated} resumos finais.`,
       cycleId: updatedCycle.id,
       cycle: updatedCycle,
     };
   }
+
 
   /**
    * Cria um novo ciclo de colaborador.
