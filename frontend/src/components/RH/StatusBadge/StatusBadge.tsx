@@ -16,9 +16,19 @@ function StatusBadge({ status }: StatusBadgeProps) {
             textColor: 'text-yellow-700',
             text: 'Pendente'
         },
+        expirado: {
+            bgColor: 'bg-red-100',
+            textColor: 'text-red-700',
+            text: 'Expirado'
+        },
     };
 
     const currentStyle = statusStyles[status];
+
+    // Se por algum motivo um status inesperado for passado, podemos ter um fallback
+    if (!currentStyle) {
+        return null;
+    }
 
     return (
         <div className={`px-3 py-1 text-xs font-semibold rounded-full inline-block ${currentStyle.bgColor} ${currentStyle.textColor}`}>

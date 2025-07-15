@@ -99,10 +99,18 @@ CREATE TABLE "EvaluationCycle" (
     "startDate" DATETIME NOT NULL,
     "endDate" DATETIME NOT NULL,
     "status" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- CreateTable
+CREATE TABLE "EvaluationCycleUser" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "userId" INTEGER NOT NULL,
+    "cycleId" INTEGER NOT NULL,
     "submittedAt" DATETIME,
     "isSubmit" BOOLEAN NOT NULL DEFAULT false,
-    "type" TEXT NOT NULL DEFAULT 'COLLABORATOR',
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    CONSTRAINT "EvaluationCycleUser_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "EvaluationCycleUser_cycleId_fkey" FOREIGN KEY ("cycleId") REFERENCES "EvaluationCycle" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -303,6 +311,9 @@ CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "EvaluationCycleUser_userId_cycleId_key" ON "EvaluationCycleUser"("userId", "cycleId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Project_name_key" ON "Project"("name");
