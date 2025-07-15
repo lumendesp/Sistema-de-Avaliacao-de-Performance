@@ -16,6 +16,9 @@ import {
 import type { SurveyStatus } from "../../../types/surveyStatus";
 import type { ClimateSurvey } from "../../../types/climateSurvey";
 import { IoAddCircle } from "react-icons/io5";
+import { FaInfoCircle } from "react-icons/fa";
+import { Tooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
 
 const RHClimateSurvey = () => {
   const navigate = useNavigate();
@@ -228,7 +231,7 @@ const RHClimateSurvey = () => {
             shortSummary ||
             "Nenhuma pesquisa finalizada ou resumo ainda não gerado"
           }
-          value={satisfactionScore || 0}
+          value={satisfactionScore || null}
         />
       </section>
 
@@ -269,8 +272,24 @@ const RHClimateSurvey = () => {
         </div>
 
         <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-lg">
+              Evolução do Clima Organizacional
+            </h2>
+            <>
+              <FaInfoCircle
+                data-tooltip-id="clima-tooltip"
+                data-tooltip-content="O gráfico representa o nível de satisfação dos colaboradores, ao longo das pesquisas, de acordo com análise da IA."
+                className="text-green-main hover:text-gray-600 cursor-pointer w-4.5 h-4.5"
+              />
+              <Tooltip
+                id="clima-tooltip"
+                place="top"
+                className="bg-gray-800 text-white px-2 py-1 rounded text-xs"
+              />
+            </>
+          </div>
           <SatisfactionChartCard
-            title="Evolução do Clima Organizacional (Nota IA)"
             chartData={
               aiChartData || { labels: [], datasets: [], tooltips: [] }
             }
