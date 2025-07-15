@@ -7,7 +7,7 @@ import {
   fetchMentorMentees,
   fetchSelfEvaluation,
   fetchManagerEvaluation,
-  fetchMentorToCollaboratorEvaluationsByCollaborator
+  fetchMentorToCollaboratorEvaluationsByCollaborator,
 } from "../../services/api";
 
 export default function MentorStatus() {
@@ -20,7 +20,9 @@ export default function MentorStatus() {
     {}
   );
   // Novo state para as notas do mentor
-  const [mentorScores, setMentorScores] = useState<Record<number, number | null>>({});
+  const [mentorScores, setMentorScores] = useState<
+    Record<number, number | null>
+  >({});
 
   useEffect(() => {
     if (!user?.id) return;
@@ -41,7 +43,9 @@ export default function MentorStatus() {
     Promise.all(
       list.map((mentee) =>
         Promise.all([
-          fetchMentorToCollaboratorEvaluationsByCollaborator(mentee.id).catch(() => null),
+          fetchMentorToCollaboratorEvaluationsByCollaborator(mentee.id).catch(
+            () => null
+          ),
           fetchSelfEvaluation(mentee.id).catch(() => null),
         ])
       )
@@ -111,57 +115,76 @@ export default function MentorStatus() {
     }
     let mentorScore = mentorScores[collaboratorId] ?? null;
     if (!evaluation || total === 0 || withScore.length === 0) {
-      return { status: "Pendente" as const, managerScore: null, selfScore, mentorScore };
+      return {
+        status: "Pendente" as const,
+        managerScore: null,
+        selfScore,
+        mentorScore,
+      };
     }
     if (filled.length < total) {
-      return { status: "Em andamento" as const, managerScore, selfScore, mentorScore };
+      return {
+        status: "Em andamento" as const,
+        managerScore,
+        selfScore,
+        mentorScore,
+      };
     }
-    return { status: "Finalizado" as const, managerScore, selfScore, mentorScore };
+    return {
+      status: "Finalizado" as const,
+      managerScore,
+      selfScore,
+      mentorScore,
+    };
   }
 
+  // Responsividade idêntica ao gestor
   return (
-    <div className="flex flex-col w-full min-h-screen bg-[#F5F6FA]">
-      <div className="h-[20px] w-full" />
-      <h1 className="text-3xl font-bold text-gray-900 tracking-tight ml-0 pl-8">
-        Mentorados
-      </h1>
-      <div className="h-[60px] w-full" />
-      <div className="flex items-center gap-2 rounded-xl py-4 px-7 w-full bg-white/50 mt-0 mb-4">
-        <input
-          type="text"
-          placeholder="Buscar por mentorados"
-          className="flex-1 outline-none text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <button className="bg-teal-700 text-white p-2 rounded-md">
-          <img src={searchIcon} alt="Buscar" className="w-5 h-5" />
-        </button>
+    <div className="flex flex-col w-full min-h-screen bg-[#F5F6FA] overflow-x-hidden sm:overflow-x-visible max-w-md sm:max-w-full mx-auto sm:mx-0">
+      {/* Top bar com espaço para ícone da sidebar */}
+      <div className="flex items-center gap-2 px-1 sm:px-6 pt-5 pb-3 justify-center sm:justify-start">
+        <div className="hidden sm:flex h-10 items-center justify-center mr-0"></div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight truncate text-left">
+          Mentorados
+        </h1>
       </div>
-      <div className="flex flex-col gap-4 w-full px-8">
-        {filtered.length > 0 ? (
-          filtered.map((mentee) => {
-            const { status, managerScore, selfScore, mentorScore } = getStatusAndScore(
-              mentee.id
-            );
-            return (
-              <CollaboratorCard
-                key={mentee.id}
-                collaborator={{
-                  ...mentee,
-                  status,
-                  managerScore,
-                  selfScore,
-                  mentorScore,
-                }}
-              />
-            );
-          })
-        ) : (
-          <p className="text-sm text-[#1D1D1D]/50 p-2">
-            Nenhum mentorado encontrado.
-          </p>
-        )}
+      <div className="w-full px-1 sm:px-6 mx-auto">
+        <div className="flex items-center gap-2 rounded-xl py-3 px-3 bg-white/50 mt-0 mb-6 w-full">
+          <input
+            type="text"
+            placeholder="Buscar por mentorados"
+            className="flex-1 outline-none text-sm font-normal text-[#1D1D1D]/75 placeholder:text-[#1D1D1D]/50 bg-transparent min-w-0"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button className="bg-teal-700 text-white p-2 rounded-md">
+            <img src={searchIcon} alt="Buscar" className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex flex-col gap-4 sm:gap-6 w-full pb-6">
+          {filtered.length > 0 ? (
+            filtered.map((mentee) => {
+              const { status, managerScore, selfScore, mentorScore } =
+                getStatusAndScore(mentee.id);
+              return (
+                <CollaboratorCard
+                  key={mentee.id}
+                  collaborator={{
+                    ...mentee,
+                    status,
+                    managerScore,
+                    selfScore,
+                    mentorScore,
+                  }}
+                />
+              );
+            })
+          ) : (
+            <p className="text-sm text-[#1D1D1D]/50 p-2 text-center">
+              Nenhum mentorado encontrado.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
