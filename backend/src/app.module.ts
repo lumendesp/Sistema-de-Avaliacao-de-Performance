@@ -27,6 +27,7 @@ import { EvaluationCompletionModule } from './evaluation-completion/evaluation-c
 import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
 import { CollaboratorModule } from './climate-survey/collaborator/collaborator.module';
 import { RhModule } from './climate-survey/rh/rh.module';
+import { AiClimateSummaryModule } from './climate-survey/ai-climate-summary/ai-climate-summary.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { RhModule } from './climate-survey/rh/rh.module';
     EvaluationCompletionModule,
     AiBrutalFactsModule,
     CollaboratorModule,
+    AiClimateSummaryModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

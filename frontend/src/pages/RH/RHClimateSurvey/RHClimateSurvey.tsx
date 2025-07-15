@@ -10,6 +10,8 @@ import {
   countCollaborators,
   getClimateSurveyResponses,
   getClimateSurveyAverages,
+  getLastCompletedSurveyData,
+  getAllClimateAISummaries,
 } from "../../../services/api";
 import type { SurveyStatus } from "../../../types/surveyStatus";
 import type { ClimateSurvey } from "../../../types/climateSurvey";
@@ -21,14 +23,11 @@ const RHClimateSurvey = () => {
   const [surveys, setSurveys] = useState<ClimateSurvey[]>([]);
   const [collaboratorCount, setCollaboratorCount] = useState<number>(0);
   const [activeResponsesCount, setActiveResponsesCount] = useState<number>(0);
-  const [surveyAverages, setSurveyAverages] = useState<
-    {
-      id: number;
-      title: string;
-      endDate: string;
-      averageScore: number | null;
-    }[]
-  >([]);
+  const [satisfactionScore, setSatisfactionScore] = useState<number | null>(
+    null
+  );
+  const [shortSummary, setShortSummary] = useState<string | null>(null);
+  const [aiChartData, setAiChartData] = useState<any>(null);
 
   const activeSurvey = surveys.find((survey) => survey.isActive);
 
@@ -105,16 +104,59 @@ const RHClimateSurvey = () => {
   }, []);
 
   useEffect(() => {
-    const loadAverages = async () => {
+    const loadSurveyData = async () => {
       try {
-        const data = await getClimateSurveyAverages();
-        setSurveyAverages(data);
+        const data = await getLastCompletedSurveyData();
+        setSatisfactionScore(data.satisfactionScore);
+        setShortSummary(data.shortText);
       } catch (error) {
-        console.log(error);
-        setSurveyAverages([]); // fallback vazio
+        console.log("Erro ao carregar dados da pesquisa:", error);
+        setSatisfactionScore(null);
+        setShortSummary(null);
       }
     };
-    loadAverages();
+    loadSurveyData();
+  }, []);
+
+  useEffect(() => {
+    const loadAiChartData = async () => {
+      try {
+        const aiSummaries = await getAllClimateAISummaries();
+        // Monta os dados do gráfico
+        const labels = aiSummaries.map((s) => {
+          const date = new Date(s.endDate);
+          const month = date
+            .toLocaleDateString("pt-BR", { month: "short" })
+            .replace(".", "")
+            .toUpperCase();
+          return `${month}/${date.getFullYear()}`;
+        });
+        const data = aiSummaries.map((s) => s.satisfactionScore ?? 0);
+        const tooltips = aiSummaries.map((s) => s.shortText ?? "");
+        const backgroundColor = aiSummaries.map((s) => {
+          if (s.satisfactionScore === null) return "#d1d5db";
+          if (s.satisfactionScore <= 40) return "#ef4444";
+          if (s.satisfactionScore <= 70) return "#eab308";
+          return "#22c55e";
+        });
+        setAiChartData({
+          labels,
+          datasets: [
+            {
+              label: "Nota de Satisfação IA",
+              data,
+              backgroundColor,
+              borderRadius: 5,
+              maxBarThickness: 40,
+            },
+          ],
+          tooltips,
+        });
+      } catch (error) {
+        setAiChartData(null);
+      }
+    };
+    loadAiChartData();
   }, []);
 
   const formatSurveyDate = (survey: ClimateSurvey) => {
@@ -182,8 +224,11 @@ const RHClimateSurvey = () => {
 
         <RHClimateMetricCard
           title="Análise de Sentimento"
-          description="Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type."
-          value={80}
+          description={
+            shortSummary ||
+            "Nenhuma pesquisa finalizada ou resumo ainda não gerado"
+          }
+          value={satisfactionScore || 0}
         />
       </section>
 
@@ -225,27 +270,10 @@ const RHClimateSurvey = () => {
 
         <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
           <SatisfactionChartCard
-            title="Satisfação ao longo do tempo"
-            chartData={{
-              labels: surveyAverages.map((s) => {
-                const date = new Date(s.endDate);
-                const month = date
-                  .toLocaleDateString("pt-BR", { month: "short" })
-                  .replace(".", "")
-                  .toUpperCase();
-                return `${month}/${date.getFullYear()}`;
-              }),
-
-              datasets: [
-                {
-                  label: "Nota média (1 a 5)",
-                  data: surveyAverages.map((s) => s.averageScore),
-                  backgroundColor: "#5A67D8",
-                  borderRadius: 5,
-                  maxBarThickness: 40,
-                },
-              ],
-            }}
+            title="Evolução do Clima Organizacional (Nota IA)"
+            chartData={
+              aiChartData || { labels: [], datasets: [], tooltips: [] }
+            }
           />
         </div>
       </section>

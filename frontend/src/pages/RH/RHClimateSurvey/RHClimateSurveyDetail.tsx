@@ -3,13 +3,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   getClimateSurveyById,
   closeClimateSurvey,
+  getClimateAISummary,
+  generateClimateAISummary,
 } from "../../../services/api";
-import { IoArrowBack, IoCalendar, IoPeople, } from "react-icons/io5";
-import type {
-  ClimateSurvey,
-} from "../../../types/climateSurvey";
+import { IoArrowBack, IoCalendar, IoPeople } from "react-icons/io5";
+import type { ClimateSurvey } from "../../../types/climateSurvey";
 import SurveyStatusBadge from "../../../components/RH/SurveyStatusBadge/SurveyStatusBadge";
-import AIIcon from "../../../assets/committee/AI_icon.svg"
+import AIIcon from "../../../assets/committee/AI_icon.svg";
+import LoadingGif from "../../../assets/loadingGif.svg";
 
 const RHClimateSurveyDetail = () => {
   const navigate = useNavigate();
@@ -17,6 +18,13 @@ const RHClimateSurveyDetail = () => {
   const [survey, setSurvey] = useState<ClimateSurvey | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [shortSummary, setShortSummary] = useState<string | null>(null);
+  const [satisfactionScore, setSatisfactionScore] = useState<number | null>(
+    null
+  );
+  const [summaryStatus, setSummaryStatus] = useState<string>("pending");
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   useEffect(() => {
     const loadSurvey = async () => {
@@ -26,6 +34,27 @@ const RHClimateSurveyDetail = () => {
         setLoading(true);
         const surveyData = await getClimateSurveyById(parseInt(id));
         setSurvey(surveyData);
+
+        try {
+          const summaryData = await getClimateAISummary(parseInt(id));
+          setSummary(summaryData.text);
+          setShortSummary(summaryData.shortText);
+          setSatisfactionScore(summaryData.satisfactionScore);
+          setSummaryStatus(summaryData.status);
+
+          // Se o resumo está em processamento, inicia o polling
+          if (summaryData.status === "processing") {
+            console.log(
+              "Resumo em processamento detectado, iniciando polling..."
+            );
+          }
+        } catch (error) {
+          console.error("Erro ao buscar resumo IA:", error);
+          setSummary(null);
+          setShortSummary(null);
+          setSatisfactionScore(null);
+          setSummaryStatus("failed");
+        }
       } catch (error) {
         console.error("Erro ao carregar pesquisa:", error);
         alert("Erro ao carregar pesquisa");
@@ -38,6 +67,32 @@ const RHClimateSurveyDetail = () => {
     loadSurvey();
   }, [id, navigate]);
 
+  // Polling para verificar status do resumo quando estiver em processamento
+  useEffect(() => {
+    if (summaryStatus !== "processing" || !id) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const summaryData = await getClimateAISummary(parseInt(id));
+        setSummary(summaryData.text);
+        setShortSummary(summaryData.shortText);
+        setSatisfactionScore(summaryData.satisfactionScore);
+        setSummaryStatus(summaryData.status);
+
+        // Para o polling quando o status não for mais 'processing'
+        if (summaryData.status !== "processing") {
+          clearInterval(pollInterval);
+        }
+      } catch (error) {
+        console.error("Erro ao verificar status do resumo:", error);
+        setSummaryStatus("failed");
+        clearInterval(pollInterval);
+      }
+    }, 3000); // Verifica a cada 3 segundos
+
+    return () => clearInterval(pollInterval);
+  }, [summaryStatus, id]);
+
   const handleCloseSurvey = async () => {
     if (
       !survey ||
@@ -47,12 +102,58 @@ const RHClimateSurveyDetail = () => {
 
     try {
       setActionLoading(true);
+
+      // Primeiro, encerra a pesquisa
       await closeClimateSurvey(survey.id);
       setSurvey((prev) => (prev ? { ...prev, isActive: false } : null));
-      alert("Pesquisa encerrada com sucesso!");
+
+      // Verifica o status atual do resumo antes de tentar gerar
+      try {
+        const currentSummaryData = await getClimateAISummary(survey.id);
+        const currentStatus = currentSummaryData.status;
+
+        if (currentStatus === "processing") {
+          alert("Pesquisa encerrada! O resumo já está sendo gerado.");
+          setSummaryStatus("processing");
+          return;
+        }
+
+        if (currentStatus === "completed" && currentSummaryData.text) {
+          alert("Pesquisa encerrada! O resumo já foi gerado.");
+          setSummary(currentSummaryData.text);
+          setShortSummary(currentSummaryData.shortText);
+          setSatisfactionScore(currentSummaryData.satisfactionScore);
+          setSummaryStatus("completed");
+          return;
+        }
+      } catch (error) {
+        console.log("Verificação de status falhou, continuando com geração...");
+      }
+
+      // Gera o resumo se não estiver em processamento ou já completo
+      setSummaryLoading(true);
+      setSummaryStatus("processing");
+      try {
+        const newSummaryData = await generateClimateAISummary(survey.id);
+        setSummary(newSummaryData.text);
+        setShortSummary(newSummaryData.shortText);
+        setSatisfactionScore(newSummaryData.satisfactionScore);
+        setSummaryStatus(newSummaryData.status);
+        // alert("Pesquisa encerrada e resumo gerado com sucesso!");
+      } catch (summaryError) {
+        console.error("Erro ao gerar resumo:", summaryError);
+        setSummaryStatus("failed");
+        // Se o erro for sobre resumo já em processamento, não mostra como erro
+        if (summaryError.message.includes("já está sendo gerado")) {
+          alert("Pesquisa encerrada! O resumo já está sendo gerado.");
+        }
+      } finally {
+        setSummaryLoading(false);
+      }
     } catch (error) {
       console.error("Erro ao encerrar pesquisa:", error);
       alert("Erro ao encerrar pesquisa");
+      setSummaryLoading(false);
     } finally {
       setActionLoading(false);
     }
@@ -101,6 +202,8 @@ const RHClimateSurveyDetail = () => {
       </div>
     );
   }
+
+  console.log("summary:", summary);
 
   return (
     <div className="w-full">
@@ -182,10 +285,57 @@ const RHClimateSurveyDetail = () => {
           <img src={AIIcon} alt="IA Icon" className="w-4 h-4" />
           <span className="font-semibold text-[#08605F]">Resumo</span>
         </div>
-        <div className=" text-gray-700 whitespace-pre-wrap">
-          {/* {summary || "Resumo não disponível."} */}
-          <p>Aqui vai o resumo da IA</p>
-        </div>
+
+        {summaryLoading || summaryStatus === "processing" ? (
+          <div className="flex items-center gap-3">
+            <img src={LoadingGif} alt="Carregando resumo" className="w-8 h-8" />
+            <span className="text-gray-600">Gerando resumo com IA...</span>
+          </div>
+        ) : summaryStatus === "completed" &&
+          typeof summary === "string" &&
+          summary.length > 0 ? (
+          <p>{summary}</p>
+        ) : summaryStatus === "failed" ? (
+          <div className="text-red-600">
+            <p className="font-semibold">Erro ao gerar resumo</p>
+            <p className="text-sm mb-3">
+              Houve um problema ao processar o resumo.
+            </p>
+            <button
+              onClick={async () => {
+                try {
+                  setSummaryStatus("processing");
+                  const newSummaryData = await generateClimateAISummary(
+                    parseInt(id!)
+                  );
+                  setSummary(newSummaryData.text);
+                  setShortSummary(newSummaryData.shortText);
+                  setSatisfactionScore(newSummaryData.satisfactionScore);
+                  setSummaryStatus(newSummaryData.status);
+                } catch (error) {
+                  console.error(
+                    "Erro ao tentar gerar resumo novamente:",
+                    error
+                  );
+                  setSummaryStatus("failed");
+                  alert(`Erro ao gerar resumo: ${error.message}`);
+                }
+              }}
+              disabled={summaryStatus === "processing"}
+              className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50"
+            >
+              {summaryStatus === "processing"
+                ? "Gerando..."
+                : "Tentar novamente"}
+            </button>
+          </div>
+        ) : summaryStatus === "pending" ? (
+          <p className="italic text-gray-500">
+            Resumo será gerado quando a pesquisa for encerrada.
+          </p>
+        ) : (
+          <p className="text-gray-500">Resumo não disponível.</p>
+        )}
       </div>
 
       {survey.description && (
