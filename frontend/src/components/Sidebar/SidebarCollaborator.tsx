@@ -5,6 +5,8 @@ import dashboardIcon from '../../assets/dashboard.svg';
 import evaluationIcon from '../../assets/evaluation.svg';
 import evolutionIcon from '../../assets/evolution.svg';
 import { useAuth } from '../../context/AuthContext';
+import { IoBarChart } from "react-icons/io5";
+
 
 const menuItems = [
   {
@@ -23,7 +25,13 @@ const menuItems = [
     label: 'Evolução',
     icon: <img src={evolutionIcon} alt="Evolução" className="w-5 h-5" />,
   },
+  {
+    path: '/collaborator/climate-survey',
+    label: 'Clima Organizacional',
+    icon: <IoBarChart size={20} />,
+  },
 ];
+
 
 const SidebarCollaborator = () => {
   const { logout, user } = useAuth();

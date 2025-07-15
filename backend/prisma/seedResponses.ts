@@ -23,7 +23,7 @@ async function seedClimateSurvey() {
 
   console.log(`Pesquisa criada: ${survey.title}`);
 
-  const questions = await prisma.climateSurveyQuestion.createMany({
+  await prisma.climateSurveyQuestion.createMany({
     data: [
       {
         surveyId: survey.id,
@@ -70,6 +70,7 @@ async function seedClimateSurvey() {
         hashId: `resp-${user.id}-${Date.now()}`,
         isSubmit: true,
         submittedAt: new Date(),
+        userId: user.id, // ✅ Adicionado
       },
     });
 
