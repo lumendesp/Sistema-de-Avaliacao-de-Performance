@@ -413,13 +413,12 @@ function RHCriteriaBox({
                                                         <div className="flex items-center gap-2">
                                                             <input
                                                                 type="number"
-                                                                placeholder="Peso entre 5 e 95"
+                                                                placeholder={`Peso atual: ${evaluation.weight?.toString() ?? ""}`}
                                                                 value={weightInputs[`${criterionIndex}-${evalIndex}`] || ''}
                                                                 onChange={e => handleWeightInputChange(criterionIndex, evalIndex, e.target.value)}
                                                                 onKeyDown={e => handleWeightKeyDown(e, criterionIndex, evalIndex, evaluation.weight)}
                                                                 className="w-sm mt-1 p-2 border border-gray-300 rounded-md text-sm"
                                                             />
-                                                            <span className="text-xs text-gray-500 ml-2">Peso atual para o critério: <b>{evaluation.weight}</b></span>
                                                             {weightSuccess[`${criterionIndex}-${evalIndex}`] && (
                                                                 <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded text-xs animate-fade-in">Atualizado com sucesso!</span>
                                                             )}
@@ -427,8 +426,11 @@ function RHCriteriaBox({
                                                     </div>
                                                     <div>
                                                         <label className="text-xs font-semibold text-gray-600">Descrição do Critério</label>
+                                                        {descriptionSuccess[`${criterionIndex}-${evalIndex}`] && (
+                                                        <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded text-xs animate-fade-in">Atualizado com sucesso!</span>
+                                                    )}
                                                         <textarea
-                                                            placeholder="Coloque uma descrição para o critério (será mostrado para o usuário)"
+                                                            placeholder={evaluation.description?.toString() ?? ""}
                                                             value={descriptionInputs[`${criterionIndex}-${evalIndex}`] ?? evaluation.description}
                                                             onChange={e => handleDescriptionInputChange(criterionIndex, evalIndex, e.target.value)}
                                                             onBlur={() => handleDescriptionBlur(criterionIndex, evalIndex, evaluation.description)}
@@ -437,9 +439,6 @@ function RHCriteriaBox({
                                                             rows={3}
                                                         />
                                                     </div>
-                                                    {descriptionSuccess[`${criterionIndex}-${evalIndex}`] && (
-                                                        <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded text-xs animate-fade-in">Atualizado com sucesso!</span>
-                                                    )}
                                                 </div>
                                             </div>
                                         )}
