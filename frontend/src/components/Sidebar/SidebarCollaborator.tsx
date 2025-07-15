@@ -26,12 +26,12 @@ const menuItems = [
   },
   {
     path: '/collaborator/okr',
-    label: 'OKR',
+    label: 'Objetivos e Resultados-Chave',
     icon: <FlagIcon className="w-5 h-5" />,
   },
   {
     path: '/collaborator/pdi',
-    label: 'PDI',
+    label: 'Plano de Desenvolvimento Individual',
     icon: <UserGroupIcon className="w-5 h-5" />,
   },
 ];
