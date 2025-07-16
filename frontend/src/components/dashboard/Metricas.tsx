@@ -97,16 +97,16 @@ const Metricas: React.FC = () => {
     icon: React.ReactNode;
     trend?: string;
   }> = ({ title, value, icon, trend }) => {
-    // Verifica se a tendência é 0% e não exibe a mensagem nesse caso
-    const shouldShowTrend = trend && !trend.includes('0%');
-    
+     // Exibe a tendência apenas se trend não for undefined
+    const shouldShowTrend = trend !== undefined && trend !== null && trend !== '';
+    const trendColor = trend && trend.trim().startsWith('-') ? 'text-red-600' : 'text-green-600';
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600">{title}</p>
             <p className="text-2xl font-semibold text-gray-900 mt-2">{value}</p>
-            {shouldShowTrend && <p className="text-sm text-green-600 mt-1">{trend}</p>}
+            {shouldShowTrend && <p className={`text-sm mt-1 ${trendColor}`}>{trend}</p>}
           </div>
           <div className="p-3 bg-blue-50 rounded-full">{icon}</div>
         </div>
@@ -117,9 +117,6 @@ const Metricas: React.FC = () => {
   if (loading) {
     return (
       <div className="w-full max-w-7xl mx-auto mb-8">
-        <h1 className="text-2xl mb-6">
-          <span className="font-bold">Olá,</span> {user?.name || "Gestor"}
-        </h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
@@ -141,9 +138,6 @@ const Metricas: React.FC = () => {
   if (error) {
     return (
       <div className="w-full max-w-7xl mx-auto mb-8">
-        <h1 className="text-2xl mb-6">
-          <span className="font-bold">Olá,</span> {user?.name || "Gestor"}
-        </h1>
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
           <p className="text-yellow-800">
             <strong>Atenção:</strong> {error}. Exibindo dados de exemplo.
@@ -160,9 +154,6 @@ const Metricas: React.FC = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto mb-8">
-      <h1 className="text-2xl mb-6">
-        <span className="font-bold">Olá,</span> {user?.name || "Gestor"}
-      </h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {metrics.map((metric, index) => (
           <MetricCard key={index} {...metric} />
