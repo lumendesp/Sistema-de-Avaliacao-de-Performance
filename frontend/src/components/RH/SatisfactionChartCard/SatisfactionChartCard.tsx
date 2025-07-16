@@ -2,7 +2,7 @@ import React from "react";
 import RHSurveyBarChart from "../RHSurveyBarChart/RHSurveyBarChart";
 
 interface SatisfactionChartCardProps {
-  title: string;
+  title?: string;
   chartData: any;
 }
 

@@ -6,7 +6,7 @@ import { BsEmojiSmile } from "react-icons/bs";
 interface RHClimateMetricCardProps {
   title: string;
   description?: string;
-  value: number;
+  value: number | null;
 }
 
 const RHClimateMetricCard: React.FC<RHClimateMetricCardProps> = ({
@@ -18,22 +18,29 @@ const RHClimateMetricCard: React.FC<RHClimateMetricCardProps> = ({
     <div className="bg-white rounded-xl shadow-md p-6 flex justify-between items-center">
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-1">{title}</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
           <div
-            className={`h-10 w-1 rounded-md ${
-              value < 40
+            className={`w-1 rounded-md ${
+              value == null
+                ? "bg-gray-600"
+                : value < 40
                 ? "bg-red-600"
                 : value <= 70
                 ? "bg-yellow-600"
                 : "bg-green-600"
-            }`}
-          ></div>
+            } flex-1` }
+          />
+
           {description && (
-            <p className="text-xs text-gray-600 max-w-[340px]">{description}</p>
+            <p className="text-xs text-gray-600 max-w-[250px]">{description}</p>
           )}
         </div>
       </div>
-      {value < 40 ? (
+      {typeof value !== "number" ? (
+        <div className="p-3 rounded-full bg-gray-100">
+          <BsEmojiNeutral className="h-8 w-8 text-gray-500" />
+        </div>
+      ) : value < 40 ? (
         <div className="p-3 rounded-full bg-red-100">
           <BsEmojiAngry className="h-8 w-8 text-red-600" />
         </div>

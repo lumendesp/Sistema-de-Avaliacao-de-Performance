@@ -14,7 +14,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { registerLocale } from "react-datepicker";
 import { ptBR } from "date-fns/locale";
 import { CustomDateInput } from "./CustomDateInput";
-import { FaInfoCircle } from "react-icons/fa";
+import { BsFillQuestionCircleFill } from "react-icons/bs";
 
 registerLocale("pt-BR", ptBR);
 
@@ -178,12 +178,12 @@ const RHCreateClimateSurvey = () => {
 
         <div className="border border-gray-300 rounded-lg bg-white">
           <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-            <div className="flex items-center gap-3 font-semibold">
+            <div className="flex items-center gap-2 font-semibold">
               <h2 className="text-lg font-semibold text-[#08605F]">
                 Perguntas da Pesquisa
               </h2>
               <>
-                <FaInfoCircle
+                <BsFillQuestionCircleFill
                   onClick={() => setShowExampleModal(true)}
                   className="text-green-main hover:text-gray-600 cursor-pointer w-4.5 h-4.5"
                 />
@@ -246,7 +246,7 @@ const RHCreateClimateSurvey = () => {
                 <h2 className="text-lg font-bold text-[#08605F]">
                   Exemplo de pergunta e resposta
                 </h2>
-                <p className="text-gray-400 text-sm">
+                <p className="text-gray-500 text-sm">
                   As perguntas devem ser formuladas no formato abaixo, alinhadas
                   ao padrão de resposta demonstrado. O colaborador também pode
                   acrescentar um campo de justificativa.

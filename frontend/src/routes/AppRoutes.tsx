@@ -41,6 +41,7 @@ import RHClimateSurvey from "../pages/RH/RHClimateSurvey/RHClimateSurvey.tsx";
 import RHCreateClimateSurvey from "../pages/RH/RHClimateSurvey/RHCreateClimateSurvey.tsx";
 import RHClimateSurveyDetail from "../pages/RH/RHClimateSurvey/RHClimateSurveyDetail.tsx";
 import RHSurveys from "../pages/RH/RHSurveys/RHSurveys.tsx";
+import RHEvaluationCycles from "../pages/RH/RHEvaluationCycles/RHEvaluationCycles.tsx";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -182,6 +183,8 @@ const AppRoutes = () => (
       >
         {/* Rota Padrão para /rh -> Renderiza o Dashboard */}
         <Route index element={<RHDashboard />} />
+
+        <Route path="cycles" element={<RHEvaluationCycles />} />
 
         {/* Rota para /rh/collaborators -> Renderiza a Página de Colaboradores */}
         <Route path="collaborators" element={<RHCollaboratorsPage />} />
