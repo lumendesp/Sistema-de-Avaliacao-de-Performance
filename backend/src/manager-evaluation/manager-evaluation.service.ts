@@ -98,13 +98,33 @@ export class ManagerEvaluationService {
       );
     }
 
-    // Se status=submitted, atualiza status e o createdAt (sobrescreve data de criação)
-    const updateData: any = {
-      items: {
-        deleteMany: {},
-        create: itemsToUpdate,
-      },
-    };
+    // Atualiza apenas os itens enviados: para cada critério, faz upsert (atualiza se existe, cria se não existe)
+    const updateOps = itemsToUpdate.map(async (item) => {
+      return this.prisma.managerEvaluationItem.upsert({
+        where: {
+          evaluationId_criterionId: {
+            evaluationId: id,
+            criterionId: item.criterion.connect.id,
+          },
+        },
+        update: {
+          justification: item.justification,
+          score: item.score,
+          scoreDescription: item.scoreDescription,
+        },
+        create: {
+          evaluation: { connect: { id } },
+          criterion: { connect: { id: item.criterion.connect.id } },
+          groupId: item.groupId,
+          justification: item.justification,
+          score: item.score,
+          scoreDescription: item.scoreDescription,
+        },
+      });
+    });
+    await Promise.all(updateOps);
+    // Atualiza status se necessário
+    const updateData: any = {};
     if (dto.status === 'submitted') {
       updateData.status = 'submitted';
       updateData.createdAt = new Date();
@@ -179,9 +199,17 @@ export class ManagerEvaluationService {
     return { ...evaluation, groups: this.groupItems(evaluation.items) };
   }
 
-  async findByEvaluatorAndEvaluatee(evaluatorId: number, evaluateeId: number) {
+  async findByEvaluatorAndEvaluatee(
+    evaluatorId: number,
+    evaluateeId: number,
+    cycleId?: number,
+  ) {
+    const where: Record<string, any> = { evaluatorId, evaluateeId };
+    if (typeof cycleId === 'number') {
+      where.cycleId = cycleId;
+    }
     const evaluation = await this.prisma.managerEvaluation.findFirst({
-      where: { evaluatorId, evaluateeId },
+      where,
       include: {
         items: true,
         evaluator: { select: { name: true, email: true } },

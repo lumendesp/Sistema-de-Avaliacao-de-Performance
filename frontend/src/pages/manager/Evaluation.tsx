@@ -15,6 +15,7 @@ import axios from "axios";
 type OutletContextType = {
   setSubmit: (fn: () => Promise<boolean>, isUpdate: boolean) => void;
   isEditing?: boolean;
+  cycleId?: number | null;
 };
 
 type Group = {
@@ -47,10 +48,12 @@ export default function CollaboratorEvaluation() {
   const [selfEvaluation, setSelfEvaluation] = useState<any>(null);
   const outletContext = useOutletContext<OutletContextType>();
   const isEditing = outletContext?.isEditing !== false;
-  console.log("[DEBUG] isEditing recebido no filho:", isEditing);
-  const { token } = useAuth();
   const [cycleId, setCycleId] = useState<number | null>(null);
   const [cycleStatus, setCycleStatus] = useState<string | null>(null);
+  // Sempre priorize o cycleId do context (layout) se vier, senão usa local
+  const effectiveCycleId = outletContext?.cycleId ?? cycleId;
+  console.log("[DEBUG] isEditing recebido no filho:", isEditing);
+  const { token } = useAuth();
 
   useEffect(() => {
     const fetchCycle = async () => {
@@ -164,7 +167,10 @@ export default function CollaboratorEvaluation() {
         console.log("initialState (criteriaState):", initialState);
         setCriteriaState(initialState);
         // Busca avaliação já existente
-        const evaluation = await fetchManagerEvaluation(Number(collaboratorId));
+        const evaluation = await fetchManagerEvaluation(
+          Number(collaboratorId),
+          effectiveCycleId ?? undefined
+        );
         if (evaluation && evaluation.groups) {
           // Se já existe avaliação, seta evaluationId para garantir update
           if (evaluation.id) setEvaluationId(evaluation.id);
@@ -222,7 +228,7 @@ export default function CollaboratorEvaluation() {
 
   // Função de auto-save: envia todos os critérios, mesmo incompletos
   const autoSave = useCallback(async () => {
-    if (!collaboratorId || !cycleId) return;
+    if (!collaboratorId || !effectiveCycleId) return;
     const groupsPayload = groups.map((group) => ({
       groupId: group.id,
       groupName: group.name,
@@ -235,13 +241,17 @@ export default function CollaboratorEvaluation() {
     if (groupsPayload.length === 0) return;
     try {
       if (evaluationId) {
-        await updateManagerEvaluation(Number(collaboratorId), {
-          groups: groupsPayload,
-        });
+        await updateManagerEvaluation(
+          Number(collaboratorId),
+          {
+            groups: groupsPayload,
+          },
+          effectiveCycleId as number
+        );
       } else {
         const res = await createManagerEvaluation({
           evaluateeId: Number(collaboratorId),
-          cycleId: cycleId as number,
+          cycleId: effectiveCycleId as number,
           groups: groupsPayload,
         });
         if (res && res.id) setEvaluationId(res.id);
@@ -250,7 +260,7 @@ export default function CollaboratorEvaluation() {
       // Não alerta, só loga
       console.error("Erro ao auto-salvar avaliação do gestor:", e);
     }
-  }, [criteriaState, groups, collaboratorId, evaluationId, cycleId]);
+  }, [criteriaState, groups, collaboratorId, evaluationId, effectiveCycleId]);
 
   // Auto-save: dispara a mesma lógica do botão sempre que criteriaState mudar
   useEffect(() => {
@@ -260,13 +270,13 @@ export default function CollaboratorEvaluation() {
       autoSave();
     }, 500);
     return () => debounceRef.current && clearTimeout(debounceRef.current);
-  }, [criteriaState, collaboratorId, cycleId, autoSave]);
+  }, [criteriaState, collaboratorId, cycleId, autoSave, effectiveCycleId]);
 
   // Mantém o submit manual para envio final (com validação)
   useEffect(() => {
     if (!outletContext?.setSubmit) return;
     outletContext.setSubmit(async () => {
-      if (!collaboratorId) return false;
+      if (!collaboratorId || !effectiveCycleId) return false;
       // Monta o payload no formato esperado pela API
       const groupsPayload = groups.map((group) => ({
         groupId: group.id,
@@ -294,15 +304,19 @@ export default function CollaboratorEvaluation() {
       try {
         if (evaluationId) {
           // Update
-          await updateManagerEvaluation(Number(collaboratorId), {
-            groups: groupsPayload,
-            status: "submitted",
-          });
+          await updateManagerEvaluation(
+            Number(collaboratorId),
+            {
+              groups: groupsPayload,
+              status: "submitted",
+            },
+            effectiveCycleId as number
+          );
         } else {
           // Create
           await createManagerEvaluation({
             evaluateeId: Number(collaboratorId),
-            cycleId: cycleId as number,
+            cycleId: effectiveCycleId as number,
             groups: groupsPayload,
             status: "submitted",
           });

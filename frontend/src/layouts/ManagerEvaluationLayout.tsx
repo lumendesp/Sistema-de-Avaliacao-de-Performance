@@ -3,6 +3,7 @@ import {
   updateManagerEvaluation,
 } from "../services/api";
 import React, { useEffect, useRef, useState } from "react";
+import { fetchActiveEvaluationCycle } from "../services/api";
 import { Outlet, NavLink, useParams } from "react-router-dom";
 import type { Collaborator } from "../types/collaboratorStatus";
 import { useAuth } from "../context/AuthContext";
@@ -10,6 +11,19 @@ import { useAuth } from "../context/AuthContext";
 const API_URL = "http://localhost:3000";
 
 export default function ManagerEvaluationLayout() {
+  // Estado para ciclo atual
+  const [cycleId, setCycleId] = useState<number | null>(null);
+  useEffect(() => {
+    async function getCycle() {
+      try {
+        const cycle = await fetchActiveEvaluationCycle("MANAGER");
+        setCycleId(cycle?.id || null);
+      } catch {
+        setCycleId(null);
+      }
+    }
+    getCycle();
+  }, []);
   const { id } = useParams();
   const { user } = useAuth();
   const [collaborator, setCollaborator] = useState<Collaborator | null>(null);
@@ -228,7 +242,7 @@ export default function ManagerEvaluationLayout() {
           <div className="w-full box-border">
             <Outlet
               key={editKey}
-              context={{ setSubmit: handleSetSubmit, isEditing }}
+              context={{ setSubmit: handleSetSubmit, isEditing, cycleId }}
             />
           </div>
         </main>

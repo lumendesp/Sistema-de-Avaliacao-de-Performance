@@ -98,10 +98,14 @@ export class ManagerEvaluationController {
     @Request() req,
   ) {
     const evaluatorId = req.user.userId;
-    // Busca a avaliação do gestor logado para o colaborador
+    // Suporte a filtro por cycleId via query param
+    const cycleId =
+      req.query && req.query.cycleId ? Number(req.query.cycleId) : undefined;
+    // Busca a avaliação do gestor logado para o colaborador, filtrando pelo ciclo se informado
     const evaluation = await this.service.findByEvaluatorAndEvaluatee(
       evaluatorId,
       evaluateeId,
+      cycleId,
     );
     if (!evaluation) throw new Error('Avaliação não encontrada');
     return this.service.update(evaluation.id, dto);
@@ -110,10 +114,17 @@ export class ManagerEvaluationController {
   @Get('by-evaluatee/:evaluateeId')
   async findByEvaluatorAndEvaluatee(
     @Param('evaluateeId', ParseIntPipe) evaluateeId: number,
-    @Request() req,
+    @Request() req: any,
   ) {
     const evaluatorId = req.user.userId;
-    return this.service.findByEvaluatorAndEvaluatee(evaluatorId, evaluateeId);
+    // Suporte a filtro por cycleId via query param
+    const cycleId =
+      req.query && req.query.cycleId ? Number(req.query.cycleId) : undefined;
+    return this.service.findByEvaluatorAndEvaluatee(
+      evaluatorId,
+      evaluateeId,
+      cycleId,
+    );
   }
 
   @Get('by-manager/:evaluatorId')
