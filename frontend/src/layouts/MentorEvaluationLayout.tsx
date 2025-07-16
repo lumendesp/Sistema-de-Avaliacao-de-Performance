@@ -62,7 +62,10 @@ export default function MentorEvaluationLayout() {
       if (!id) return;
       try {
         const api = await import("../services/api");
-        const evaluations = await api.fetchMentorToCollaboratorEvaluationsByCollaborator(Number(id));
+        const evaluations =
+          await api.fetchMentorToCollaboratorEvaluationsByCollaborator(
+            Number(id)
+          );
         const evaluation = Array.isArray(evaluations) ? evaluations[0] : null;
         if (evaluation) {
           setCreatedAt(evaluation.createdAt || null);
@@ -94,7 +97,10 @@ export default function MentorEvaluationLayout() {
         if (ok && id) {
           // Atualiza status/createdAt após envio
           const api = await import("../services/api");
-          const evaluations = await api.fetchMentorToCollaboratorEvaluationsByCollaborator(Number(id));
+          const evaluations =
+            await api.fetchMentorToCollaboratorEvaluationsByCollaborator(
+              Number(id)
+            );
           const evaluation = Array.isArray(evaluations) ? evaluations[0] : null;
           if (evaluation) {
             setCreatedAt(evaluation.createdAt || null);
