@@ -20,8 +20,8 @@ export class EvaluationCycleService {
   async findCommitteeEqualizationCycle() {
     return this.prisma.evaluationCycle.findFirst({
       where: { 
-        status: 'CLOSED',
-        type: Role.COMMITTEE
+        status: 'IN_PROGRESS_COMMITTEE',
+        // type: Role.COMMITTEE
       },
       orderBy: {
         endDate: 'desc'
