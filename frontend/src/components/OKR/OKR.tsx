@@ -265,7 +265,7 @@ const OKR: React.FC<OKRProps> = ({
         </div>
         <button
           onClick={() => setShowAddForm(true)}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition-colors"
+          className="bg-[#08605F] hover:bg-[#064a49] text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
         >
           <PlusIcon className="w-5 h-5" />
           Novo OKR
@@ -374,7 +374,7 @@ const OKR: React.FC<OKRProps> = ({
             <div className="flex gap-3 pt-4">
               <button
                 onClick={handleAddOKR}
-                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                className="bg-[#08605F] hover:bg-[#064a49] text-white px-6 py-2 rounded-lg transition-colors"
                 disabled={
                   !newOKR.objective.trim() ||
                   !newOKR.keyResults[0].trim() ||
@@ -415,7 +415,7 @@ const OKR: React.FC<OKRProps> = ({
             </p>
             <button
               onClick={() => setShowAddForm(true)}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              className="bg-[#08605F] hover:bg-[#064a49] text-white px-4 py-2 rounded-lg transition-colors"
             >
               Criar primeiro OKR
             </button>
@@ -522,7 +522,7 @@ const OKR: React.FC<OKRProps> = ({
                       <div className="flex gap-2 mt-2">
                         <button
                           onClick={() => handleSaveEdit(okr.id)}
-                          className="bg-green-600 text-white px-4 py-1 rounded-lg hover:bg-green-700"
+                          className="bg-[#08605F] hover:bg-[#064a49] text-white px-4 py-1 rounded-lg"
                         >
                           Salvar
                         </button>

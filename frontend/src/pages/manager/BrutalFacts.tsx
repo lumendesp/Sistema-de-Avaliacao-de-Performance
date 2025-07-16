@@ -33,7 +33,7 @@ const BrutalFacts: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center gap-8">
+    <div className="min-h-screen bg-[#f1f1f1] p-10 flex flex-col items-center gap-8">
       <h1 className="text-3xl font-bold mb-4">Brutal Facts</h1>
       {loading || hasClosedCycle === null ? (
         <div className="w-full max-w-4xl mb-2">

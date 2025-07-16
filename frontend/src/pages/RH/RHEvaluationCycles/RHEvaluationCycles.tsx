@@ -113,6 +113,7 @@ const RHEvaluationCycles = () => {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [iaLoading, setIaLoading] = useState(false); // Novo estado para loading IA
+  const [publishingLoading, setPublishingLoading] = useState(false); // Novo estado para loading de publicação
 
   const cycle =
     allCycles
@@ -150,6 +151,10 @@ const RHEvaluationCycles = () => {
       if (status === "IN_PROGRESS_MANAGER") {
         setIaLoading(true);
       }
+      // Se for publicar ciclo, ativa loading de publicação
+      if (status === "IN_PROGRESS_COMMITTEE") {
+        setPublishingLoading(true);
+      }
       const res = await fetch(`http://localhost:3000${action.endpoint}`, {
         method: action.method,
         headers: {
@@ -184,6 +189,7 @@ const RHEvaluationCycles = () => {
     } finally {
       setActionLoading(false);
       setIaLoading(false); // Desativa loading IA ao finalizar
+      setPublishingLoading(false); // Desativa loading de publicação ao finalizar
       setTimeout(() => {
         setActionSuccess(null);
         setActionError(null);
@@ -229,120 +235,149 @@ const RHEvaluationCycles = () => {
                     Nenhum ciclo encontrado.
                   </div>
                 )}
-                {allCycles.map((c) => {
-                  const status = statusMap[c.status] || {
-                    label: c.status,
-                    color: "text-gray-700",
-                    bg: "bg-gray-100",
-                  };
-                  const isActive = cycle && c.id === cycle.id;
-                  const action = actionMap[c.status];
-                  const iconData = actionIconMap[c.status];
-                  const isClosed = c.status === "CLOSED";
-                  return (
-                    <div
-                      key={c.id}
-                      className="grid grid-cols-5 gap-2 px-2 py-3 items-center text-center"
-                    >
-                      <div className="font-medium text-gray-800 md:truncate h-full flex items-center text-center min-h-[32px]">
-                        <span className="block align-middle w-full">
-                          {c.name}
-                        </span>
-                      </div>
-                      <div className="flex justify-center items-center">
-                        <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${status.bg} ${status.color}`}
-                        >
-                          {status.label}
-                        </span>
-                      </div>
-                      <div className="flex justify-center items-center text-gray-600">
-                        {c.startDate
-                          ? new Date(c.startDate).toLocaleDateString("pt-BR")
-                          : "-"}
-                      </div>
-                      <div className="flex justify-center items-center text-gray-600">
-                        {c.endDate
-                          ? new Date(c.endDate).toLocaleDateString("pt-BR")
-                          : "-"}
-                      </div>
-                      <div className="flex justify-center items-center">
-                        {isActive && action && iconData ? (
-                          <>
-                            <button
-                              className="group relative"
-                              onClick={() => handleAction(c.status)}
-                              disabled={
-                                actionLoading ||
-                                (c.status === "CLOSED" && iaLoading)
-                              }
-                              data-tooltip-id={`tooltip-action-${c.id}`}
-                              data-tooltip-content={iconData.tooltip}
-                            >
-                              <span className="sr-only">
-                                {iconData.tooltip}
-                              </span>
-                              {actionLoading && c.status === cycle.status ? (
-                                <svg
-                                  className="animate-spin h-7 w-7 text-gray-400"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                    fill="none"
-                                  />
-                                  <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8v8z"
-                                  />
-                                </svg>
-                              ) : iaLoading && c.status === "CLOSED" ? (
-                                <svg
-                                  className="animate-spin h-7 w-7 text-yellow-400"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                    fill="none"
-                                  />
-                                  <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8v8z"
-                                  />
-                                </svg>
-                              ) : (
-                                iconData.icon
-                              )}
-                            </button>
-                            <Tooltip
-                              id={`tooltip-action-${c.id}`}
-                              place="bottom"
-                              effect="solid"
-                            />
-                          </>
-                        ) : c.status === "PUBLISHED" ? (
-                          <span className="text-green-700 font-semibold text-xs">
-                            Publicado
+                {[...allCycles]
+                  .sort(
+                    (a, b) =>
+                      new Date(b.startDate).getTime() -
+                      new Date(a.startDate).getTime()
+                  )
+                  .map((c) => {
+                    const status = statusMap[c.status] || {
+                      label: c.status,
+                      color: "text-gray-700",
+                      bg: "bg-gray-100",
+                    };
+                    const isActive = cycle && c.id === cycle.id;
+                    const action = actionMap[c.status];
+                    const iconData = actionIconMap[c.status];
+                    const isClosed = c.status === "CLOSED";
+                    return (
+                      <div
+                        key={c.id}
+                        className="grid grid-cols-5 gap-2 px-2 py-3 items-center text-center"
+                      >
+                        <div className="font-medium text-gray-800 md:truncate h-full flex items-center text-center min-h-[32px]">
+                          <span className="block align-middle w-full">
+                            {c.name}
                           </span>
-                        ) : (
-                          <span className="text-gray-400 text-xs">-</span>
-                        )}
+                        </div>
+                        <div className="flex justify-center items-center">
+                          <span
+                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${status.bg} ${status.color}`}
+                          >
+                            {status.label}
+                          </span>
+                        </div>
+                        <div className="flex justify-center items-center text-gray-600">
+                          {c.startDate
+                            ? new Date(c.startDate).toLocaleDateString("pt-BR")
+                            : "-"}
+                        </div>
+                        <div className="flex justify-center items-center text-gray-600">
+                          {c.endDate
+                            ? new Date(c.endDate).toLocaleDateString("pt-BR")
+                            : "-"}
+                        </div>
+                        <div className="flex justify-center items-center">
+                          {isActive && action && iconData ? (
+                            <>
+                              <button
+                                className="group relative"
+                                onClick={() => handleAction(c.status)}
+                                disabled={
+                                  actionLoading ||
+                                  (c.status === "CLOSED" && iaLoading) ||
+                                  (c.status === "IN_PROGRESS_COMMITTEE" &&
+                                    publishingLoading)
+                                }
+                                data-tooltip-id={`tooltip-action-${c.id}`}
+                                data-tooltip-content={iconData.tooltip}
+                              >
+                                <span className="sr-only">
+                                  {iconData.tooltip}
+                                </span>
+                                {actionLoading && c.status === cycle.status ? (
+                                  <svg
+                                    className="animate-spin h-7 w-7 text-gray-400"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <circle
+                                      className="opacity-25"
+                                      cx="12"
+                                      cy="12"
+                                      r="10"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                      fill="none"
+                                    />
+                                    <path
+                                      className="opacity-75"
+                                      fill="currentColor"
+                                      d="M4 12a8 8 0 018-8v8z"
+                                    />
+                                  </svg>
+                                ) : iaLoading && c.status === "CLOSED" ? (
+                                  <svg
+                                    className="animate-spin h-7 w-7 text-yellow-400"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <circle
+                                      className="opacity-25"
+                                      cx="12"
+                                      cy="12"
+                                      r="10"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                      fill="none"
+                                    />
+                                    <path
+                                      className="opacity-75"
+                                      fill="currentColor"
+                                      d="M4 12a8 8 0 018-8v8z"
+                                    />
+                                  </svg>
+                                ) : publishingLoading &&
+                                  c.status === "IN_PROGRESS_COMMITTEE" ? (
+                                  <svg
+                                    className="animate-spin h-7 w-7 text-yellow-400"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <circle
+                                      className="opacity-25"
+                                      cx="12"
+                                      cy="12"
+                                      r="10"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                      fill="none"
+                                    />
+                                    <path
+                                      className="opacity-75"
+                                      fill="currentColor"
+                                      d="M4 12a8 8 0 018-8v8z"
+                                    />
+                                  </svg>
+                                ) : (
+                                  iconData.icon
+                                )}
+                              </button>
+                              <Tooltip
+                                id={`tooltip-action-${c.id}`}
+                                place="bottom"
+                                effect="solid"
+                              />
+                            </>
+                          ) : c.status === "PUBLISHED" ? (
+                            <span className="text-green-700 font-semibold text-xs">
+                              Publicado
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 text-xs">-</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             </div>
           </div>
@@ -369,7 +404,17 @@ const RHEvaluationCycles = () => {
       {iaLoading && (
         <div className="flex items-center justify-center gap-2 py-6">
           <span className="w-6 h-6 loader"></span>
-          <span className="text-gray-600">Gerando resumo com IA...</span>
+          <span className="text-gray-600">
+            Gerando resumos das avaliações com a IA...
+          </span>
+        </div>
+      )}
+      {publishingLoading && (
+        <div className="flex items-center justify-center gap-2 py-6">
+          <span className="w-6 h-6 loader"></span>
+          <span className="text-gray-600">
+            Publicando ciclo e gerando resumos para o colaborador...
+          </span>
         </div>
       )}
       {actionSuccess && (

@@ -717,7 +717,7 @@ const PDI: React.FC<PDIProps> = ({
                 <p className="text-sm text-gray-500 mb-4">Crie seu plano de desenvolvimento individual para começar a adicionar ações.</p>
                 <button
                   onClick={() => setShowCreatePdi(true)}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  className="bg-[#08605F] hover:bg-[#064a49] text-white px-4 py-2 rounded-lg transition-colors"
                 >
                   Criar meu PDI
                 </button>
@@ -748,7 +748,7 @@ const PDI: React.FC<PDIProps> = ({
                 </div>
                 <button
                   onClick={handleCreatePdi}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors w-full"
+                  className="bg-[#08605F] hover:bg-[#064a49] text-white px-4 py-2 rounded-lg transition-colors w-full"
                 >
                   Salvar PDI
                 </button>
@@ -800,7 +800,7 @@ const PDI: React.FC<PDIProps> = ({
                       </div>
                       <button
                         onClick={handleCreatePdiForCollaborator}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors w-full"
+                        className="bg-[#08605F] hover:bg-[#064a49] text-white px-4 py-2 rounded-lg transition-colors w-full"
                       >
                         Salvar PDI
                       </button>
@@ -875,7 +875,7 @@ const PDI: React.FC<PDIProps> = ({
                                   setShowAddAction(true);
                                 }
                               }}
-                              className={`bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition-colors mb-0 ${(() => { const collab = collaborators.find(c => c.id === selectedCollaborator); return !collab || !collab.pdiId ? 'opacity-50 cursor-not-allowed' : '' })()}`}
+                              className={`bg-[#08605F] hover:bg-[#064a49] text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors mb-0 ${(() => { const collab = collaborators.find(c => c.id === selectedCollaborator); return !collab || !collab.pdiId ? 'opacity-50 cursor-not-allowed' : '' })()}`}
                               disabled={(() => { const collab = collaborators.find(c => c.id === selectedCollaborator); return !collab || !collab.pdiId })()}
                             >
                               <PlusIcon className="w-5 h-5" />
@@ -997,7 +997,7 @@ const PDI: React.FC<PDIProps> = ({
                           <div className="flex gap-3 pt-4">
                             <button
                               onClick={handleAddAction}
-                              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                              className="bg-[#08605F] hover:bg-[#064a49] text-white px-6 py-2 rounded-lg transition-colors"
                             >
                               Salvar Ação
                             </button>
@@ -1124,7 +1124,7 @@ const PDI: React.FC<PDIProps> = ({
                                     <div className="flex gap-3 pt-4">
                                       <button
                                         onClick={handleEditActionSave}
-                                        className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                                        className="bg-[#08605F] hover:bg-[#064a49] text-white px-6 py-2 rounded-lg transition-colors"
                                       >
                                         Salvar Alterações
                                       </button>

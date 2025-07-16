@@ -3,11 +3,13 @@ import Assessment from "./AssessmentColaboratorsPreview"
 import { UserIcon } from "../UserIcon";
 import { useState } from 'react';
 import { FaExclamationTriangle } from 'react-icons/fa';
+import { translateRole } from '../../utils/roleTranslations';
 
 interface ColaboratorsCommitteeProps {
     // Profile info
     name: string;
     role: string;
+    roleRaw?: any[]; // Add roleRaw prop
     initials: string;
     state: 'finalizado' | 'pendente' | 'expirado';
     
@@ -21,9 +23,17 @@ interface ColaboratorsCommitteeProps {
     dropInfo?: { text: string; percent: number };
 }
 
+// Helper to get display roles (excluding 'Administrador')
+function getDisplayRoles(roles: any[]): string[] {
+    return roles
+        .map((r: any) => translateRole(r.role))
+        .filter(role => role !== 'Administrador');
+}
+
 function ColaboratorsCommitte({
     name,
     role,
+    roleRaw,
     initials,
     state,
     autoAvaliacao,
@@ -73,7 +83,25 @@ function ColaboratorsCommitte({
                 <div className="flex-1 sm:flex-none flex items-center gap-1 sm:gap-2 relative">
                     <div>
                         <h3 className="text-xs sm:text-sm md:text-base font-medium">{name}</h3>
-                        <h4 className="text-gray-500 text-xs sm:text-sm">{role}</h4>
+                        {(() => {
+                            if (!roleRaw) {
+                                return <h4 className="text-gray-500 text-xs sm:text-sm">{role}</h4>;
+                            }
+                            const displayRoles = getDisplayRoles(roleRaw);
+                            if (displayRoles.length === 0) return null;
+                            if (displayRoles.length === 1) {
+                                return <h4 className="text-gray-500 text-xs sm:text-sm">{displayRoles[0]}</h4>;
+                            }
+                            return (
+                                <div className="text-gray-500 text-xs sm:text-sm relative group cursor-pointer">
+                                    {displayRoles[0]}
+                                    <span className="ml-1 text-gray-400">+{displayRoles.length - 1}</span>
+                                    <div className="absolute left-0 z-10 hidden group-hover:block bg-white border border-gray-300 rounded shadow-md p-2 mt-1 text-xs text-gray-700 min-w-max">
+                                        {displayRoles.join(', ')}
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
                     {(hasDiscrepancy && discrepancyInfo) || (dropInfo && !hasDiscrepancy) ? (
                         <div
@@ -112,6 +140,6 @@ function ColaboratorsCommitte({
             </div>
         </div>
     )
-};
+}
 
 export default ColaboratorsCommitte;

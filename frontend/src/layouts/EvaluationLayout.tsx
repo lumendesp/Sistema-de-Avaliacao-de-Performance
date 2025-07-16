@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import SubmitButton from "../components/SubmitButton/SubmitButton";
 import { useEvaluation } from "../context/EvaluationsContext";
+import { useEffect } from "react";
 
 const tabs = [
   { key: "self", label: "Autoavaliação", path: "self-evaluation" },
@@ -17,7 +18,22 @@ const EvaluationLayout = () => {
     isSubmit,
     unlockAllEvaluations,
     activeCycle,
+    loadCompletionStatus,
   } = useEvaluation();
+
+  // nem todas as abas estão completas ==> botão de concluir desativado
+  // cliquei em editar mas não atualizei nada ==> botão de concluir desativado
+  // cliquei em enviar ==> botão de editar ativado
+
+  console.log(activeCycle);
+
+  useEffect(() => {
+    console.log("Estado das abas:", tabCompletion);
+  }, [tabCompletion]);
+
+  useEffect(() => {
+    loadCompletionStatus();
+  }, []);
 
   return (
     <div className="h-full flex flex-col pt-12 sm:pt-6">
