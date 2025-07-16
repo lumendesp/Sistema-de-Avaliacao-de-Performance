@@ -14,7 +14,7 @@ const menuItems = [
   },
   {
     path: "/mentor/collaborators",
-    label: "Colaboradores",
+    label: "Mentorados",
     icon: (
       <img src={colaboratorsIcon} alt="Colaboradores" className="w-5 h-5" />
     ),

@@ -588,12 +588,13 @@ export const getUserById = async (id: number) => {
 // Gestor (avaliações)
 
 export const fetchManagerCollaborators = async (managerId: number) => {
-  const res = await fetch(`${API_URL}/manager/${managerId}/collaborators`, {
+  const res = await fetch(`${API_URL}/managers/${managerId}`, {
     method: "GET",
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error("Erro ao buscar colaboradores");
-  return res.json();
+  const data = await res.json();
+  return data.collaborators || [];
 };
 
 export const fetchManagerEvaluation = async (collaboratorId: number) => {
