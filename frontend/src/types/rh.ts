@@ -15,6 +15,7 @@ export interface RHDashboardData {
     pendingEvaluations: number;
     completionPercentage: number;
     daysRemaining: number;
+    cycleStatus: string;
     collaborators: CollaboratorStatus[];
     completionByTrack: {
         track: string;

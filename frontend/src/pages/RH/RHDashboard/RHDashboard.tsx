@@ -2,9 +2,7 @@ import RHMetricsCard from '../../../components/RH/RHMetricsCard/RHMetricsCard';
 import RHCircularProgressCard from '../../../components/RH/RHCircularProgressCard/RHCircularProgressCard';
 import CollaboratorRow from '../../../components/RH/CollaboratorRow/CollaboratorRow';
 import RHBarChart from '../../../components/RH/RHBarChart/RHBarChart';
-/* import CustomCalendarIcon from '../../../components/RH/icons/CalendarIcons'; */
-import CustomDocumentIcon from '../../../components/RH/icons/DocumentIcon';
-import { CalendarDaysIcon } from '@heroicons/react/24/outline';
+import { CalendarDaysIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { getRHDashboardData } from '../../../services/api';
 import { type RHDashboardData } from '../../../types/rh'
@@ -79,15 +77,19 @@ function RHDashboard() {
         return <div className="p-8 text-center">Nenhum dado encontrado.</div>;
     }
 
-    let calendarIconColor = 'text-green-600';
-    let cardBgColor = 'bg-green-300';
+    const isPublished = dashboardData.cycleStatus === 'PUBLISHED';
 
-    if (dashboardData.daysRemaining <= 7 && dashboardData.daysRemaining >= 3) {
-        calendarIconColor = 'text-yellow-500';
-        cardBgColor = 'bg-yellow-200';
-    } else if (dashboardData.daysRemaining <= 2) {
-        calendarIconColor = 'text-red-500';
-        cardBgColor = 'bg-red-300';
+    // Cores para o ícone do documento
+    const documentIconColor = isPublished ? 'text-gray-400' : 'text-red-600';
+
+    // Cores para o ícone do calendário
+    let calendarIconColor = isPublished ? 'text-gray-400' : 'text-green-600';
+    if (!isPublished) { // Só aplica lógica de cores se o ciclo não estiver publicado
+        if (dashboardData.daysRemaining <= 7 && dashboardData.daysRemaining >= 3) {
+            calendarIconColor = 'text-yellow-500';
+        } else if (dashboardData.daysRemaining <= 2) {
+            calendarIconColor = 'text-red-500';
+        }
     }
 
     return (
@@ -106,25 +108,34 @@ function RHDashboard() {
                 />
                 <RHMetricsCard
                     title="Avaliações pendentes"
-                    description={`${dashboardData.pendingEvaluations} colaboradores ainda não fecharam`}
+                    description={
+                        isPublished
+                        ?`${dashboardData.pendingEvaluations} colaboradores não fecharam`
+                        :`${dashboardData.pendingEvaluations} colaboradores ainda não fecharam`
+                    }
                     value={dashboardData.pendingEvaluations}
-                    icon={CustomDocumentIcon}
+                    icon={DocumentTextIcon}
                     iconBgColor="bg-white"
-                    iconColor="text-red-600"
+                    iconColor={documentIconColor}
                 />
                 <RHMetricsCard
-                    title="Fechamento de ciclo"
-                    description={
-                        dashboardData.daysRemaining > 0
-                            ? `Faltam ${dashboardData.daysRemaining} dia(s) para o fechamento`
-                            : 'O prazo para o ciclo encerrou.'
+                    title={
+                        isPublished
+                        ? "Ciclo publicado"
+                        : "Fechamento de ciclo"
                     }
-                    value={dashboardData.daysRemaining}
-                    unit={dashboardData.daysRemaining === 1 ? 'dia' : 'dias'}
+                    description={
+                        isPublished 
+                            ?  ""
+                            : (dashboardData.daysRemaining > 0 
+                                ? `Faltam ${dashboardData.daysRemaining} dia(s) para o fechamento` 
+                                : 'O prazo para o ciclo encerrou.')
+                    }
+                    value={isPublished ? '-' : dashboardData.daysRemaining}
+                    unit={isPublished ? '' : (dashboardData.daysRemaining === 1 ? 'dia' : 'dias')}
                     icon={CalendarDaysIcon}
                     iconBgColor="bg-white"
                     iconColor={calendarIconColor}
-                    backgroundColor={cardBgColor}
                 />
             </section>
 

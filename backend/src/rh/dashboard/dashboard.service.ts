@@ -122,6 +122,7 @@ export class RHDashboardService {
             pendingEvaluations: pendingCount,
             completionPercentage,
             daysRemaining,
+            cycleStatus: activeCycle.status,
             collaborators: collaboratorsStatus,
             completionByTrack,
         };

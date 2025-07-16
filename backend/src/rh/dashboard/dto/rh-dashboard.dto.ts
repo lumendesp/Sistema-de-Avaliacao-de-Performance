@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { CycleStatus } from '@prisma/client';
 
 // DTO para os dados do gráfico de barras
 export class CompletionByTrackDto {
@@ -55,6 +56,9 @@ export class RHDashboardDto {
 
     @ApiProperty({ example: 30, description: 'Dias restantes para o fim do ciclo.' })
     daysRemaining: number;
+
+    @ApiProperty({ enum: CycleStatus, example: 'IN_PROGRESS_COLLABORATOR' })
+    cycleStatus: CycleStatus;
 
     @ApiProperty({ type: [CollaboratorStatusDto] })
     collaborators: CollaboratorStatusDto[];
