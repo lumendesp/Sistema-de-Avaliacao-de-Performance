@@ -174,15 +174,15 @@ export default function MentorEvaluationLayout() {
           </div>
           {/* Navegação responsiva */}
           <nav className="bg-white border-b border-gray-100 w-full overflow-x-auto max-w-screen box-border">
-            <ul className="flex flex-col sm:flex-row px-2 sm:px-8 pt-2 sm:pt-4 gap-1 sm:gap-10 text-base sm:text-lg text-gray-600 font-semibold w-full box-border">
+            <ul className="flex flex-col sm:flex-row px-2 sm:px-8 pt-6 sm:pt-8 gap-1 sm:gap-10 text-base text-gray-600 font-semibold w-full box-border">
               <li>
                 <NavLink
                   to=""
                   end
                   className={({ isActive }) =>
                     isActive
-                      ? "border-b-2 border-teal-700 pb-2 sm:pb-3 text-teal-700 flex items-center gap-2"
-                      : "pb-2 sm:pb-3 flex items-center gap-2"
+                      ? "border-b-2 border-teal-700 pb-2 text-teal-700 text-base font-bold flex items-center gap-2"
+                      : "pb-2 text-base font-medium flex items-center gap-2"
                   }
                 >
                   Avaliação
@@ -193,8 +193,8 @@ export default function MentorEvaluationLayout() {
                   to="autoavaliacao"
                   className={({ isActive }) =>
                     isActive
-                      ? "border-b-2 border-teal-700 pb-2 sm:pb-3 text-teal-700 flex items-center gap-2"
-                      : "pb-2 sm:pb-3 flex items-center gap-2"
+                      ? "border-b-2 border-teal-700 pb-2 text-teal-700 text-base font-bold flex items-center gap-2"
+                      : "pb-2 text-base font-medium flex items-center gap-2"
                   }
                 >
                   Autoavaliação
@@ -205,8 +205,8 @@ export default function MentorEvaluationLayout() {
                   to="360"
                   className={({ isActive }) =>
                     isActive
-                      ? "border-b-2 border-teal-700 pb-2 sm:pb-3 text-teal-700 flex items-center gap-2"
-                      : "pb-2 sm:pb-3 flex items-center gap-2"
+                      ? "border-b-2 border-teal-700 pb-2 text-teal-700 text-base font-bold flex items-center gap-2"
+                      : "pb-2 text-base font-medium flex items-center gap-2"
                   }
                 >
                   Avaliação 360
@@ -217,8 +217,8 @@ export default function MentorEvaluationLayout() {
                   to="historico"
                   className={({ isActive }) =>
                     isActive
-                      ? "border-b-2 border-teal-700 pb-2 sm:pb-3 text-teal-700 flex items-center gap-2"
-                      : "pb-2 sm:pb-3 flex items-center gap-2"
+                      ? "border-b-2 border-teal-700 pb-2 text-teal-700 text-base font-bold flex items-center gap-2"
+                      : "pb-2 text-base font-medium flex items-center gap-2"
                   }
                 >
                   Histórico
