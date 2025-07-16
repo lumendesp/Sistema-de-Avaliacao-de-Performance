@@ -6,12 +6,20 @@ import { useAuth } from "../../context/AuthContext";
 import dashboardIcon from "../../assets/dashboard.svg";
 import collaboratorsIcon from "../../assets/collaborators.svg";
 import configIcon from "../../assets/config.svg";
+import { IoDocumentTextOutline } from "react-icons/io5";
 
 const menuItems = [
   {
     path: "/rh",
     label: "Dashboard",
     icon: <img src={dashboardIcon} alt="Dashboard" className="w-5 h-5" />,
+  },
+    {
+    path: "/rh/cycles",
+    label: "Ciclos Avaliativos",
+    icon: (
+      <IoDocumentTextOutline size={20}/>
+    ),
   },
   {
     path: "/rh/collaborators",
