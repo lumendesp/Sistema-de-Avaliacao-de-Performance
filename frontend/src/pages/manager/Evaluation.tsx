@@ -100,14 +100,15 @@ export default function CollaboratorEvaluation() {
         // Filtra grupos do track que batem com unit/position
         const filteredGroups = trackData.CriterionGroup.filter((g) =>
           g.configuredCriteria.some(
-            (cc) => cc.unitId === userUnit && cc.positionId === userPosition
+            (cc) => cc.positionId === userPosition // removido: && cc.unitId === userUnit
           )
         ).map((g) => ({
           ...g,
           configuredCriteria: g.configuredCriteria.filter(
-            (cc) => cc.unitId === userUnit && cc.positionId === userPosition
+            (cc) => cc.positionId === userPosition // removido: && cc.unitId === userUnit
           ),
         }));
+
         setGroups(filteredGroups);
         // LOG: grupos filtrados
         console.log("filteredGroups:", filteredGroups);
