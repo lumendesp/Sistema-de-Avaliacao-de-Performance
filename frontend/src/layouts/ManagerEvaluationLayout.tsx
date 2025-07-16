@@ -56,12 +56,12 @@ export default function ManagerEvaluationLayout() {
     }
   }, [user, id]);
 
-  // Busca avaliação para status/createdAt
+  // Busca avaliação para status/createdAt do ciclo atual
   useEffect(() => {
     async function fetchEval() {
-      if (!id) return;
+      if (!id || !cycleId) return;
       try {
-        const evaluation = await fetchManagerEvaluation(Number(id));
+        const evaluation = await fetchManagerEvaluation(Number(id), cycleId);
         if (evaluation) {
           setEvaluationStatus(evaluation.status || null);
           setCreatedAt(evaluation.createdAt || null);
@@ -84,7 +84,7 @@ export default function ManagerEvaluationLayout() {
       }
     }
     fetchEval();
-  }, [id]);
+  }, [id, cycleId]);
 
   // Recebe do filho se é update ou create
   const handleSetSubmit = (fn: () => Promise<boolean>, updateFlag: boolean) => {
@@ -105,8 +105,8 @@ export default function ManagerEvaluationLayout() {
         const ok = await submitRef.current();
         if (ok) {
           // Atualiza status/createdAt após envio
-          if (id) {
-            const evaluation = await fetchManagerEvaluation(Number(id));
+          if (id && cycleId) {
+            const evaluation = await fetchManagerEvaluation(Number(id), cycleId);
             if (evaluation) {
               setEvaluationStatus(evaluation.status || null);
               setCreatedAt(evaluation.createdAt || null);
