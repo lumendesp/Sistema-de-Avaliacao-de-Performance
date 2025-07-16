@@ -10,6 +10,7 @@ interface Collaborator {
   managerNota?: string;
   peerNota?: string;
   finalNota?: string;
+  mentorNota?: string;
 }
 
 const BrutalFactsEqualizationList: React.FC = () => {
@@ -86,7 +87,7 @@ const BrutalFactsEqualizationList: React.FC = () => {
           />
           <button
             onClick={handleExport}
-            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm shadow"
+            className="bg-[#08605F] hover:bg-[#064a49] text-white px-3 py-1 rounded text-sm shadow"
           >
             Exportar Planilha
           </button>
@@ -99,8 +100,8 @@ const BrutalFactsEqualizationList: React.FC = () => {
           </div>
         ) : (
           filteredCollaborators.map((colab, idx) => (
-            <div key={idx} className="flex items-center justify-between border-b py-3">
-              <div className="flex items-center gap-3">
+            <div key={idx} className="flex w-full justify-between items-center gap-2 sm:gap-4 border-b py-3">
+              <div className="flex items-center gap-3 min-w-[180px]">
                 <div className="bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center font-bold text-gray-600">
                   {colab.nome.split(' ').map(n => n[0]).join('')}
                 </div>
@@ -109,22 +110,38 @@ const BrutalFactsEqualizationList: React.FC = () => {
                   <div className="text-xs text-gray-400">{colab.cargo}</div>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex flex-col items-center">
-                  <span className="text-xs text-gray-500">Auto</span>
-                  <span className="font-semibold text-blue-600">{colab.autoNota || '-'}</span>
+              <div className="flex w-full justify-between items-center gap-2 sm:gap-4">
+                <div className="flex-1 flex flex-col items-center">
+                  <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">Autoavaliação</span>
+                  <div className="w-full max-w-[60px] h-8 bg-gray-100 rounded flex items-center justify-center">
+                    <span className="text-xs sm:text-sm text-gray-800 font-medium">{colab.autoNota !== undefined && colab.autoNota !== '-' ? Number(colab.autoNota).toFixed(1) : '-'}</span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-xs text-gray-500">Gestor</span>
-                  <span className="font-semibold text-green-600">{colab.managerNota || '-'}</span>
+                <div className="flex-1 flex flex-col items-center">
+                  <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">Avaliação 360</span>
+                  <div className="w-full max-w-[60px] h-8 bg-gray-100 rounded flex items-center justify-center">
+                    <span className="text-xs sm:text-sm text-gray-800 font-medium">{colab.peerNota !== undefined && colab.peerNota !== '-' ? Number(colab.peerNota).toFixed(1) : '-'}</span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-xs text-gray-500">360</span>
-                  <span className="font-semibold text-orange-600">{colab.peerNota || '-'}</span>
+                <div className="flex-1 flex flex-col items-center">
+                  <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">Nota Gestor</span>
+                  <div className="w-full max-w-[60px] h-8 bg-gray-100 rounded flex items-center justify-center">
+                    <span className="text-xs sm:text-sm text-gray-800 font-medium">{colab.managerNota !== undefined && colab.managerNota !== '-' ? Number(colab.managerNota).toFixed(1) : '-'}</span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-xs text-gray-500">Final</span>
-                  <span className="font-bold text-purple-600 text-lg">{colab.finalNota || '-'}</span>
+                {colab.mentorNota !== undefined && (
+                  <div className="flex-1 flex flex-col items-center">
+                    <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">Nota Mentor</span>
+                    <div className="w-full max-w-[60px] h-8 bg-gray-100 rounded flex items-center justify-center">
+                      <span className="text-xs sm:text-sm text-gray-800 font-medium">{colab.mentorNota !== '-' ? Number(colab.mentorNota).toFixed(1) : '-'}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="flex-1 flex flex-col items-center">
+                  <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">Nota Final</span>
+                  <div className={`w-full max-w-[60px] h-8 rounded flex items-center justify-center ${colab.finalNota && colab.finalNota !== '-' ? 'bg-[#08605F]' : 'bg-gray-100'}`}>
+                    <span className={`text-xs sm:text-sm font-medium ${colab.finalNota && colab.finalNota !== '-' ? 'text-white' : 'text-gray-800'}`}>{colab.finalNota !== undefined && colab.finalNota !== '-' ? Number(colab.finalNota).toFixed(1) : '-'}</span>
+                  </div>
                 </div>
               </div>
             </div>

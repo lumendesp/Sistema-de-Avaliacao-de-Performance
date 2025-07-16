@@ -45,16 +45,6 @@ const menuItems = [
     ),
   },
   {
-    path: '/rh/okr',
-    label: 'Objetivos e Resultados-Chave',
-    icon: <FlagIcon className="w-5 h-5" />,
-  },
-  {
-    path: '/rh/pdi',
-    label: 'Plano de Desenvolvimento Individual',
-    icon: <UserGroupIcon className="w-5 h-5" />,
-  },
-  {
     path: '/rh/import',
     label: 'Importação',
     icon: <DocumentArrowUpIcon className="w-5 h-5" />,
