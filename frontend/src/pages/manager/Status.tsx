@@ -129,7 +129,7 @@ export default function Collaborators() {
   // Responsivo: Top bar, busca e lista
   const list = search.trim() !== "" ? searchResults : collaborators;
   return (
-    <div className="flex flex-col w-full min-h-screen bg-[#F5F6FA] overflow-x-hidden sm:overflow-x-visible max-w-md sm:max-w-full mx-auto sm:mx-0">
+    <div className="flex flex-col w-full min-h-screen bg-[#F1F1F1] overflow-x-hidden sm:overflow-x-visible max-w-md sm:max-w-full mx-auto sm:mx-0">
       {/* Top bar com espaço para ícone da sidebar */}
       <div className="flex items-center gap-2 px-1 sm:px-6 pt-5 pb-3 justify-center sm:justify-start">
         {/* Espaço reservado para o ícone da sidebar apenas no desktop */}

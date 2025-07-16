@@ -76,7 +76,7 @@ export default function MentorEvaluationLayout() {
     .join("");
 
   return (
-    <div className="min-h-screen flex bg-gray-100 overflow-x-hidden">
+    <div className="min-h-screen flex bg-[#F1F1F1] overflow-x-hidden">
       <div className="flex-1 flex flex-col">
         <div
           ref={headerBlockRef}
