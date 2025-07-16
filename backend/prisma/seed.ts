@@ -368,6 +368,7 @@ async function main() {
           { role: 'MANAGER' },
           { role: 'COLLABORATOR' },
           { role: 'ADMIN' },
+          { role: 'COMMITTEE' },
         ],
       },
     },

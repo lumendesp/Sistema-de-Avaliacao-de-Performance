@@ -117,12 +117,25 @@ export const fetchActiveEvaluationCycle = async (role?: string) => {
     }
     throw new Error(errorMessage);
   }
-  return res.json();
+  const text = await res.text();
+  if (!text) {
+    console.log(`[fetchActiveEvaluationCycle] Empty response for status ${status}`);
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(text);
+    console.log(`[fetchActiveEvaluationCycle] Parsed response for status ${status}:`, parsed);
+    return parsed;
+  } catch (e) {
+    console.log(`[fetchActiveEvaluationCycle] Invalid JSON for status ${status}:`, text);
+    return null;
+  }
 };
 
 // Function specifically for committee equalization cycles
 export const fetchCommitteeEqualizationCycle = async () => {
-  const res = await fetch(`${API_URL}/evaluation-cycle/active?type=COMMITTEE`, {
+  // Use status=IN_PROGRESS_COMMITTEE to get the correct cycle
+  const res = await fetch(`${API_URL}/evaluation-cycle/active?status=IN_PROGRESS_COMMITTEE`, {
     headers: getAuthHeaders(),
   });
   if (!res.ok) {
@@ -134,21 +147,13 @@ export const fetchCommitteeEqualizationCycle = async () => {
       // If response is not JSON, use the status text
       errorMessage = res.statusText || errorMessage;
     }
-    
     // Handle specific 404 case for committee
     if (res.status === 404) {
       throw new Error("Nenhum ciclo de equalização disponível. Aguarde o fechamento do ciclo de avaliação e sua liberação para o comitê.");
     }
-    
     throw new Error(errorMessage);
   }
-
-  try {
-    return JSON.parse(responseText);
-  } catch (error) {
-    console.error("Erro ao fazer parse da resposta:", responseText);
-    throw new Error("Resposta inválida do servidor");
-  }
+  return res.json();
 };
 
 export const fetchMostRecentEvaluationCycle = async () => {
@@ -473,7 +478,6 @@ export const fetchAISummary = async (
   userId: number,
   cycleId: number
 ): Promise<string> => {
-  console.log(userId, cycleId);
   const res = await fetch(
     `${API_URL}/ai-summary?userId=${userId}&cycleId=${cycleId}`,
     {
@@ -514,22 +518,22 @@ export const getSignificantDrops = async (userId: number, cycleId: number) => {
   );
   if (!response.ok) {
     if (response.status === 404) {
-      console.log(`[getSignificantDrops] No significant drops for user ${userId} in cycle ${cycleId} (404)`);
+      
       return null; // No significant drops found
     }
     throw new Error("Failed to fetch significant drops");
   }
   const text = await response.text();
   if (!text) {
-    console.log(`[getSignificantDrops] Empty response for user ${userId} in cycle ${cycleId}`);
+    
     return null;
   }
   try {
     const parsed = JSON.parse(text);
-    console.log(`[getSignificantDrops] Drops for user ${userId} in cycle ${cycleId}:`, parsed);
+    
     return parsed;
   } catch (e) {
-    console.log(`[getSignificantDrops] Invalid JSON for user ${userId} in cycle ${cycleId}:`, text);
+    
     return null;
   }
 };

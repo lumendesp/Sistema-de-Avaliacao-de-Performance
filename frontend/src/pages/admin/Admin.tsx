@@ -262,16 +262,6 @@ function Admin() {
             >
               Logs do Sistema
             </button>
-            <button
-              onClick={() => setActiveTab('system')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'system'
-                  ? 'border-green-main text-green-main'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Status do Sistema
-            </button>
           </nav>
         </div>
       </div>
@@ -632,55 +622,6 @@ function Admin() {
                 )}
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* System Status Tab */}
-      {activeTab === 'system' && (
-        <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-gray-900">Status do Sistema</h2>
-          
-          {/* System Health */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">CPU</h3>
-                <span className="text-2xl font-bold text-blue-600">{systemStatus.cpuUsage}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${systemStatus.cpuUsage}%` }}
-                ></div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Memória</h3>
-                <span className="text-2xl font-bold text-green-600">{systemStatus.memoryUsage}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${systemStatus.memoryUsage}%` }}
-                ></div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Disco</h3>
-                <span className="text-2xl font-bold text-purple-600">{systemStatus.diskUsage}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${systemStatus.diskUsage}%` }}
-                ></div>
-              </div>
-            </div>
           </div>
         </div>
       )}

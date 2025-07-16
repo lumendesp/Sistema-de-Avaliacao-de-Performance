@@ -243,7 +243,7 @@ export class UsersService {
           id: evaluation.id,
           type: 'FINAL',
           score: evaluation.finalScore || 0,
-          justification: evaluation.justification, // Final scores are not encrypted
+          justification: decrypt(evaluation.justification),
           evaluator: evaluation.adjuster,
           cycle: evaluation.cycle,
         })),

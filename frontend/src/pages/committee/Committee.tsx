@@ -41,8 +41,10 @@ function Committee(){
     const fetchCollaborators = async () => {
         try {
             const users = await getUsersWithEvaluationsForCommittee();
-            setFullUserData(users); // Store full data for export
-            const formattedCollaborators = await Promise.all(users.map(async (user: any) => {
+            // Filter out the logged-in user
+            const filteredUsers = user ? users.filter((u: any) => u.id !== user.id) : users;
+            setFullUserData(filteredUsers); // Store full data for export
+            const formattedCollaborators = await Promise.all(filteredUsers.map(async (user: any) => {
                 const evaluations = user.evaluationsEvaluated || [];
                 // Only include evaluations for the current committee cycle
                 const cycleEvaluations = cycleId
@@ -151,10 +153,7 @@ function Committee(){
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 sm:p-5 gap-2 sm:gap-4">
                 <h1 className="text-lg sm:text-xl md:text-2xl">
                     <span className="font-bold">Olá,</span> {user?.name || 'usuário'}
-                </h1>
-                <div className="flex items-center gap-2 sm:gap-4">
-                    <UserIcon initials={user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'CN'} size={36} />
-                </div>
+                </h1>   
             </div>
             {(!cycle || !cycleId) ? (
                 <div className="flex flex-col items-center justify-center h-64 text-gray-500">

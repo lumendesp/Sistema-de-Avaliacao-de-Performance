@@ -49,6 +49,7 @@ import Committee from "../pages/committee/Committee";
 import Equalization from "../pages/committee/Equalization";
 import OKRCommittee from "../pages/committee/OKR";
 import PDICommittee from "../pages/committee/PDI";
+import History from "../pages/committee/History";
 
 import RHDashboard from "../pages/RH/RHDashboard/RHDashboard";
 import RHCollaboratorsPage from "../pages/RH/RHCollaborators/RHCollaborators";
@@ -194,6 +195,7 @@ const AppRoutes = () => (
       >
         <Route index element={<Committee />} />
         <Route path="equalizations" element={<Equalization />} />
+        <Route path="history" element={<History />} />
         <Route path="okr" element={<OKRCommittee />} />
         <Route path="pdi" element={<PDICommittee />} />
       </Route>
