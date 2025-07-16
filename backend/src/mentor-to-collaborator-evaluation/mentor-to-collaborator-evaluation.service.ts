@@ -36,6 +36,7 @@ export class MentorToCollaboratorEvaluationService {
           score: dto.score,
           justification: encrypt(dto.justification),
           createdAt: new Date(),
+          status: dto.status ?? existing.status ?? 'draft',
         },
       });
     }
@@ -46,6 +47,7 @@ export class MentorToCollaboratorEvaluationService {
         cycleId: dto.cycleId,
         score: dto.score,
         justification: encrypt(dto.justification),
+        status: dto.status ?? 'draft',
       },
     });
   }

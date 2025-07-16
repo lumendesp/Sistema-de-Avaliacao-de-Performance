@@ -59,6 +59,7 @@ const MentorToCollaboratorEvaluationForm = ({
         cycleId,
         score,
         justification: feedback,
+        status: "submitted",
       });
       setError(null);
       return true;

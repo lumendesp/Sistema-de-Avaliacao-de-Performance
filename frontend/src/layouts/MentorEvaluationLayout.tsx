@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Outlet, NavLink, useParams } from "react-router-dom";
 import type { Collaborator } from "../types/collaboratorStatus";
 import { useAuth } from "../context/AuthContext";
@@ -9,9 +9,8 @@ export default function MentorEvaluationLayout() {
   const { id } = useParams();
   const { user } = useAuth();
   const [collaborator, setCollaborator] = useState<Collaborator | null>(null);
-  const [isUpdate, setIsUpdate] = useState(false);
-  const [hasSent, setHasSent] = useState(false);
-  const [isEditing, setIsEditing] = useState(true);
+  // Estado inicial indefinido para evitar piscar
+  const [isEditing, setIsEditing] = useState<boolean | undefined>(undefined);
   const [evaluationStatus, setEvaluationStatus] = useState<string | null>(null);
   const [createdAt, setCreatedAt] = useState<string | null>(null);
   const [evaluationId, setEvaluationId] = useState<number | null>(null);
@@ -63,84 +62,60 @@ export default function MentorEvaluationLayout() {
       if (!id) return;
       try {
         const api = await import("../services/api");
-        const evaluations =
-          await api.fetchMentorToCollaboratorEvaluationsByCollaborator(
-            Number(id)
-          );
+        const evaluations = await api.fetchMentorToCollaboratorEvaluationsByCollaborator(Number(id));
         const evaluation = Array.isArray(evaluations) ? evaluations[0] : null;
         if (evaluation) {
-          setEvaluationStatus(evaluation.status || null);
           setCreatedAt(evaluation.createdAt || null);
           setEvaluationId(evaluation.id || null);
           setIsEditing(evaluation.status !== "submitted");
-          setHasSent(evaluation.status === "submitted");
         } else {
-          setEvaluationStatus(null);
           setCreatedAt(null);
           setEvaluationId(null);
           setIsEditing(true);
-          setHasSent(false);
         }
       } catch {
-        setEvaluationStatus(null);
         setCreatedAt(null);
         setEvaluationId(null);
         setIsEditing(true);
-        setHasSent(false);
       }
     }
     fetchEval();
   }, [id]);
 
   // Recebe do filho se é update ou create
-  const handleSetSubmit = (fn: () => Promise<boolean>, updateFlag: boolean) => {
+  const handleSetSubmit = (fn: () => Promise<boolean>) => {
     submitRef.current = fn;
-    setIsUpdate(updateFlag);
   };
 
   const handleSend = async () => {
     if (isEditing) {
       if (submitRef.current) {
         const ok = await submitRef.current();
-        if (ok) {
+        if (ok && id) {
           // Atualiza status/createdAt após envio
-          if (id) {
-            const api = await import("../services/api");
-            const evaluations =
-              await api.fetchMentorToCollaboratorEvaluationsByCollaborator(
-                Number(id)
-              );
-            const evaluation = Array.isArray(evaluations)
-              ? evaluations[0]
-              : null;
-            if (evaluation) {
-              setEvaluationStatus(evaluation.status || null);
-              setCreatedAt(evaluation.createdAt || null);
-              setEvaluationId(evaluation.id || null);
-              setIsEditing(evaluation.status !== "submitted");
-              setHasSent(evaluation.status === "submitted");
-            }
+          const api = await import("../services/api");
+          const evaluations = await api.fetchMentorToCollaboratorEvaluationsByCollaborator(Number(id));
+          const evaluation = Array.isArray(evaluations) ? evaluations[0] : null;
+          if (evaluation) {
+            setCreatedAt(evaluation.createdAt || null);
+            setEvaluationId(evaluation.id || null);
+            setIsEditing(false);
           }
-          setTimeout(() => {
-            window.alert("Avaliação enviada com sucesso!");
-          }, 100);
+          window.alert("Avaliação enviada com sucesso!");
         } else {
-          setTimeout(() => {
-            window.alert("Erro ao enviar avaliação.");
-          }, 100);
+          window.alert("Erro ao enviar avaliação.");
         }
       }
     } else {
       setIsEditing(true);
-      setHasSent(false);
     }
   };
 
-  if (!collaborator) {
-    return <div>Colaborador não encontrado</div>;
+  if (!collaborator || isEditing === undefined) {
+    return <div>Carregando...</div>;
   }
 
-  const { name, role } = collaborator;
+  const { name } = collaborator;
   const initials = name
     .split(" ")
     .map((w: string) => w[0])
@@ -183,9 +158,9 @@ export default function MentorEvaluationLayout() {
                 className="bg-[#8CB7B7] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap"
                 onClick={handleSend}
               >
-                {evaluationStatus === "submitted" && !isEditing
+                {!isEditing && evaluationId
                   ? "Editar avaliação"
-                  : isEditing && hasSent
+                  : isEditing && evaluationId
                   ? "Atualizar"
                   : "Enviar"}
               </button>
