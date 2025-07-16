@@ -15,6 +15,7 @@ interface Collaborator {
 
 const BrutalFactsEqualizationList: React.FC = () => {
   const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
+  const [cycleName, setCycleName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -31,8 +32,10 @@ const BrutalFactsEqualizationList: React.FC = () => {
         if (!res.ok) throw new Error('Erro ao buscar colaboradores');
         const data = await res.json();
         setColaboradores(data.collaborators || []);
+        setCycleName(data.cycleName || '');
       } catch (err: any) {
         setColaboradores([]);
+        setCycleName('');
       } finally {
         setLoading(false);
       }
@@ -57,7 +60,9 @@ const BrutalFactsEqualizationList: React.FC = () => {
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Colaboradores');
-    XLSX.writeFile(workbook, 'brutal-facts-colaboradores.xlsx');
+    // Limpa caracteres especiais do nome do ciclo para o nome do arquivo
+    const cleanCycleName = cycleName ? cycleName.replace(/[^a-zA-Z0-9-_]/g, '_') : 'ciclo';
+    XLSX.writeFile(workbook, `brutal-facts-colaboradores-${cleanCycleName}.xlsx`);
   };
 
   if (loading) {
