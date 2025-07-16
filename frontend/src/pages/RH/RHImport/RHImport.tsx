@@ -128,12 +128,6 @@ const RHImport: React.FC = () => {
                         <div className="mt-4 space-y-2">
                             <h3 className="font-semibold text-gray-700">Arquivos Selecionados:</h3>
 
-                            <div className="hidden md:flex items-center px-3 py-2 border-b text-xs font-bold text-gray-500 uppercase bg-gray-50 rounded-t-md">
-                                <div className="flex-1">Nome do arquivo</div>
-                                <div className="w-24 text-right">Tamanho</div>
-                                <div className="w-20 text-center">Excluir</div>
-                            </div>
-
                             <ul className="border rounded-md divide-y">
                                 {selectedFiles.map(file => (
                                     <li key={file.name} className="p-3 flex flex-col md:flex-row md:justify-between md:items-center text-sm hover:bg-gray-50">
