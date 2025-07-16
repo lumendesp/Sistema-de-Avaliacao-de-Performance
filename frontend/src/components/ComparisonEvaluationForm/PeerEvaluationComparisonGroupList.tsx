@@ -42,7 +42,7 @@ const PeerEvaluationComparisonGroupList = ({ cycleId }: Props) => {
     );
 
   return (
-    <div className="p-3 bg-[#f1f1f1] space-y-6">
+    <div className="p-3 bg-[#f1f1f1] space-y-6 min-h-screen">
       {evaluations.map((evaluation) => (
         <PeerEvaluationReadOnlyForm
           key={evaluation.id}
