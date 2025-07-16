@@ -1,10 +1,12 @@
 import { useNavigate, NavLink } from 'react-router-dom';
 import { FiLogOut, FiMenu, FiX } from 'react-icons/fi';
 import { useState } from 'react';
+import { FlagIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 import dashboardIcon from '../../assets/dashboard.svg';
 import collaboratorsIcon from '../../assets/collaborators.svg';
 import configIcon from '../../assets/config.svg';
+import { DocumentArrowUpIcon } from '@heroicons/react/24/outline';
 
 const menuItems = [
   {
@@ -21,6 +23,21 @@ const menuItems = [
     path: '/rh/criteria',
     label: 'Critérios de Avaliação',
     icon: <img src={configIcon} alt="Critérios de Avaliação" className="w-5 h-5" />,
+  },
+  {
+    path: '/rh/okr',
+    label: 'Objetivos e Resultados-Chave',
+    icon: <FlagIcon className="w-5 h-5" />,
+  },
+  {
+    path: '/rh/pdi',
+    label: 'Plano de Desenvolvimento Individual',
+    icon: <UserGroupIcon className="w-5 h-5" />,
+  },
+  {
+    path: '/rh/import',
+    label: 'Importação',
+    icon: <DocumentArrowUpIcon className="w-5 h-5" />,
   },
 ];
 
@@ -55,8 +72,7 @@ const SidebarRH = () => {
       {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 w-64 min-h-screen bg-white border-r z-50 flex flex-col justify-between py-6 px-4
-          transition-transform duration-300 md:transform-none transform ${
-            isOpen ? 'translate-x-0' : '-translate-x-full'
+          transition-transform duration-300 md:transform-none transform ${isOpen ? 'translate-x-0' : '-translate-x-full'
           } md:translate-x-0`}
       >
         {/* Fechar menu mobile */}
@@ -81,10 +97,9 @@ const SidebarRH = () => {
                     end={path === '/rh'}
                     onClick={() => setIsOpen(false)}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition ${
-                        isActive
-                          ? 'bg-green-100 text-green-main font-semibold'
-                          : 'text-gray-700 hover:bg-gray-100'
+                      `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition ${isActive
+                        ? 'bg-green-100 text-green-main font-semibold'
+                        : 'text-gray-700 hover:bg-gray-100'
                       }`
                     }
                   >

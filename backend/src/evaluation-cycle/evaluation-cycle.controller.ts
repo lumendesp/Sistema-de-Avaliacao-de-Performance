@@ -1,7 +1,7 @@
 import { Controller, Get, UseGuards, Query, NotFoundException, BadRequestException } from '@nestjs/common';
 import { EvaluationCycleService } from './evaluation-cycle.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Role } from '@prisma/client';
+import { CycleStatus } from '@prisma/client';
 
 @Controller('evaluation-cycle')
 export class EvaluationCycleController {
@@ -9,32 +9,25 @@ export class EvaluationCycleController {
     private readonly evaluationCycleService: EvaluationCycleService,
   ) {}
 
+  // Retorna um ciclo com status específico (ex: IN_PROGRESS_COLLABORATOR)
   @UseGuards(JwtAuthGuard)
   @Get('active')
-  async getActiveCycle(@Query('type') type?: string) {
-    // Validar se o tipo é válido
-    if (type && !Object.values(Role).includes(type as Role)) {
-      throw new BadRequestException(`Invalid role type: ${type}`);
+  async getActiveCycle(@Query('status') status?: string) {
+    if (status && !Object.values(CycleStatus).includes(status as CycleStatus)) {
+      throw new Error(`Invalid cycle status: ${status}`);
     }
-    
-    const activeCycle = await this.evaluationCycleService.findActiveCycle(type as Role);
-    
-    if (!activeCycle) {
-      if (type === Role.COMMITTEE) {
-        throw new NotFoundException('No closed evaluation cycle available for committee equalization. Please wait for the evaluation cycle to be closed and released to the committee.');
-      } else {
-        throw new NotFoundException(`No active evaluation cycle found for type: ${type || 'any'}`);
-      }
-    }
-    
-    return activeCycle;
+
+    return this.evaluationCycleService.findActiveCycle(status as CycleStatus);
   }
 
+  // Retorna ciclos fechados (excluindo o em progresso mais recente)
+  @UseGuards(JwtAuthGuard)
   @Get('closed')
   getClosedCycles() {
     return this.evaluationCycleService.getClosedCycles();
   }
 
+  // Retorna o ciclo mais recente (qualquer status)
   @UseGuards(JwtAuthGuard)
   @Get('recent')
   getMostRecentCycle() {

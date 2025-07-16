@@ -2,45 +2,58 @@ import RHMetricsCard from '../../../components/RH/RHMetricsCard/RHMetricsCard';
 import RHCircularProgressCard from '../../../components/RH/RHCircularProgressCard/RHCircularProgressCard';
 import CollaboratorRow from '../../../components/RH/CollaboratorRow/CollaboratorRow';
 import RHBarChart from '../../../components/RH/RHBarChart/RHBarChart';
-import { mockCollaborators } from '../../../data/rh_data';
 import CustomCalendarIcon from '../../../components/RH/icons/CalendarIcons';
 import CustomDocumentIcon from '../../../components/RH/icons/DocumentIcon';
+import { useEffect, useState } from 'react';
+import { getRHDashboardData } from '../../../services/api';
+import { type RHDashboardData } from '../../../types/rh'
 
 function RHDashboard() {
-    // Lógica para calcular os totais
-    const total = mockCollaborators.length;
-    const completed = mockCollaborators.filter(c => c.status === 'finalizado').length;
-    const pending = total - completed;
-    const completionPercentage = Math.round((completed / total) * 100);
 
-    const processChartData = () => {
-        // Encontra todos os setores únicos nos dados
-        const units = [...new Set(mockCollaborators.map(c => c.unit))];
-        // Conta quantos finalizaram em cada setor
-        const completedData = units.map(unit =>
-            mockCollaborators.filter(c => c.unit === unit && c.status === 'finalizado').length
-        );
+    const [dashboardData, setDashboardData] = useState<RHDashboardData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-        return {
-            labels: units,
-            datasets: [
-                {
-                    label: 'Avaliações Concluídas',
-                    data: completedData,
-                    backgroundColor: [
-                        '#043c3c',
-                        '#ffc857',
-                        '#345c64',
-                        '#3c7c7c',
-                    ],
-                    borderRadius: 5,
-                    maxBarThickness: 50,
-                },
-            ],
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const data = await getRHDashboardData();
+                setDashboardData(data);
+            } catch (err) {
+                setError('Falha ao carregar os dados do dashboard.');
+            } finally {
+                setIsLoading(false);
+            }
         };
+
+        fetchData();
+    }, []);
+
+    const chartData = {
+        labels: dashboardData?.completionByUnit.map(u => u.unit) || [],
+        datasets: [
+            {
+                label: 'Avaliações Concluídas',
+                data: dashboardData?.completionByUnit.map(u => u.completedCount) || [],
+                backgroundColor: ['#043c3c', '#ffc857', '#345c64', '#3c7c7c'],
+                borderRadius: 5,
+                maxBarThickness: 50,
+            },
+        ],
     };
 
-    const chartData = processChartData();
+    if (isLoading) {
+        return <div className="p-8 text-center">Carregando dados...</div>;
+    }
+
+    if (error) {
+        return <div className="p-8 text-center text-red-500">{error}</div>;
+    }
+
+    // Se não está carregando e não tem erro, mas não há dados
+    if (!dashboardData) {
+        return <div className="p-8 text-center">Nenhum dado encontrado.</div>;
+    }
 
     return (
         <>
@@ -54,13 +67,13 @@ function RHDashboard() {
             {/* Seção dos Cards de Métricas */}
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <RHCircularProgressCard
-                    percentage={completionPercentage}
-                    description={`${completed} de ${total} colaboradores finalizaram`}
+                    percentage={dashboardData.completionPercentage}
+                    description={`${dashboardData.completedEvaluations} de ${dashboardData.totalEvaluations} colaboradores finalizaram`}
                 />
                 <RHMetricsCard
                     title="Avaliações pendentes"
-                    description={`${pending} colaboradores ainda não fecharam`}
-                    value={pending}
+                    description={`${dashboardData.pendingEvaluations} colaboradores ainda não fecharam`}
+                    value={dashboardData.pendingEvaluations}
                     icon={CustomDocumentIcon}
                     iconBgColor="bg-white"
                     iconColor="text-red-600"
@@ -84,7 +97,7 @@ function RHDashboard() {
                         <a href="#" className="text-blue-500 hover:underline font-medium text-sm">Ver mais</a>
                     </div>
                     <div className="flex flex-col gap-y-1 max-h-[350px] overflow-y-auto pr-2">
-                        {mockCollaborators.map(c => <CollaboratorRow key={c.id} collaborator={c} />)}
+                        {dashboardData.collaborators.map(c => <CollaboratorRow key={c.id} collaborator={c} />)}
                     </div>
                 </div>
 

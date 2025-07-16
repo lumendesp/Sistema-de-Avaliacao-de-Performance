@@ -1,11 +1,6 @@
 import { IsString, IsDateString, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
-export enum CycleStatus {
-  IN_PROGRESS = 'IN_PROGRESS',
-  CLOSED = 'CLOSED',
-  PUBLISHED = 'PUBLISHED',
-}
+import { CycleStatus } from '@prisma/client';
 
 export class CreateCicloDto {
   @ApiProperty({ example: '2024.1' })

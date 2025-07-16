@@ -26,6 +26,11 @@ import { ManagerModule } from './manager/manager.module';
 import { ProjectsModule } from './projects/projects.module';
 import { EvaluationCompletionModule } from './evaluation-completion/evaluation-completion.module';
 import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
+import { RHDashboardModule } from './rh/dashboard/dashboard.module';
+import { ImportModule } from './rh/import/import.module';
+import { PdiModule } from './pdi/pdi.module';
+import { OkrModule } from './okr/okr.module';
+import { MentorToCollaboratorEvaluationModule } from './mentor-to-collaborator-evaluation/mentor-to-collaborator-evaluation.module';
 import { AdminLogModule } from './admin-log/admin-log.module';
 
 @Module({
@@ -60,6 +65,11 @@ import { AdminLogModule } from './admin-log/admin-log.module';
     ProjectsModule,
     EvaluationCompletionModule,
     AiBrutalFactsModule,
+    RHDashboardModule,
+    ImportModule,
+    PdiModule,
+    OkrModule,
+    MentorToCollaboratorEvaluationModule,
     AdminLogModule,
   ],
   controllers: [AppController],

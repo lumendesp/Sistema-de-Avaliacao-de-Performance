@@ -155,7 +155,7 @@ const MentorEvaluationForm = ({
             Justificativa enviada
           </p>
           <textarea
-            className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm bg-gray-100 text-[#1D1D1D]"
+            className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm bg-gray-100 text-[#1D1D1D] styled-scrollbar"
             value={feedback}
             disabled
           ></textarea>
@@ -191,7 +191,7 @@ const MentorEvaluationForm = ({
           Justifique sua nota
         </p>
         <textarea
-          className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
+          className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal styled-scrollbar"
           placeholder="Justifique sua nota..."
           value={feedback}
           onChange={(e) => handleFeedbackChange(e.target.value)}

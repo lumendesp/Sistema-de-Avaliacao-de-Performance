@@ -127,7 +127,7 @@ export class AiBrutalFactsService {
   } | null> {
     // Buscar o último ciclo concluído (CLOSED ou PUBLISHED)
     const lastCompletedCycle = await prisma.evaluationCycle.findFirst({
-      where: { status: { in: ['CLOSED'] }, type: 'HR' },
+      where: { status: { in: ['CLOSED'] } },
       orderBy: { startDate: 'desc' }
     });
     if (!lastCompletedCycle) {

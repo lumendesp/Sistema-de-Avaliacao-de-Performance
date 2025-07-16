@@ -1,29 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { Role } from '@prisma/client';
+import { CycleStatus } from '@prisma/client';
 
 @Injectable()
 export class EvaluationCycleService {
   constructor(private prisma: PrismaService) {}
 
-  async findActiveCycle(type?: Role) {
-    // For committee, look for in-progress cycles for equalization
-    if (type === Role.COMMITTEE) {
-      return this.prisma.evaluationCycle.findFirst({
-        where: {
-          status: 'IN_PROGRESS',
-          type: Role.COMMITTEE
-        },
-        orderBy: {
-          startDate: 'desc'
-        }
-      });
+  async findActiveCycle(status?: CycleStatus) {
+    if (!status) {
+      throw new Error('Status do ciclo deve ser especificado!');
     }
-    // For other roles, look for cycles in progress
     return this.prisma.evaluationCycle.findFirst({
-      where: {
-        status: 'IN_PROGRESS',
-        ...(type ? { type } : {})
+      where: { 
+        status: status,
       },
     });
   }
@@ -41,7 +30,19 @@ export class EvaluationCycleService {
   }
  
   async getClosedCycles() {
-    const activeCycle = await this.findActiveCycle(undefined);
+    // Busca o ciclo mais recente de qualquer status IN_PROGRESS_*
+    const activeCycle = await this.prisma.evaluationCycle.findFirst({
+      where: {
+        status: {
+          in: [
+            'IN_PROGRESS_COLLABORATOR',
+            'IN_PROGRESS_MANAGER',
+            'IN_PROGRESS_COMMITTEE',
+          ] as unknown as CycleStatus[],
+        },
+      },
+      orderBy: { startDate: 'desc' },
+    });
 
     return this.prisma.evaluationCycle.findMany({
       where: {
@@ -49,7 +50,7 @@ export class EvaluationCycleService {
           not: activeCycle?.id,
         },
         status: {
-          in: ['CLOSED', 'PUBLISHED'], // <== AQUI A MÁGICA
+          in: ['CLOSED', 'PUBLISHED'] as unknown as CycleStatus[],
         },
       },
       orderBy: {
@@ -66,5 +67,7 @@ export class EvaluationCycleService {
       },
     });
   }
+
+  
 }
 

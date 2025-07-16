@@ -1,7 +1,7 @@
 import { useNavigate, NavLink } from "react-router-dom";
 import { FiLogOut, FiMenu, FiX } from "react-icons/fi";
 import { useState } from "react";
-import { DocumentTextIcon } from "@heroicons/react/24/outline";
+import { DocumentTextIcon, UserGroupIcon, FlagIcon } from "@heroicons/react/24/outline";
 import dashboardIcon from "../../assets/dashboard.svg";
 import colaboratorsIcon from "../../assets/collaborators.svg";
 import { useAuth } from "../../context/AuthContext";
@@ -16,6 +16,16 @@ const menuItems = [
     path: "/manager/collaborators",
     label: "Colaboradores",
     icon: <img src={colaboratorsIcon} alt="Colaboradores" className="w-5 h-5" />,
+  },
+  {
+    path: "/manager/okr",
+    label: "Objetivos e Resultados-Chave",
+    icon: <FlagIcon className="w-5 h-5" />,
+  },
+  {
+    path: "/manager/pdi",
+    label: "Plano de Desenvolvimento Individual",
+    icon: <UserGroupIcon className="w-5 h-5" />,
   },
   {
     path: "/manager/brutal-facts",

@@ -20,7 +20,7 @@ const SelfEvaluationItem = ({
   const isComplete = score > 0 && justification.trim().length > 0;
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-4">
+    <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-4">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
           {isComplete ? (
@@ -34,7 +34,7 @@ const SelfEvaluationItem = ({
             </div>
           )}
 
-          <div className="flex items-center gap-3 font-semibold">
+          <div className="flex items-center gap-3 font-semibold text-sm sm:text-base">
             <span>{title}</span>
             {description && (
               <>
@@ -54,7 +54,10 @@ const SelfEvaluationItem = ({
         </div>
         <div className="flex items-center gap-4">
           <ScoreBox score={score} />
-          <button onClick={() => setIsOpen(!isOpen)}>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-1 rounded hover:bg-gray-100 transition"
+          >
             {isOpen ? <FaChevronUp /> : <FaChevronDown />}
           </button>
         </div>
@@ -62,7 +65,7 @@ const SelfEvaluationItem = ({
 
       {isOpen && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm sm:text-base text-gray-500">
             {readOnly
               ? "Nota atribuída ao critério:"
               : "Dê uma avaliação de 1 a 5 com base no critério"}
@@ -84,7 +87,7 @@ const SelfEvaluationItem = ({
             </label>
             <textarea
               id={`justification-${index}`}
-              className="w-full border rounded-md p-2 text-sm"
+              className="w-full border rounded-md px-3 py-2 text-sm sm:text-base"
               rows={3}
               placeholder="Justifique sua nota"
               value={justification}

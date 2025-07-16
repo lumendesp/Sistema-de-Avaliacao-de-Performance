@@ -10,7 +10,7 @@ export function formatCriterionName(criterionName: CriterionName): string {
 
 export function getCriterionDisplayName(criterionName: CriterionName): string {
   const formattedName = formatCriterionName(criterionName);
-  
+
   // Mapeamento específico para nomes mais amigáveis
   const nameMapping: Record<CriterionName, string> = {
     [CriterionName.ORGANIZACAO_NO_TRABALHO]: 'Organização no Trabalho',
@@ -24,8 +24,9 @@ export function getCriterionDisplayName(criterionName: CriterionName): string {
     [CriterionName.PENSAR_FORA_DA_CAIXA]: 'Pensar Fora da Caixa',
     [CriterionName.GENTE]: 'Gente',
     [CriterionName.RESULTADOS]: 'Resultados',
+    [CriterionName.GESTAO]: 'Gestão',
     [CriterionName.EVOLUCAO_DA_ROCKET_COR]: 'Evolução da Rocket Cor',
   };
-  
+
   return nameMapping[criterionName] || formattedName;
 } 

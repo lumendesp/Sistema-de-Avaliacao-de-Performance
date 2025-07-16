@@ -1,7 +1,8 @@
-export type CicloProps = {
+export interface CicloProps {
   ciclo: string;
-  status: 'Finalizado' | 'Em andamento';
-  resumo?: string;
+  status: string;
+  statusReal?: string;
   nota?: number;
   destaque?: string;
-};
+  resumo?: string;
+}
