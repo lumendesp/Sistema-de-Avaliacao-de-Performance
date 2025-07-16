@@ -27,6 +27,7 @@ interface EvaluationContextProps {
   unlockAllEvaluations: () => Promise<void>;
   resetEvaluationContext: () => void;
   activeCycle: { id: number } | null;
+  loadCompletionStatus: () => Promise<void>;
 }
 
 const EvaluationContext = createContext<EvaluationContextProps | undefined>(
@@ -51,7 +52,7 @@ export const EvaluationProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-const [initialTabCompletion, setInitialTabCompletion] = useState<
+  const [initialTabCompletion, setInitialTabCompletion] = useState<
     TabStateMap<boolean>
   >({
     self: false,
@@ -100,7 +101,6 @@ const [initialTabCompletion, setInitialTabCompletion] = useState<
   };
 
   const resetEvaluationContext = () => {
-    setActiveCycle(null);
     setLastSubmittedAt(null);
     setIsSubmit(false);
     setIsComplete(false);
@@ -112,44 +112,50 @@ const [initialTabCompletion, setInitialTabCompletion] = useState<
     });
   };
 
-  useEffect(() => {
-    if (!token) return;
+  const loadCompletionStatus = async () => {
+    try {
+      let role = "COLLABORATOR";
+      if (user?.roles?.includes("COLLABORATOR")) role = "COLLABORATOR";
+      else if (user?.roles?.includes("MANAGER")) role = "MANAGER";
+      else if (user?.roles?.includes("COMMITTEE")) role = "COMMITTEE";
+      else if (user?.roles?.includes("HR")) role = "HR";
 
-    const loadCompletionStatus = async () => {
-      try {
-        // Determinar o role baseado nos roles do usuário autenticado
-        let role = "COLLABORATOR"; // default
+      console.log("Usuário atual:", user);
+      console.log("Role detectado:", role);
 
-        if (user?.roles?.includes("MANAGER")) {
-          role = "MANAGER";
-        } else if (user?.roles?.includes("COMMITTEE")) {
-          role = "COMMITTEE";
-        } else if (user?.roles?.includes("HR")) {
-          role = "HR";
-        } else {
-          role = "COLLABORATOR";
-        }
+      const cycle = await fetchActiveEvaluationCycle(role);
+      console.log("Cycle retornado:", cycle);
 
-        const cycle = await fetchActiveEvaluationCycle(role);
-        setActiveCycle(cycle); // Salva ciclo ativo
+      setActiveCycle(cycle);
 
-        const statusResponse = await fetchEvaluationCompletionStatus(cycle.id);
-
-        setInitialTabCompletion(statusResponse.completionStatus);
-        setTabCompletion(statusResponse.completionStatus);
-        setIsComplete(
-          Object.values(statusResponse.completionStatus).every(Boolean)
+      if (!cycle) {
+        console.warn(
+          "Nenhum ciclo ativo retornado para o usuário e role informados."
         );
-        setLastSubmittedAt(statusResponse.lastSubmittedAt || null);
-        setIsSubmit(statusResponse.isSubmit);
-      } catch (error) {
-        console.error("Erro ao carregar status da avaliação:", error);
+        return;
       }
-    };
 
-    loadCompletionStatus();
-  }, [token]);
+      const statusResponse = await fetchEvaluationCompletionStatus(cycle.id);
 
+      setInitialTabCompletion(statusResponse.completionStatus);
+      setTabCompletion(statusResponse.completionStatus);
+      setIsComplete(
+        Object.values(statusResponse.completionStatus).every(Boolean)
+      );
+      setLastSubmittedAt(statusResponse.lastSubmittedAt || null);
+      setIsSubmit(statusResponse.isSubmit);
+    } catch (error) {
+      console.error("Erro ao carregar status da avaliação:", error);
+    }
+  };
+
+  useEffect(() => {
+    console.log("useEffect disparado! token:", token, "user:", user);
+    if (token && user) {
+      resetEvaluationContext(); // Limpa o contexto ao trocar de usuário
+      loadCompletionStatus();
+    }
+  }, [token, user]);
   // useEffect(() => {
   //   console.log("DEBUG => isSubmit:", isSubmit);
   //   console.log("DEBUG => tabCompletion:", tabCompletion);
@@ -171,6 +177,7 @@ const [initialTabCompletion, setInitialTabCompletion] = useState<
         unlockAllEvaluations,
         resetEvaluationContext,
         activeCycle,
+        loadCompletionStatus,
       }}
     >
       {children}
