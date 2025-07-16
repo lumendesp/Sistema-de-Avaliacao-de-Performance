@@ -1,8 +1,10 @@
+import { type EvaluationStatus } from './evaluations'
+
 export interface CollaboratorStatus {
     id: number;
     name: string;
     role: string;
-    status: 'finalizado' | 'pendente';
+    status: EvaluationStatus;
     avatarInitials: string;
     unit: string;
 }
@@ -12,10 +14,13 @@ export interface RHDashboardData {
     completedEvaluations: number;
     pendingEvaluations: number;
     completionPercentage: number;
+    daysRemaining: number;
     collaborators: CollaboratorStatus[];
-    completionByUnit: {
-        unit: string;
+    completionByTrack: {
+        track: string;
         completedCount: number;
+        inProgressCount: number;
+        pendingCount: number;
         totalCount: number;
     }[];
 }
@@ -25,7 +30,7 @@ export interface RhCollaborator {
     name: string;
     role: string;
     avatarInitials: string;
-    status: 'finalizado' | 'pendente' | 'expirado';
+    status: EvaluationStatus;
     unit: string;
     autoAvaliacao?: number;
     avaliacao360?: number;

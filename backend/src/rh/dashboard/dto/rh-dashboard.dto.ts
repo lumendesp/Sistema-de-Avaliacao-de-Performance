@@ -1,12 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 // DTO para os dados do gráfico de barras
-export class CompletionByUnitDto {
-    @ApiProperty({ example: 'Tecnologia' })
-    unit: string;
+export class CompletionByTrackDto {
+    @ApiProperty({ example: 'Trilha do Colaborador' })
+    track: string;
 
     @ApiProperty({ example: 2 })
     completedCount: number;
+
+    @ApiProperty({ example: 1, description: 'Total de avaliações em andamento na trilha.' })
+    inProgressCount: number;
+
+    @ApiProperty({ example: 1, description: 'Total de avaliações pendentes na trilha.' })
+    pendingCount: number;
 
     @ApiProperty({ example: 4 })
     totalCount: number;
@@ -23,8 +29,8 @@ export class CollaboratorStatusDto {
     @ApiProperty({ example: 'Designer de Produto' })
     role: string;
 
-    @ApiProperty({ example: 'finalizado', enum: ['finalizado', 'pendente'] })
-    status: 'finalizado' | 'pendente';
+    @ApiProperty({ example: 'finalizado', enum: ['finalizado', 'pendente', 'em_andamento'] })
+    status: 'finalizado' | 'pendente' | 'em_andamento';
 
     @ApiProperty({ example: 'AS' })
     avatarInitials: string;
@@ -47,9 +53,12 @@ export class RHDashboardDto {
     @ApiProperty({ example: 43 })
     completionPercentage: number;
 
+    @ApiProperty({ example: 30, description: 'Dias restantes para o fim do ciclo.' })
+    daysRemaining: number;
+
     @ApiProperty({ type: [CollaboratorStatusDto] })
     collaborators: CollaboratorStatusDto[];
 
-    @ApiProperty({ type: [CompletionByUnitDto] })
-    completionByUnit: CompletionByUnitDto[];
+    @ApiProperty({ type: [CompletionByTrackDto] })
+    completionByTrack: CompletionByTrackDto[];
 }

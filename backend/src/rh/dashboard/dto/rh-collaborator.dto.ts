@@ -18,8 +18,8 @@ export class RhCollaboratorDto {
     @ApiProperty({ example: 'Tecnologia' })
     unit: string;
 
-    @ApiProperty({ enum: ['finalizado', 'pendente', 'expirado'] })
-    status: 'finalizado' | 'pendente' | 'expirado';
+    @ApiProperty({ enum: ['finalizado', 'pendente', 'em_andamento'] })
+    status: 'finalizado' | 'pendente' | 'em_andamento';
 
     @ApiProperty({ required: false })
     autoAvaliacao?: number;
