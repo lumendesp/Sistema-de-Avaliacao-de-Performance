@@ -13,7 +13,11 @@ interface CurrentCycle {
   isOverdue: boolean;
 }
 
-const PlanoFuturo: React.FC = () => {
+interface PlanoFuturoProps {
+  cicloStatus?: string;
+}
+
+const PlanoFuturo: React.FC<PlanoFuturoProps> = ({ cicloStatus }) => {
   const { user } = useAuth();
   const [pending, setPending] = useState<number>(0);
   const [currentCycle, setCurrentCycle] = useState<CurrentCycle | null>(null);
@@ -23,7 +27,6 @@ const PlanoFuturo: React.FC = () => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-        
         // Buscar dados do dashboard (pending)
         const dashboardRes = await fetch(`${API_URL}/ciclos/dashboard/manager`, {
           headers: {
@@ -59,7 +62,6 @@ const PlanoFuturo: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [user]);
 
@@ -101,13 +103,31 @@ const PlanoFuturo: React.FC = () => {
 
   if (loading) return null;
 
+  // Não renderiza nada se não houver nenhuma ação a mostrar
+  const showAutoAvaliacao = user?.roles?.includes('COLLABORATOR') && cicloStatus === 'IN_PROGRESS_COLLABORATOR';
+  const showPending = pending > 0;
+  const showCurrentCycle = !!currentCycle;
+  if (!showAutoAvaliacao && !showPending && !showCurrentCycle) {
+    return null;
+  }
+
   return (
     <div className="w-full max-w-7xl mx-auto px-1 sm:px-2 md:px-4">
       <div className="bg-white rounded-lg shadow">
         <div className="p-2 sm:p-4 md:p-6">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4">Próximas Ações</h2>
           <div className="space-y-2 sm:space-y-4">
-            {pending > 0 && (
+            {/* Aviso para colaborador preencher a parte de colaborador */}
+            {showAutoAvaliacao && (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center p-2 sm:p-4 bg-yellow-50 rounded-lg min-w-0 border border-yellow-200">
+                <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 mr-0 sm:mr-3 mb-2 sm:mb-0 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-yellow-900 truncate">Preencha sua autoavaliação!</p>
+                  <p className="text-xs sm:text-sm text-yellow-600 truncate">Acesse a etapa de colaborador para iniciar sua avaliação.</p>
+                </div>
+              </div>
+            )}
+            {showPending && (
               <div className="flex flex-col sm:flex-row items-start sm:items-center p-2 sm:p-4 bg-yellow-50 rounded-lg min-w-0">
                 <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 mr-0 sm:mr-3 mb-2 sm:mb-0 flex-shrink-0" />
                 <div className="min-w-0">
@@ -116,7 +136,7 @@ const PlanoFuturo: React.FC = () => {
                 </div>
               </div>
             )}
-            {currentCycle && (
+            {showCurrentCycle && (
               <div className={`flex flex-col sm:flex-row items-start sm:items-center p-2 sm:p-4 rounded-lg min-w-0 ${getCycleColor(currentCycle.daysRemaining).bg} ${getCycleColor(currentCycle.daysRemaining).border} border`}>
                 <ClockIcon className={`h-4 w-4 sm:h-5 sm:w-5 mr-0 sm:mr-3 mb-2 sm:mb-0 ${getCycleColor(currentCycle.daysRemaining).text} flex-shrink-0`} />
                 <div className="min-w-0">

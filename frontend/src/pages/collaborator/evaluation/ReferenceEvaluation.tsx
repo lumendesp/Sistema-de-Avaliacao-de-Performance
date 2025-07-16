@@ -79,9 +79,11 @@ const ReferenceEvaluation = () => {
 
   if (!activeCycleId) {
     return (
-      <p className="text-center text-gray-500 mt-10">
-        Nenhum ciclo ativo encontrado.
-      </p>
+      <div className="bg-[#f1f1f1] h-screen w-full p-3">
+        <p className="text-sm text-gray-400 text-center py-8">
+          Nenhum ciclo ativo encontrado.
+        </p>
+      </div>
     );
   }
 

@@ -21,9 +21,9 @@ export class AiBrutalFactsService {
   constructor(private readonly geminiService: GeminiService) {}
 
   async getInsightForLastCompletedCycle(): Promise<string> {
-    // Buscar o último ciclo concluído (CLOSED ou PUBLISHED)
+    // Buscar o último ciclo publicado (PUBLISHED)
     const lastCompletedCycle = await prisma.evaluationCycle.findFirst({
-      where: { status: { in: ['CLOSED'] } },
+      where: { status: { in: ['PUBLISHED'] } },
       orderBy: { startDate: 'desc' }
     });
     if (!lastCompletedCycle) {
@@ -125,9 +125,9 @@ export class AiBrutalFactsService {
     totalEvaluated: number;
     insight: string;
   } | null> {
-    // Buscar o último ciclo concluído (CLOSED ou PUBLISHED)
+    // Buscar o último ciclo publicado (PUBLISHED)
     const lastCompletedCycle = await prisma.evaluationCycle.findFirst({
-      where: { status: { in: ['CLOSED'] } },
+      where: { status: { in: ['PUBLISHED'] } },
       orderBy: { startDate: 'desc' }
     });
     if (!lastCompletedCycle) {

@@ -1,55 +1,38 @@
 import React, { useEffect, useState } from "react";
 import EvolutionLayout from "../../layouts/EvolutionLayout";
-import { useParams } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import { API_URL } from "../../services/api";
 
-interface Cycle {
-  cycle: string;
-  status: string;
-  self: number | string;
-  exec: number | string;
-  posture: number | string;
-  final: number | string;
-  summary: string;
-}
-
-interface Performance {
-  cycle: string;
-  score: number;
-}
-
-const EvolutionMentor = () => {
-  const { id } = useParams();
-  const collaboratorId = id ? Number(id) : null;
+const EvolutionManager = () => {
+  const { user } = useAuth();
+  const userId = user?.id;
   const [loading, setLoading] = useState(true);
-  const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [performance, setPerformance] = useState<Performance[]>([]);
+  const [cycles, setCycles] = useState<any[]>([]);
+  const [performance, setPerformance] = useState<any[]>([]);
   const [currentScore, setCurrentScore] = useState<number>(0);
   const [growth, setGrowth] = useState<number>(0);
   const [totalEvaluations, setTotalEvaluations] = useState<number>(0);
 
   useEffect(() => {
-    if (!collaboratorId) return;
+    if (!userId) return;
     const fetchData = async () => {
       setLoading(true);
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(
-          `${API_URL}/ciclos/historico/${collaboratorId}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const data: Cycle[] = await res.json();
+        const res = await fetch(`${API_URL}/ciclos/historico/${userId}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
         setCycles(data);
         setTotalEvaluations(data.length);
         if (data.length > 0) {
-          const perf: Performance[] = data
-            .filter((c) => typeof c.final === "number")
-            .map((c) => ({ cycle: c.cycle, score: Number(c.final) }));
+          // performance: array de { cycle, score }
+          const perf = data
+            .filter((c: any) => typeof c.final === "number")
+            .map((c: any) => ({ cycle: c.cycle, score: c.final }));
           setPerformance(perf);
           setCurrentScore(perf.length > 0 ? perf[0].score : 0);
           setGrowth(
@@ -72,16 +55,25 @@ const EvolutionMentor = () => {
       setLoading(false);
     };
     fetchData();
-  }, [collaboratorId]);
+  }, [userId]);
 
-  if (!collaboratorId)
-    return <div className="p-6 text-gray-500">Colaborador não encontrado.</div>;
+  if (!userId)
+    return <div className="p-6 text-gray-500">Usuário não autenticado.</div>;
+
   if (loading)
     return <div className="p-6 text-gray-500">Carregando histórico...</div>;
 
+  if (!cycles || cycles.length === 0) {
+    return (
+      <div className="p-6 text-gray-500 text-left">
+        Colaborador não possui ciclos avaliados.
+      </div>
+    );
+  }
+
   return (
     <EvolutionLayout
-      title="Evolução do colaborador"
+      title="Minha Evolução"
       currentScore={currentScore}
       growth={growth}
       totalEvaluations={totalEvaluations}
@@ -91,4 +83,4 @@ const EvolutionMentor = () => {
   );
 };
 
-export default EvolutionMentor;
+export default EvolutionManager;

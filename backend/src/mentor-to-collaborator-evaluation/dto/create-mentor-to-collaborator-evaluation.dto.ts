@@ -2,6 +2,9 @@ import { IsInt, IsNotEmpty, Min, Max, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateMentorToCollaboratorEvaluationDto {
+  @ApiProperty({ example: 'submitted', description: 'Status da avaliação' })
+  @IsString()
+  status?: string;
   @ApiProperty({ example: 2, description: 'ID do colaborador avaliado' })
   @IsInt()
   @IsNotEmpty()
