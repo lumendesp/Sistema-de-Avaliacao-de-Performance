@@ -10,6 +10,16 @@ export default function MentorEvaluationLayout() {
   const { user } = useAuth();
   const [collaborator, setCollaborator] = useState<Collaborator | null>(null);
   const [isUpdate, setIsUpdate] = useState(false);
+  const [hasSent, setHasSent] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
+  const [evaluationStatus, setEvaluationStatus] = useState<string | null>(null);
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
+  const [evaluationId, setEvaluationId] = useState<number | null>(null);
+  // Sempre que isEditing mudar, editKey também muda para forçar remount do Outlet
+  const [editKey, setEditKey] = useState(0);
+  useEffect(() => {
+    setEditKey((k) => k + 1);
+  }, [isEditing]);
   // Ref para acessar a função de submit do filho
   const submitRef = useRef<(() => Promise<boolean>) | null>(null);
 
@@ -47,6 +57,41 @@ export default function MentorEvaluationLayout() {
     }
   }, [user, id]);
 
+  // Busca avaliação para status/createdAt
+  useEffect(() => {
+    async function fetchEval() {
+      if (!id) return;
+      try {
+        const api = await import("../services/api");
+        const evaluations =
+          await api.fetchMentorToCollaboratorEvaluationsByCollaborator(
+            Number(id)
+          );
+        const evaluation = Array.isArray(evaluations) ? evaluations[0] : null;
+        if (evaluation) {
+          setEvaluationStatus(evaluation.status || null);
+          setCreatedAt(evaluation.createdAt || null);
+          setEvaluationId(evaluation.id || null);
+          setIsEditing(evaluation.status !== "submitted");
+          setHasSent(evaluation.status === "submitted");
+        } else {
+          setEvaluationStatus(null);
+          setCreatedAt(null);
+          setEvaluationId(null);
+          setIsEditing(true);
+          setHasSent(false);
+        }
+      } catch {
+        setEvaluationStatus(null);
+        setCreatedAt(null);
+        setEvaluationId(null);
+        setIsEditing(true);
+        setHasSent(false);
+      }
+    }
+    fetchEval();
+  }, [id]);
+
   // Recebe do filho se é update ou create
   const handleSetSubmit = (fn: () => Promise<boolean>, updateFlag: boolean) => {
     submitRef.current = fn;
@@ -54,13 +99,40 @@ export default function MentorEvaluationLayout() {
   };
 
   const handleSend = async () => {
-    if (submitRef.current) {
-      const ok = await submitRef.current();
-      if (ok) {
-        window.alert("Avaliação enviada com sucesso!");
-      } else {
-        window.alert("Erro ao enviar avaliação.");
+    if (isEditing) {
+      if (submitRef.current) {
+        const ok = await submitRef.current();
+        if (ok) {
+          // Atualiza status/createdAt após envio
+          if (id) {
+            const api = await import("../services/api");
+            const evaluations =
+              await api.fetchMentorToCollaboratorEvaluationsByCollaborator(
+                Number(id)
+              );
+            const evaluation = Array.isArray(evaluations)
+              ? evaluations[0]
+              : null;
+            if (evaluation) {
+              setEvaluationStatus(evaluation.status || null);
+              setCreatedAt(evaluation.createdAt || null);
+              setEvaluationId(evaluation.id || null);
+              setIsEditing(evaluation.status !== "submitted");
+              setHasSent(evaluation.status === "submitted");
+            }
+          }
+          setTimeout(() => {
+            window.alert("Avaliação enviada com sucesso!");
+          }, 100);
+        } else {
+          setTimeout(() => {
+            window.alert("Erro ao enviar avaliação.");
+          }, 100);
+        }
       }
+    } else {
+      setIsEditing(true);
+      setHasSent(false);
     }
   };
 
@@ -97,11 +169,25 @@ export default function MentorEvaluationLayout() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2 w-full sm:w-auto text-center sm:text-left mt-2 sm:mt-0">
+              {createdAt ? (
+                <span className="text-xs text-gray-500 whitespace-nowrap mr-2">
+                  Última modificação:{" "}
+                  {new Date(createdAt).toLocaleString("pt-BR")}
+                </span>
+              ) : (
+                <span className="text-xs text-gray-400 whitespace-nowrap mr-2">
+                  Nenhuma avaliação enviada ainda
+                </span>
+              )}
               <button
                 className="bg-[#8CB7B7] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap"
                 onClick={handleSend}
               >
-                {isUpdate ? "Atualizar" : "Enviar"}
+                {evaluationStatus === "submitted" && !isEditing
+                  ? "Editar avaliação"
+                  : isEditing && hasSent
+                  ? "Atualizar"
+                  : "Enviar"}
               </button>
             </div>
           </div>
@@ -165,7 +251,10 @@ export default function MentorEvaluationLayout() {
         {/* Espaço para não cobrir o conteúdo pelo bloco fixo */}
         <main className="flex-1 flex items-start p-0 sm:p-0 w-full overflow-x-auto max-w-screen box-border">
           <div className="w-full box-border">
-            <Outlet context={{ setSubmit: handleSetSubmit }} />
+            <Outlet
+              key={editKey}
+              context={{ setSubmit: handleSetSubmit, isEditing }}
+            />
           </div>
         </main>
       </div>

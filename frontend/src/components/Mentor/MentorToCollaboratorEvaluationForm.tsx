@@ -1,7 +1,7 @@
 import StarRating from "../StarRating";
 import type { MentorEvaluationProps } from "../../types/mentor-evaluation";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
   createMentorToCollaboratorEvaluation,
@@ -12,14 +12,17 @@ const MentorToCollaboratorEvaluationForm = ({
   evaluateeId,
   mentor,
   cycleId,
-}: MentorEvaluationProps & { cycleId: number }) => {
+  readOnly = false,
+}: MentorEvaluationProps & { cycleId: number; readOnly?: boolean }) => {
   const [score, setScore] = useState<number | undefined>(undefined);
   const [feedback, setFeedback] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const { setSubmit } = useOutletContext<{
+  const { setSubmit, isEditing } = useOutletContext<{
     setSubmit: (fn: () => Promise<boolean>, isUpdate: boolean) => void;
+    isEditing?: boolean;
   }>();
+  const effectiveReadOnly = readOnly || isEditing === false;
 
   useEffect(() => {
     // Busca avaliação já enviada deste mentor para este colaborador neste ciclo
@@ -45,7 +48,7 @@ const MentorToCollaboratorEvaluationForm = ({
     loadEvaluation();
   }, [evaluateeId, mentor.id, cycleId]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!score || !feedback.trim()) {
       setError("Preencha todos os campos");
       return false;
@@ -65,7 +68,7 @@ const MentorToCollaboratorEvaluationForm = ({
       setError(err instanceof Error ? err.message : "Erro ao enviar avaliação");
       return false;
     }
-  };
+  }, [score, feedback, evaluateeId, cycleId]);
 
   useEffect(() => {
     setSubmit(handleSubmit, false); // false = não é update, ajuste se necessário
@@ -87,7 +90,12 @@ const MentorToCollaboratorEvaluationForm = ({
         <div className="w-full overflow-x-hidden">
           <StarRating
             score={score ?? 0}
-            onChange={(newScore: number) => setScore(newScore)}
+            onChange={
+              effectiveReadOnly
+                ? () => {}
+                : (newScore: number) => setScore(newScore)
+            }
+            readOnly={effectiveReadOnly}
           />
         </div>
       </div>
@@ -99,7 +107,10 @@ const MentorToCollaboratorEvaluationForm = ({
           className="w-full h-24 resize-none p-2 rounded border border-gray-300 text-sm focus:outline-[#08605e4a] placeholder:text-[#94A3B8] placeholder:text-xs placeholder:font-normal"
           placeholder="Justifique sua nota..."
           value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
+          onChange={
+            effectiveReadOnly ? undefined : (e) => setFeedback(e.target.value)
+          }
+          disabled={effectiveReadOnly}
         ></textarea>
       </div>
       {error && <p className="text-red-500 text-sm">{error}</p>}

@@ -35,6 +35,7 @@ export class MentorToCollaboratorEvaluationService {
         data: {
           score: dto.score,
           justification: encrypt(dto.justification),
+          createdAt: new Date(),
         },
       });
     }
