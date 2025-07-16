@@ -208,7 +208,7 @@ const OKR: React.FC<OKRProps> = ({
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="w-full flex flex-col gap-4 p-10">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{title}</h1>

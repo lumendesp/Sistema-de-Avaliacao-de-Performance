@@ -47,8 +47,8 @@ const DashboardManagerPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8 w-full">
-      <div className="max-w-7xl mx-auto flex flex-col gap-8">
+    <div className="w-full flex flex-col gap-4 p-10 bg-[#f1f1f1]">
+      <div className="flex flex-col gap-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
           Olá, <span className="font-normal">{user?.name || 'usuário'}</span>
         </h1>
@@ -70,12 +70,12 @@ const DashboardManagerPage: React.FC = () => {
           />
         )}
         <Metricas />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <div className="col-span-1">
             <ColaboradoresList />
           </div>
           <div className="col-span-1">
-            <PlanoFuturo />
+            <PlanoFuturo cicloStatus={cycle?.status} />
           </div>
         </div>
       </div>
