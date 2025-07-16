@@ -49,6 +49,7 @@ enum CriterionName {
   PENSAR_FORA_DA_CAIXA
   GENTE
   RESULTADOS
+  GESTAO
   EVOLUCAO_DA_ROCKET_COR
 }
 
@@ -132,6 +133,10 @@ model User {
   mentorToCollaboratorEvaluationsGiven MentorToCollaboratorEvaluation[] @relation("MentorToCollaboratorEvaluator")
   mentorToCollaboratorEvaluationsReceived MentorToCollaboratorEvaluation[] @relation("MentorToCollaboratorEvaluatee")
   EvaluationCycleUser EvaluationCycleUser[]
+  pdis                PDI[]
+
+  // --- OKR ---
+  okrs Okr[]
 }
 
 // ---------------- HISTÓRICO DE TRILHAS -----------------
@@ -448,4 +453,56 @@ model BrutalFactsCache {
   cycleId   Int      @unique
   data      Json
   createdAt DateTime @default(now())
+}
+
+model PDI {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  user        User        @relation(fields: [userId], references: [id])
+  title       String
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  actions     PDIAction[]
+}
+
+model PDIAction {
+  id          Int      @id @default(autoincrement())
+  pdiId       Int
+  pdi         PDI      @relation(fields: [pdiId], references: [id])
+  title       String
+  description String
+  category    String   // skill | knowledge | behavior | career
+  priority    String   // low | medium | high
+  status      String   // planned | in_progress | completed
+  dueDate     DateTime
+  progress    Int      // 0-100
+  goals       Json?    // array de metas: [{ id, descricao, concluida }]
+}
+
+// --- OKR ---
+enum OKRStatus {
+  ACTIVE
+  COMPLETED
+  OVERDUE
+}
+
+model Okr {
+  id         Int          @id @default(autoincrement())
+  userId     Int
+  user       User         @relation(fields: [userId], references: [id])
+  objective  String
+  progress   Float        @default(0)
+  status     OKRStatus    @default(ACTIVE)
+  dueDate    DateTime
+  keyResults KeyResult[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model KeyResult {
+  id          Int      @id @default(autoincrement())
+  okrId       Int
+  okr         Okr      @relation(fields: [okrId], references: [id], onDelete: Cascade)
+  description String
 }

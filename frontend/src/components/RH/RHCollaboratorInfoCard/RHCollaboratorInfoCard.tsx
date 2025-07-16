@@ -1,11 +1,11 @@
 import React from 'react';
-import { type Collaborator } from '../../../types/evaluations';
+import { type RhCollaborator } from '../../../types/rh';
 import StatusBadge from '../StatusBadge/StatusBadge';
 import AssessmentPreview from '../AssessmentPreview/AssessmentPreview';
 import { ChevronRightIcon } from '@heroicons/react/24/solid';
 
 interface RHCollaboratorInfoCardProps {
-    collaborator: Collaborator;
+    collaborator: RhCollaborator;
 }
 
 const RHCollaboratorInfoCard: React.FC<RHCollaboratorInfoCardProps> = ({ collaborator }) => {
