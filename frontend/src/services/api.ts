@@ -72,68 +72,24 @@ export const fetchActiveEvaluationCycle = async (role?: string) => {
     // Buscar o usuário do localStorage para obter o role
     const userStr = localStorage.getItem("user");
     mainRole = "COLLABORATOR"; // default
-    const userStr = localStorage.getItem("user");
-    mainRole = "COLLABORATOR"; // default
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
         mainRole = user.roles?.[0] || "COLLABORATOR";
-        mainRole = user.roles?.[0] || "COLLABORATOR";
       } catch (error) {
-        console.error("Erro ao parsear usuário do localStorage:", error);
         console.error("Erro ao parsear usuário do localStorage:", error);
       }
     }
   }
-
-  // Mapeamento de role para status
-  let status = "IN_PROGRESS_COLLABORATOR";
-  if (mainRole === "MANAGER") status = "IN_PROGRESS_MANAGER";
-  else if (mainRole === "COMMITTEE") status = "IN_PROGRESS_COMMITTEE";
-  else if (mainRole === "HR") status = "IN_PROGRESS_COMMITTEE"; // HR também usa COMMITTEE status
-
-  const token = getAuthToken();
-  if (!token) {
-    throw new Error(
-      "Token de autenticação não encontrado. Faça login novamente."
-    );
-  }
-
   const res = await fetch(
-    `${API_URL}/evaluation-cycle/active?status=${status}`,
+    `${API_URL}/evaluation-cycle/active?type=${mainRole}`,
     {
       headers: getAuthHeaders(),
     }
   );
-
-  if (res.status === 401) {
-    throw new Error("Sessão expirada. Faça login novamente.");
-  }
-
   if (!res.ok) {
-    const errorText = await res.text();
-    console.error("Erro na resposta:", res.status, errorText);
-    throw new Error(`Erro ao buscar ciclo ativo: ${res.status} - ${errorText}`);
+    throw new Error("Erro ao buscar ciclo ativo");
   }
-
-  const responseText = await res.text();
-  if (!responseText) {
-    throw new Error("Resposta vazia do servidor");
-  }
-
-  try {
-    return JSON.parse(responseText);
-  } catch (error) {
-    console.error("Erro ao fazer parse da resposta:", responseText);
-    throw new Error("Resposta inválida do servidor");
-  }
-};
-
-export const fetchMostRecentEvaluationCycle = async () => {
-  const res = await fetch(`${API_URL}/evaluation-cycle/recent`, {
-    headers: getAuthHeaders(),
-  });
-  if (!res.ok) throw new Error("Erro ao buscar ciclo mais recente");
   return res.json();
 };
 
@@ -549,13 +505,12 @@ export const getUserById = async (id: number) => {
 // Gestor (avaliações)
 
 export const fetchManagerCollaborators = async (managerId: number) => {
-  const res = await fetch(`${API_URL}/managers/${managerId}`, {
+  const res = await fetch(`${API_URL}/manager/${managerId}/collaborators`, {
     method: "GET",
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error("Erro ao buscar colaboradores");
-  const data = await res.json();
-  return data.collaborators || [];
+  return res.json();
 };
 
 export const fetchManagerEvaluation = async (collaboratorId: number) => {
@@ -575,7 +530,6 @@ export const createManagerEvaluation = async (data: {
   evaluateeId: number;
   cycleId: number;
   groups: any[];
-  status?: string;
 }) => {
   // Log para debug
   console.log("Payload enviado para manager-evaluation:", data);
@@ -1228,10 +1182,7 @@ export const getLastCompletedSurveyData = async () => {
       shortText: summary.shortText,
     };
   } catch (error) {
-    console.error(
-      "Erro ao buscar dados da última pesquisa finalizada:",
-      error
-    );
+    console.error("Erro ao buscar dados da última pesquisa finalizada:", error);
     return { satisfactionScore: null, shortText: null };
   }
 };
@@ -1318,13 +1269,17 @@ export const getAllClimateAISummaries = async () => {
 };
 
 // Função para fazer o upload de um único arquivo .xlsx
-export const importSingleHistoryRequest = async (file: File, cycleId: number) => {
+export const importSingleHistoryRequest = async (
+  file: File,
+  cycleId: number
+) => {
   const formData = new FormData();
-  formData.append('cycleId', String(cycleId));
-  formData.append('file', file, file.name);
+  formData.append("cycleId", String(cycleId));
+  formData.append("file", file, file.name);
 
-  const res = await fetch(`${API_URL}/rh/import/history`, { // <-- Chama o endpoint correto
-    method: 'POST',
+  const res = await fetch(`${API_URL}/rh/import/history`, {
+    // <-- Chama o endpoint correto
+    method: "POST",
     headers: {
       Authorization: `Bearer ${getAuthToken()}`,
     },
@@ -1333,7 +1288,7 @@ export const importSingleHistoryRequest = async (file: File, cycleId: number) =>
 
   if (!res.ok) {
     const errorBody = await res.json().catch(() => ({}));
-    throw new Error(errorBody?.message || 'Erro ao importar o arquivo.');
+    throw new Error(errorBody?.message || "Erro ao importar o arquivo.");
   }
 
   return res.json();
@@ -1342,11 +1297,11 @@ export const importSingleHistoryRequest = async (file: File, cycleId: number) =>
 // Função para fazer o upload de um arquivo .zip
 export const importBulkHistoryRequest = async (file: File, cycleId: number) => {
   const formData = new FormData();
-  formData.append('cycleId', String(cycleId));
-  formData.append('file', file, file.name);
+  formData.append("cycleId", String(cycleId));
+  formData.append("file", file, file.name);
 
   const res = await fetch(`${API_URL}/rh/import/bulk-history`, {
-    method: 'POST',
+    method: "POST",
 
     headers: {
       Authorization: `Bearer ${getAuthToken()}`,
@@ -1357,7 +1312,7 @@ export const importBulkHistoryRequest = async (file: File, cycleId: number) => {
   if (!res.ok) {
     // Tenta pegar uma mensagem de erro mais específica do backend
     const errorBody = await res.json().catch(() => ({}));
-    const message = errorBody?.message || 'Erro ao importar o arquivo.';
+    const message = errorBody?.message || "Erro ao importar o arquivo.";
     throw new Error(message);
   }
 
@@ -1371,12 +1326,12 @@ export const getRHDashboardData = async (cycleId?: number) => {
     : `${API_URL}/rh/dashboard/status`;
 
   const res = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
 
   if (!res.ok) {
-    throw new Error('Erro ao buscar dados do dashboard de RH');
+    throw new Error("Erro ao buscar dados do dashboard de RH");
   }
   return res.json();
 };
@@ -1388,12 +1343,12 @@ export const getRhCollaborators = async (cycleId?: number) => {
     : `${API_URL}/rh/dashboard/collaborators`;
 
   const res = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
 
   if (!res.ok) {
-    throw new Error('Erro ao buscar lista de colaboradores');
+    throw new Error("Erro ao buscar lista de colaboradores");
   }
   return res.json();
 };
@@ -1401,11 +1356,25 @@ export const getRhCollaborators = async (cycleId?: number) => {
 // Busca todos os ciclos de avaliação disponíveis
 export const getEvaluationCycles = async () => {
   const res = await fetch(`${API_URL}/ciclos`, {
-    method: 'GET',
+    method: "GET",
   });
 
   if (!res.ok) {
-    throw new Error('Erro ao buscar ciclos de avaliação');
+    throw new Error("Erro ao buscar ciclos de avaliação");
+  }
+  return res.json();
+};
+
+// Busca o ciclo ativo de colaborador para o RH (usando status)
+export const fetchActiveCollaboratorCycleRH = async () => {
+  const res = await fetch(
+    `${API_URL}/ciclos/current?status=IN_PROGRESS_COLLABORATOR`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!res.ok) {
+    return null;
   }
   return res.json();
 };
@@ -1413,136 +1382,156 @@ export const getEvaluationCycles = async () => {
 // --- PDI API ---
 export const fetchPdiByUser = async (userId: number) => {
   const res = await fetch(`${API_URL}/pdi/user/${userId}`, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao buscar PDI');
+  if (!res.ok) throw new Error("Erro ao buscar PDI");
   return res.json();
 };
 
-export const createPdi = async (data: { userId: number; title: string; description?: string }) => {
+export const createPdi = async (data: {
+  userId: number;
+  title: string;
+  description?: string;
+}) => {
   const res = await fetch(`${API_URL}/pdi`, {
-    method: 'POST',
+    method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao criar PDI');
+  if (!res.ok) throw new Error("Erro ao criar PDI");
   return res.json();
 };
 
-export const updatePdi = async (id: number, data: { title?: string; description?: string }) => {
+export const updatePdi = async (
+  id: number,
+  data: { title?: string; description?: string }
+) => {
   const res = await fetch(`${API_URL}/pdi/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao atualizar PDI');
+  if (!res.ok) throw new Error("Erro ao atualizar PDI");
   return res.json();
 };
 
 export const deletePdi = async (id: number) => {
   const res = await fetch(`${API_URL}/pdi/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao deletar PDI');
+  if (!res.ok) throw new Error("Erro ao deletar PDI");
   return res.json();
 };
 
 export const createPdiAction = async (data: any) => {
   const res = await fetch(`${API_URL}/pdi/action`, {
-    method: 'POST',
+    method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao criar ação do PDI');
+  if (!res.ok) throw new Error("Erro ao criar ação do PDI");
   return res.json();
 };
 
 export const updatePdiAction = async (id: number, data: any) => {
   const res = await fetch(`${API_URL}/pdi/action/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao atualizar ação do PDI');
+  if (!res.ok) throw new Error("Erro ao atualizar ação do PDI");
   return res.json();
 };
 
 export const deletePdiAction = async (id: number) => {
   const res = await fetch(`${API_URL}/pdi/action/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao deletar ação do PDI');
+  if (!res.ok) throw new Error("Erro ao deletar ação do PDI");
   return res.json();
 };
 
 // --- OKR API ---
 export const fetchOkrsByUser = async (userId: number) => {
   const res = await fetch(`${API_URL}/okrs/user/${userId}`, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao buscar OKRs');
+  if (!res.ok) throw new Error("Erro ao buscar OKRs");
   return res.json();
 };
 
-export const createOkr = async (data: { userId: number; objective: string; dueDate: string; keyResults: string[] }) => {
+export const createOkr = async (data: {
+  userId: number;
+  objective: string;
+  dueDate: string;
+  keyResults: string[];
+}) => {
   const res = await fetch(`${API_URL}/okrs`, {
-    method: 'POST',
+    method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao criar OKR');
+  if (!res.ok) throw new Error("Erro ao criar OKR");
   return res.json();
 };
 
-export const updateOkr = async (id: number, data: { objective?: string; dueDate?: string; progress?: number; status?: string }) => {
+export const updateOkr = async (
+  id: number,
+  data: {
+    objective?: string;
+    dueDate?: string;
+    progress?: number;
+    status?: string;
+  }
+) => {
   const res = await fetch(`${API_URL}/okrs/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao atualizar OKR');
+  if (!res.ok) throw new Error("Erro ao atualizar OKR");
   return res.json();
 };
 
 export const deleteOkr = async (id: number) => {
   const res = await fetch(`${API_URL}/okrs/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao deletar OKR');
+  if (!res.ok) throw new Error("Erro ao deletar OKR");
   return res.json();
 };
 
 export const addKeyResult = async (okrId: number, description: string) => {
   const res = await fetch(`${API_URL}/okrs/${okrId}/key-result`, {
-    method: 'POST',
+    method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ description }),
   });
-  if (!res.ok) throw new Error('Erro ao adicionar resultado-chave');
+  if (!res.ok) throw new Error("Erro ao adicionar resultado-chave");
   return res.json();
 };
 
 export const updateKeyResult = async (id: number, description: string) => {
   const res = await fetch(`${API_URL}/okrs/key-result/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify({ description }),
   });
-  if (!res.ok) throw new Error('Erro ao atualizar resultado-chave');
+  if (!res.ok) throw new Error("Erro ao atualizar resultado-chave");
   return res.json();
 };
 
 export const deleteKeyResult = async (id: number) => {
   const res = await fetch(`${API_URL}/okrs/key-result/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao deletar resultado-chave');
+  if (!res.ok) throw new Error("Erro ao deletar resultado-chave");
   return res.json();
 };
 
