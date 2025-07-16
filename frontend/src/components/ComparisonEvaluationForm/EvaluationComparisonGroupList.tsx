@@ -121,7 +121,7 @@ const EvaluationComparisonGroupList = ({ cycleId, trackData }: Props) => {
   if (!grouped.length) return <div>Nenhuma resposta para este ciclo.</div>;
 
   return (
-    <div className="p-3 bg-[#f1f1f1] space-y-6">
+    <div className="p-3 bg-[#f1f1f1] space-y-6 min-h-screen">
       {grouped.map((group) => (
         <EvaluationComparisonForm
           key={group.groupId}
