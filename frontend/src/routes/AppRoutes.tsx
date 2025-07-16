@@ -152,7 +152,6 @@ const AppRoutes = () => (
         </Route>
         <Route path="historico" element={<EvolutionManager />} />
         <Route path="brutal-facts" element={<BrutalFacts />} />
-        <Route path="okr" element={<OKRManager />} />
         <Route path="pdi" element={<PDIManager />} />
       </Route>
 
@@ -178,8 +177,6 @@ const AppRoutes = () => (
         </Route>
         <Route path="historico" element={<EvolutionMentor />} />
         <Route path="brutal-facts" element={<BrutalFactsMentor />} />
-        <Route path="okr" element={<OKRManager />} />
-        <Route path="pdi" element={<PDIManager />} />
       </Route>
 
       <Route
@@ -192,8 +189,6 @@ const AppRoutes = () => (
       >
         <Route index element={<Committee />} />
         <Route path="equalizations" element={<Equalization />} />
-        <Route path="okr" element={<OKRCommittee />} />
-        <Route path="pdi" element={<PDICommittee />} />
       </Route>
 
       <Route
@@ -209,8 +204,6 @@ const AppRoutes = () => (
         <Route path="collaborators" element={<RHCollaboratorsPage />} />
 
         <Route path="criteria" element={<RHCriteriaSettingsPage />} />
-        <Route path="okr" element={<OKRRH />} />
-        <Route path="pdi" element={<PDIRH />} />
         <Route path="import" element={<RHImport />} />
       </Route>
       <Route path="/perfil" element={<Profile />} />

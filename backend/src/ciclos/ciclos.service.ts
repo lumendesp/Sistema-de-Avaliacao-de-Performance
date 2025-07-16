@@ -530,6 +530,13 @@ export class CiclosService {
       }
     }
 
+    // Gera o resumo do Brutal Facts para o ciclo publicado
+    try {
+      await this.aiBrutalFactsService.getInsightForLastCompletedCycle();
+    } catch (err) {
+      console.warn('Erro ao gerar resumo do Brutal Facts:', err.message);
+    }
+
     return {
       message: `Ciclo de comitê fechado com sucesso! Foram gerados ${generated} resumos finais.`,
       cycleId: updatedCycle.id,
@@ -639,6 +646,7 @@ export class CiclosService {
         console.warn(`Erro ao gerar resumo para user ${userId}:`, err.message);
       }
     }
+
 
     return {
       message: `Ciclo fechado e resumos gerados para ${uniqueUserIds.length} colaboradores.`,
