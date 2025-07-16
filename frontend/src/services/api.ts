@@ -1131,12 +1131,12 @@ export const getRHDashboardData = async (cycleId?: number) => {
 };
 
 // Busca a lista completa de colaboradores para a página do RH
-export const getRhCollaborators = async (cycleId?: number) => {
-  const url = cycleId
-    ? `${API_URL}/rh/dashboard/collaborators?cycleId=${cycleId}`
-    : `${API_URL}/rh/dashboard/collaborators`;
+export const getRhCollaborators = async (cycleId?: number, searchTerm?: string) => {
+  const url = new URL(`${API_URL}/rh/dashboard/collaborators`);
+  if (cycleId) url.searchParams.append('cycleId', String(cycleId));
+  if (searchTerm) url.searchParams.append('search', searchTerm);
 
-  const res = await fetch(url, {
+  const res = await fetch(url.toString(), {
     method: 'GET',
     headers: getAuthHeaders(),
   });

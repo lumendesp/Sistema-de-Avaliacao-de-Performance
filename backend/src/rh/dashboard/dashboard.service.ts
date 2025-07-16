@@ -156,7 +156,7 @@ export class RHDashboardService {
         }));
     }
 
-    async getCollaboratorsList(cycleId?: number): Promise<RhCollaboratorDto[]> {
+    async getCollaboratorsList(cycleId?: number, searchTerm?: string): Promise<RhCollaboratorDto[]> {
         const activeCycle = await this.prisma.evaluationCycle.findFirst({
             where: cycleId ? { id: cycleId } : {
                 status: {
@@ -180,6 +180,11 @@ export class RHDashboardService {
             where: {
                 active: true,
                 roles: { some: { role: 'COLLABORATOR' } },
+                ...(searchTerm && {
+                    name: {
+                        contains: searchTerm,
+                    },
+                }),
             },
             include: {
                 position: true,
