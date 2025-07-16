@@ -21,15 +21,26 @@ const PeerEvaluationComparisonGroupList = ({ cycleId }: Props) => {
 
   useEffect(() => {
     if (!cycleId) return;
+
+    console.log("🔍 cycleId recebido:", cycleId);
+    console.log("🔐 token:", token);
+
     setLoading(true);
+
     fetchMyPeerEvaluations(cycleId)
-      .then((data) => setEvaluations(data))
-      .catch((err) => {
-        setEvaluations([]);
-        console.error("Erro ao buscar avaliações de pares:", err);
+      .then((data) => {
+        console.log("📥 Avaliações recebidas:", data);
+        setEvaluations(data);
       })
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        console.error("❌ Erro ao buscar avaliações de pares:", err);
+        setEvaluations([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [cycleId, token]);
+
 
   if (loading) return <div className="bg-[#f1f1f1] h-screen w-full" />;
   if (!evaluations.length)

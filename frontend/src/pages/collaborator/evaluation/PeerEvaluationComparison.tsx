@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import PeerEvaluationComparisonGroupList from "../../../components/ComparisonEvaluationForm/PeerEvaluationComparisonGroupList";
+import { useOutletContext } from "react-router-dom";
+
+type OutletContextType = {
+  selectedCycleId: number | null;
+  selectedCycleName: string;
+};
 
 interface Cycle {
   id: number;
@@ -15,20 +21,27 @@ interface Cycle {
 
 export default function PeerEvaluationComparison() {
   const { token } = useAuth();
+  const { selectedCycleId, selectedCycleName } = useOutletContext<OutletContextType>();
   const [cycle, setCycle] = useState<Cycle | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCycles = async () => {
+    const fetchCycle = async () => {
       try {
         const res = await fetch("http://localhost:3000/ciclos", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const allCycles: Cycle[] = await res.json();
 
-        const selected = allCycles.find(
-          (c) => c.status !== "IN_PROGRESS_COLLABORATOR"
-        );
+        let selected: Cycle | undefined;
+        if (selectedCycleName) {
+          selected = allCycles.find((c) => c.name === selectedCycleName);
+        } else if (selectedCycleId) {
+          const cleanCycleId = typeof selectedCycleId === "string"
+            ? parseInt(selectedCycleId.split(":")[0], 10)
+            : Number(selectedCycleId);
+          selected = allCycles.find((c) => c.id === cleanCycleId);
+        }
 
         if (selected) setCycle(selected);
       } catch (error) {
@@ -38,14 +51,11 @@ export default function PeerEvaluationComparison() {
       }
     };
 
-    fetchCycles();
-  }, [token]);
+    fetchCycle();
+  }, [token, selectedCycleId, selectedCycleName]);
 
-  if (loading) {
-    return <div className="bg-[#f1f1f1] h-screen w-full" />;
-  }
-
-  if (!cycle) {
+  if (loading) return <div className="bg-[#f1f1f1] h-screen w-full" />;
+  if (!cycle)
     return (
       <div className="bg-[#f1f1f1] h-screen w-full py-8 flex justify-center">
         <p className="text-sm text-gray-400 text-start">
@@ -53,7 +63,7 @@ export default function PeerEvaluationComparison() {
         </p>
       </div>
     );
-  }
 
   return <PeerEvaluationComparisonGroupList cycleId={cycle.id} />;
 }
+

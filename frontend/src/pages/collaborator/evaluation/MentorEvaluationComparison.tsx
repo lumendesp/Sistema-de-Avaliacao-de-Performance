@@ -4,6 +4,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { fetchMentorEvaluation, fetchMentors } from "../../../services/api";
 import type { MentorEvaluation } from "../../../types/mentor-evaluation";
 import type { Mentor } from "../../../types/mentor";
+import { useOutletContext } from "react-router-dom";
 
 interface Cycle {
   id: number;
@@ -16,16 +17,23 @@ interface Cycle {
     | "PUBLISHED";
 }
 
+type OutletContextType = {
+  selectedCycleId: number | null;
+  selectedCycleName: string;
+};
+
 export default function MentorEvaluationComparison() {
   const { user, token } = useAuth();
+  const { selectedCycleId, selectedCycleName } = useOutletContext<OutletContextType>();
+
   const [cycle, setCycle] = useState<Cycle | null>(null);
   const [mentorEvaluation, setMentorEvaluation] = useState<MentorEvaluation | null>(null);
   const [mentor, setMentor] = useState<Mentor | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadMentorAndEvaluation = async () => {
-      if (!user?.mentorId) {
+    const loadData = async () => {
+      if (!user?.mentorId || (!selectedCycleId && !selectedCycleName)) {
         setLoading(false);
         return;
       }
@@ -37,25 +45,39 @@ export default function MentorEvaluationComparison() {
         const foundMentor = mentors.find((m) => m.id === user.mentorId) || null;
         setMentor(foundMentor);
 
-        // Buscar avaliação primeiro
-        if (foundMentor) {
-          const evaluation = await fetchMentorEvaluation(foundMentor.id);
-          setMentorEvaluation(evaluation);
+        // Buscar ciclos
+        const res = await fetch("http://localhost:3000/ciclos", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const allCycles: Cycle[] = await res.json();
 
-          // Buscar ciclo correspondente
-          if (evaluation?.cycle?.id) {
-            const res = await fetch("http://localhost:3000/ciclos", {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            const allCycles: Cycle[] = await res.json();
-            const foundCycle = allCycles.find((c) => c.id === evaluation.cycle.id) || null;
-            setCycle(foundCycle);
-          }
+        let selected: Cycle | undefined;
+        if (selectedCycleName) {
+          selected = allCycles.find((c) => c.name === selectedCycleName);
+        } else if (selectedCycleId) {
+          const cleanCycleId = typeof selectedCycleId === "string"
+            ? parseInt(selectedCycleId.split(":")[0], 10)
+            : Number(selectedCycleId);
+          selected = allCycles.find((c) => c.id === cleanCycleId);
+        }
+
+        if (!selected || !foundMentor) {
+          setCycle(null);
+          setMentorEvaluation(null);
+          return;
+        }
+
+        setCycle(selected);
+
+        // Buscar avaliação do mentor
+        const evaluation = await fetchMentorEvaluation(foundMentor.id);
+        if (evaluation?.cycle?.id === selected.id) {
+          setMentorEvaluation(evaluation);
         } else {
           setMentorEvaluation(null);
         }
       } catch (err) {
-        console.log(err);
+        console.log("Erro ao carregar mentor ou avaliação:", err);
         setMentor(null);
         setMentorEvaluation(null);
       } finally {
@@ -63,8 +85,8 @@ export default function MentorEvaluationComparison() {
       }
     };
 
-    loadMentorAndEvaluation();
-  }, [user, token]);
+    loadData();
+  }, [user?.mentorId, selectedCycleId, selectedCycleName, token]);
 
   if (loading) return <div className="bg-[#f1f1f1] h-screen w-full" />;
 
@@ -81,7 +103,7 @@ export default function MentorEvaluationComparison() {
     return (
       <div className="bg-[#f1f1f1] h-screen w-full py-8 flex justify-center">
         <p className="text-sm text-gray-400 text-center">
-          Nenhuma avaliação de mentor encontrada.
+          Nenhuma avaliação de mentor encontrada para este ciclo.
         </p>
       </div>
     );
