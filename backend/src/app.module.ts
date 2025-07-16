@@ -7,7 +7,6 @@ import { PrismaService } from './prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma.module';
 import { AuthModule } from './auth/auth.module';
-import { RhModule } from './rh/rh.modules';
 import { TrackModule } from './track/track.module';
 import { UnitModule } from './unit/unit.module';
 import { PositionModule } from './position/position.module';
@@ -31,6 +30,8 @@ import { ImportModule } from './rh/import/import.module';
 import { PdiModule } from './pdi/pdi.module';
 import { OkrModule } from './okr/okr.module';
 import { MentorToCollaboratorEvaluationModule } from './mentor-to-collaborator-evaluation/mentor-to-collaborator-evaluation.module';
+import { CollaboratorModule } from './climate-survey/collaborator/collaborator.module';
+import { RhModule } from './climate-survey/rh/rh.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { MentorToCollaboratorEvaluationModule } from './mentor-to-collaborator-e
     PdiModule,
     OkrModule,
     MentorToCollaboratorEvaluationModule,
+    CollaboratorModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
