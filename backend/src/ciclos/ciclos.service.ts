@@ -157,9 +157,9 @@ export class CiclosService {
         evaluatedCollaborators: '0',
         pendingCollaborators: '0',
         averageScore: '0.0/5',
-        evaluationTrend: '0% este mês',
-        collaboratorTrend: '0% este mês',
-        scoreTrend: '0.0 este mês',
+        evaluationTrend: undefined,
+        collaboratorTrend: undefined,
+        scoreTrend: undefined,
         totalCollaborators: '0',
       };
     }
@@ -195,9 +195,9 @@ export class CiclosService {
         evaluatedCollaborators: '0',
         pendingCollaborators: '0',
         averageScore: '0.0/5',
-        evaluationTrend: '0% este mês',
-        collaboratorTrend: '0% este mês',
-        scoreTrend: '0.0 este mês',
+        evaluationTrend: undefined,
+        collaboratorTrend: undefined,
+        scoreTrend: undefined,
         totalCollaborators: '0',
       };
     }
@@ -236,8 +236,8 @@ export class CiclosService {
       take: 1,
     });
 
-    let evaluationTrend = '0% este mês';
-    let collaboratorTrend = '0% este mês';
+    let evaluationTrend: string | undefined = undefined;
+    let collaboratorTrend: string | undefined = undefined;
     let scoreTrend: string | undefined = undefined;
 
     if (previousCycle.length > 0) {
@@ -301,10 +301,6 @@ export class CiclosService {
         ).toFixed(1);
         scoreTrend = `${scoreChange} este mês`;
       }
-    } else {
-      evaluationTrend = '+12% este mês';
-      collaboratorTrend = '+5% este mês';
-      scoreTrend = '+0.3 este mês';
     }
 
     return {
