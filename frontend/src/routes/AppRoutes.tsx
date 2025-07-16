@@ -58,6 +58,11 @@ import RHImport from "../pages/RH/RHImport/RHImport.tsx";
 
 import BrutalFacts from "../pages/manager/BrutalFacts";
 
+import RHClimateSurvey from "../pages/RH/RHClimateSurvey/RHClimateSurvey.tsx";
+import RHCreateClimateSurvey from "../pages/RH/RHClimateSurvey/RHCreateClimateSurvey.tsx";
+import RHClimateSurveyDetail from "../pages/RH/RHClimateSurvey/RHClimateSurveyDetail.tsx";
+import RHSurveys from "../pages/RH/RHSurveys/RHSurveys.tsx";
+import RHEvaluationCycles from "../pages/RH/RHEvaluationCycles/RHEvaluationCycles.tsx";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -206,12 +211,20 @@ const AppRoutes = () => (
       >
         <Route index element={<RHDashboard />} />
 
+        <Route path="cycles" element={<RHEvaluationCycles />} />
+
         <Route path="collaborators" element={<RHCollaboratorsPage />} />
 
         <Route path="criteria" element={<RHCriteriaSettingsPage />} />
         <Route path="okr" element={<OKRRH />} />
         <Route path="pdi" element={<PDIRH />} />
         <Route path="import" element={<RHImport />} />
+
+        <Route path="climate-survey" element={<RHClimateSurvey />} />
+        <Route path="climate-survey/create" element={<RHCreateClimateSurvey />} />
+        <Route path="climate-survey/:id" element={<RHClimateSurveyDetail />} />
+
+        {/* <Route path="climate-surveys" element={<RHSurveys />} /> */}
       </Route>
       <Route path="/perfil" element={<Profile />} />
     </Routes>
