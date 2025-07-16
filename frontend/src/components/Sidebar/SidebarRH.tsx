@@ -1,13 +1,3 @@
-<<<<<<<<< Temporary merge branch 1
-import { useNavigate, NavLink } from "react-router-dom";
-import { FiLogOut, FiMenu, FiX } from "react-icons/fi";
-import { IoBarChart } from "react-icons/io5";
-import { useState } from "react";
-import { useAuth } from "../../context/AuthContext";
-import dashboardIcon from "../../assets/dashboard.svg";
-import collaboratorsIcon from "../../assets/collaborators.svg";
-import configIcon from "../../assets/config.svg";
-=========
 import { useNavigate, NavLink } from 'react-router-dom';
 import { FiLogOut, FiMenu, FiX } from 'react-icons/fi';
 import { useState } from 'react';
