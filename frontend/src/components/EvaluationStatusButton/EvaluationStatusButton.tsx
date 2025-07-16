@@ -11,28 +11,30 @@ function EvaluationStatusButton({
   context = 'collaborator', // novo prop, default 'collaborator'
   originalStatus,
   ...props
-}: EvaluationStatusButtonProps & { context?: 'collaborator' | 'manager', originalStatus?: string }) {
+}: EvaluationStatusButtonProps & { context?: 'collaborator' | 'manager' | 'mentor', originalStatus?: string }) {
   const { bg, text, subtitle, iconColor, textColor } = statusConfig[status];
   const navigate = useNavigate();
 
-  const isManager = context === 'manager';
+  const isManager = context === 'manager' || context === 'mentor';
   const isColabCycle = status === 'aberto';
   const isManagerCycle = status === 'emBreve';
 
   // Ajuste de cor para texto e fundo no manager ciclo gestor
   // Ajuste para ciclo gestor aberto só se originalStatus for IN_PROGRESS_MANAGER
-  const isManagerGestorCycle = context === 'manager' && originalStatus === 'IN_PROGRESS_MANAGER';
-  const isManagerClosedCycle = context === 'manager' && (originalStatus === 'CLOSED' || originalStatus === 'IN_PROGRESS_COMMITTEE');
+  const isManagerGestorCycle = (context === 'manager' || context === 'mentor') && originalStatus === 'IN_PROGRESS_MANAGER';
+  const isManagerClosedCycle = (context === 'manager' || context === 'mentor') && (originalStatus === 'CLOSED' || originalStatus === 'IN_PROGRESS_COMMITTEE');
   const abertoConfig = statusConfig['aberto'];
-  const effectiveButtonBg = isManagerGestorCycle ? abertoConfig.bg : (context === 'manager' ? 'bg-white' : bg);
-  const effectiveTextColor = isManagerGestorCycle ? abertoConfig.text : (context === 'manager' ? 'text-gray-900' : textColor);
-  const effectiveSubtitleColor = isManagerGestorCycle ? abertoConfig.text : (context === 'manager' ? 'text-gray-700' : textColor);
-  const effectiveIconColor = isManagerGestorCycle ? abertoConfig.iconColor : (context === 'manager' ? 'text-gray-400' : iconColor);
+  const effectiveButtonBg = isManagerGestorCycle ? abertoConfig.bg : ((context === 'manager' || context === 'mentor') ? 'bg-white' : bg);
+  const effectiveTextColor = isManagerGestorCycle ? abertoConfig.text : ((context === 'manager' || context === 'mentor') ? 'text-gray-900' : textColor);
+  const effectiveSubtitleColor = isManagerGestorCycle ? abertoConfig.text : ((context === 'manager' || context === 'mentor') ? 'text-gray-700' : textColor);
+  const effectiveIconColor = isManagerGestorCycle ? abertoConfig.text : ((context === 'manager' || context === 'mentor') ? 'text-gray-400' : iconColor);
 
   const handleClick = () => {
     if (status === 'disponivel') {
-      if (isManager) {
+      if (context === 'manager') {
         navigate('/manager/brutal-facts');
+      } else if (context === 'mentor') {
+        navigate('/mentor/brutal-facts');
       } else {
         navigate('/collaborator/progress');
       }
@@ -124,7 +126,7 @@ function EvaluationStatusButton({
           ) : isManagerGestorCycle ? (
             <>
               <p className={`font-semibold text-sm md:text-base ${effectiveTextColor}`}>
-                Ciclo de gestor 2025.1 está aberto
+                {context === 'mentor' ? 'Ciclo de mentor' : 'Ciclo de gestor'} {ciclo} está aberto
               </p>
               <p className={`text-sm opacity-80 ${effectiveSubtitleColor}`}>
                 {statusConfig['aberto'].subtitle(diasRestantes)}
