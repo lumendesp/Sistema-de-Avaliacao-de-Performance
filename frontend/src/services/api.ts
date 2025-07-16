@@ -597,14 +597,18 @@ export const fetchManagerCollaborators = async (managerId: number) => {
   return data.collaborators || [];
 };
 
-export const fetchManagerEvaluation = async (collaboratorId: number) => {
-  const res = await fetch(
-    `${API_URL}/manager-evaluation/by-evaluatee/${collaboratorId}`,
-    {
-      method: "GET",
-      headers: getAuthHeaders(),
-    }
-  );
+export const fetchManagerEvaluation = async (
+  collaboratorId: number,
+  cycleId?: number
+) => {
+  let url = `${API_URL}/manager-evaluation/by-evaluatee/${collaboratorId}`;
+  if (cycleId) {
+    url += `?cycleId=${cycleId}`;
+  }
+  const res = await fetch(url, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
   if (res.status === 404) return null; // Não existe avaliação ainda
   if (!res.ok) throw new Error("Erro ao buscar avaliação");
   return res.json();
@@ -632,16 +636,16 @@ export const createManagerEvaluation = async (data: {
 
 export const updateManagerEvaluation = async (
   evaluateeId: number,
-  data: any
+  data: any,
+  cycleId: number
 ) => {
-  const res = await fetch(
-    `${API_URL}/manager-evaluation/by-evaluatee/${evaluateeId}`,
-    {
-      method: "PATCH",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    }
-  );
+  // Adiciona o cycleId como query param e no body para garantir que o backend saiba o ciclo
+  const url = `${API_URL}/manager-evaluation/by-evaluatee/${evaluateeId}?cycleId=${cycleId}`;
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ ...data, cycleId }),
+  });
   if (!res.ok) throw new Error("Erro ao atualizar avaliação");
   return res.json();
 };

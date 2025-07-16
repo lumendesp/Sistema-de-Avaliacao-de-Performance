@@ -362,6 +362,8 @@ model ManagerEvaluationItem {
 
   evaluation ManagerEvaluation @relation(fields: [evaluationId], references: [id])
   criterion  Criterion         @relation(fields: [criterionId], references: [id])
+
+  @@unique([evaluationId, criterionId])
 }
 
 // ---------- REFERÊNCIAS ----------

@@ -3,7 +3,11 @@ import { IoIosSearch } from "react-icons/io";
 import CollaboratorCard from "../../components/manager/CollaboratorCard";
 import type { Collaborator } from "../../types/collaboratorStatus.tsx";
 import { useAuth } from "../../context/AuthContext";
-import { API_URL, getAuthHeaders } from "../../services/api";
+import {
+  API_URL,
+  getAuthHeaders,
+  fetchActiveEvaluationCycle,
+} from "../../services/api";
 
 export default function Collaborators() {
   const [search, setSearch] = useState("");
@@ -12,6 +16,13 @@ export default function Collaborators() {
   const [selfEvaluations, setSelfEvaluations] = useState<Record<number, any>>(
     {}
   );
+  const [currentCycleId, setCurrentCycleId] = useState<number | null>(null);
+  // Busca o ciclo atual do gestor ao montar
+  useEffect(() => {
+    fetchActiveEvaluationCycle("MANAGER")
+      .then((cycle) => setCurrentCycleId(cycle?.id ?? null))
+      .catch(() => setCurrentCycleId(null));
+  }, []);
   const { user } = useAuth();
 
   // Carrega todos os colaboradores do manager ao entrar na página
@@ -37,36 +48,59 @@ export default function Collaborators() {
   }, [user]);
 
   useEffect(() => {
+    if (!currentCycleId) return;
     // Filtra colaboradores pelo nome
     const filtered = search.trim()
       ? collaborators.filter((c) =>
           c.name.toLowerCase().includes(search.trim().toLowerCase())
         )
       : collaborators;
-    // Busca avaliações e autoavaliações reais
+    // Busca avaliações e autoavaliações reais do ciclo atual
     const ids = filtered.map((c) => c.id);
     if (ids.length === 0) return;
     Promise.all(
       ids.map((id) =>
         Promise.all([
-          fetch(`${API_URL}/manager-evaluation/by-evaluatee/${id}`, {
-            method: "GET",
-            headers: getAuthHeaders(),
-          })
+          fetch(
+            `${API_URL}/manager-evaluation/by-evaluatee/${id}?cycleId=${currentCycleId}`,
+            {
+              method: "GET",
+              headers: getAuthHeaders(),
+            }
+          )
             .then(async (res) => {
               if (!res.ok) return { id, evaluation: null };
               const evaluation = await res.json();
               return { id, evaluation };
             })
             .catch(() => ({ id, evaluation: null })),
-          fetch(`${API_URL}/self-evaluation/user/${id}`, {
-            method: "GET",
-            headers: getAuthHeaders(),
-          })
+          fetch(
+            `${API_URL}/self-evaluation/user/${id}?cycleId=${currentCycleId}`,
+            {
+              method: "GET",
+              headers: getAuthHeaders(),
+            }
+          )
             .then(async (res) => {
               if (!res.ok) return { id, selfEval: null };
               const selfEval = await res.json();
-              return { id, selfEval };
+              // Se vier array, pega a do ciclo atual
+              if (Array.isArray(selfEval)) {
+                const found =
+                  selfEval.find(
+                    (s) => s.cycle && s.cycle.id === currentCycleId
+                  ) || null;
+                return { id, selfEval: found };
+              }
+              // Se vier objeto único, valida ciclo
+              if (
+                selfEval &&
+                selfEval.cycle &&
+                selfEval.cycle.id === currentCycleId
+              ) {
+                return { id, selfEval };
+              }
+              return { id, selfEval: null };
             })
             .catch(() => ({ id, selfEval: null })),
         ])
@@ -77,21 +111,12 @@ export default function Collaborators() {
       results.forEach((pairArr) => {
         const [{ id, evaluation }, { selfEval }] = pairArr;
         evalMap[id] = evaluation;
-        // Pega a autoavaliação mais recente (maior cycleId)
-        let latest = null;
-        if (Array.isArray(selfEval) && selfEval.length > 0) {
-          latest = selfEval.reduce((prev, curr) =>
-            prev.cycle && curr.cycle && prev.cycle.id > curr.cycle.id
-              ? prev
-              : curr
-          );
-        }
-        selfEvalMap[id] = latest;
+        selfEvalMap[id] = selfEval;
       });
       setEvaluations(evalMap);
       setSelfEvaluations(selfEvalMap);
     });
-  }, [search, collaborators]);
+  }, [search, collaborators, currentCycleId]);
 
   // Função para calcular status, nota do gestor e nota de autoavaliação
   function getStatusAndScore(collaboratorId: number) {

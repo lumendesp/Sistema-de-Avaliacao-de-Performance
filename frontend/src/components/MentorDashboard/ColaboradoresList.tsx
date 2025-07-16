@@ -124,40 +124,53 @@ const ColaboradoresList: React.FC = () => {
 
   // Função para calcular status, nota do gestor e nota de autoavaliação
   function getStatusAndScore(collaboratorId: number) {
-    const evaluation = (evaluations as Record<number, ManagerEvaluation | null>)[collaboratorId];
-    const selfEval = (selfEvaluations as Record<number, SelfEvaluation | null>)[collaboratorId];
-    let managerScore = null;
-    let selfScore = null;
-    if (evaluation && evaluation.groups) {
-      const allCriteria = (evaluation.groups || []).flatMap(
-        (g) => g.items || []
-      );
-      const withScore = allCriteria.filter(
-        (c) => c.score !== null && c.score !== undefined
-      );
-      if (withScore.length > 0) {
-        managerScore =
-          withScore.reduce((sum, c) => sum + (c.score || 0), 0) /
-          withScore.length;
-      }
+    // Busca avaliações do mentor para o colaborador
+    const mentorEval = mentorEvaluations[collaboratorId];
+    const selfEval = selfEvaluations[collaboratorId];
+    // Descobre o ciclo atual do mentor (IN_PROGRESS_MENTOR)
+    // Para simplificar, pega o evaluation com maior cycleId
+    let mentorStatus = "Pendente";
+    let mentorScore: number | null = null;
+    if (Array.isArray(mentorEval) && mentorEval.length > 0) {
+      // Pega a avaliação do ciclo mais recente
+      const latest = mentorEval.reduce((prev, curr) => {
+        const prevCycle = prev.cycleId ?? prev.cycle?.id ?? 0;
+        const currCycle = curr.cycleId ?? curr.cycle?.id ?? 0;
+        return currCycle > prevCycle ? curr : prev;
+      });
+      mentorScore = latest.score ?? null;
+      if (latest.status === "submitted") mentorStatus = "Finalizado";
+      else if (latest.status === "draft" || latest.status === "in_progress")
+        mentorStatus = "Em andamento";
+      else mentorStatus = "Pendente";
     }
+    // Calcula média da autoavaliação
+    let selfScore: number | null = null;
     if (selfEval && selfEval.items && selfEval.items.length > 0) {
       selfScore =
         selfEval.items.reduce((sum, item) => sum + item.score, 0) /
         selfEval.items.length;
     }
-    if (!evaluation) {
-      return { status: "Pendente" as const, managerScore: null, selfScore };
+    // Manager score (mantém lógica antiga)
+    const evaluation = evaluations[collaboratorId];
+    const allCriteria = (evaluation?.groups || []).flatMap(
+      (g) => g.items || []
+    );
+    const withScore = allCriteria.filter(
+      (c) => c.score !== null && c.score !== undefined
+    );
+    let managerScore: number | null = null;
+    if (withScore.length > 0) {
+      managerScore =
+        withScore.reduce((sum, c) => sum + (c.score || 0), 0) /
+        withScore.length;
     }
-    // Corrija o acesso ao status usando type assertion
-    if ((evaluation as ManagerEvaluation).status === "submitted") {
-      return { status: "Finalizado" as const, managerScore, selfScore };
-    }
-    if ((evaluation as ManagerEvaluation).status === "draft") {
-      return { status: "Em andamento" as const, managerScore, selfScore };
-    }
-    // fallback para casos inesperados
-    return { status: "Pendente" as const, managerScore, selfScore };
+    return {
+      status: mentorStatus as "Finalizado" | "Em andamento" | "Pendente",
+      managerScore,
+      selfScore,
+      mentorScore,
+    };
   }
 
   if (loading)

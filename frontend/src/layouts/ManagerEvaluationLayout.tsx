@@ -3,6 +3,7 @@ import {
   updateManagerEvaluation,
 } from "../services/api";
 import React, { useEffect, useRef, useState } from "react";
+import { fetchActiveEvaluationCycle } from "../services/api";
 import { Outlet, NavLink, useParams } from "react-router-dom";
 import type { Collaborator } from "../types/collaboratorStatus";
 import { useAuth } from "../context/AuthContext";
@@ -10,6 +11,19 @@ import { useAuth } from "../context/AuthContext";
 const API_URL = "http://localhost:3000";
 
 export default function ManagerEvaluationLayout() {
+  // Estado para ciclo atual
+  const [cycleId, setCycleId] = useState<number | null>(null);
+  useEffect(() => {
+    async function getCycle() {
+      try {
+        const cycle = await fetchActiveEvaluationCycle("MANAGER");
+        setCycleId(cycle?.id || null);
+      } catch {
+        setCycleId(null);
+      }
+    }
+    getCycle();
+  }, []);
   const { id } = useParams();
   const { user } = useAuth();
   const [collaborator, setCollaborator] = useState<Collaborator | null>(null);
@@ -42,12 +56,12 @@ export default function ManagerEvaluationLayout() {
     }
   }, [user, id]);
 
-  // Busca avaliação para status/createdAt
+  // Busca avaliação para status/createdAt do ciclo atual
   useEffect(() => {
     async function fetchEval() {
-      if (!id) return;
+      if (!id || !cycleId) return;
       try {
-        const evaluation = await fetchManagerEvaluation(Number(id));
+        const evaluation = await fetchManagerEvaluation(Number(id), cycleId);
         if (evaluation) {
           setEvaluationStatus(evaluation.status || null);
           setCreatedAt(evaluation.createdAt || null);
@@ -70,7 +84,7 @@ export default function ManagerEvaluationLayout() {
       }
     }
     fetchEval();
-  }, [id]);
+  }, [id, cycleId]);
 
   // Recebe do filho se é update ou create
   const handleSetSubmit = (fn: () => Promise<boolean>, updateFlag: boolean) => {
@@ -91,8 +105,11 @@ export default function ManagerEvaluationLayout() {
         const ok = await submitRef.current();
         if (ok) {
           // Atualiza status/createdAt após envio
-          if (id) {
-            const evaluation = await fetchManagerEvaluation(Number(id));
+          if (id && cycleId) {
+            const evaluation = await fetchManagerEvaluation(
+              Number(id),
+              cycleId
+            );
             if (evaluation) {
               setEvaluationStatus(evaluation.status || null);
               setCreatedAt(evaluation.createdAt || null);
@@ -167,7 +184,7 @@ export default function ManagerEvaluationLayout() {
                 </span>
               )}
               <button
-                className="bg-[#8CB7B7] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap"
+                className="bg-[#08605F] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap"
                 onClick={handleSend}
               >
                 {evaluationStatus === "submitted" && !isEditing
@@ -180,15 +197,15 @@ export default function ManagerEvaluationLayout() {
           </div>
           {/* Navegação responsiva */}
           <nav className="bg-white border-b border-gray-100 w-full overflow-x-auto max-w-screen box-border">
-            <ul className="flex flex-col sm:flex-row px-2 sm:px-8 pt-2 sm:pt-4 gap-1 sm:gap-10 text-base sm:text-lg text-gray-600 font-semibold w-full box-border">
+            <ul className="flex flex-col sm:flex-row px-2 sm:px-8 pt-6 sm:pt-8 gap-1 sm:gap-10 text-base text-gray-600 font-semibold w-full box-border">
               <li>
                 <NavLink
                   to=""
                   end
                   className={({ isActive }) =>
                     isActive
-                      ? "border-b-2 border-teal-700 pb-2 sm:pb-3 text-teal-700 flex items-center gap-2"
-                      : "pb-2 sm:pb-3 flex items-center gap-2"
+                      ? "border-b-2 border-teal-700 pb-2 text-teal-700 text-base font-bold flex items-center gap-2"
+                      : "pb-2 text-base font-medium flex items-center gap-2"
                   }
                 >
                   Avaliação
@@ -199,8 +216,8 @@ export default function ManagerEvaluationLayout() {
                   to="360"
                   className={({ isActive }) =>
                     isActive
-                      ? "border-b-2 border-teal-700 pb-2 sm:pb-3 text-teal-700 flex items-center gap-2"
-                      : "pb-2 sm:pb-3 flex items-center gap-2"
+                      ? "border-b-2 border-teal-700 pb-2 text-teal-700 text-base font-bold flex items-center gap-2"
+                      : "pb-2 text-base font-medium flex items-center gap-2"
                   }
                 >
                   Avaliação 360
@@ -211,8 +228,8 @@ export default function ManagerEvaluationLayout() {
                   to="historico"
                   className={({ isActive }) =>
                     isActive
-                      ? "border-b-2 border-teal-700 pb-2 sm:pb-3 text-teal-700 flex items-center gap-2"
-                      : "pb-2 sm:pb-3 flex items-center gap-2"
+                      ? "border-b-2 border-teal-700 pb-2 text-teal-700 text-base font-bold flex items-center gap-2"
+                      : "pb-2 text-base font-medium flex items-center gap-2"
                   }
                 >
                   Histórico
@@ -228,7 +245,7 @@ export default function ManagerEvaluationLayout() {
           <div className="w-full box-border">
             <Outlet
               key={editKey}
-              context={{ setSubmit: handleSetSubmit, isEditing }}
+              context={{ setSubmit: handleSetSubmit, isEditing, cycleId }}
             />
           </div>
         </main>
