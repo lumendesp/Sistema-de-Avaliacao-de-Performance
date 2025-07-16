@@ -64,6 +64,9 @@ import RHClimateSurveyDetail from "../pages/RH/RHClimateSurvey/RHClimateSurveyDe
 import RHEvaluationCycles from "../pages/RH/RHEvaluationCycles/RHEvaluationCycles.tsx";
 import RHEvaluationCycleCreate from "../pages/RH/RHEvaluationCycles/RHEvaluationCycleCreate";
 
+import ClimateSurveyDashboard from "../pages/collaborator/climateSurvey/ClimateSurveyDashboard";
+import ClimateSurveyForm from "../pages/collaborator/climateSurvey/ClimateSurveyForm";
+
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
@@ -90,6 +93,8 @@ const AppRoutes = () => (
           path="/collaborator/progress"
           element={<EvolutionCollaborator />}
         />
+        <Route path="climate-survey" element={<ClimateSurveyDashboard />} />
+        <Route path="climate-survey/form" element={<ClimateSurveyForm />} />
         <Route
           path="evaluation"
           element={

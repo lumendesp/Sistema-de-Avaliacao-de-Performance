@@ -139,6 +139,7 @@ model User {
   okrs Okr[]
 
   climateSurveysCreated ClimateSurvey[] @relation("UserCreatedClimateSurveys")
+  climateSurveyResponses ClimateSurveyResponse[]
 }
 
 // ---------------- HISTÓRICO DE TRILHAS -----------------
@@ -533,15 +534,16 @@ model ClimateSurveyQuestion {
 }
 
 model ClimateSurveyResponse {
-  id          Int       @id @default(autoincrement())
-  surveyId    Int
-  hashId      String
-  createdAt   DateTime  @default(now())
-  isSubmit    Boolean   @default(false)
-  submittedAt DateTime?
+  id           Int       @id @default(autoincrement())
+  hashId       String
+  isSubmit     Boolean
+  submittedAt  DateTime?
+  surveyId     Int
+  userId       Int
 
-  survey  ClimateSurvey         @relation(fields: [surveyId], references: [id])
-  answers ClimateSurveyAnswer[]
+  survey       ClimateSurvey @relation(fields: [surveyId], references: [id])
+  user         User           @relation(fields: [userId], references: [id])
+  answers      ClimateSurveyAnswer[]
 }
 
 model ClimateSurveyAnswer {

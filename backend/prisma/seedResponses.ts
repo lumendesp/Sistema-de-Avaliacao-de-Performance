@@ -140,6 +140,7 @@ async function seedClimateSurvey() {
         hashId: `resp-${user.id}-${Date.now()}`,
         isSubmit: true,
         submittedAt: new Date(),
+        userId: user.id, // ✅ Adicionado
       },
     });
 
