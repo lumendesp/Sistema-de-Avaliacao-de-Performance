@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import searchIcon from "../../assets/search.png";
+import { IoIosSearch } from "react-icons/io";
 import CollaboratorCard from "../../components/Mentor/CollaboratorCard.tsx";
 import type { Collaborator } from "../../types/collaboratorStatus.tsx";
 import { useAuth } from "../../context/AuthContext";
@@ -150,6 +150,7 @@ export default function MentorStatus() {
       </div>
       <div className="w-full px-1 sm:px-6 mx-auto">
         <div className="flex items-center gap-2 rounded-xl py-3 px-3 bg-white/50 mt-0 mb-6 w-full">
+          <IoIosSearch size={16} className="text-[#1D1D1D]/75 mr-2" />
           <input
             type="text"
             placeholder="Buscar por mentorados"
@@ -157,9 +158,6 @@ export default function MentorStatus() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="bg-teal-700 text-white p-2 rounded-md">
-            <img src={searchIcon} alt="Buscar" className="w-5 h-5" />
-          </button>
         </div>
         <div className="flex flex-col gap-4 sm:gap-6 w-full pb-6">
           {filtered.length > 0 ? (

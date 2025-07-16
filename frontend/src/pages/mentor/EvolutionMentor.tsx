@@ -63,6 +63,14 @@ const EvolutionManager = () => {
   if (loading)
     return <div className="p-6 text-gray-500">Carregando histórico...</div>;
 
+  if (!cycles || cycles.length === 0) {
+    return (
+      <div className="p-6 text-gray-500 text-left">
+        Colaborador não possui ciclos avaliados.
+      </div>
+    );
+  }
+
   return (
     <EvolutionLayout
       title="Minha Evolução"

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import searchIcon from "../../assets/search.png";
+import { IoIosSearch } from "react-icons/io";
 import CollaboratorCard from "../../components/manager/CollaboratorCard";
 import type { Collaborator } from "../../types/collaboratorStatus.tsx";
 import { useAuth } from "../../context/AuthContext";
@@ -8,7 +8,6 @@ import { API_URL, getAuthHeaders } from "../../services/api";
 export default function Collaborators() {
   const [search, setSearch] = useState("");
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
-  const [searchResults, setSearchResults] = useState<Collaborator[]>([]);
   const [evaluations, setEvaluations] = useState<Record<number, any>>({});
   const [selfEvaluations, setSelfEvaluations] = useState<Record<number, any>>(
     {}
@@ -38,8 +37,14 @@ export default function Collaborators() {
   }, [user]);
 
   useEffect(() => {
-    const currentList = search.trim() !== "" ? searchResults : collaborators;
-    const ids = currentList.map((c) => c.id);
+    // Filtra colaboradores pelo nome
+    const filtered = search.trim()
+      ? collaborators.filter((c) =>
+          c.name.toLowerCase().includes(search.trim().toLowerCase())
+        )
+      : collaborators;
+    // Busca avaliações e autoavaliações reais
+    const ids = filtered.map((c) => c.id);
     if (ids.length === 0) return;
     Promise.all(
       ids.map((id) =>
@@ -84,10 +89,9 @@ export default function Collaborators() {
         selfEvalMap[id] = latest;
       });
       setEvaluations(evalMap);
-
       setSelfEvaluations(selfEvalMap);
     });
-  }, [search, collaborators, searchResults]);
+  }, [search, collaborators]);
 
   // Função para calcular status, nota do gestor e nota de autoavaliação
   function getStatusAndScore(collaboratorId: number) {
@@ -127,7 +131,12 @@ export default function Collaborators() {
   }
 
   // Responsivo: Top bar, busca e lista
-  const list = search.trim() !== "" ? searchResults : collaborators;
+  const filtered = search.trim()
+    ? collaborators.filter((c) =>
+        c.name.toLowerCase().includes(search.trim().toLowerCase())
+      )
+    : collaborators;
+  const list = filtered;
   return (
     <div className="flex flex-col w-full min-h-screen bg-[#F1F1F1] overflow-x-hidden sm:overflow-x-visible max-w-md sm:max-w-full mx-auto sm:mx-0">
       {/* Top bar com espaço para ícone da sidebar */}
@@ -144,6 +153,7 @@ export default function Collaborators() {
       <div className="w-full px-1 sm:px-6 mx-auto">
         {/* Barra de busca responsiva */}
         <div className="flex items-center gap-2 rounded-xl py-3 px-3 bg-white/50 mt-0 mb-6 w-full">
+          <IoIosSearch size={16} className="text-[#1D1D1D]/75 mr-2" />
           <input
             type="text"
             placeholder="Buscar por colaboradores"
@@ -151,9 +161,6 @@ export default function Collaborators() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="bg-teal-700 text-white p-2 rounded-md">
-            <img src={searchIcon} alt="Buscar" className="w-5 h-5" />
-          </button>
         </div>
         {/* Lista responsiva de colaboradores */}
         <div className="flex flex-col gap-4 sm:gap-6 w-full pb-6">
