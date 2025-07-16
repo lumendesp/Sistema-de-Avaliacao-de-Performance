@@ -7,6 +7,7 @@ import { PrismaService } from './prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma.module';
 import { AuthModule } from './auth/auth.module';
+import { RhModule } from './rh/rh.modules';
 import { TrackModule } from './track/track.module';
 import { UnitModule } from './unit/unit.module';
 import { PositionModule } from './position/position.module';
@@ -25,14 +26,14 @@ import { ManagerModule } from './manager/manager.module';
 import { ProjectsModule } from './projects/projects.module';
 import { EvaluationCompletionModule } from './evaluation-completion/evaluation-completion.module';
 import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
-import { CollaboratorModule } from './climate-survey/collaborator/collaborator.module';
-import { RhModule } from './climate-survey/rh/rh.module';
-import { AiClimateSummaryModule } from './climate-survey/ai-climate-summary/ai-climate-summary.module';
 import { RHDashboardModule } from './rh/dashboard/dashboard.module';
 import { ImportModule } from './rh/import/import.module';
 import { PdiModule } from './pdi/pdi.module';
 import { OkrModule } from './okr/okr.module';
 import { MentorToCollaboratorEvaluationModule } from './mentor-to-collaborator-evaluation/mentor-to-collaborator-evaluation.module';
+import { CollaboratorModule } from './climate-survey/collaborator/collaborator.module';
+import { RhClimateModule } from './climate-survey/rh/rh.module';
+import { AiClimateSummaryModule } from './climate-survey/ai-climate-summary/ai-climate-summary.module';
 
 @Module({
   imports: [
@@ -66,13 +67,14 @@ import { MentorToCollaboratorEvaluationModule } from './mentor-to-collaborator-e
     ProjectsModule,
     EvaluationCompletionModule,
     AiBrutalFactsModule,
-    CollaboratorModule,
-    AiClimateSummaryModule,
     RHDashboardModule,
     ImportModule,
     PdiModule,
     OkrModule,
     MentorToCollaboratorEvaluationModule,
+    CollaboratorModule,
+    AiClimateSummaryModule,
+    RhClimateModule
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

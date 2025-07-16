@@ -64,8 +64,8 @@ const RHEvaluationCycleCreate = () => {
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 mt-5 md:mt-0">
+        <div className="flex items-center md:gap-4 gap-1">
           <button
             onClick={() => navigate("../cycles")}
             className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
@@ -77,7 +77,7 @@ const RHEvaluationCycleCreate = () => {
           </h1>
         </div>
         <button
-          className="bg-[#08605F] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-50"
+          className="bg-[#08605F] text-white px-4 py-2 mt-3 md:mt-0 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-50 max-w-[200px]"
           onClick={handleSubmit}
           disabled={loading}
         >
@@ -92,8 +92,8 @@ const RHEvaluationCycleCreate = () => {
             </h2>
           </div>
           <div className="p-4 space-y-4">
-            <div className="flex w-full gap-4">
-              <div className="w-2/4">
+            <div className="flex md:flex-row flex-col w-full gap-4">
+              <div className="w-full md:w-2/4">
                 <label
                   htmlFor="name"
                   className="block text-sm font-medium text-gray-700 mb-2"
@@ -110,7 +110,7 @@ const RHEvaluationCycleCreate = () => {
                   required
                 />
               </div>
-              <div className="w-1/4">
+              <div className="w-full md:w-1/4">
                 <label
                   htmlFor="startDate"
                   className="block text-sm font-medium text-gray-700 mb-2"
@@ -128,7 +128,7 @@ const RHEvaluationCycleCreate = () => {
                   popperPlacement="bottom-start"
                 />
               </div>
-              <div className="w-1/4">
+              <div className="w-full md:w-1/4">
                 <label
                   htmlFor="endDate"
                   className="block text-sm font-medium text-gray-700 mb-2"

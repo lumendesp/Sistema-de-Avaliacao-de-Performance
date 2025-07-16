@@ -57,6 +57,7 @@ import PDIRH from "../pages/RH/PDI";
 import RHImport from "../pages/RH/RHImport/RHImport.tsx";
 
 import BrutalFacts from "../pages/manager/BrutalFacts";
+
 import RHClimateSurvey from "../pages/RH/RHClimateSurvey/RHClimateSurvey.tsx";
 import RHCreateClimateSurvey from "../pages/RH/RHClimateSurvey/RHCreateClimateSurvey.tsx";
 import RHClimateSurveyDetail from "../pages/RH/RHClimateSurvey/RHClimateSurveyDetail.tsx";
@@ -216,6 +217,9 @@ const AppRoutes = () => (
         <Route path="collaborators" element={<RHCollaboratorsPage />} />
 
         <Route path="criteria" element={<RHCriteriaSettingsPage />} />
+        <Route path="okr" element={<OKRRH />} />
+        <Route path="pdi" element={<PDIRH />} />
+        <Route path="import" element={<RHImport />} />
 
         <Route path="climate-survey" element={<RHClimateSurvey />} />
         <Route
@@ -225,9 +229,6 @@ const AppRoutes = () => (
         <Route path="climate-survey/:id" element={<RHClimateSurveyDetail />} />
 
         {/* <Route path="climate-surveys" element={<RHSurveys />} /> */}
-        <Route path="okr" element={<OKRRH />} />
-        <Route path="pdi" element={<PDIRH />} />
-        <Route path="import" element={<RHImport />} />
       </Route>
       <Route path="/perfil" element={<Profile />} />
     </Routes>

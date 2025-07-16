@@ -8,6 +8,7 @@ import {
 } from "react-icons/io5";
 import { getEvaluationCycles } from "../../../services/api";
 import type { EvaluationCycle } from "../../../types/rh";
+import { Tooltip } from "react-tooltip";
 
 const statusMap: Record<string, { label: string; color: string; bg: string }> =
   {
@@ -111,6 +112,7 @@ const RHEvaluationCycles = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [iaLoading, setIaLoading] = useState(false); // Novo estado para loading IA
 
   const cycle =
     allCycles
@@ -144,6 +146,10 @@ const RHEvaluationCycles = () => {
     if (!action || !cycle) return;
     try {
       const token = localStorage.getItem("token");
+      // Se for fechar para gestor, ativa loading IA
+      if (status === "IN_PROGRESS_MANAGER") {
+        setIaLoading(true);
+      }
       const res = await fetch(`http://localhost:3000${action.endpoint}`, {
         method: action.method,
         headers: {
@@ -155,7 +161,7 @@ const RHEvaluationCycles = () => {
         const error = await res.json().catch(() => ({}));
         throw new Error(error.message || "Erro ao executar ação");
       }
-      setActionSuccess("Ação realizada com sucesso!");
+      // setActionSuccess("Ação realizada com sucesso!");
       const updatedStatus =
         status === "IN_PROGRESS_COLLABORATOR"
           ? "IN_PROGRESS_MANAGER"
@@ -177,6 +183,7 @@ const RHEvaluationCycles = () => {
       await reloadCycles();
     } finally {
       setActionLoading(false);
+      setIaLoading(false); // Desativa loading IA ao finalizar
       setTimeout(() => {
         setActionSuccess(null);
         setActionError(null);
@@ -185,8 +192,8 @@ const RHEvaluationCycles = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-2 md:px-0">
-      <header className="flex justify-between items-center mb-8">
+    <div className="w-full px-2 md:px-0">
+      <header className="flex justify-between items-center mb-8 mt-5">
         <h1 className="text-3xl font-bold text-gray-800">Ciclos Avaliativos</h1>
         <div className="w-12 h-12 bg-gray-300 text-gray-700 rounded-full flex items-center justify-center font-bold text-lg">
           RH
@@ -197,33 +204,26 @@ const RHEvaluationCycles = () => {
           {loading ? (
             <div className="text-center text-gray-500">Carregando...</div>
           ) : !cycle ? (
-            <>
-              
-            </>
+            <></>
           ) : (
-            <div className="text-center text-green-700 text-lg font-semibold mb-8">
+            <div className="text-center text-[#085F60] text-xl font-bold mb-6 md:mb-0">
               Ciclo ativo:{" "}
-              <span className="font-bold text-green-900">{cycle.name}</span>
+              <span className="font-bold text-[#085F60]">{cycle.name}</span>
             </div>
           )}
           <div className="flex-1 flex flex-col h-full w-full p-0 m-0">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
+            <h2 className="text-xl font-bold text-gray-800 md:mb-4 mb-6">
               Todos os ciclos
             </h2>
-            <div className="flex-1 w-full rounded-xl scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent p-0 m-0">
-              {/* Cabeçalho das colunas */}
-              <div className="hidden md:grid grid-cols-5 gap-2 px-2 py-2 bg-gray-100 rounded-t-xl text-xs font-semibold text-gray-600 uppercase tracking-wider text-center items-center">
+            <div className="overflow-x-auto">
+              <div className="min-w-[700px] grid grid-cols-5 gap-2 px-2 py-2 bg-gray-100 rounded-t-xl text-xs font-semibold text-gray-600 uppercase tracking-wider text-center items-center">
                 <div>Nome</div>
                 <div>Status</div>
                 <div>Início</div>
                 <div>Término</div>
                 <div className="text-center">Ação</div>
               </div>
-              <div className="md:hidden flex gap-2 px-2 py-2 bg-gray-100 rounded-t-xl text-xs font-semibold text-gray-600 uppercase tracking-wider items-center">
-                <div className="flex-1">Ciclo</div>
-                <div className="w-20 text-center">Ação</div>
-              </div>
-              <div className="flex flex-col divide-y divide-gray-100 bg-white rounded-b-xl shadow">
+              <div className="min-w-[700px] flex flex-col divide-y divide-gray-100 bg-white rounded-b-xl shadow">
                 {allCycles.length === 0 && (
                   <div className="text-gray-500 py-6 text-center col-span-5">
                     Nenhum ciclo encontrado.
@@ -238,89 +238,100 @@ const RHEvaluationCycles = () => {
                   const isActive = cycle && c.id === cycle.id;
                   const action = actionMap[c.status];
                   const iconData = actionIconMap[c.status];
+                  const isClosed = c.status === "CLOSED";
                   return (
                     <div
                       key={c.id}
-                      className="grid grid-cols-1 md:grid-cols-5 gap-2 px-2 py-3 items-center md:text-center"
+                      className="grid grid-cols-5 gap-2 px-2 py-3 items-center text-center"
                     >
                       <div className="font-medium text-gray-800 md:truncate h-full flex items-center text-center min-h-[32px]">
-                        <span className="block md:inline align-middle w-full">
+                        <span className="block align-middle w-full">
                           {c.name}
                         </span>
-                        <span className="md:hidden block text-xs mt-1 w-full">
-                          <span
-                            className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${status.bg} ${status.color}`}
-                          >
-                            {status.label}
-                          </span>
-                          <span className="block text-gray-600 mt-1">
-                            Início:{" "}
-                            {c.startDate
-                              ? new Date(c.startDate).toLocaleDateString(
-                                  "pt-BR"
-                                )
-                              : "-"}
-                          </span>
-                          <span className="block text-gray-600">
-                            Término:{" "}
-                            {c.endDate
-                              ? new Date(c.endDate).toLocaleDateString("pt-BR")
-                              : "-"}
-                          </span>
-                        </span>
                       </div>
-                      <div className="hidden md:flex justify-center items-center">
+                      <div className="flex justify-center items-center">
                         <span
                           className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${status.bg} ${status.color}`}
                         >
                           {status.label}
                         </span>
                       </div>
-                      <div className="hidden md:flex justify-center items-center text-gray-600">
+                      <div className="flex justify-center items-center text-gray-600">
                         {c.startDate
                           ? new Date(c.startDate).toLocaleDateString("pt-BR")
                           : "-"}
                       </div>
-                      <div className="hidden md:flex justify-center items-center text-gray-600">
+                      <div className="flex justify-center items-center text-gray-600">
                         {c.endDate
                           ? new Date(c.endDate).toLocaleDateString("pt-BR")
                           : "-"}
                       </div>
                       <div className="flex justify-center items-center">
                         {isActive && action && iconData ? (
-                          <button
-                            className="group relative"
-                            onClick={() => handleAction(c.status)}
-                            disabled={actionLoading}
-                          >
-                            <span className="sr-only">{iconData.tooltip}</span>
-                            {actionLoading ? (
-                              <svg
-                                className="animate-spin h-7 w-7 text-gray-400"
-                                viewBox="0 0 24 24"
-                              >
-                                <circle
-                                  className="opacity-25"
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                  fill="none"
-                                />
-                                <path
-                                  className="opacity-75"
-                                  fill="currentColor"
-                                  d="M4 12a8 8 0 018-8v8z"
-                                />
-                              </svg>
-                            ) : (
-                              iconData.icon
-                            )}
-                            <span className="absolute left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none z-10 transition-opacity">
-                              {iconData.tooltip}
-                            </span>
-                          </button>
+                          <>
+                            <button
+                              className="group relative"
+                              onClick={() => handleAction(c.status)}
+                              disabled={
+                                actionLoading ||
+                                (c.status === "CLOSED" && iaLoading)
+                              }
+                              data-tooltip-id={`tooltip-action-${c.id}`}
+                              data-tooltip-content={iconData.tooltip}
+                            >
+                              <span className="sr-only">
+                                {iconData.tooltip}
+                              </span>
+                              {actionLoading && c.status === cycle.status ? (
+                                <svg
+                                  className="animate-spin h-7 w-7 text-gray-400"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                    fill="none"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8v8z"
+                                  />
+                                </svg>
+                              ) : iaLoading && c.status === "CLOSED" ? (
+                                <svg
+                                  className="animate-spin h-7 w-7 text-yellow-400"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                    fill="none"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8v8z"
+                                  />
+                                </svg>
+                              ) : (
+                                iconData.icon
+                              )}
+                            </button>
+                            <Tooltip
+                              id={`tooltip-action-${c.id}`}
+                              place="bottom"
+                              effect="solid"
+                            />
+                          </>
                         ) : c.status === "PUBLISHED" ? (
                           <span className="text-green-700 font-semibold text-xs">
                             Publicado
@@ -337,7 +348,7 @@ const RHEvaluationCycles = () => {
           </div>
         </div>
       </section>
-
+      {/* O bloco condicional de novo ciclo deve estar fora da <section> */}
       {!cycle && !loading && !location.pathname.endsWith("/create") && (
         <div className="w-full flex flex-col items-center justify-center bg-gray-50 rounded-xl shadow-lg p-8 mt-4">
           <p className="text-lg text-gray-700 mb-4 text-center">
@@ -352,6 +363,23 @@ const RHEvaluationCycles = () => {
           >
             <IoAddCircle size={24} /> Novo Ciclo Avaliativo
           </button>
+        </div>
+      )}
+      {/* Indicadores e mensagens globais */}
+      {iaLoading && (
+        <div className="flex items-center justify-center gap-2 py-6">
+          <span className="w-6 h-6 loader"></span>
+          <span className="text-gray-600">Gerando resumo com IA...</span>
+        </div>
+      )}
+      {actionSuccess && (
+        <div className="flex items-center justify-center gap-2 py-2">
+          <span className="text-green-700 font-semibold">{actionSuccess}</span>
+        </div>
+      )}
+      {actionError && (
+        <div className="flex items-center justify-center gap-2 py-2">
+          <span className="text-red-700 font-semibold">{actionError}</span>
         </div>
       )}
     </div>

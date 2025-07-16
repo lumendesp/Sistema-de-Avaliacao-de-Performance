@@ -8,4 +8,4 @@ import { PrismaModule } from 'src/prisma.module';
   controllers: [RhController],
   providers: [RhService],
 })
-export class RhModule {}
+export class RhClimateModule {}
