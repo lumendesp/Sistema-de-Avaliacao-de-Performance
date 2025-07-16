@@ -113,6 +113,7 @@ const Profile: React.FC = () => {
 
   function getAccountRoute(account: string) {
     const acc = account?.toLowerCase?.() || "";
+    if (acc.includes("admin")) return "/admin";
     if (acc.includes("manager") || acc.includes("gestor")) return "/manager";
     if (acc.includes("mentor")) return "/mentor";
     if (acc.includes("hr")) return "/rh";

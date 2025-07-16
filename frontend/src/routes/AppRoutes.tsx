@@ -8,6 +8,7 @@ import RHLayout from "../layouts/RHLayout";
 import EvaluationLayout from "../layouts/EvaluationLayout";
 import ComparisonLayout from "../layouts/ComparisonLayout"; // novo
 import MentorLayout from "../layouts/MentorLayout";
+import AdminLayout from '../layouts/AdminLayout';
 
 import Dashboard from "../pages/collaborator/Dashboard";
 import SelfEvaluation from "../pages/collaborator/evaluation/SelfEvaluation";
@@ -59,8 +60,15 @@ import PDIRH from "../pages/RH/PDI";
 import RHImport from "../pages/RH/RHImport/RHImport.tsx";
 
 import BrutalFacts from "../pages/manager/BrutalFacts";
-import AdminLayout from "../layouts/AdminLayout.tsx";
 
+import RHClimateSurvey from "../pages/RH/RHClimateSurvey/RHClimateSurvey.tsx";
+import RHCreateClimateSurvey from "../pages/RH/RHClimateSurvey/RHCreateClimateSurvey.tsx";
+import RHClimateSurveyDetail from "../pages/RH/RHClimateSurvey/RHClimateSurveyDetail.tsx";
+import RHEvaluationCycles from "../pages/RH/RHEvaluationCycles/RHEvaluationCycles.tsx";
+import RHEvaluationCycleCreate from "../pages/RH/RHEvaluationCycles/RHEvaluationCycleCreate";
+
+import ClimateSurveyDashboard from "../pages/collaborator/climateSurvey/ClimateSurveyDashboard";
+import ClimateSurveyForm from "../pages/collaborator/climateSurvey/ClimateSurveyForm";
 
 const AppRoutes = () => (
   <BrowserRouter>
@@ -88,6 +96,8 @@ const AppRoutes = () => (
           path="/collaborator/progress"
           element={<EvolutionCollaborator />}
         />
+        <Route path="climate-survey" element={<ClimateSurveyDashboard />} />
+        <Route path="climate-survey/form" element={<ClimateSurveyForm />} />
         <Route
           path="evaluation"
           element={
@@ -155,7 +165,6 @@ const AppRoutes = () => (
         </Route>
         <Route path="historico" element={<EvolutionManager />} />
         <Route path="brutal-facts" element={<BrutalFacts />} />
-        <Route path="okr" element={<OKRManager />} />
         <Route path="pdi" element={<PDIManager />} />
       </Route>
 
@@ -181,8 +190,6 @@ const AppRoutes = () => (
         </Route>
         <Route path="historico" element={<EvolutionMentor />} />
         <Route path="brutal-facts" element={<BrutalFactsMentor />} />
-        <Route path="okr" element={<OKRManager />} />
-        <Route path="pdi" element={<PDIManager />} />
       </Route>
 
       <Route
@@ -196,8 +203,6 @@ const AppRoutes = () => (
         <Route index element={<Committee />} />
         <Route path="equalizations" element={<Equalization />} />
         <Route path="history" element={<History />} />
-        <Route path="okr" element={<OKRCommittee />} />
-        <Route path="pdi" element={<PDICommittee />} />
       </Route>
 
       <Route
@@ -210,12 +215,22 @@ const AppRoutes = () => (
       >
         <Route index element={<RHDashboard />} />
 
+        <Route path="cycles" element={<RHEvaluationCycles />} />
+        <Route path="cycles/create" element={<RHEvaluationCycleCreate />} />
+
         <Route path="collaborators" element={<RHCollaboratorsPage />} />
 
         <Route path="criteria" element={<RHCriteriaSettingsPage />} />
-        <Route path="okr" element={<OKRRH />} />
-        <Route path="pdi" element={<PDIRH />} />
         <Route path="import" element={<RHImport />} />
+
+        <Route path="climate-survey" element={<RHClimateSurvey />} />
+        <Route
+          path="climate-survey/create"
+          element={<RHCreateClimateSurvey />}
+        />
+        <Route path="climate-survey/:id" element={<RHClimateSurveyDetail />} />
+
+        {/* <Route path="climate-surveys" element={<RHSurveys />} /> */}
       </Route>
       <Route path="/perfil" element={<Profile />} />
       

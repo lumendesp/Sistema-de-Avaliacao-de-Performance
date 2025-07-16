@@ -47,7 +47,7 @@ export default function CriteriaSection({
       : "-";
 
   return (
-    <section className="bg-white rounded-md p-3 sm:p-8 shadow-md w-full max-w-full sm:max-w-7xl mx-auto overflow-x-hidden">
+    <section className="bg-white rounded-xl px-6 py-9 w-full overflow-x-hidden">
       <div className="flex flex-col w-full max-w-full">
         <h2 className="text-base sm:text-lg font-bold text-[#08605F] mr-0 sm:mr-4 w-full truncate max-w-full">
           {title}

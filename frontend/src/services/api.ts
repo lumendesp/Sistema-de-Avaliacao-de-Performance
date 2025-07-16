@@ -588,13 +588,12 @@ export const getUserById = async (id: number) => {
 // Gestor (avaliações)
 
 export const fetchManagerCollaborators = async (managerId: number) => {
-  const res = await fetch(`${API_URL}/managers/${managerId}`, {
+  const res = await fetch(`${API_URL}/manager/${managerId}/collaborators`, {
     method: "GET",
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error("Erro ao buscar colaboradores");
-  const data = await res.json();
-  return data.collaborators || [];
+  return res.json();
 };
 
 export const fetchManagerEvaluation = async (collaboratorId: number) => {
@@ -614,7 +613,6 @@ export const createManagerEvaluation = async (data: {
   evaluateeId: number;
   cycleId: number;
   groups: any[];
-  status?: string;
 }) => {
   // Log para debug
   console.log("Payload enviado para manager-evaluation:", data);
@@ -1239,13 +1237,17 @@ export const getClosedCycles = async () => {
 };
 
 // Função para fazer o upload de um único arquivo .xlsx
-export const importSingleHistoryRequest = async (file: File, cycleId: number) => {
+export const importSingleHistoryRequest = async (
+  file: File,
+  cycleId: number
+) => {
   const formData = new FormData();
-  formData.append('cycleId', String(cycleId));
-  formData.append('file', file, file.name);
+  formData.append("cycleId", String(cycleId));
+  formData.append("file", file, file.name);
 
-  const res = await fetch(`${API_URL}/rh/import/history`, { // <-- Chama o endpoint correto
-    method: 'POST',
+  const res = await fetch(`${API_URL}/rh/import/history`, {
+    // <-- Chama o endpoint correto
+    method: "POST",
     headers: {
       Authorization: `Bearer ${getAuthToken()}`,
     },
@@ -1254,7 +1256,7 @@ export const importSingleHistoryRequest = async (file: File, cycleId: number) =>
 
   if (!res.ok) {
     const errorBody = await res.json().catch(() => ({}));
-    throw new Error(errorBody?.message || 'Erro ao importar o arquivo.');
+    throw new Error(errorBody?.message || "Erro ao importar o arquivo.");
   }
 
   return res.json();
@@ -1263,11 +1265,11 @@ export const importSingleHistoryRequest = async (file: File, cycleId: number) =>
 // Função para fazer o upload de um arquivo .zip
 export const importBulkHistoryRequest = async (file: File, cycleId: number) => {
   const formData = new FormData();
-  formData.append('cycleId', String(cycleId));
-  formData.append('file', file, file.name);
+  formData.append("cycleId", String(cycleId));
+  formData.append("file", file, file.name);
 
   const res = await fetch(`${API_URL}/rh/import/bulk-history`, {
-    method: 'POST',
+    method: "POST",
 
     headers: {
       Authorization: `Bearer ${getAuthToken()}`,
@@ -1278,7 +1280,7 @@ export const importBulkHistoryRequest = async (file: File, cycleId: number) => {
   if (!res.ok) {
     // Tenta pegar uma mensagem de erro mais específica do backend
     const errorBody = await res.json().catch(() => ({}));
-    const message = errorBody?.message || 'Erro ao importar o arquivo.';
+    const message = errorBody?.message || "Erro ao importar o arquivo.";
     throw new Error(message);
   }
 
@@ -1292,12 +1294,12 @@ export const getRHDashboardData = async (cycleId?: number) => {
     : `${API_URL}/rh/dashboard/status`;
 
   const res = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
 
   if (!res.ok) {
-    throw new Error('Erro ao buscar dados do dashboard de RH');
+    throw new Error("Erro ao buscar dados do dashboard de RH");
   }
   return res.json();
 };
@@ -1309,12 +1311,12 @@ export const getRhCollaborators = async (cycleId?: number) => {
     : `${API_URL}/rh/dashboard/collaborators`;
 
   const res = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
 
   if (!res.ok) {
-    throw new Error('Erro ao buscar lista de colaboradores');
+    throw new Error("Erro ao buscar lista de colaboradores");
   }
   return res.json();
 };
@@ -1322,11 +1324,25 @@ export const getRhCollaborators = async (cycleId?: number) => {
 // Busca todos os ciclos de avaliação disponíveis
 export const getEvaluationCycles = async () => {
   const res = await fetch(`${API_URL}/ciclos`, {
-    method: 'GET',
+    method: "GET",
   });
 
   if (!res.ok) {
-    throw new Error('Erro ao buscar ciclos de avaliação');
+    throw new Error("Erro ao buscar ciclos de avaliação");
+  }
+  return res.json();
+};
+
+// Busca o ciclo ativo de colaborador para o RH (usando status)
+export const fetchActiveCollaboratorCycleRH = async () => {
+  const res = await fetch(
+    `${API_URL}/ciclos/current?status=IN_PROGRESS_COLLABORATOR`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!res.ok) {
+    return null;
   }
   return res.json();
 };
@@ -1334,136 +1350,156 @@ export const getEvaluationCycles = async () => {
 // --- PDI API ---
 export const fetchPdiByUser = async (userId: number) => {
   const res = await fetch(`${API_URL}/pdi/user/${userId}`, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao buscar PDI');
+  if (!res.ok) throw new Error("Erro ao buscar PDI");
   return res.json();
 };
 
-export const createPdi = async (data: { userId: number; title: string; description?: string }) => {
+export const createPdi = async (data: {
+  userId: number;
+  title: string;
+  description?: string;
+}) => {
   const res = await fetch(`${API_URL}/pdi`, {
-    method: 'POST',
+    method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao criar PDI');
+  if (!res.ok) throw new Error("Erro ao criar PDI");
   return res.json();
 };
 
-export const updatePdi = async (id: number, data: { title?: string; description?: string }) => {
+export const updatePdi = async (
+  id: number,
+  data: { title?: string; description?: string }
+) => {
   const res = await fetch(`${API_URL}/pdi/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao atualizar PDI');
+  if (!res.ok) throw new Error("Erro ao atualizar PDI");
   return res.json();
 };
 
 export const deletePdi = async (id: number) => {
   const res = await fetch(`${API_URL}/pdi/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao deletar PDI');
+  if (!res.ok) throw new Error("Erro ao deletar PDI");
   return res.json();
 };
 
 export const createPdiAction = async (data: any) => {
   const res = await fetch(`${API_URL}/pdi/action`, {
-    method: 'POST',
+    method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao criar ação do PDI');
+  if (!res.ok) throw new Error("Erro ao criar ação do PDI");
   return res.json();
 };
 
 export const updatePdiAction = async (id: number, data: any) => {
   const res = await fetch(`${API_URL}/pdi/action/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao atualizar ação do PDI');
+  if (!res.ok) throw new Error("Erro ao atualizar ação do PDI");
   return res.json();
 };
 
 export const deletePdiAction = async (id: number) => {
   const res = await fetch(`${API_URL}/pdi/action/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao deletar ação do PDI');
+  if (!res.ok) throw new Error("Erro ao deletar ação do PDI");
   return res.json();
 };
 
 // --- OKR API ---
 export const fetchOkrsByUser = async (userId: number) => {
   const res = await fetch(`${API_URL}/okrs/user/${userId}`, {
-    method: 'GET',
+    method: "GET",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao buscar OKRs');
+  if (!res.ok) throw new Error("Erro ao buscar OKRs");
   return res.json();
 };
 
-export const createOkr = async (data: { userId: number; objective: string; dueDate: string; keyResults: string[] }) => {
+export const createOkr = async (data: {
+  userId: number;
+  objective: string;
+  dueDate: string;
+  keyResults: string[];
+}) => {
   const res = await fetch(`${API_URL}/okrs`, {
-    method: 'POST',
+    method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao criar OKR');
+  if (!res.ok) throw new Error("Erro ao criar OKR");
   return res.json();
 };
 
-export const updateOkr = async (id: number, data: { objective?: string; dueDate?: string; progress?: number; status?: string }) => {
+export const updateOkr = async (
+  id: number,
+  data: {
+    objective?: string;
+    dueDate?: string;
+    progress?: number;
+    status?: string;
+  }
+) => {
   const res = await fetch(`${API_URL}/okrs/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao atualizar OKR');
+  if (!res.ok) throw new Error("Erro ao atualizar OKR");
   return res.json();
 };
 
 export const deleteOkr = async (id: number) => {
   const res = await fetch(`${API_URL}/okrs/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao deletar OKR');
+  if (!res.ok) throw new Error("Erro ao deletar OKR");
   return res.json();
 };
 
 export const addKeyResult = async (okrId: number, description: string) => {
   const res = await fetch(`${API_URL}/okrs/${okrId}/key-result`, {
-    method: 'POST',
+    method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ description }),
   });
-  if (!res.ok) throw new Error('Erro ao adicionar resultado-chave');
+  if (!res.ok) throw new Error("Erro ao adicionar resultado-chave");
   return res.json();
 };
 
 export const updateKeyResult = async (id: number, description: string) => {
   const res = await fetch(`${API_URL}/okrs/key-result/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify({ description }),
   });
-  if (!res.ok) throw new Error('Erro ao atualizar resultado-chave');
+  if (!res.ok) throw new Error("Erro ao atualizar resultado-chave");
   return res.json();
 };
 
 export const deleteKeyResult = async (id: number) => {
   const res = await fetch(`${API_URL}/okrs/key-result/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error('Erro ao deletar resultado-chave');
+  if (!res.ok) throw new Error("Erro ao deletar resultado-chave");
   return res.json();
 };
 
@@ -1515,16 +1551,24 @@ export const createMentorToCollaboratorEvaluation = async ({
   cycleId,
   score,
   justification,
+  status = "submitted",
 }: {
   evaluateeId: number;
   cycleId: number;
   score: number;
   justification: string;
+  status?: string;
 }) => {
   const res = await fetch(`${API_URL}/mentor-to-collaborator-evaluations`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ evaluateeId, cycleId, score, justification }),
+    body: JSON.stringify({
+      evaluateeId,
+      cycleId,
+      score,
+      justification,
+      status,
+    }),
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
@@ -1586,5 +1630,251 @@ export const fetchPeerEvaluationsReceived = async (
     }
   );
   if (!res.ok) throw new Error("Erro ao buscar avaliações 360 recebidas");
+  return res.json();
+};
+
+// Climate Survey
+export const createClimateSurvey = async (data: {
+  title: string;
+  description?: string;
+  endDate: string;
+  questions: { text: string }[];
+}) => {
+  const res = await fetch(`${API_URL}/rh/climate-survey`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao criar pesquisa de clima");
+  }
+  return res.json();
+};
+
+export const getClimateSurveys = async () => {
+  const res = await fetch(`${API_URL}/rh/climate-survey`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar pesquisas de clima");
+  }
+
+  return res.json();
+};
+
+export const getClimateSurveyById = async (surveyId: number) => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/${surveyId}`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar pesquisa");
+  }
+
+  return res.json();
+};
+
+export const getClimateSurveyResponses = async (surveyId: number) => {
+  const res = await fetch(
+    `${API_URL}/rh/climate-survey/${surveyId}/responses`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar respostas da pesquisa");
+  }
+
+  return res.json();
+};
+
+export const closeClimateSurvey = async (
+  surveyId: number,
+  endDate?: string
+) => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/${surveyId}/close`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ endDate }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao encerrar pesquisa");
+  }
+
+  return res.json();
+};
+
+export const reopenClimateSurvey = async (surveyId: number) => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/${surveyId}/reopen`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao reabrir pesquisa");
+  }
+
+  return res.json();
+};
+
+export const countCollaborators = async () => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/count`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao contar colaboradores");
+  }
+
+  return res.json(); // vai retornar algo como: { count: 42 }
+};
+
+export const getClimateSurveyAverages = async () => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/averages`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Erro ao buscar médias das pesquisas");
+  }
+  return res.json();
+};
+
+export const getLastCompletedSurveyData = async () => {
+  try {
+    console.log("🔍 Buscando dados da última pesquisa finalizada...");
+
+    // Busca todas as pesquisas
+    const surveys = await getClimateSurveys();
+    console.log("Pesquisas encontradas:", surveys.length);
+
+    // Filtra apenas as pesquisas finalizadas (não ativas) e ordena por data de criação
+    const completedSurveys = surveys
+      .filter((s: any) => !s.isActive)
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+    console.log("Pesquisas finalizadas:", completedSurveys.length);
+
+    if (completedSurveys.length === 0) {
+      console.log("Nenhuma pesquisa finalizada encontrada");
+      return { satisfactionScore: null, shortText: null };
+    }
+
+    // Pega a pesquisa mais recente finalizada
+    const lastCompletedSurvey = completedSurveys[0];
+    console.log("Última pesquisa finalizada:", lastCompletedSurvey);
+
+    // Busca o resumo de IA da última pesquisa finalizada
+    console.log("Buscando resumo para pesquisa ID:", lastCompletedSurvey.id);
+    const summary = await getClimateAISummary(lastCompletedSurvey.id);
+    console.log("Resumo completo:", summary);
+    console.log("Score de satisfação:", summary.satisfactionScore);
+    console.log("Resumo curto:", summary.shortText);
+
+    return {
+      satisfactionScore: summary.satisfactionScore,
+      shortText: summary.shortText,
+    };
+  } catch (error) {
+    console.error(
+      "Erro ao buscar dados da última pesquisa finalizada:",
+      error
+    );
+    return { satisfactionScore: null, shortText: null };
+  }
+};
+
+export const getClimateAISummary = async (surveyId: number) => {
+  const res = await fetch(
+    `${API_URL}/ai-climate-summary?surveyId=${surveyId}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Erro ao buscar resumo de IA da pesquisa");
+  }
+
+  const data = await res.json();
+  return {
+    text: data.text || null,
+    shortText: data.shortText || null,
+    satisfactionScore: data.satisfactionScore || null,
+    status: data.status || "pending",
+  };
+};
+
+export const generateClimateAISummary = async (surveyId: number) => {
+  const res = await fetch(`${API_URL}/ai-climate-summary`, {
+    method: "POST",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ surveyId }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    const errorMessage =
+      error.message || "Erro ao gerar resumo de IA da pesquisa";
+
+    // Verificar se é um erro relacionado à configuração da API
+    if (
+      errorMessage.includes("API") ||
+      errorMessage.includes("Gemini") ||
+      errorMessage.includes("chave")
+    ) {
+      throw new Error(
+        "API do Google Gemini não está configurada. Verifique a documentação para configurar a GEMINI_API_KEY."
+      );
+    }
+
+    // Verificar se é um erro de resumo já em processamento
+    if (errorMessage.includes("já existe um resumo sendo gerado")) {
+      throw new Error("Resumo já está sendo gerado. Aguarde a conclusão.");
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  const data = await res.json();
+
+  // Verificar se a resposta está vazia ou malformada
+  if (!data || typeof data.text !== "string" || data.text.trim() === "") {
+    throw new Error(
+      "A IA retornou uma resposta vazia. Verifique se a API está configurada corretamente."
+    );
+  }
+
+  return {
+    text: data.text,
+    shortText: data.shortText,
+    satisfactionScore: data.satisfactionScore,
+    status: data.status || "completed",
+  };
+};
+
+export const getAllClimateAISummaries = async () => {
+  const res = await fetch(`${API_URL}/ai-climate-summary/all`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar resumos de IA das pesquisas");
   return res.json();
 };

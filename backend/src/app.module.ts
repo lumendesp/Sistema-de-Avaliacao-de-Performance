@@ -32,6 +32,9 @@ import { PdiModule } from './pdi/pdi.module';
 import { OkrModule } from './okr/okr.module';
 import { MentorToCollaboratorEvaluationModule } from './mentor-to-collaborator-evaluation/mentor-to-collaborator-evaluation.module';
 import { AdminLogModule } from './admin-log/admin-log.module';
+import { CollaboratorModule } from './climate-survey/collaborator/collaborator.module';
+import { RhClimateModule } from './climate-survey/rh/rh.module';
+import { AiClimateSummaryModule } from './climate-survey/ai-climate-summary/ai-climate-summary.module';
 
 @Module({
   imports: [
@@ -71,6 +74,9 @@ import { AdminLogModule } from './admin-log/admin-log.module';
     OkrModule,
     MentorToCollaboratorEvaluationModule,
     AdminLogModule,
+    CollaboratorModule,
+    AiClimateSummaryModule,
+    RhClimateModule
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

@@ -37,6 +37,8 @@ export interface EvaluationCycle {
     id: number;
     name: string;
     status: string;
+    startDate: Date;
+    endDate: Date;
 }
 
 export interface FileProcessResult {

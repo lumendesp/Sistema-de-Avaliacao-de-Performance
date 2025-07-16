@@ -24,16 +24,6 @@ const menuItems = [
     icon: <ClockIcon className="w-5 h-5" />,
     badge: true,
   },
-  {
-    path: '/committee/okr',
-    label: 'Objetivos e Resultados-Chave',
-    icon: <FlagIcon className="w-5 h-5" />,
-  },
-  {
-    path: '/committee/pdi',
-    label: 'Plano de Desenvolvimento Individual',
-    icon: <UserGroupIcon className="w-5 h-5" />,
-  },
 ];
 
 const SidebarCommittee = () => {

@@ -7,32 +7,42 @@ import dashboardIcon from '../../assets/dashboard.svg';
 import collaboratorsIcon from '../../assets/collaborators.svg';
 import configIcon from '../../assets/config.svg';
 import { DocumentArrowUpIcon } from '@heroicons/react/24/outline';
+import { IoBarChart } from "react-icons/io5";
+import { IoDocumentTextOutline } from "react-icons/io5";
 
 const menuItems = [
   {
-    path: '/rh',
-    label: 'Dashboard',
+    path: "/rh",
+    label: "Dashboard",
     icon: <img src={dashboardIcon} alt="Dashboard" className="w-5 h-5" />,
   },
-  {
-    path: '/rh/collaborators',
-    label: 'Colaboradores',
-    icon: <img src={collaboratorsIcon} alt="Colaboradores" className="w-5 h-5" />,
+    {
+    path: "/rh/cycles",
+    label: "Ciclos Avaliativos",
+    icon: (
+      <IoDocumentTextOutline size={20}/>
+    ),
   },
   {
-    path: '/rh/criteria',
-    label: 'Critérios de Avaliação',
-    icon: <img src={configIcon} alt="Critérios de Avaliação" className="w-5 h-5" />,
+    path: "/rh/collaborators",
+    label: "Colaboradores",
+    icon: (
+      <img src={collaboratorsIcon} alt="Colaboradores" className="w-5 h-5" />
+    ),
   },
   {
-    path: '/rh/okr',
-    label: 'Objetivos e Resultados-Chave',
-    icon: <FlagIcon className="w-5 h-5" />,
+    path: "/rh/criteria",
+    label: "Critérios de Avaliação",
+    icon: (
+      <img src={configIcon} alt="Critérios de Avaliação" className="w-5 h-5" />
+    ),
   },
   {
-    path: '/rh/pdi',
-    label: 'Plano de Desenvolvimento Individual',
-    icon: <UserGroupIcon className="w-5 h-5" />,
+    path: "/rh/climate-survey",
+    label: "Clima Organizacional",
+    icon: (
+      <IoBarChart size={20}/>
+    ),
   },
   {
     path: '/rh/import',
@@ -48,7 +58,7 @@ const SidebarRH = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
   };
 
   return (
@@ -94,7 +104,7 @@ const SidebarRH = () => {
                 <li key={path}>
                   <NavLink
                     to={path}
-                    end={path === '/rh'}
+                    end={path === "/rh"}
                     onClick={() => setIsOpen(false)}
                     className={({ isActive }) =>
                       `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition ${isActive
@@ -116,7 +126,7 @@ const SidebarRH = () => {
         <div className="flex flex-col gap-6">
           <button
             onClick={() => {
-              navigate('/perfil');
+              navigate("/perfil");
               setIsOpen(false);
             }}
             className="flex items-center gap-2 pl-2 group focus:outline-none"
@@ -130,11 +140,17 @@ const SidebarRH = () => {
               />
             ) : (
               <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-700 font-bold group-hover:ring-2 group-hover:ring-green-main transition">
-                {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'RH'}
+                {user?.name
+                  ? user.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()
+                  : "RH"}
               </div>
             )}
             <p className="text-sm text-gray-700 font-medium group-hover:underline">
-              {user?.name || 'Recursos Humanos'}
+              {user?.name || "Recursos Humanos"}
             </p>
           </button>
 
