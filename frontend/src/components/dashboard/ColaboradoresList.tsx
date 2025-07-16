@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { API_URL, getAuthHeaders } from "../../services/api";
+import {
+  API_URL,
+  getAuthHeaders,
+  fetchActiveEvaluationCycle,
+} from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import type { Collaborator as CollaboratorStatus } from "../../types/collaboratorStatus";
@@ -76,40 +80,61 @@ const ColaboradoresList: React.FC = () => {
     }
   }, [user]);
 
-  // Buscar avaliações dos colaboradores
+  const [currentCycleId, setCurrentCycleId] = useState<number | null>(null);
+  // Buscar ciclo atual do gestor
   useEffect(() => {
-    if (colaboradores.length === 0) return;
+    fetchActiveEvaluationCycle("MANAGER")
+      .then((cycle) => setCurrentCycleId(cycle?.id ?? null))
+      .catch(() => setCurrentCycleId(null));
+  }, []);
+
+  // Buscar avaliações dos colaboradores do ciclo atual
+  useEffect(() => {
+    if (colaboradores.length === 0 || !currentCycleId) return;
     const ids = colaboradores.map((c) => c.id);
     Promise.all(
       ids.map((id) =>
         Promise.all([
-          fetch(`${API_URL}/manager-evaluation/by-evaluatee/${id}`, {
-            method: "GET",
-            headers: getAuthHeaders(),
-          })
+          fetch(
+            `${API_URL}/manager-evaluation/by-evaluatee/${id}?cycleId=${currentCycleId}`,
+            {
+              method: "GET",
+              headers: getAuthHeaders(),
+            }
+          )
             .then(async (res) => {
               if (!res.ok) return { id, evaluation: null };
               const evaluation: ManagerEvaluation = await res.json();
               return { id, evaluation };
             })
             .catch(() => ({ id, evaluation: null })),
-          fetch(`${API_URL}/self-evaluation/user/${id}`, {
-            method: "GET",
-            headers: getAuthHeaders(),
-          })
+          fetch(
+            `${API_URL}/self-evaluation/user/${id}?cycleId=${currentCycleId}`,
+            {
+              method: "GET",
+              headers: getAuthHeaders(),
+            }
+          )
             .then(async (res) => {
               if (!res.ok) return { id, selfEval: null };
-              const selfEvalArr: SelfEvaluation[] = await res.json();
-              // Pega a autoavaliação mais recente (maior cycleId)
-              let latest: SelfEvaluation | null = null;
-              if (Array.isArray(selfEvalArr) && selfEvalArr.length > 0) {
-                latest = selfEvalArr.reduce((prev, curr) =>
-                  prev.cycle && curr.cycle && prev.cycle.id > curr.cycle.id
-                    ? prev
-                    : curr
-                );
+              const selfEval = await res.json();
+              // Se vier array, pega a do ciclo atual
+              if (Array.isArray(selfEval)) {
+                const found =
+                  selfEval.find(
+                    (s) => s.cycle && s.cycle.id === currentCycleId
+                  ) || null;
+                return { id, selfEval: found };
               }
-              return { id, selfEval: latest };
+              // Se vier objeto único, valida ciclo
+              if (
+                selfEval &&
+                selfEval.cycle &&
+                selfEval.cycle.id === currentCycleId
+              ) {
+                return { id, selfEval };
+              }
+              return { id, selfEval: null };
             })
             .catch(() => ({ id, selfEval: null })),
         ])
@@ -125,7 +150,7 @@ const ColaboradoresList: React.FC = () => {
       setEvaluations(evalMap);
       setSelfEvaluations(selfEvalMap);
     });
-  }, [colaboradores]);
+  }, [colaboradores, currentCycleId]);
 
   // Função para calcular status, nota do gestor e nota de autoavaliação
   function getStatusAndScore(collaboratorId: number) {
