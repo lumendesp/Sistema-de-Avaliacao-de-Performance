@@ -102,7 +102,7 @@ export class FinalScoreService {
       where.cycleId = cycleId;
     }
 
-    return this.prisma.finalScore.findMany({
+    const results = await this.prisma.finalScore.findMany({
       where,
       include: {
         user: true,
@@ -111,6 +111,12 @@ export class FinalScoreService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    // Decrypt justification before returning
+    return results.map(score => ({
+      ...score,
+      justification: decrypt(score.justification),
+    }));
   }
 
   async findOne(id: number) {
@@ -127,7 +133,11 @@ export class FinalScoreService {
       throw new NotFoundException('Final score not found');
     }
 
-    return finalScore;
+    // Decrypt justification before returning
+    return {
+      ...finalScore,
+      justification: decrypt(finalScore.justification),
+    };
   }
 
   async findByUser(userId: number, cycleId?: number) {
@@ -136,7 +146,7 @@ export class FinalScoreService {
       where.cycleId = cycleId;
     }
 
-    return this.prisma.finalScore.findMany({
+    const results = await this.prisma.finalScore.findMany({
       where,
       include: {
         cycle: true,
@@ -144,6 +154,12 @@ export class FinalScoreService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    // Decrypt justification before returning
+    return results.map(score => ({
+      ...score,
+      justification: decrypt(score.justification),
+    }));
   }
 
   async update(id: number, adjusterId: number, dto: UpdateFinalScoreDto) {
@@ -153,7 +169,7 @@ export class FinalScoreService {
       include: { roles: true },
     });
 
-    const isCommittee = adjuster?.roles.some((r) => r.role === 'COMMITTEE');
+    const isCommittee = adjuster?.roles.some((r) => (r.role || '').toUpperCase() === 'COMMITTEE');
     if (!isCommittee) {
       throw new ForbiddenException('Only committee members can update final scores.');
     }
@@ -166,7 +182,7 @@ export class FinalScoreService {
       throw new NotFoundException('Final score not found');
     }
 
-    return this.prisma.finalScore.update({
+    const updated = await this.prisma.finalScore.update({
       where: { id },
       data: {
         ...dto,
@@ -179,13 +195,21 @@ export class FinalScoreService {
         adjuster: { select: { id: true, name: true } },
       },
     });
+    return {
+      ...updated,
+      justification: decrypt(updated.justification),
+    };
   }
 
   async getFinalScoreGradeByUserAndCycle(userId: number, cycleId: number) {
     const score = await this.prisma.finalScore.findFirst({
       where: { userId, cycleId },
-      select: { finalScore: true, id: true, userId: true, cycleId: true },
+      select: { finalScore: true, id: true, userId: true, cycleId: true, justification: true },
     });
-    return score;
+    if (!score) return score;
+    return {
+      ...score,
+      justification: decrypt(score.justification),
+    };
   }
 } 

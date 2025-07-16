@@ -89,7 +89,7 @@ export default function EvaluationCard({
         {open && (
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 mb-4 w-full max-w-full overflow-x-hidden">
             {/* Autoavaliação */}
-            <div className="flex-1 flex flex-col gap-2 items-start bg-gray-50 rounded p-3">
+            <div className="flex-1 flex flex-col gap-2 items-start bg-gray-50 p-3">
               <span className="text-[#1D1D1DBF] text-sm font-medium mb-1">
                 Autoavaliação
               </span>
@@ -107,7 +107,7 @@ export default function EvaluationCard({
               />
             </div>
             {/* Avaliação do gestor */}
-            <div className="flex-1 flex flex-col gap-2 items-start bg-gray-50 rounded p-3">
+            <div className="flex-1 flex flex-col gap-2 items-start bg-gray-50 p-3">
               <span className="text-[#1D1D1DBF] text-sm font-medium mb-1">
                 Sua avaliação de 1 à 5 com base no critério
               </span>

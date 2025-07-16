@@ -604,7 +604,7 @@ const PDI: React.FC<PDIProps> = ({
   };
 
   return (
-    <div className="pt-16 px-2 sm:px-4 md:px-6 max-w-7xl mx-auto">
+    <div className="w-full flex flex-col gap-4 p-10">
       <div className="flex flex-col gap-4 sm:gap-6">
         <div className="mb-2">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{title}</h1>

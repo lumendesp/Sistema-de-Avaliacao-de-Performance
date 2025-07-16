@@ -16,6 +16,18 @@ export class EvaluationCycleService {
       },
     });
   }
+
+  async findCommitteeEqualizationCycle() {
+    return this.prisma.evaluationCycle.findFirst({
+      where: { 
+        status: 'IN_PROGRESS_COMMITTEE',
+        // type: Role.COMMITTEE
+      },
+      orderBy: {
+        endDate: 'desc'
+      }
+    });
+  }
  
   async getClosedCycles() {
     // Busca o ciclo mais recente de qualquer status IN_PROGRESS_*

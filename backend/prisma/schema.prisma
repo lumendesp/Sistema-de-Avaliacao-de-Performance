@@ -137,6 +137,10 @@ model User {
 
   // --- OKR ---
   okrs Okr[]
+
+  climateSurveysCreated ClimateSurvey[] @relation("UserCreatedClimateSurveys")
+  climateSurveyResponses ClimateSurveyResponse[]
+  logs                Log[]
 }
 
 // ---------------- HISTÓRICO DE TRILHAS -----------------
@@ -186,6 +190,8 @@ model ConfiguredCriterion {
   unitId      Int
   positionId  Int
   mandatory   Boolean
+  description String? @default("")
+  weight      Int     @default(1)
 
   criterion Criterion      @relation(fields: [criterionId], references: [id])
   group     CriterionGroup @relation("GroupConfiguredCriteria", fields: [groupId], references: [id])
@@ -194,6 +200,8 @@ model ConfiguredCriterion {
   position  Position       @relation("PositionConfiguredCriteria", fields: [positionId], references: [id])
 
   selfEvaluationItems SelfEvaluationItem[]
+
+  @@unique([groupId, criterionId])
 }
 
 // ---------- CICLOS ----------
@@ -441,6 +449,7 @@ model MentorToCollaboratorEvaluation {
   createdAt     DateTime @default(now())
   score         Int
   justification String
+  status        String   @default("draft") // 'draft' ou 'submitted'
 
   evaluator User @relation("MentorToCollaboratorEvaluator", fields: [evaluatorId], references: [id])
   evaluatee User @relation("MentorToCollaboratorEvaluatee", fields: [evaluateeId], references: [id])
@@ -504,4 +513,102 @@ model KeyResult {
   okrId       Int
   okr         Okr      @relation(fields: [okrId], references: [id], onDelete: Cascade)
   description String
+}
+
+model ClimateSurvey {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  endDate     DateTime
+  createdById Int
+  createdBy   User     @relation("UserCreatedClimateSurveys", fields: [createdById], references: [id])
+
+  questions   ClimateSurveyQuestion[]
+  responses   ClimateSurveyResponse[]
+  aiSummaries ClimateSurveyAISummary[]
+}
+
+model ClimateSurveyQuestion {
+  id       Int    @id @default(autoincrement())
+  surveyId Int
+  text     String
+
+  survey  ClimateSurvey         @relation(fields: [surveyId], references: [id])
+  answers ClimateSurveyAnswer[]
+}
+
+model ClimateSurveyResponse {
+  id           Int       @id @default(autoincrement())
+  hashId       String
+  isSubmit     Boolean
+  submittedAt  DateTime?
+  surveyId     Int
+  userId       Int
+
+  survey       ClimateSurvey @relation(fields: [surveyId], references: [id])
+  user         User           @relation(fields: [userId], references: [id])
+  answers      ClimateSurveyAnswer[]
+}
+
+model ClimateSurveyAnswer {
+  id            Int          @id @default(autoincrement())
+  questionId    Int
+  responseId    Int
+  level         ClimateLevel
+  justification String
+
+  question ClimateSurveyQuestion @relation(fields: [questionId], references: [id])
+  response ClimateSurveyResponse @relation(fields: [responseId], references: [id])
+}
+
+model ClimateSurveyAISummary {
+  id                Int             @id @default(autoincrement())
+  surveyId          Int
+  text              String? // Resumo completo
+  shortText         String? // Resumo curto
+  satisfactionScore Int? // Score de satisfação (0-100)
+  status            AISummaryStatus @default(PENDING)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  survey ClimateSurvey @relation(fields: [surveyId], references: [id])
+
+  @@unique([surveyId])
+}
+
+enum ClimateLevel {
+  CONCORDO_TOTALMENTE
+  CONCORDO_PARCIALMENTE
+  NEUTRO
+  DISCORDO_PARCIALMENTE
+  DISCORDO_TOTALMENTE
+}
+
+enum AISummaryStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// ---------- LOGS ----------
+model Log {
+  id             Int      @id @default(autoincrement())
+  userId         Int?
+  userEmail      String?
+  userName       String?
+  action         String
+  method         String
+  path           String
+  ip             String
+  userAgent      String?
+  requestBody    String?
+  responseStatus Int?
+  responseTime   Int?
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 }

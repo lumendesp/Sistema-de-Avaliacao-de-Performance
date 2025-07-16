@@ -38,7 +38,7 @@ export default function MentorEvaluationPage() {
     return <div className="text-gray-500 text-center mt-10">Carregando...</div>;
   if (!cycleId || cycleStatus !== "IN_PROGRESS_MANAGER")
     return (
-      <div className="text-red-500 text-center mt-10 font-semibold bg-red-100 border border-red-300 rounded p-4 max-w-xl mx-auto">
+      <div className="text-gray-500 text-center mt-10 font-semibold bg-[#F1F1F1] border border-gray-300 rounded p-4 max-w-xl mx-auto">
         Nenhum ciclo de avaliação de mentor em andamento.
         <br />
         <span className="text-gray-700 text-sm font-normal">
@@ -63,7 +63,7 @@ export default function MentorEvaluationPage() {
 
   // DEBUG: Mostra sempre algo na tela para garantir renderização
   return (
-    <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center gap-8">
+    <div className="min-h-screen bg-[#F1F1F1] p-6 flex flex-col items-center gap-8">
       <MentorToCollaboratorEvaluationForm
         evaluateeId={Number(collaboratorId)}
         mentor={mentorObj}

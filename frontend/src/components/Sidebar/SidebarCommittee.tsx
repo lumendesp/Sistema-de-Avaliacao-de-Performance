@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { FiLogOut, FiMenu, FiX } from 'react-icons/fi';
 import { useState } from 'react';
-import { FlagIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { FlagIcon, UserGroupIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 import dashboardIcon from '../../assets/dashboard.svg';
 import equalizationsIcon from '../../assets/equalization.svg';
@@ -19,14 +19,10 @@ const menuItems = [
     badge: true,
   },
   {
-    path: '/committee/okr',
-    label: 'Objetivos e Resultados-Chave',
-    icon: <FlagIcon className="w-5 h-5" />,
-  },
-  {
-    path: '/committee/pdi',
-    label: 'Plano de Desenvolvimento Individual',
-    icon: <UserGroupIcon className="w-5 h-5" />,
+    path: '/committee/history',
+    label: 'Histórico',
+    icon: <ClockIcon className="w-5 h-5" />,
+    badge: true,
   },
 ];
 
@@ -80,7 +76,7 @@ const SidebarCommittee = () => {
           </div>
           <nav>
             <ul className="flex flex-col gap-3">
-              {menuItems.map(({ path, label, icon, badge }) => (
+              {menuItems.map(({ path, label, icon }) => (
                 <li key={path}>
                   <NavLink
                     to={path}
@@ -97,7 +93,6 @@ const SidebarCommittee = () => {
                     {icon}
                     <span className="flex items-center gap-1">
                       {label}
-                      {badge && <span className="w-2 h-2 bg-red-500 rounded-full" />}
                     </span>
                   </NavLink>
                 </li>

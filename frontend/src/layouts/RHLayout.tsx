@@ -5,7 +5,7 @@ const RHLayout = () => {
   return (
     <div className="min-h-screen bg-[#F1F1F1] flex">
       <SidebarRH />
-      <main className="flex-1 md:ml-64 p-8 transition-all duration-300">
+      <main className="flex-1 md:ml-64 p-8 transition-all duration-300 h-full overflow-auto">
         <Outlet />
       </main>
     </div>

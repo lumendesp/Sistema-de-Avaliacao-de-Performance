@@ -3,9 +3,17 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { json, urlencoded } from 'express';
+import { LogInterceptor } from './interceptors/log.interceptor';
+import { PrismaService } from './prisma.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Get PrismaService instance to inject into LogInterceptor
+  const prismaService = app.get(PrismaService);
+  
+  // Apply global interceptor for logging
+  app.useGlobalInterceptors(new LogInterceptor(prismaService));
 
   app.enableCors({
     origin: 'http://localhost:5173',

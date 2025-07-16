@@ -54,11 +54,11 @@ function ColaboratorsCommitte({
                 if (percent > maxDiscrepancy) {
                     maxDiscrepancy = percent;
                     discrepancyInfo = {
-                        percent: Math.round(percent),
+                        percent: Math.round(percent * 10) / 10,
                         label1: grades[i].label,
-                        value1: v1,
+                        value1: Math.round(v1 * 10) / 10,
                         label2: grades[j].label,
-                        value2: v2,
+                        value2: Math.round(v2 * 10) / 10,
                     };
                 }
             }
@@ -91,7 +91,7 @@ function ColaboratorsCommitte({
                                         </>
                                     ) : dropInfo ? (
                                         <>
-                                            {dropInfo.text} <span className="text-[#08605F] font-semibold">({dropInfo.percent}%)</span>
+                                            {dropInfo.text} <span className="text-[#08605F] font-semibold">({Math.round(dropInfo.percent * 10) / 10}%)</span>
                                         </>
                                     ) : null}
                                 </div>
