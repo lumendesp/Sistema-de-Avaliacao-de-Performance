@@ -163,8 +163,8 @@ export default function MentorEvaluationLayout() {
         {/* Espaço dinâmico para não cobrir o conteúdo pelo header/nav fixos */}
         <div style={{ width: "100%", height: spacerHeight }} />
         {/* Espaço para não cobrir o conteúdo pelo bloco fixo */}
-        <main className="flex-1 flex justify-center items-start p-2 sm:p-4 w-full overflow-x-auto max-w-screen box-border">
-          <div className="w-full max-w-full sm:max-w-7xl box-border">
+        <main className="flex-1 flex items-start p-0 sm:p-0 w-full overflow-x-auto max-w-screen box-border">
+          <div className="w-full box-border">
             <Outlet context={{ setSubmit: handleSetSubmit }} />
           </div>
         </main>

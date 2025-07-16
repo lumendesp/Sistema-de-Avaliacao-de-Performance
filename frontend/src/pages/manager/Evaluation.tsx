@@ -350,7 +350,7 @@ export default function CollaboratorEvaluation() {
     return <div>Nenhum critério configurado para este colaborador.</div>;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6 p-0 m-0">
       {groups.map((group, idx) => {
         const isLast = idx === groups.length - 1;
         return (

@@ -66,7 +66,7 @@ const PeerEvaluationManager = () => {
     );
 
   return (
-    <div className="bg-[#f1f1f1] w-full flex flex-col gap-4 p-3">
+    <div className="bg-[#f1f1f1] w-full flex flex-col gap-6 p-0 m-0 box-border">
       {loading && <div>Carregando avaliações 360...</div>}
       {!loading && peerEvaluations.length === 0 && (
         <div className="text-gray-500 text-center mt-10 font-semibold bg-yellow-100 border border-yellow-300 rounded p-4 max-w-xl mx-auto">

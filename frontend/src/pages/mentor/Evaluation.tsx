@@ -63,7 +63,7 @@ export default function MentorEvaluationPage() {
 
   // DEBUG: Mostra sempre algo na tela para garantir renderização
   return (
-    <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center gap-8">
+    <div className="min-h-screen bg-[#F1F1F1] p-6 flex flex-col items-center gap-8">
       <MentorToCollaboratorEvaluationForm
         evaluateeId={Number(collaboratorId)}
         mentor={mentorObj}
