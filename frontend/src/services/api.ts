@@ -1343,16 +1343,24 @@ export const createMentorToCollaboratorEvaluation = async ({
   cycleId,
   score,
   justification,
+  status = "submitted",
 }: {
   evaluateeId: number;
   cycleId: number;
   score: number;
   justification: string;
+  status?: string;
 }) => {
   const res = await fetch(`${API_URL}/mentor-to-collaborator-evaluations`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ evaluateeId, cycleId, score, justification }),
+    body: JSON.stringify({
+      evaluateeId,
+      cycleId,
+      score,
+      justification,
+      status,
+    }),
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));

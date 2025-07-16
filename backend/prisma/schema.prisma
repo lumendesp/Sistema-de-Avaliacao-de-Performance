@@ -441,6 +441,7 @@ model MentorToCollaboratorEvaluation {
   createdAt     DateTime @default(now())
   score         Int
   justification String
+  status        String   @default("draft") // 'draft' ou 'submitted'
 
   evaluator User @relation("MentorToCollaboratorEvaluator", fields: [evaluatorId], references: [id])
   evaluatee User @relation("MentorToCollaboratorEvaluatee", fields: [evaluateeId], references: [id])

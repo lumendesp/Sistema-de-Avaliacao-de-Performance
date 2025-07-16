@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Outlet, NavLink, useParams } from "react-router-dom";
 import type { Collaborator } from "../types/collaboratorStatus";
 import { useAuth } from "../context/AuthContext";
@@ -9,7 +9,16 @@ export default function MentorEvaluationLayout() {
   const { id } = useParams();
   const { user } = useAuth();
   const [collaborator, setCollaborator] = useState<Collaborator | null>(null);
-  const [isUpdate, setIsUpdate] = useState(false);
+  // Estado inicial indefinido para evitar piscar
+  const [isEditing, setIsEditing] = useState<boolean | undefined>(undefined);
+  const [evaluationStatus, setEvaluationStatus] = useState<string | null>(null);
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
+  const [evaluationId, setEvaluationId] = useState<number | null>(null);
+  // Sempre que isEditing mudar, editKey também muda para forçar remount do Outlet
+  const [editKey, setEditKey] = useState(0);
+  useEffect(() => {
+    setEditKey((k) => k + 1);
+  }, [isEditing]);
   // Ref para acessar a função de submit do filho
   const submitRef = useRef<(() => Promise<boolean>) | null>(null);
 
@@ -47,28 +56,72 @@ export default function MentorEvaluationLayout() {
     }
   }, [user, id]);
 
+  // Busca avaliação para status/createdAt
+  useEffect(() => {
+    async function fetchEval() {
+      if (!id) return;
+      try {
+        const api = await import("../services/api");
+        const evaluations =
+          await api.fetchMentorToCollaboratorEvaluationsByCollaborator(
+            Number(id)
+          );
+        const evaluation = Array.isArray(evaluations) ? evaluations[0] : null;
+        if (evaluation) {
+          setCreatedAt(evaluation.createdAt || null);
+          setEvaluationId(evaluation.id || null);
+          setIsEditing(evaluation.status !== "submitted");
+        } else {
+          setCreatedAt(null);
+          setEvaluationId(null);
+          setIsEditing(true);
+        }
+      } catch {
+        setCreatedAt(null);
+        setEvaluationId(null);
+        setIsEditing(true);
+      }
+    }
+    fetchEval();
+  }, [id]);
+
   // Recebe do filho se é update ou create
-  const handleSetSubmit = (fn: () => Promise<boolean>, updateFlag: boolean) => {
+  const handleSetSubmit = (fn: () => Promise<boolean>) => {
     submitRef.current = fn;
-    setIsUpdate(updateFlag);
   };
 
   const handleSend = async () => {
-    if (submitRef.current) {
-      const ok = await submitRef.current();
-      if (ok) {
-        window.alert("Avaliação enviada com sucesso!");
-      } else {
-        window.alert("Erro ao enviar avaliação.");
+    if (isEditing) {
+      if (submitRef.current) {
+        const ok = await submitRef.current();
+        if (ok && id) {
+          // Atualiza status/createdAt após envio
+          const api = await import("../services/api");
+          const evaluations =
+            await api.fetchMentorToCollaboratorEvaluationsByCollaborator(
+              Number(id)
+            );
+          const evaluation = Array.isArray(evaluations) ? evaluations[0] : null;
+          if (evaluation) {
+            setCreatedAt(evaluation.createdAt || null);
+            setEvaluationId(evaluation.id || null);
+            setIsEditing(false);
+          }
+          window.alert("Avaliação enviada com sucesso!");
+        } else {
+          window.alert("Erro ao enviar avaliação.");
+        }
       }
+    } else {
+      setIsEditing(true);
     }
   };
 
-  if (!collaborator) {
-    return <div>Colaborador não encontrado</div>;
+  if (!collaborator || isEditing === undefined) {
+    return <div>Carregando...</div>;
   }
 
-  const { name, role } = collaborator;
+  const { name } = collaborator;
   const initials = name
     .split(" ")
     .map((w: string) => w[0])
@@ -76,7 +129,7 @@ export default function MentorEvaluationLayout() {
     .join("");
 
   return (
-    <div className="min-h-screen flex bg-gray-100 overflow-x-hidden">
+    <div className="min-h-screen flex bg-[#F1F1F1] overflow-x-hidden">
       <div className="flex-1 flex flex-col">
         <div
           ref={headerBlockRef}
@@ -97,11 +150,25 @@ export default function MentorEvaluationLayout() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2 w-full sm:w-auto text-center sm:text-left mt-2 sm:mt-0">
+              {createdAt ? (
+                <span className="text-xs text-gray-500 whitespace-nowrap mr-2">
+                  Última modificação:{" "}
+                  {new Date(createdAt).toLocaleString("pt-BR")}
+                </span>
+              ) : (
+                <span className="text-xs text-gray-400 whitespace-nowrap mr-2">
+                  Nenhuma avaliação enviada ainda
+                </span>
+              )}
               <button
                 className="bg-[#8CB7B7] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap"
                 onClick={handleSend}
               >
-                {isUpdate ? "Atualizar" : "Enviar"}
+                {!isEditing && evaluationId
+                  ? "Editar avaliação"
+                  : isEditing && evaluationId
+                  ? "Atualizar"
+                  : "Enviar"}
               </button>
             </div>
           </div>
@@ -163,9 +230,12 @@ export default function MentorEvaluationLayout() {
         {/* Espaço dinâmico para não cobrir o conteúdo pelo header/nav fixos */}
         <div style={{ width: "100%", height: spacerHeight }} />
         {/* Espaço para não cobrir o conteúdo pelo bloco fixo */}
-        <main className="flex-1 flex justify-center items-start p-2 sm:p-4 w-full overflow-x-auto max-w-screen box-border">
-          <div className="w-full max-w-full sm:max-w-7xl box-border">
-            <Outlet context={{ setSubmit: handleSetSubmit }} />
+        <main className="flex-1 flex items-start p-0 sm:p-0 w-full overflow-x-auto max-w-screen box-border">
+          <div className="w-full box-border">
+            <Outlet
+              key={editKey}
+              context={{ setSubmit: handleSetSubmit, isEditing }}
+            />
           </div>
         </main>
       </div>
