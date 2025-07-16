@@ -18,11 +18,6 @@ const menuItems = [
     icon: <img src={colaboratorsIcon} alt="Colaboradores" className="w-5 h-5" />,
   },
   {
-    path: "/manager/okr",
-    label: "Objetivos e Resultados-Chave",
-    icon: <FlagIcon className="w-5 h-5" />,
-  },
-  {
     path: "/manager/pdi",
     label: "Plano de Desenvolvimento Individual",
     icon: <UserGroupIcon className="w-5 h-5" />,

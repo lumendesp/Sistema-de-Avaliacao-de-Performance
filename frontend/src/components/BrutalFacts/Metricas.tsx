@@ -75,7 +75,6 @@ const Metricas: React.FC = () => {
         </span>
       ),
       subtitle: `Em comparação ao ciclo ${stats.cycleName || ''}`,
-      extra: <span className="text-green-600 font-semibold">Great</span>
     },
     {
       title: "Variação da média final",

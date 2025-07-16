@@ -85,6 +85,8 @@ CREATE TABLE "ConfiguredCriterion" (
     "unitId" INTEGER NOT NULL,
     "positionId" INTEGER NOT NULL,
     "mandatory" BOOLEAN NOT NULL,
+    "description" TEXT DEFAULT '',
+    "weight" INTEGER NOT NULL DEFAULT 1,
     CONSTRAINT "ConfiguredCriterion_criterionId_fkey" FOREIGN KEY ("criterionId") REFERENCES "Criterion" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "ConfiguredCriterion_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "CriterionGroup" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "ConfiguredCriterion_trackId_fkey" FOREIGN KEY ("trackId") REFERENCES "Track" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -321,11 +323,66 @@ CREATE TABLE "BrutalFactsCache" (
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- RedefineTables
+PRAGMA defer_foreign_keys=ON;
+PRAGMA foreign_keys=OFF;
+CREATE TABLE "new_Log" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "userId" INTEGER,
+    "userEmail" TEXT,
+    "userName" TEXT,
+    "action" TEXT NOT NULL,
+    "method" TEXT NOT NULL,
+    "path" TEXT NOT NULL,
+    "ip" TEXT NOT NULL,
+    "userAgent" TEXT,
+    "requestBody" TEXT,
+    "responseStatus" INTEGER,
+    "responseTime" INTEGER,
+    "errorMessage" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Log_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+INSERT INTO "new_Log" ("action", "createdAt", "errorMessage", "id", "ip", "method", "path", "requestBody", "responseStatus", "responseTime", "userAgent", "userEmail", "userId", "userName") SELECT "action", "createdAt", "errorMessage", "id", "ip", "method", "path", "requestBody", "responseStatus", "responseTime", "userAgent", "userEmail", "userId", "userName" FROM "Log";
+DROP TABLE "Log";
+ALTER TABLE "new_Log" RENAME TO "Log";
+CREATE TABLE "new_Okr" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "userId" INTEGER NOT NULL,
+    "objective" TEXT NOT NULL,
+    "progress" REAL NOT NULL DEFAULT 0,
+    "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+    "dueDate" DATETIME NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "Okr_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+INSERT INTO "new_Okr" ("createdAt", "dueDate", "id", "objective", "progress", "status", "updatedAt", "userId") SELECT "createdAt", "dueDate", "id", "objective", "progress", "status", "updatedAt", "userId" FROM "Okr";
+DROP TABLE "Okr";
+ALTER TABLE "new_Okr" RENAME TO "Okr";
+CREATE TABLE "new_PDI" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "userId" INTEGER NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "PDI_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+INSERT INTO "new_PDI" ("createdAt", "description", "id", "title", "updatedAt", "userId") SELECT "createdAt", "description", "id", "title", "updatedAt", "userId" FROM "PDI";
+DROP TABLE "PDI";
+ALTER TABLE "new_PDI" RENAME TO "PDI";
+PRAGMA foreign_keys=ON;
+PRAGMA defer_foreign_keys=OFF;
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ConfiguredCriterion_groupId_criterionId_key" ON "ConfiguredCriterion"("groupId", "criterionId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "EvaluationCycleUser_userId_cycleId_key" ON "EvaluationCycleUser"("userId", "cycleId");

@@ -2,17 +2,21 @@ import RHMetricsCard from '../../../components/RH/RHMetricsCard/RHMetricsCard';
 import RHCircularProgressCard from '../../../components/RH/RHCircularProgressCard/RHCircularProgressCard';
 import CollaboratorRow from '../../../components/RH/CollaboratorRow/CollaboratorRow';
 import RHBarChart from '../../../components/RH/RHBarChart/RHBarChart';
-import CustomCalendarIcon from '../../../components/RH/icons/CalendarIcons';
-import CustomDocumentIcon from '../../../components/RH/icons/DocumentIcon';
+import { CalendarDaysIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { getRHDashboardData } from '../../../services/api';
 import { type RHDashboardData } from '../../../types/rh'
+import { useAuth } from '../../../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 function RHDashboard() {
+    const { user } = useAuth();
 
     const [dashboardData, setDashboardData] = useState<RHDashboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const [chartFilter, setChartFilter] = useState<'finalizado' | 'em_andamento' | 'pendente'>('finalizado');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -29,13 +33,31 @@ function RHDashboard() {
         fetchData();
     }, []);
 
+    const chartConfig = {
+        finalizado: {
+            label: 'Avaliações Finalizadas',
+            data: dashboardData?.completionByTrack.map(t => t.completedCount) || [],
+            backgroundColor: '#4ade80',
+        },
+        em_andamento: {
+            label: 'Avaliações em Andamento',
+            data: dashboardData?.completionByTrack.map(t => t.inProgressCount) || [],
+            backgroundColor: '#FCD34D',
+        },
+        pendente: {
+            label: 'Avaliações Pendentes',
+            data: dashboardData?.completionByTrack.map(t => t.pendingCount) || [],
+            backgroundColor: '#ef4444',
+        },
+    };
+
     const chartData = {
-        labels: dashboardData?.completionByUnit.map(u => u.unit) || [],
+        labels: dashboardData?.completionByTrack.map(t => t.track) || [],
         datasets: [
             {
-                label: 'Avaliações Concluídas',
-                data: dashboardData?.completionByUnit.map(u => u.completedCount) || [],
-                backgroundColor: ['#043c3c', '#ffc857', '#345c64', '#3c7c7c'],
+                label: chartConfig[chartFilter].label,
+                data: chartConfig[chartFilter].data,
+                backgroundColor: chartConfig[chartFilter].backgroundColor,
                 borderRadius: 5,
                 maxBarThickness: 50,
             },
@@ -55,13 +77,27 @@ function RHDashboard() {
         return <div className="p-8 text-center">Nenhum dado encontrado.</div>;
     }
 
+    const isPublished = dashboardData.cycleStatus === 'PUBLISHED';
+
+    // Cores para o ícone do documento
+    const documentIconColor = isPublished ? 'text-gray-400' : 'text-red-600';
+
+    // Cores para o ícone do calendário
+    let calendarIconColor = isPublished ? 'text-gray-400' : 'text-green-600';
+    if (!isPublished) { // Só aplica lógica de cores se o ciclo não estiver publicado
+        if (dashboardData.daysRemaining <= 7 && dashboardData.daysRemaining >= 3) {
+            calendarIconColor = 'text-yellow-500';
+        } else if (dashboardData.daysRemaining <= 2) {
+            calendarIconColor = 'text-red-500';
+        }
+    }
+
     return (
         <>
             <header className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-800">Olá, RH</h1>
-                <div className="w-12 h-12 bg-gray-300 text-gray-700 rounded-full flex items-center justify-center font-bold text-lg">
-                    CN
-                </div>
+                <h1 className="text-lg text-gray-800">
+                    <span className="font-semibold">Olá</span>, {user?.name || 'RH'}
+                </h1>
             </header>
 
             {/* Seção dos Cards de Métricas */}
@@ -72,20 +108,34 @@ function RHDashboard() {
                 />
                 <RHMetricsCard
                     title="Avaliações pendentes"
-                    description={`${dashboardData.pendingEvaluations} colaboradores ainda não fecharam`}
+                    description={
+                        isPublished
+                        ?`${dashboardData.pendingEvaluations} colaboradores não fecharam`
+                        :`${dashboardData.pendingEvaluations} colaboradores ainda não fecharam`
+                    }
                     value={dashboardData.pendingEvaluations}
-                    icon={CustomDocumentIcon}
+                    icon={DocumentTextIcon}
                     iconBgColor="bg-white"
-                    iconColor="text-red-600"
+                    iconColor={documentIconColor}
                 />
                 <RHMetricsCard
-                    title="Fechamento de ciclo"
-                    description="Faltam 30 dias para o fechamento"
-                    value={30}
-                    unit="dias"
-                    icon={CustomCalendarIcon}
+                    title={
+                        isPublished
+                        ? "Ciclo publicado"
+                        : "Fechamento de ciclo"
+                    }
+                    description={
+                        isPublished 
+                            ?  ""
+                            : (dashboardData.daysRemaining > 0 
+                                ? `Faltam ${dashboardData.daysRemaining} dia(s) para o fechamento` 
+                                : 'O prazo para o ciclo encerrou.')
+                    }
+                    value={isPublished ? '-' : dashboardData.daysRemaining}
+                    unit={isPublished ? '' : (dashboardData.daysRemaining === 1 ? 'dia' : 'dias')}
+                    icon={CalendarDaysIcon}
                     iconBgColor="bg-white"
-                    iconColor="text-green-600"
+                    iconColor={calendarIconColor}
                 />
             </section>
 
@@ -94,7 +144,7 @@ function RHDashboard() {
                 <div className="lg:col-span-1 bg-white rounded-xl shadow-md p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-semibold text-gray-800">Colaboradores</h2>
-                        <a href="#" className="text-blue-500 hover:underline font-medium text-sm">Ver mais</a>
+                        <Link to="/rh/collaborators" className="px-4 py-2 text-sm font-medium text-[#08605F] hover:bg-[#08605F]/5 rounded-md">Ver mais</Link>
                     </div>
                     <div className="flex flex-col gap-y-1 max-h-[350px] overflow-y-auto pr-2">
                         {dashboardData.collaborators.map(c => <CollaboratorRow key={c.id} collaborator={c} />)}
@@ -103,9 +153,15 @@ function RHDashboard() {
 
                 <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold text-gray-800">Preenchimento</h2>
-                        <select className="border border-gray-300 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option>Todos os setores</option>
+                        <h2 className="text-xl font-semibold text-gray-800">Preenchimento por Trilha</h2>
+                        <select
+                            value={chartFilter}
+                            onChange={(e) => setChartFilter(e.target.value as any)}
+                            className="border border-gray-300 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="finalizado">Finalizados</option>
+                            <option value="em_andamento">Em andamento</option>
+                            <option value="pendente">Pendentes</option>
                         </select>
                     </div>
                     <div className="h-[320px] relative">

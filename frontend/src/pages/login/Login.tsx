@@ -33,7 +33,7 @@ const Login = () => {
         } catch {}
       }
       navigate(getHighestRoleRoute());
-    } else setError("Invalid credentials");
+    } else setError("Credenciais Inválidas");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

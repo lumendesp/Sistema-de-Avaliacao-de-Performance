@@ -107,22 +107,53 @@ export const fetchActiveEvaluationCycle = async (role?: string) => {
   }
 
   if (!res.ok) {
-    const errorText = await res.text();
-    console.error("Erro na resposta:", res.status, errorText);
-    throw new Error(`Erro ao buscar ciclo ativo: ${res.status} - ${errorText}`);
+    let errorMessage = "Erro ao buscar ciclo ativo";
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch {
+      // If response is not JSON, use the status text
+      errorMessage = res.statusText || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
-
-  const responseText = await res.text();
-  if (!responseText) {
-    throw new Error("Resposta vazia do servidor");
+  const text = await res.text();
+  if (!text) {
+    console.log(`[fetchActiveEvaluationCycle] Empty response for status ${status}`);
+    return null;
   }
-
   try {
-    return JSON.parse(responseText);
-  } catch (error) {
-    console.error("Erro ao fazer parse da resposta:", responseText);
-    throw new Error("Resposta inválida do servidor");
+    const parsed = JSON.parse(text);
+    console.log(`[fetchActiveEvaluationCycle] Parsed response for status ${status}:`, parsed);
+    return parsed;
+  } catch (e) {
+    console.log(`[fetchActiveEvaluationCycle] Invalid JSON for status ${status}:`, text);
+    return null;
   }
+};
+
+// Function specifically for committee equalization cycles
+export const fetchCommitteeEqualizationCycle = async () => {
+  // Use status=IN_PROGRESS_COMMITTEE to get the correct cycle
+  const res = await fetch(`${API_URL}/evaluation-cycle/active?status=IN_PROGRESS_COMMITTEE`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    let errorMessage = "Erro ao buscar ciclo de equalização do comitê";
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch {
+      // If response is not JSON, use the status text
+      errorMessage = res.statusText || errorMessage;
+    }
+    // Handle specific 404 case for committee
+    if (res.status === 404) {
+      throw new Error("Nenhum ciclo de equalização disponível. Aguarde o fechamento do ciclo de avaliação e sua liberação para o comitê.");
+    }
+    throw new Error(errorMessage);
+  }
+  return res.json();
 };
 
 export const fetchMostRecentEvaluationCycle = async () => {
@@ -447,7 +478,6 @@ export const fetchAISummary = async (
   userId: number,
   cycleId: number
 ): Promise<string> => {
-  console.log(userId, cycleId);
   const res = await fetch(
     `${API_URL}/ai-summary?userId=${userId}&cycleId=${cycleId}`,
     {
@@ -488,11 +518,24 @@ export const getSignificantDrops = async (userId: number, cycleId: number) => {
   );
   if (!response.ok) {
     if (response.status === 404) {
+      
       return null; // No significant drops found
     }
     throw new Error("Failed to fetch significant drops");
   }
-  return response.json();
+  const text = await response.text();
+  if (!text) {
+    
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(text);
+    
+    return parsed;
+  } catch (e) {
+    
+    return null;
+  }
 };
 
 // Creates a new final evaluation
@@ -575,7 +618,6 @@ export const createManagerEvaluation = async (data: {
   evaluateeId: number;
   cycleId: number;
   groups: any[];
-  status?: string;
 }) => {
   // Log para debug
   console.log("Payload enviado para manager-evaluation:", data);
@@ -884,7 +926,9 @@ export const addCriterionToGroup = async (
   trackId: number,
   unitId: number,
   positionId: number,
-  mandatory: boolean = false
+  mandatory: boolean = false,
+  description: string,
+  weight: number
 ) => {
   const res = await fetch(`${API_URL}/rh-criteria/configured`, {
     method: "POST",
@@ -896,6 +940,8 @@ export const addCriterionToGroup = async (
       unitId,
       positionId,
       mandatory,
+      description,
+      weight,
     }),
   });
   if (!res.ok) throw new Error("Erro ao adicionar critério ao grupo");
@@ -1070,6 +1116,131 @@ export const getMyManagerEvaluations = async (cycleId?: number) => {
   return res.json();
 };
 
+// Admin API functions
+export const getSystemLogs = async (filters?: {
+  userId?: number;
+  userEmail?: string;
+  method?: string;
+  path?: string;
+  ip?: string;
+  responseStatus?: number;
+  startDate?: string;
+  endDate?: string;
+  errorOnly?: boolean;
+  page?: number;
+  limit?: number;
+}) => {
+  const params = new URLSearchParams();
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params.append(key, value.toString());
+      }
+    });
+  }
+
+  const url = `${API_URL}/admin-log?${params.toString()}`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar logs do sistema");
+  return res.json();
+};
+
+export const getSystemLogStats = async () => {
+  const res = await fetch(`${API_URL}/admin-log/stats`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar estatísticas dos logs");
+  return res.json();
+};
+
+export const exportSystemLogs = async (filters?: {
+  userId?: number;
+  userEmail?: string;
+  method?: string;
+  path?: string;
+  ip?: string;
+  responseStatus?: number;
+  startDate?: string;
+  endDate?: string;
+  errorOnly?: boolean;
+}) => {
+  const params = new URLSearchParams();
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params.append(key, value.toString());
+      }
+    });
+  }
+
+  const url = `${API_URL}/admin-log/export/csv?${params.toString()}`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao exportar logs");
+  return res.json();
+};
+
+export const getSystemStatus = async () => {
+  const res = await fetch(`${API_URL}/admin/system-status`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar status do sistema");
+  return res.json();
+};
+
+export const getSystemStats = async () => {
+  const res = await fetch(`${API_URL}/admin-log/dashboard-stats`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar estatísticas do sistema");
+  return res.json();
+};
+
+export const getRecentLogs = async (limit: number = 5) => {
+  const res = await fetch(`${API_URL}/admin-log/recent?limit=${limit}`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar logs recentes");
+  return res.json();
+};
+
+// Delete old logs
+export const deleteOldLogs = async (daysToKeep: number = 7) => {
+  const res = await fetch(`${API_URL}/admin-log/cleanup?daysToKeep=${daysToKeep}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao deletar logs antigos");
+  return res.json();
+};
+
+// Debug function to check user authentication and roles
+export const debugUserInfo = async () => {
+  const res = await fetch(`${API_URL}/admin-log/debug/user-info`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar informações do usuário");
+  return res.json();
+};
+
+export const getClosedCycles = async () => {
+  const res = await fetch(`${API_URL}/evaluation-cycle/closed`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Erro ao buscar ciclos fechados');
+  return res.json();
+};
+
 // Função para fazer o upload de um único arquivo .xlsx
 export const importSingleHistoryRequest = async (
   file: File,
@@ -1163,6 +1334,20 @@ export const getEvaluationCycles = async () => {
 
   if (!res.ok) {
     throw new Error("Erro ao buscar ciclos de avaliação");
+  }
+  return res.json();
+};
+
+// Busca o ciclo ativo de colaborador para o RH (usando status)
+export const fetchActiveCollaboratorCycleRH = async () => {
+  const res = await fetch(
+    `${API_URL}/ciclos/current?status=IN_PROGRESS_COLLABORATOR`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!res.ok) {
+    return null;
   }
   return res.json();
 };
@@ -1450,5 +1635,251 @@ export const fetchPeerEvaluationsReceived = async (
     }
   );
   if (!res.ok) throw new Error("Erro ao buscar avaliações 360 recebidas");
+  return res.json();
+};
+
+// Climate Survey
+export const createClimateSurvey = async (data: {
+  title: string;
+  description?: string;
+  endDate: string;
+  questions: { text: string }[];
+}) => {
+  const res = await fetch(`${API_URL}/rh/climate-survey`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao criar pesquisa de clima");
+  }
+  return res.json();
+};
+
+export const getClimateSurveys = async () => {
+  const res = await fetch(`${API_URL}/rh/climate-survey`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar pesquisas de clima");
+  }
+
+  return res.json();
+};
+
+export const getClimateSurveyById = async (surveyId: number) => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/${surveyId}`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar pesquisa");
+  }
+
+  return res.json();
+};
+
+export const getClimateSurveyResponses = async (surveyId: number) => {
+  const res = await fetch(
+    `${API_URL}/rh/climate-survey/${surveyId}/responses`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao buscar respostas da pesquisa");
+  }
+
+  return res.json();
+};
+
+export const closeClimateSurvey = async (
+  surveyId: number,
+  endDate?: string
+) => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/${surveyId}/close`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ endDate }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao encerrar pesquisa");
+  }
+
+  return res.json();
+};
+
+export const reopenClimateSurvey = async (surveyId: number) => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/${surveyId}/reopen`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao reabrir pesquisa");
+  }
+
+  return res.json();
+};
+
+export const countCollaborators = async () => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/count`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Erro ao contar colaboradores");
+  }
+
+  return res.json(); // vai retornar algo como: { count: 42 }
+};
+
+export const getClimateSurveyAverages = async () => {
+  const res = await fetch(`${API_URL}/rh/climate-survey/averages`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Erro ao buscar médias das pesquisas");
+  }
+  return res.json();
+};
+
+export const getLastCompletedSurveyData = async () => {
+  try {
+    console.log("🔍 Buscando dados da última pesquisa finalizada...");
+
+    // Busca todas as pesquisas
+    const surveys = await getClimateSurveys();
+    console.log("Pesquisas encontradas:", surveys.length);
+
+    // Filtra apenas as pesquisas finalizadas (não ativas) e ordena por data de criação
+    const completedSurveys = surveys
+      .filter((s: any) => !s.isActive)
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+    console.log("Pesquisas finalizadas:", completedSurveys.length);
+
+    if (completedSurveys.length === 0) {
+      console.log("Nenhuma pesquisa finalizada encontrada");
+      return { satisfactionScore: null, shortText: null };
+    }
+
+    // Pega a pesquisa mais recente finalizada
+    const lastCompletedSurvey = completedSurveys[0];
+    console.log("Última pesquisa finalizada:", lastCompletedSurvey);
+
+    // Busca o resumo de IA da última pesquisa finalizada
+    console.log("Buscando resumo para pesquisa ID:", lastCompletedSurvey.id);
+    const summary = await getClimateAISummary(lastCompletedSurvey.id);
+    console.log("Resumo completo:", summary);
+    console.log("Score de satisfação:", summary.satisfactionScore);
+    console.log("Resumo curto:", summary.shortText);
+
+    return {
+      satisfactionScore: summary.satisfactionScore,
+      shortText: summary.shortText,
+    };
+  } catch (error) {
+    console.error(
+      "Erro ao buscar dados da última pesquisa finalizada:",
+      error
+    );
+    return { satisfactionScore: null, shortText: null };
+  }
+};
+
+export const getClimateAISummary = async (surveyId: number) => {
+  const res = await fetch(
+    `${API_URL}/ai-climate-summary?surveyId=${surveyId}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Erro ao buscar resumo de IA da pesquisa");
+  }
+
+  const data = await res.json();
+  return {
+    text: data.text || null,
+    shortText: data.shortText || null,
+    satisfactionScore: data.satisfactionScore || null,
+    status: data.status || "pending",
+  };
+};
+
+export const generateClimateAISummary = async (surveyId: number) => {
+  const res = await fetch(`${API_URL}/ai-climate-summary`, {
+    method: "POST",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ surveyId }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    const errorMessage =
+      error.message || "Erro ao gerar resumo de IA da pesquisa";
+
+    // Verificar se é um erro relacionado à configuração da API
+    if (
+      errorMessage.includes("API") ||
+      errorMessage.includes("Gemini") ||
+      errorMessage.includes("chave")
+    ) {
+      throw new Error(
+        "API do Google Gemini não está configurada. Verifique a documentação para configurar a GEMINI_API_KEY."
+      );
+    }
+
+    // Verificar se é um erro de resumo já em processamento
+    if (errorMessage.includes("já existe um resumo sendo gerado")) {
+      throw new Error("Resumo já está sendo gerado. Aguarde a conclusão.");
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  const data = await res.json();
+
+  // Verificar se a resposta está vazia ou malformada
+  if (!data || typeof data.text !== "string" || data.text.trim() === "") {
+    throw new Error(
+      "A IA retornou uma resposta vazia. Verifique se a API está configurada corretamente."
+    );
+  }
+
+  return {
+    text: data.text,
+    shortText: data.shortText,
+    satisfactionScore: data.satisfactionScore,
+    status: data.status || "completed",
+  };
+};
+
+export const getAllClimateAISummaries = async () => {
+  const res = await fetch(`${API_URL}/ai-climate-summary/all`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar resumos de IA das pesquisas");
   return res.json();
 };
