@@ -88,9 +88,9 @@ const RHCreateClimateSurvey = () => {
   };
 
   return (
-    <div className="w-full">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
+    <div className="w-full mt-5">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+        <div className="flex items-center md:gap-4 gap-0">
           <button
             onClick={() => navigate("../climate-survey")}
             className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
@@ -102,7 +102,7 @@ const RHCreateClimateSurvey = () => {
           </h1>
         </div>
         <button
-          className="bg-[#08605F] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-50"
+          className="bg-[#08605F] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-50 max-w-[200px]"
           onClick={handleSubmit}
           disabled={loading || validQuestions.length === 0}
         >
@@ -119,8 +119,8 @@ const RHCreateClimateSurvey = () => {
           </div>
 
           <div className="p-4 space-y-4">
-            <div className="flex w-full gap-4">
-              <div className="w-3/4">
+            <div className="flex flex-col md:flex-row w-full gap-4">
+              <div className="w-full md:w-3/4">
                 <label
                   htmlFor="title"
                   className="block text-sm font-medium text-gray-700 mb-2"
@@ -137,7 +137,7 @@ const RHCreateClimateSurvey = () => {
                   required
                 />
               </div>
-              <div className="w-1/4">
+              <div className="w-full md:w-1/4">
                 <label
                   htmlFor="endDate"
                   className="block text-sm font-medium text-gray-700 mb-2"
@@ -177,7 +177,7 @@ const RHCreateClimateSurvey = () => {
         </div>
 
         <div className="border border-gray-300 rounded-lg bg-white">
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+          <div className="p-4 border-b border-gray-200 flex md:flex-row flex-col md:justify-between md:items-center items-start md:gap-0 gap-1">
             <div className="flex items-center gap-2 font-semibold">
               <h2 className="text-lg font-semibold text-[#08605F]">
                 Perguntas da Pesquisa
@@ -239,7 +239,7 @@ const RHCreateClimateSurvey = () => {
       </form>
 
       {showExampleModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-5 md:p-0">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-[700px] p-6 relative">
             <div className="flex justify-between">
               <div className="flex flex-col mb-4 gap-1">
@@ -255,7 +255,7 @@ const RHCreateClimateSurvey = () => {
               <IoClose
                 onClick={() => setShowExampleModal(false)}
                 size={30}
-                className="cursor-pointer"
+                className="cursor-pointer md:min-w-8 min-w-5"
               />
             </div>
             <p className="mb-3 font-semibold">Formato de pergunta:</p>
@@ -264,34 +264,34 @@ const RHCreateClimateSurvey = () => {
             </p>
 
             <p className="mb-3 font-semibold">Formato de resposta:</p>
-            <div className="flex w-full">
-              <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col md:flex-row w-full gap-3 md:gap-0">
+              <div className="flex sm:flex-col items-center sm:gap-1 gap-2">
                 <BsEmojiAngry className="text-3xl text-red-500" />
-                <span className="text-center min-w-[130px] max-w-[130px]">
+                <span className="sm:text-center min-w-[130px] sm:max-w-[130px] w-full">
                   Discordo totalmente
                 </span>
               </div>
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex sm:flex-col items-center sm:gap-1 gap-2">
                 <BsEmojiFrown className="text-3xl text-orange-500" />
-                <span className="text-center  min-w-[130px] max-w-[130px]">
+                <span className="sm:text-center min-w-[130px] sm:max-w-[130px] w-full">
                   Discordo parcialmente
                 </span>
               </div>
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex sm:flex-col items-center sm:gap-1 gap-2">
                 <BsEmojiNeutral className="text-3xl text-yellow-500" />
-                <span className="text-center  min-w-[130px] max-w-[130px]">
+                <span className="sm:text-center  min-w-[130px] sm:max-w-[130px] w-full">
                   Neutro
                 </span>
               </div>
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex sm:flex-col items-center sm:gap-1 gap-2">
                 <BsEmojiSmile className="text-3xl text-green-500" />
-                <span className="text-center  min-w-[130px] max-w-[130px]">
+                <span className="sm:text-center  min-w-[130px] sm:max-w-[130px] w-full">
                   Concordo parcialmente
                 </span>
               </div>
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex sm:flex-col items-center sm:gap-1 gap-2">
                 <BsEmojiLaughing className="text-3xl text-emerald-500" />
-                <span className="text-center  min-w-[130px] max-w-[130px]">
+                <span className="sm:text-center  min-w-[130px] sm:max-w-[130px] w-full">
                   Concordo totalmente
                 </span>
               </div>

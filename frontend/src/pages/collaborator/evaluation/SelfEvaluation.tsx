@@ -28,6 +28,8 @@ export default function SelfEvaluationPage() {
           }
         );
 
+        console.log(res.data)
+
         const userTrack = user?.trackId;
         const trackData = res.data.find((t: any) => t.id === userTrack);
         setTrackGroups(trackData || null);
