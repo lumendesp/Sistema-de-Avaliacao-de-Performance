@@ -17,6 +17,7 @@ interface Collaborator {
     id: number;
     name: string;
     role: string;
+    roleRaw?: any[]; // Add roleRaw to interface
     initials: string;
     state: 'pendente' | 'finalizado' | 'expirado';
     autoAvaliacao: number;
@@ -81,6 +82,7 @@ function Committee(){
                     id: user.id,
                     name: user.name,
                     role: user.roles.map((r: any) => r.role).join(', ') || 'N/A',
+                    roleRaw: user.roles, // Store raw roles for tooltip
                     initials: user.name.split(' ').map((n: string) => n[0]).join(''),
                     state: state,
                     autoAvaliacao: getScore('SELF'),
@@ -148,6 +150,13 @@ function Committee(){
         );
     }, [collaborators, searchTerm]);
 
+    // Helper to get display roles (excluding 'Administrador')
+    function getDisplayRoles(roles: any[]): string[] {
+        return roles
+            .map((r: any) => translateRole(r.role))
+            .filter(role => role !== 'Administrador');
+    }
+
     return(
         <div className="w-full min-h-screen bg-[#f1f1f1]">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 sm:p-5 gap-2 sm:gap-4">
@@ -193,7 +202,7 @@ function Committee(){
                         <button className="text-[#08605F] hover:text-green-700 font-medium text-sm sm:text-base">ver mais</button>
                     </Link>
                 </div>
-                <div className="flex items-center gap-1 sm:gap-2 rounded-xl py-2 sm:py-4 px-3 sm:px-7 w-full bg-white mb-2 sm:mb-4">
+                <div className="flex items-center gap-1 sm:gap-2 rounded-xl py-2 sm:py-4 px-3 sm:px-7 w-full bg-gray-100 mb-2 sm:mb-4">
                     <IoIosSearch size={16} className="text-[#1D1D1D]/75" />
                     <input
                         type="text"
@@ -216,6 +225,7 @@ function Committee(){
                                  .split(',')
                                  .map(r => translateRole(r.trim()))
                                  .join(', ')} 
+                                roleRaw={collab.roleRaw}
                                 initials={collab.initials} 
                                 state={collab.state}
                                 autoAvaliacao={collab.autoAvaliacao}
