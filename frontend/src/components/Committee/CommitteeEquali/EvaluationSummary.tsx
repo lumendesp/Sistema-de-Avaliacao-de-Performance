@@ -38,13 +38,13 @@ const Criterion = ({ name, score }: CriterionProps) => {
             <div className="flex items-center gap-2">
                 <span className="text-xs sm:text-sm font-medium text-gray-700">{name}</span>
                 <span className={`text-xs sm:text-sm font-bold ${getColorClass(score)}`}>
-                    {score.toFixed(1)}
+                    {Math.round(score * 10) / 10}
                 </span>
             </div>
             <div className="w-full h-2 bg-gray-200 rounded-full">
                 <div 
                     className={`h-full rounded-full ${getBarColorClass(score)}`}
-                    style={{ width: `${adjustScoreBar(score)}%` }}
+                    style={{ width: `${adjustScoreBar(Math.round(score * 10) / 10)}%` }}
                 />
             </div>
         </div>
@@ -153,32 +153,32 @@ function EvaluationSummary({
                 <div style="text-align: center; width: 23%;">
                     <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Autoavaliação</h3>
                     <div style="font-size: 24px; font-weight: bold; color: ${autoAvaliacao >= 4 ? '#16a34a' : autoAvaliacao >= 3 ? '#ca8a04' : '#dc2626'}">
-                        ${autoAvaliacao.toFixed(1)}
+                        ${Math.round(autoAvaliacao * 10) / 10}
                     </div>
                 </div>
                 <div style="text-align: center; width: 23%;">
                     <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Nota Gestor</h3>
                     <div style="font-size: 24px; font-weight: bold; color: ${notaGestor >= 4 ? '#16a34a' : notaGestor >= 3 ? '#ca8a04' : '#dc2626'}">
-                        ${notaGestor.toFixed(1)}
+                        ${Math.round(notaGestor * 10) / 10}
                     </div>
                 </div>
                 <div style="text-align: center; width: 23%;">
                     <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Nota Gestor</h3>
                     <div style="font-size: 24px; font-weight: bold; color: ${notaMentor >= 4 ? '#16a34a' : notaMentor >= 3 ? '#ca8a04' : '#dc2626'}">
-                        ${notaMentor.toFixed(1)}
+                        ${Math.round(notaMentor * 10) / 10}
                     </div>
                 </div>
                 <div style="text-align: center; width: 23%;">
                     <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Avaliação 360</h3>
                     <div style="font-size: 24px; font-weight: bold; color: ${avaliacao360 >= 4 ? '#16a34a' : avaliacao360 >= 3 ? '#ca8a04' : '#dc2626'}">
-                        ${avaliacao360.toFixed(1)}
+                        ${Math.round(avaliacao360 * 10) / 10}
                     </div>
                 </div>
                 ${typeof notaFinal === 'number' ? `
                     <div style="text-align: center; width: 23%;">
                         <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Nota Final</h3>
                         <div style="font-size: 24px; font-weight: bold; color: ${notaFinal >= 4 ? '#16a34a' : notaFinal >= 3 ? '#ca8a04' : '#dc2626'}">
-                            ${notaFinal.toFixed(1)}
+                            ${Math.round(notaFinal * 10) / 10}
                         </div>
                     </div>
                 ` : ''}
@@ -187,32 +187,32 @@ function EvaluationSummary({
             <div style="margin-top: 40px;">
                 <h3 style="font-size: 16px; color: #08605F; margin-bottom: 16px;">Justificativas das Avaliações</h3>
                 <div style="margin-bottom: 20px;">
-                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Autoavaliação (${autoAvaliacao.toFixed(1)})</h4>
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Autoavaliação (${Math.round(autoAvaliacao * 10) / 10})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
                         ${backendData?.justificativaAutoAvaliacao || justificativaAutoAvaliacao || 'Justificativa não disponível'}
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
-                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Mentor (${notaMentor.toFixed(1)})</h4>
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Mentor (${Math.round(notaMentor * 10) / 10})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
                         ${backendData?.justificativaMentor || justificativaMentor || 'Justificativa não disponível'}
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
-                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Gestor (${notaGestor.toFixed(1)})</h4>
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Gestor (${Math.round(notaGestor * 10) / 10})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
                         ${backendData?.justificativaGestor || justificativaGestor || 'Justificativa não disponível'}
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
-                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação 360° (${avaliacao360.toFixed(1)})</h4>
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação 360° (${Math.round(avaliacao360 * 10) / 10})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
                         ${backendData?.justificativa360 || justificativa360 || 'Justificativa não disponível'}
                     </div>
                 </div>
                 ${typeof notaFinal === 'number' ? `
                     <div style="margin-bottom: 20px;">
-                        <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação Final do Comitê (${notaFinal.toFixed(1)})</h4>
+                        <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação Final do Comitê (${Math.round(notaFinal * 10) / 10})</h4>
                         <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
                             ${currentJustification || 'Justificativa não disponível'}
                         </div>
@@ -391,12 +391,14 @@ function EvaluationSummary({
                     >
                         <img src={downloadIcon} alt="Download PDF" className="w-5 h-5" />
                     </button>
-                    <button 
-                        onClick={onEdit}
-                        className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-[#08605F] hover:text-white transition-colors"
-                    >
-                        Editar Avaliação
-                    </button>
+                    {typeof onEdit === 'function' && (
+                        <button 
+                            onClick={onEdit}
+                            className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-[#08605F] hover:text-white transition-colors"
+                        >
+                            Editar Avaliação
+                        </button>
+                    )}
                 </div>
             )}
         </div>

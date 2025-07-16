@@ -243,7 +243,7 @@ export class UsersService {
           id: evaluation.id,
           type: 'FINAL',
           score: evaluation.finalScore || 0,
-          justification: evaluation.justification, // Final scores are not encrypted
+          justification: decrypt(evaluation.justification),
           evaluator: evaluation.adjuster,
           cycle: evaluation.cycle,
         })),
@@ -312,7 +312,7 @@ export class UsersService {
             type: 'SELF',
             currentScore: currentAvg,
             previousScore: previousAvg,
-            dropPercent: Math.round(dropPercent),
+            dropPercent: parseFloat(dropPercent.toFixed(2)),
             message: `Autoavaliação caiu de ${previousAvg.toFixed(1)} para ${currentAvg.toFixed(1)}`
           });
         }
@@ -339,7 +339,7 @@ export class UsersService {
             type: 'PEER',
             currentScore: currentAvg,
             previousScore: previousAvg,
-            dropPercent: Math.round(dropPercent),
+            dropPercent: parseFloat(dropPercent.toFixed(2)),
             message: `Avaliação 360° caiu de ${previousAvg.toFixed(1)} para ${currentAvg.toFixed(1)}`
           });
         }
@@ -363,7 +363,7 @@ export class UsersService {
             type: 'MENTOR',
             currentScore: currentMentor.score,
             previousScore: previousMentor.score,
-            dropPercent: Math.round(dropPercent),
+            dropPercent: parseFloat(dropPercent.toFixed(2)),
             message: `Avaliação do mentor caiu de ${previousMentor.score} para ${currentMentor.score}`
           });
         }
@@ -399,7 +399,7 @@ export class UsersService {
             type: 'MANAGER',
             currentScore: currentAvg,
             previousScore: previousAvg,
-            dropPercent: Math.round(dropPercent),
+            dropPercent: parseFloat(dropPercent.toFixed(2)),
             message: `Avaliação do gestor caiu de ${previousAvg.toFixed(1)} para ${currentAvg.toFixed(1)}`
           });
         }

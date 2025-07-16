@@ -8,10 +8,12 @@ import RHLayout from "../layouts/RHLayout";
 import EvaluationLayout from "../layouts/EvaluationLayout";
 import ComparisonLayout from "../layouts/ComparisonLayout"; // novo
 import MentorLayout from "../layouts/MentorLayout";
+import AdminLayout from '../layouts/AdminLayout';
 
 import Dashboard from "../pages/collaborator/Dashboard";
 import SelfEvaluation from "../pages/collaborator/evaluation/SelfEvaluation";
 import PeerEvaluationPage from "../pages/collaborator/evaluation/PeerEvaluation";
+import Admin from "../pages/admin/Admin";
 import MentorEvaluation from "../pages/collaborator/evaluation/MentorEvaluation";
 import ReferenceEvaluation from "../pages/collaborator/evaluation/ReferenceEvaluation";
 import ComparisonEvaluation from "../pages/collaborator/evaluation/ComparisonEvaluation"; // novo
@@ -48,6 +50,7 @@ import Committee from "../pages/committee/Committee";
 import Equalization from "../pages/committee/Equalization";
 import OKRCommittee from "../pages/committee/OKR";
 import PDICommittee from "../pages/committee/PDI";
+import History from "../pages/committee/History";
 
 import RHDashboard from "../pages/RH/RHDashboard/RHDashboard";
 import RHCollaboratorsPage from "../pages/RH/RHCollaborators/RHCollaborators";
@@ -199,6 +202,7 @@ const AppRoutes = () => (
       >
         <Route index element={<Committee />} />
         <Route path="equalizations" element={<Equalization />} />
+        <Route path="history" element={<History />} />
       </Route>
 
       <Route
@@ -229,6 +233,17 @@ const AppRoutes = () => (
         {/* <Route path="climate-surveys" element={<RHSurveys />} /> */}
       </Route>
       <Route path="/perfil" element={<Profile />} />
+      
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Admin />} />
+      </Route>
     </Routes>
   </BrowserRouter>
 );

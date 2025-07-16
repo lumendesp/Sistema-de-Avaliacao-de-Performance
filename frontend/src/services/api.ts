@@ -107,22 +107,53 @@ export const fetchActiveEvaluationCycle = async (role?: string) => {
   }
 
   if (!res.ok) {
-    const errorText = await res.text();
-    console.error("Erro na resposta:", res.status, errorText);
-    throw new Error(`Erro ao buscar ciclo ativo: ${res.status} - ${errorText}`);
+    let errorMessage = "Erro ao buscar ciclo ativo";
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch {
+      // If response is not JSON, use the status text
+      errorMessage = res.statusText || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
-
-  const responseText = await res.text();
-  if (!responseText) {
-    throw new Error("Resposta vazia do servidor");
+  const text = await res.text();
+  if (!text) {
+    console.log(`[fetchActiveEvaluationCycle] Empty response for status ${status}`);
+    return null;
   }
-
   try {
-    return JSON.parse(responseText);
-  } catch (error) {
-    console.error("Erro ao fazer parse da resposta:", responseText);
-    throw new Error("Resposta inválida do servidor");
+    const parsed = JSON.parse(text);
+    console.log(`[fetchActiveEvaluationCycle] Parsed response for status ${status}:`, parsed);
+    return parsed;
+  } catch (e) {
+    console.log(`[fetchActiveEvaluationCycle] Invalid JSON for status ${status}:`, text);
+    return null;
   }
+};
+
+// Function specifically for committee equalization cycles
+export const fetchCommitteeEqualizationCycle = async () => {
+  // Use status=IN_PROGRESS_COMMITTEE to get the correct cycle
+  const res = await fetch(`${API_URL}/evaluation-cycle/active?status=IN_PROGRESS_COMMITTEE`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    let errorMessage = "Erro ao buscar ciclo de equalização do comitê";
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch {
+      // If response is not JSON, use the status text
+      errorMessage = res.statusText || errorMessage;
+    }
+    // Handle specific 404 case for committee
+    if (res.status === 404) {
+      throw new Error("Nenhum ciclo de equalização disponível. Aguarde o fechamento do ciclo de avaliação e sua liberação para o comitê.");
+    }
+    throw new Error(errorMessage);
+  }
+  return res.json();
 };
 
 export const fetchMostRecentEvaluationCycle = async () => {
@@ -447,7 +478,6 @@ export const fetchAISummary = async (
   userId: number,
   cycleId: number
 ): Promise<string> => {
-  console.log(userId, cycleId);
   const res = await fetch(
     `${API_URL}/ai-summary?userId=${userId}&cycleId=${cycleId}`,
     {
@@ -488,11 +518,24 @@ export const getSignificantDrops = async (userId: number, cycleId: number) => {
   );
   if (!response.ok) {
     if (response.status === 404) {
+      
       return null; // No significant drops found
     }
     throw new Error("Failed to fetch significant drops");
   }
-  return response.json();
+  const text = await response.text();
+  if (!text) {
+    
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(text);
+    
+    return parsed;
+  } catch (e) {
+    
+    return null;
+  }
 };
 
 // Creates a new final evaluation
@@ -878,7 +921,9 @@ export const addCriterionToGroup = async (
   trackId: number,
   unitId: number,
   positionId: number,
-  mandatory: boolean = false
+  mandatory: boolean = false,
+  description: string,
+  weight: number
 ) => {
   const res = await fetch(`${API_URL}/rh-criteria/configured`, {
     method: "POST",
@@ -890,6 +935,8 @@ export const addCriterionToGroup = async (
       unitId,
       positionId,
       mandatory,
+      description,
+      weight,
     }),
   });
   if (!res.ok) throw new Error("Erro ao adicionar critério ao grupo");
@@ -1061,6 +1108,131 @@ export const getMyManagerEvaluations = async (cycleId?: number) => {
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error("Erro ao buscar minhas avaliações de gestor");
+  return res.json();
+};
+
+// Admin API functions
+export const getSystemLogs = async (filters?: {
+  userId?: number;
+  userEmail?: string;
+  method?: string;
+  path?: string;
+  ip?: string;
+  responseStatus?: number;
+  startDate?: string;
+  endDate?: string;
+  errorOnly?: boolean;
+  page?: number;
+  limit?: number;
+}) => {
+  const params = new URLSearchParams();
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params.append(key, value.toString());
+      }
+    });
+  }
+
+  const url = `${API_URL}/admin-log?${params.toString()}`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar logs do sistema");
+  return res.json();
+};
+
+export const getSystemLogStats = async () => {
+  const res = await fetch(`${API_URL}/admin-log/stats`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar estatísticas dos logs");
+  return res.json();
+};
+
+export const exportSystemLogs = async (filters?: {
+  userId?: number;
+  userEmail?: string;
+  method?: string;
+  path?: string;
+  ip?: string;
+  responseStatus?: number;
+  startDate?: string;
+  endDate?: string;
+  errorOnly?: boolean;
+}) => {
+  const params = new URLSearchParams();
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params.append(key, value.toString());
+      }
+    });
+  }
+
+  const url = `${API_URL}/admin-log/export/csv?${params.toString()}`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao exportar logs");
+  return res.json();
+};
+
+export const getSystemStatus = async () => {
+  const res = await fetch(`${API_URL}/admin/system-status`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar status do sistema");
+  return res.json();
+};
+
+export const getSystemStats = async () => {
+  const res = await fetch(`${API_URL}/admin-log/dashboard-stats`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar estatísticas do sistema");
+  return res.json();
+};
+
+export const getRecentLogs = async (limit: number = 5) => {
+  const res = await fetch(`${API_URL}/admin-log/recent?limit=${limit}`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar logs recentes");
+  return res.json();
+};
+
+// Delete old logs
+export const deleteOldLogs = async (daysToKeep: number = 7) => {
+  const res = await fetch(`${API_URL}/admin-log/cleanup?daysToKeep=${daysToKeep}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao deletar logs antigos");
+  return res.json();
+};
+
+// Debug function to check user authentication and roles
+export const debugUserInfo = async () => {
+  const res = await fetch(`${API_URL}/admin-log/debug/user-info`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao buscar informações do usuário");
+  return res.json();
+};
+
+export const getClosedCycles = async () => {
+  const res = await fetch(`${API_URL}/evaluation-cycle/closed`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Erro ao buscar ciclos fechados');
   return res.json();
 };
 

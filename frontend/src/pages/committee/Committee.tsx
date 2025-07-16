@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { IoIosSearch } from 'react-icons/io';
 import { FaChevronRight } from 'react-icons/fa';
 import { translateRole } from '../../utils/roleTranslations';
+import { FaInfoCircle } from 'react-icons/fa';
 
 interface Collaborator {
     id: number;
@@ -32,6 +33,7 @@ function Committee(){
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
     const [fullUserData, setFullUserData] = useState<any[]>([]);
     const [cycle, setCycle] = useState<any>(null);
+    const [cycleId, setCycleId] = useState<number | null>(null);
     const [remainingDays, setRemainingDays] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
@@ -39,29 +41,30 @@ function Committee(){
     const fetchCollaborators = async () => {
         try {
             const users = await getUsersWithEvaluationsForCommittee();
-            setFullUserData(users); // Store full data for export
-            
-            const formattedCollaborators = await Promise.all(users.map(async (user: any) => {
+            // Filter out the logged-in user
+            const filteredUsers = user ? users.filter((u: any) => u.id !== user.id) : users;
+            setFullUserData(filteredUsers); // Store full data for export
+            const formattedCollaborators = await Promise.all(filteredUsers.map(async (user: any) => {
                 const evaluations = user.evaluationsEvaluated || [];
-                
+                // Only include evaluations for the current committee cycle
+                const cycleEvaluations = cycleId
+                    ? evaluations.filter((e: any) => e.cycle && e.cycle.id === cycleId)
+                    : evaluations;
                 const getScore = (type: string): number => {
-                    const evalData = evaluations.find((e: any) => e.type === type);
+                    const evalData = cycleEvaluations.find((e: any) => e.type === type);
                     return evalData ? evalData.score : 0;
                 };
-
-                const finalEval = evaluations.find((e: any) => e.type === 'FINAL');
-
+                const finalEval = cycleEvaluations.find((e: any) => e.type === 'FINAL');
                 // Determine state based on having all 4 required evaluation types
                 const requiredTypes = ['SELF', 'PEER', 'MENTOR', 'MANAGER', 'FINAL'];
-                const typesPresent = evaluations.map((e: any) => e.type);
+                const typesPresent = cycleEvaluations.map((e: any) => e.type);
                 const hasAllEvaluations = requiredTypes.every(type => typesPresent.includes(type));
                 const state = hasAllEvaluations ? 'finalizado' : 'pendente';
-
                 // Fetch significant drops if we have an active cycle
                 let dropInfo = undefined;
-                if (cycle?.id) {
+                if (cycleId) {
                     try {
-                        const dropData = await getSignificantDrops(user.id, cycle.id);
+                        const dropData = await getSignificantDrops(user.id, cycleId);
                         if (dropData) {
                             dropInfo = {
                                 text: dropData.message,
@@ -72,7 +75,8 @@ function Committee(){
                         console.warn(`Failed to fetch drops for user ${user.id}:`, error);
                     }
                 }
-
+                // Only include users who have at least one evaluation in this cycle
+                if (cycleEvaluations.length === 0) return null;
                 return {
                     id: user.id,
                     name: user.name,
@@ -88,7 +92,7 @@ function Committee(){
                     dropInfo: dropInfo,
                 };
             }));
-            setCollaborators(formattedCollaborators);
+            setCollaborators(formattedCollaborators.filter(Boolean));
         } catch (error) {
             console.error("Failed to fetch collaborators:", error);
         }
@@ -96,8 +100,10 @@ function Committee(){
 
     const fetchCycle = async () => {
         try {
-            const data = await fetchActiveEvaluationCycle('HR');
+            // Fetch the active committee cycle
+            const data = await fetchActiveEvaluationCycle('COMMITTEE');
             setCycle(data);
+            setCycleId(data?.id || null);
             if (data && data.endDate) {
                 const endDate = new Date(data.endDate);
                 const today = new Date();
@@ -107,6 +113,7 @@ function Committee(){
             }
         } catch (e) {
             setCycle(null);
+            setCycleId(null);
             setRemainingDays(null);
         }
     };
@@ -118,10 +125,10 @@ function Committee(){
 
     // Refetch collaborators when cycle changes to get drop info
     useEffect(() => {
-        if (cycle) {
+        if (cycleId) {
             fetchCollaborators();
         }
-    }, [cycle]);
+    }, [cycleId]);
 
     // Calculate statistics
     const stats = useMemo(() => {
@@ -146,11 +153,15 @@ function Committee(){
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 sm:p-5 gap-2 sm:gap-4">
                 <h1 className="text-lg sm:text-xl md:text-2xl">
                     <span className="font-bold">Olá,</span> {user?.name || 'usuário'}
-                </h1>
-                <div className="flex items-center gap-2 sm:gap-4">
-                    <UserIcon initials={user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'CN'} size={36} />
-                </div>
+                </h1>   
             </div>
+            {(!cycle || !cycleId) ? (
+                <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                    <FaInfoCircle className="text-4xl mb-2" />
+                    <div className="text-lg font-medium">Não há ciclo ativo para o comitê no momento.</div>
+                </div>
+            ) : (
+            <>
             <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-2 sm:gap-4 m-2 sm:m-5">
                 <InfoCard 
                     name={cycle ? cycle.name : 'Prazo'} 
@@ -223,6 +234,8 @@ function Committee(){
                     )}
                 </div>
             </div>
+            </>
+            )}
         </div>
     )
 }

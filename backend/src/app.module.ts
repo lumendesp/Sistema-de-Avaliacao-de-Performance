@@ -31,6 +31,7 @@ import { ImportModule } from './rh/import/import.module';
 import { PdiModule } from './pdi/pdi.module';
 import { OkrModule } from './okr/okr.module';
 import { MentorToCollaboratorEvaluationModule } from './mentor-to-collaborator-evaluation/mentor-to-collaborator-evaluation.module';
+import { AdminLogModule } from './admin-log/admin-log.module';
 import { CollaboratorModule } from './climate-survey/collaborator/collaborator.module';
 import { RhClimateModule } from './climate-survey/rh/rh.module';
 import { AiClimateSummaryModule } from './climate-survey/ai-climate-summary/ai-climate-summary.module';
@@ -72,6 +73,7 @@ import { AiClimateSummaryModule } from './climate-survey/ai-climate-summary/ai-c
     PdiModule,
     OkrModule,
     MentorToCollaboratorEvaluationModule,
+    AdminLogModule,
     CollaboratorModule,
     AiClimateSummaryModule,
     RhClimateModule
