@@ -64,8 +64,7 @@ const SelfEvaluationGroupReadOnlyList = ({ cycleId, trackData }: Props) => {
             group.configuredCriteria.forEach((cc) => {
               const answer = current.items.find(
                 (item: any) =>
-                  item.criterionId === cc.criterion.id &&
-                  item.group?.id === group.id
+                  item.criterionId === cc.criterion.id
               );
 
               groupedRatings[group.id].push(answer?.score ?? 0);
