@@ -16,6 +16,7 @@ interface Collaborator {
     id: number;
     name: string;
     role: string;
+    roleRaw?: any[]; // Add roleRaw to interface
     initials: string;
     state: 'pendente' | 'finalizado' | 'expirado';
     autoAvaliacao: number;
@@ -117,6 +118,7 @@ function Equalization(){
                     id: user.id,
                     name: user.name,
                     role: user.roles.map((r: any) => r.role).join(', ') || 'N/A',
+                    roleRaw: user.roles, // Store raw roles for tooltip
                     initials: user.name.split(' ').map((n: string) => n[0]).join(''),
                     state: state,
                     autoAvaliacao: getScore('SELF'),
@@ -308,6 +310,7 @@ function Equalization(){
                                                       .split(',')
                                                       .map(r => translateRole(r.trim()))
                                                       .join(', ')}
+                                                    roleRaw={collab.roleRaw}
                                                     initials={collab.initials}
                                                     state={collab.state}
                                                     autoAvaliacao={collab.autoAvaliacao}
@@ -394,6 +397,13 @@ function exportHistoryToCSV(data: any[], cycleName: string) {
     const csv = [header, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     saveAs(blob, `historico_equalizacao_${cycleName}.csv`);
+}
+
+// Helper to get display roles (excluding 'Administrador')
+function getDisplayRoles(roles: any[]): string[] {
+    return roles
+        .map((r: any) => translateRole(r.role))
+        .filter(role => role !== 'Administrador');
 }
 
 export default Equalization;

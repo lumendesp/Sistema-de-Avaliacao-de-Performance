@@ -5,6 +5,7 @@ import { UserIcon } from '../../components/UserIcon';
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import EvaluationSummary from "../../components/Committee/CommitteeEquali/EvaluationSummary";
 import { exportEvaluationToExcel, exportEvaluationToCSV, transformBackendDataToExport } from '../../services/export.service';
+import { translateRole } from '../../utils/roleTranslations';
 
 function History() {
     const [closedCycles, setClosedCycles] = useState<any[]>([]);
@@ -42,7 +43,7 @@ function History() {
                         return {
                             id: user.id,
                             name: user.name,
-                            role: user.roles.map((r: any) => r.role).join(', ') || 'N/A',
+                            role: user.roles.map((r: any) => translateRole(r.role)).join(', ') || 'N/A',
                             initials: user.name.split(' ').map((n: string) => n[0]).join(''),
                             autoAvaliacao: getScore('SELF'),
                             avaliacao360: getScore('PEER'),
@@ -83,7 +84,7 @@ function History() {
                             cyclesMap[cycleId].users.push({
                                 id: user.id,
                                 name: user.name,
-                                role: user.roles.map((r: any) => r.role).join(', ') || 'N/A',
+                                role: user.roles.map((r: any) => translateRole(r.role)).join(', ') || 'N/A',
                                 initials: user.name.split(' ').map((n: string) => n[0]).join(''),
                                 autoAvaliacao: getScore('SELF'),
                                 avaliacao360: getScore('PEER'),
@@ -114,6 +115,13 @@ function History() {
 
     // Filter function for search
     const filterUsers = (users: any[]) => users.filter(c => c.name.toLowerCase().includes(historySearch.toLowerCase()));
+
+    // Helper to get display roles (excluding 'Administrador')
+    function getDisplayRoles(roles: any[]): string[] {
+        return roles
+            .map((r: any) => translateRole(r.role))
+            .filter(role => role !== 'Administrador');
+    }
 
     return (
         <div className="w-full min-h-screen bg-[#f1f1f1]">
@@ -161,7 +169,24 @@ function History() {
                                                 <UserIcon initials={collab.initials} size={32} />
                                                 <div>
                                                     <div className="font-semibold text-gray-800">{collab.name}</div>
-                                                    <div className="text-xs text-gray-500">{collab.role}</div>
+                                                    {
+                                                        (() => {
+                                                            const displayRoles = getDisplayRoles(collab.roleRaw || []);
+                                                            if (displayRoles.length === 0) return null;
+                                                            if (displayRoles.length === 1) {
+                                                                return <div className="text-xs text-gray-500">{displayRoles[0]}</div>;
+                                                            }
+                                                            return (
+                                                                <div className="text-xs text-gray-500 relative group cursor-pointer">
+                                                                    {displayRoles[0]}
+                                                                    <span className="ml-1 text-gray-400">+{displayRoles.length - 1}</span>
+                                                                    <div className="absolute left-0 z-10 hidden group-hover:block bg-white border border-gray-300 rounded shadow-md p-2 mt-1 text-xs text-gray-700 min-w-max">
+                                                                        {displayRoles.join(', ')}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })()
+                                                    }
                                                 </div>
                                                 <div className="ml-auto font-bold text-green-700 text-lg">{collab.notaFinal !== undefined ? (Math.round(collab.notaFinal * 10) / 10) : '-'}</div>
                                             </div>
@@ -225,7 +250,24 @@ function History() {
                                                             <UserIcon initials={collab.initials} size={32} />
                                                             <div>
                                                                 <div className="font-semibold text-gray-800">{collab.name}</div>
-                                                                <div className="text-xs text-gray-500">{collab.role}</div>
+                                                                {
+                                                                    (() => {
+                                                                        const displayRoles = getDisplayRoles(collab.roleRaw || []);
+                                                                        if (displayRoles.length === 0) return null;
+                                                                        if (displayRoles.length === 1) {
+                                                                            return <div className="text-xs text-gray-500">{displayRoles[0]}</div>;
+                                                                        }
+                                                                        return (
+                                                                            <div className="text-xs text-gray-500 relative group cursor-pointer">
+                                                                                {displayRoles[0]}
+                                                                                <span className="ml-1 text-gray-400">+{displayRoles.length - 1}</span>
+                                                                                <div className="absolute left-0 z-10 hidden group-hover:block bg-white border border-gray-300 rounded shadow-md p-2 mt-1 text-xs text-gray-700 min-w-max">
+                                                                                    {displayRoles.join(', ')}
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })()
+                                                                }
                                                             </div>
                                                             <div className="ml-auto font-bold text-green-700 text-lg">{collab.notaFinal !== undefined ? (Math.round(collab.notaFinal * 10) / 10) : '-'}</div>
                                                         </div>
