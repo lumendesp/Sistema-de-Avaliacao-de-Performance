@@ -102,26 +102,26 @@ const PlanoFuturo: React.FC = () => {
   if (loading) return null;
 
   return (
-    <div className="w-full max-w-7xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto px-1 sm:px-2 md:px-4">
       <div className="bg-white rounded-lg shadow">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Próximas Ações</h2>
-          <div className="space-y-4">
+        <div className="p-2 sm:p-4 md:p-6">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4">Próximas Ações</h2>
+          <div className="space-y-2 sm:space-y-4">
             {pending > 0 && (
-              <div className="flex items-center p-4 bg-yellow-50 rounded-lg">
-                <CheckCircleIcon className="h-5 w-5 text-yellow-600 mr-3" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Revisar avaliações pendentes</p>
-                  <p className="text-sm text-gray-500">{pending} avaliação{pending > 1 ? 's' : ''} aguardando sua revisão</p>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center p-2 sm:p-4 bg-yellow-50 rounded-lg min-w-0">
+                <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 mr-0 sm:mr-3 mb-2 sm:mb-0 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">Revisar avaliações pendentes</p>
+                  <p className="text-xs sm:text-sm text-gray-500 truncate">{pending} avaliação{pending > 1 ? 's' : ''} aguardando sua revisão</p>
                 </div>
               </div>
             )}
             {currentCycle && (
-              <div className={`flex items-center p-4 rounded-lg ${getCycleColor(currentCycle.daysRemaining).bg} ${getCycleColor(currentCycle.daysRemaining).border} border`}>
-                <ClockIcon className={`h-5 w-5 mr-3 ${getCycleColor(currentCycle.daysRemaining).text}`} />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Ciclo de avaliação atual: {currentCycle.name}</p>
-                  <p className={`text-sm ${getCycleColor(currentCycle.daysRemaining).text} font-medium`}>
+              <div className={`flex flex-col sm:flex-row items-start sm:items-center p-2 sm:p-4 rounded-lg min-w-0 ${getCycleColor(currentCycle.daysRemaining).bg} ${getCycleColor(currentCycle.daysRemaining).border} border`}>
+                <ClockIcon className={`h-4 w-4 sm:h-5 sm:w-5 mr-0 sm:mr-3 mb-2 sm:mb-0 ${getCycleColor(currentCycle.daysRemaining).text} flex-shrink-0`} />
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">Ciclo de avaliação atual: {currentCycle.name}</p>
+                  <p className={`text-xs sm:text-sm ${getCycleColor(currentCycle.daysRemaining).text} font-medium truncate`}>
                     {getDeadlineText(currentCycle.daysRemaining, currentCycle.isOverdue)}
                   </p>
                 </div>

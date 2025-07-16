@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient, Role, EvaluationCycle, CycleStatus, Prisma } from '@prisma/client';
+import { PrismaClient, CycleStatus, EvaluationCycle, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 @Injectable()
 export class CycleService {
-  async getMostRecentCycle(type: Role, status: CycleStatus = 'IN_PROGRESS') {
+  async getMostRecentCycle(status: CycleStatus) {
     return prisma.evaluationCycle.findFirst({
-      where: { type, status },
+      where: { status },
       orderBy: { startDate: 'desc' }
     });
   }

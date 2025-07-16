@@ -28,6 +28,11 @@ import { AiBrutalFactsModule } from './ai-brutal-facts/ai-brutal-facts.module';
 import { CollaboratorModule } from './climate-survey/collaborator/collaborator.module';
 import { RhModule } from './climate-survey/rh/rh.module';
 import { AiClimateSummaryModule } from './climate-survey/ai-climate-summary/ai-climate-summary.module';
+import { RHDashboardModule } from './rh/dashboard/dashboard.module';
+import { ImportModule } from './rh/import/import.module';
+import { PdiModule } from './pdi/pdi.module';
+import { OkrModule } from './okr/okr.module';
+import { MentorToCollaboratorEvaluationModule } from './mentor-to-collaborator-evaluation/mentor-to-collaborator-evaluation.module';
 
 @Module({
   imports: [
@@ -63,6 +68,11 @@ import { AiClimateSummaryModule } from './climate-survey/ai-climate-summary/ai-c
     AiBrutalFactsModule,
     CollaboratorModule,
     AiClimateSummaryModule,
+    RHDashboardModule,
+    ImportModule,
+    PdiModule,
+    OkrModule,
+    MentorToCollaboratorEvaluationModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

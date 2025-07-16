@@ -13,13 +13,17 @@ async function main() {
   // Cria unidades
   const unit1 = await prisma.unit.create({ data: { name: 'Rio de Janeiro' } });
   const unit2 = await prisma.unit.create({ data: { name: 'Recife' } });
+  const unit3 = await prisma.unit.create({ data: { name: 'São Paulo' } });
+  const unit4 = await prisma.unit.create({ data: { name: 'Porto Alegre' } });
+  const unit5 = await prisma.unit.create({ data: { name: 'Belo Horizonte' } });
+  const unit6 = await prisma.unit.create({ data: { name: 'Salvador' } });
 
   // Cria trilhas
-  const track1 = await prisma.track.create({ data: { name: 'Backend' } });
-  const track2 = await prisma.track.create({ data: { name: 'Frontend' } });
-  const track3 = await prisma.track.create({
+  const track1 = await prisma.track.create({ data: { name: 'Trilha do Colaborador' } });
+  const track2 = await prisma.track.create({
     data: { name: 'Trilha de Liderança' },
   });
+  const track3 = await prisma.track.create({ data: { name: 'Trilha Executiva' } });
 
   // Adicionando todos os tipos de criterios no bd
   const criteriaData: Array<{
@@ -27,69 +31,74 @@ async function main() {
     generalDescription: string;
     weight: number;
   }> = [
-    {
-      name: CriterionName.ORGANIZACAO_NO_TRABALHO,
-      generalDescription: 'Capacidade de manter o ambiente organizado',
-      weight: 10,
-    },
-    {
-      name: CriterionName.ATENDER_AOS_PRAZOS,
-      generalDescription: 'Capacidade de cumprir prazos estabelecidos',
-      weight: 10,
-    },
-    {
-      name: CriterionName.SENTIMENTO_DE_DONO,
-      generalDescription:
-        'Demonstra responsabilidade e compromisso com os resultados',
-      weight: 10,
-    },
-    {
-      name: CriterionName.RESILIENCIA_NAS_ADVERSIDADES,
-      generalDescription: 'Capacidade de se adaptar e superar desafios',
-      weight: 10,
-    },
-    {
-      name: CriterionName.CAPACIDADE_DE_APRENDER,
-      generalDescription:
-        'Disposição para aprender e se desenvolver continuamente',
-      weight: 10,
-    },
-    {
-      name: CriterionName.TEAM_PLAYER,
-      generalDescription: 'Capacidade de trabalhar em equipe e colaborar',
-      weight: 10,
-    },
-    {
-      name: CriterionName.FAZER_MAIS_COM_MENOS,
-      generalDescription: 'Eficiência na utilização de recursos',
-      weight: 10,
-    },
-    {
-      name: CriterionName.ENTREGAR_COM_QUALIDADE,
-      generalDescription: 'Compromisso com a qualidade das entregas',
-      weight: 10,
-    },
-    {
-      name: CriterionName.PENSAR_FORA_DA_CAIXA,
-      generalDescription: 'Criatividade e inovação na resolução de problemas',
-      weight: 10,
-    },
-    {
-      name: CriterionName.GENTE,
-      generalDescription: 'Habilidades de relacionamento e liderança',
-      weight: 10,
-    },
-    {
-      name: CriterionName.RESULTADOS,
-      generalDescription: 'Foco em resultados e performance',
-      weight: 10,
-    },
-    {
-      name: CriterionName.EVOLUCAO_DA_ROCKET_COR,
-      generalDescription: 'Contribuição para o crescimento da empresa',
-      weight: 10,
-    },
-  ];
+      {
+        name: CriterionName.ORGANIZACAO_NO_TRABALHO,
+        generalDescription: 'Capacidade de manter o ambiente organizado',
+        weight: 10,
+      },
+      {
+        name: CriterionName.ATENDER_AOS_PRAZOS,
+        generalDescription: 'Capacidade de cumprir prazos estabelecidos',
+        weight: 10,
+      },
+      {
+        name: CriterionName.SENTIMENTO_DE_DONO,
+        generalDescription:
+          'Demonstra responsabilidade e compromisso com os resultados',
+        weight: 10,
+      },
+      {
+        name: CriterionName.RESILIENCIA_NAS_ADVERSIDADES,
+        generalDescription: 'Capacidade de se adaptar e superar desafios',
+        weight: 10,
+      },
+      {
+        name: CriterionName.CAPACIDADE_DE_APRENDER,
+        generalDescription:
+          'Disposição para aprender e se desenvolver continuamente',
+        weight: 10,
+      },
+      {
+        name: CriterionName.TEAM_PLAYER,
+        generalDescription: 'Capacidade de trabalhar em equipe e colaborar',
+        weight: 10,
+      },
+      {
+        name: CriterionName.FAZER_MAIS_COM_MENOS,
+        generalDescription: 'Eficiência na utilização de recursos',
+        weight: 10,
+      },
+      {
+        name: CriterionName.ENTREGAR_COM_QUALIDADE,
+        generalDescription: 'Compromisso com a qualidade das entregas',
+        weight: 10,
+      },
+      {
+        name: CriterionName.PENSAR_FORA_DA_CAIXA,
+        generalDescription: 'Criatividade e inovação na resolução de problemas',
+        weight: 10,
+      },
+      {
+        name: CriterionName.GENTE,
+        generalDescription: 'Habilidades de relacionamento e liderança',
+        weight: 10,
+      },
+      {
+        name: CriterionName.RESULTADOS,
+        generalDescription: 'Foco em resultados e performance',
+        weight: 10,
+      },
+      {
+        name: CriterionName.GESTAO,
+        generalDescription: 'Promove a eficiência da gestão ao desenvolver mecanismos que tornam a empresa mais organizada, estruturada e independente',
+        weight: 10,
+      },
+      {
+        name: CriterionName.EVOLUCAO_DA_ROCKET_COR,
+        generalDescription: 'Contribuição para o crescimento da empresa',
+        weight: 10,
+      },
+    ];
 
   const criteria: any[] = [];
   for (const criterionData of criteriaData) {
@@ -340,8 +349,8 @@ async function main() {
       email: 'bob@example.com',
       password: passwordHash2,
       active: true,
-      positionId: position2.id,
-      unitId: unit2.id,
+      positionId: position1.id,
+      unitId: unit1.id, 
       trackId: track2.id,
       roles: {
         create: [
@@ -418,7 +427,7 @@ async function main() {
       password: passwordHash5,
       active: true,
       positionId: position2.id,
-      unitId: unit2.id,
+      unitId: unit1.id,
       trackId: track3.id,
       roles: {
         create: [
@@ -472,8 +481,7 @@ async function main() {
       name: '2025.1',
       startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 dias atrás
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias à frente
-      status: 'IN_PROGRESS',
-      type: 'COLLABORATOR',
+      status: 'IN_PROGRESS_COLLABORATOR' as any,
     },
   });
 

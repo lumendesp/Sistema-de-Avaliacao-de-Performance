@@ -2,11 +2,13 @@ import { useNavigate, NavLink } from "react-router-dom";
 import { FiLogOut, FiMenu, FiX } from "react-icons/fi";
 import { IoBarChart } from "react-icons/io5";
 import { useState } from "react";
+import { FlagIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import { useAuth } from "../../context/AuthContext";
 import dashboardIcon from "../../assets/dashboard.svg";
 import collaboratorsIcon from "../../assets/collaborators.svg";
 import configIcon from "../../assets/config.svg";
 import { IoDocumentTextOutline } from "react-icons/io5";
+import { DocumentArrowUpIcon } from '@heroicons/react/24/outline';
 
 const menuItems = [
   {
@@ -41,6 +43,36 @@ const menuItems = [
     icon: (
       <IoBarChart size={20}/>
     ),
+  },
+  {
+    path: '/rh/okr',
+    label: 'Objetivos e Resultados-Chave',
+    icon: <FlagIcon className="w-5 h-5" />,
+  },
+  {
+    path: '/rh/pdi',
+    label: 'Plano de Desenvolvimento Individual',
+    icon: <UserGroupIcon className="w-5 h-5" />,
+  },
+  {
+    path: '/rh/import',
+    label: 'Importação',
+    icon: <DocumentArrowUpIcon className="w-5 h-5" />,
+  },
+  {
+    path: '/rh/okr',
+    label: 'Objetivos e Resultados-Chave',
+    icon: <FlagIcon className="w-5 h-5" />,
+  },
+  {
+    path: '/rh/pdi',
+    label: 'Plano de Desenvolvimento Individual',
+    icon: <UserGroupIcon className="w-5 h-5" />,
+  },
+  {
+    path: '/rh/import',
+    label: 'Importação',
+    icon: <DocumentArrowUpIcon className="w-5 h-5" />,
   },
 ];
 

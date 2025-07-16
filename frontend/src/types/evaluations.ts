@@ -1,4 +1,4 @@
-export type EvaluationStatus = 'finalizado' | 'pendente';
+export type EvaluationStatus = 'finalizado' | 'pendente' | 'expirado';
 
 export interface AssessmentScores {
     autoAvaliacao?: number;
