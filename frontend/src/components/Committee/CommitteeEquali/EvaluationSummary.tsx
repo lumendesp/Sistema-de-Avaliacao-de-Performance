@@ -391,12 +391,14 @@ function EvaluationSummary({
                     >
                         <img src={downloadIcon} alt="Download PDF" className="w-5 h-5" />
                     </button>
-                    <button 
-                        onClick={onEdit}
-                        className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-[#08605F] hover:text-white transition-colors"
-                    >
-                        Editar Avaliação
-                    </button>
+                    {typeof onEdit === 'function' && (
+                        <button 
+                            onClick={onEdit}
+                            className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-[#08605F] hover:text-white transition-colors"
+                        >
+                            Editar Avaliação
+                        </button>
+                    )}
                 </div>
             )}
         </div>
