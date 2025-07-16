@@ -28,6 +28,8 @@ export default function SelfEvaluationPage() {
           }
         );
 
+        console.log(res.data)
+
         const userTrack = user?.trackId;
         const trackData = res.data.find((t: any) => t.id === userTrack);
         setTrackGroups(trackData || null);
@@ -49,9 +51,11 @@ export default function SelfEvaluationPage() {
 
   if (!trackGroups || !cycleId) {
     return (
-      <p className="text-center text-gray-500 mt-10">
-        Nenhum critério ou ciclo ativo encontrado.
-      </p>
+      <div className="bg-[#f1f1f1] h-screen w-full p-3">
+        <p className="text-sm text-gray-400 text-center py-8">
+          Nenhum critério ou ciclo ativo encontrado.
+        </p>
+      </div>
     );
   }
 

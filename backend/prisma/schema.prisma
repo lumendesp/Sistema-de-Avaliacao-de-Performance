@@ -137,6 +137,9 @@ model User {
 
   // --- OKR ---
   okrs Okr[]
+
+  climateSurveysCreated ClimateSurvey[] @relation("UserCreatedClimateSurveys")
+  climateSurveyResponses ClimateSurveyResponse[]
 }
 
 // ---------------- HISTÓRICO DE TRILHAS -----------------
@@ -505,4 +508,82 @@ model KeyResult {
   okrId       Int
   okr         Okr      @relation(fields: [okrId], references: [id], onDelete: Cascade)
   description String
+}
+
+model ClimateSurvey {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  endDate     DateTime
+  createdById Int
+  createdBy   User     @relation("UserCreatedClimateSurveys", fields: [createdById], references: [id])
+
+  questions   ClimateSurveyQuestion[]
+  responses   ClimateSurveyResponse[]
+  aiSummaries ClimateSurveyAISummary[]
+}
+
+model ClimateSurveyQuestion {
+  id       Int    @id @default(autoincrement())
+  surveyId Int
+  text     String
+
+  survey  ClimateSurvey         @relation(fields: [surveyId], references: [id])
+  answers ClimateSurveyAnswer[]
+}
+
+model ClimateSurveyResponse {
+  id           Int       @id @default(autoincrement())
+  hashId       String
+  isSubmit     Boolean
+  submittedAt  DateTime?
+  surveyId     Int
+  userId       Int
+
+  survey       ClimateSurvey @relation(fields: [surveyId], references: [id])
+  user         User           @relation(fields: [userId], references: [id])
+  answers      ClimateSurveyAnswer[]
+}
+
+model ClimateSurveyAnswer {
+  id            Int          @id @default(autoincrement())
+  questionId    Int
+  responseId    Int
+  level         ClimateLevel
+  justification String
+
+  question ClimateSurveyQuestion @relation(fields: [questionId], references: [id])
+  response ClimateSurveyResponse @relation(fields: [responseId], references: [id])
+}
+
+model ClimateSurveyAISummary {
+  id                Int             @id @default(autoincrement())
+  surveyId          Int
+  text              String? // Resumo completo
+  shortText         String? // Resumo curto
+  satisfactionScore Int? // Score de satisfação (0-100)
+  status            AISummaryStatus @default(PENDING)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  survey ClimateSurvey @relation(fields: [surveyId], references: [id])
+
+  @@unique([surveyId])
+}
+
+enum ClimateLevel {
+  CONCORDO_TOTALMENTE
+  CONCORDO_PARCIALMENTE
+  NEUTRO
+  DISCORDO_PARCIALMENTE
+  DISCORDO_TOTALMENTE
+}
+
+enum AISummaryStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
