@@ -161,7 +161,7 @@ export default function MentorEvaluationLayout() {
                 </span>
               )}
               <button
-                className="bg-[#8CB7B7] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap"
+                className="bg-[#08605F] font-semibold text-white px-5 py-2 rounded-md text-sm shadow-sm hover:bg-[#7aa3a3] transition whitespace-nowrap"
                 onClick={handleSend}
               >
                 {!isEditing && evaluationId
