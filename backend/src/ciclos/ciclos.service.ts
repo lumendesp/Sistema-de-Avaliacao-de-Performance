@@ -315,6 +315,94 @@ export class CiclosService {
     };
   }
 
+  async getMentorDashboardStats(mentorId: number) {
+    // Buscar o ciclo atual usando o método existente com status IN_PROGRESS_MANAGER (ou IN_PROGRESS_MENTOR se existir)
+    const currentCycle = await this.getCurrentCycle('IN_PROGRESS_MANAGER');
+
+    if (!currentCycle) {
+      return {
+        totalEvaluations: '0',
+        evaluatedCollaborators: '0',
+        pendingCollaborators: '0',
+        averageScore: '0.0/5',
+        evaluationTrend: undefined,
+        collaboratorTrend: undefined,
+        scoreTrend: undefined,
+        totalCollaborators: '0',
+      };
+    }
+
+    // Buscar o mentor e seus mentorados
+    const mentor = await prisma.user.findUnique({
+      where: { id: mentorId },
+      include: {
+        mentees: {
+          include: {
+            roles: true,
+            mentorToCollaboratorEvaluationsReceived: {
+              where: { cycleId: currentCycle.id },
+            },
+          },
+        },
+      },
+    });
+
+    if (!mentor) {
+      return {
+        totalEvaluations: '0',
+        evaluatedCollaborators: '0',
+        pendingCollaborators: '0',
+        averageScore: '0.0/5',
+        evaluationTrend: undefined,
+        collaboratorTrend: undefined,
+        scoreTrend: undefined,
+        totalCollaborators: '0',
+      };
+    }
+
+    // Lista de mentorados ativos
+    const mentees = mentor.mentees.filter((c) => c.active);
+    const totalCollaborators = mentees.length;
+    const totalEvaluations = totalCollaborators;
+    // Considera avaliado se existe avaliação do mentor para o colaborador no ciclo atual com status 'submitted'
+    const evaluatedCollaborators = mentees.filter(
+      (mentee) =>
+        (mentee.mentorToCollaboratorEvaluationsReceived as Array<{ status?: string }>)?.some(
+          (evalObj) => evalObj.status === 'submitted'
+        )
+    ).length;
+    const pendingCollaborators = totalCollaborators - evaluatedCollaborators;
+
+    // Média das notas dadas pelo mentor no ciclo atual
+    const currentCycleScores = mentees
+      .map((mentee) =>
+        (mentee.mentorToCollaboratorEvaluationsReceived as Array<{ status?: string; score?: number }>)?.find(
+          (evalObj) => evalObj.status === 'submitted'
+        )?.score
+      )
+      .filter((score) => score !== null && score !== undefined);
+
+    const averageScore =
+      currentCycleScores.length > 0
+        ? (
+            currentCycleScores.reduce((sum, score) => sum + score, 0) /
+            currentCycleScores.length
+          ).toFixed(1)
+        : '0.0';
+
+    // Tendências: pode ser implementado depois, por enquanto undefined
+    return {
+      totalEvaluations: totalEvaluations.toString(),
+      evaluatedCollaborators: evaluatedCollaborators.toString(),
+      pendingCollaborators: pendingCollaborators.toString(),
+      averageScore: `${averageScore}/5`,
+      evaluationTrend: undefined,
+      collaboratorTrend: undefined,
+      scoreTrend: undefined,
+      totalCollaborators: totalCollaborators.toString(),
+    };
+  }
+
   async getBrutalFactsData() {
     // Buscar dados já processados do serviço de Brutal Facts
     const brutalFactsData =

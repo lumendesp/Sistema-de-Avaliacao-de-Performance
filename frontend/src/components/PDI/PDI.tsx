@@ -396,7 +396,7 @@ const PDI: React.FC<PDIProps> = ({
                     </div>
                   )}
                 </div>
-              ) : (
+                              ) : (
                 userRole === 'manager' && (
                   <div className="text-center py-8 sm:py-12">
                     <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

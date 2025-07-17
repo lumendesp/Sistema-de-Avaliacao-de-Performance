@@ -72,6 +72,31 @@ const ColaboradoresList: React.FC = () => {
     }
   }, [user]);
 
+  // Buscar avaliações do mentor para cada mentorado
+  useEffect(() => {
+    if (!user || !user.id || colaboradores.length === 0) return;
+    const fetchAllMentorEvals = async () => {
+      const evals: Record<number, any> = {};
+      for (const colab of colaboradores) {
+        try {
+          const res = await fetch(`${API_URL}/mentor-to-collaborator-evaluations/mentor/${user.id}?collaboratorId=${colab.id}`, {
+            headers: getAuthHeaders(),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            evals[colab.id] = data;
+          } else {
+            evals[colab.id] = [];
+          }
+        } catch {
+          evals[colab.id] = [];
+        }
+      }
+      setMentorEvaluations(evals);
+    };
+    fetchAllMentorEvals();
+  }, [user, colaboradores]);
+
   // Buscar avaliações dos colaboradores
   useEffect(() => {
     if (colaboradores.length === 0) return;
@@ -238,13 +263,13 @@ const ColaboradoresList: React.FC = () => {
           </div>
         ) :
           colaboradores.map((colab, idx) => {
-            const { status, selfScore, managerScore } = getStatusAndScore(
+            const { status, selfScore, managerScore, mentorScore } = getStatusAndScore(
               colab.id
             );
             return (
               <button
                 key={colab.id || idx}
-                className="w-full flex flex-col sm:flex-row sm:items-center justify-between bg-gray-50 rounded-lg px-2 sm:px-4 py-3 hover:bg-gray-100 transition cursor-pointer min-w-0"
+                className="w-full flex flex-row items-center justify-between bg-gray-50 rounded-lg px-2 sm:px-4 py-3 hover:bg-gray-100 transition cursor-pointer min-w-0"
                 onClick={() => navigate(`/mentor/avaliacao/${colab.id}`)}
               >
                 <div className="flex items-center gap-2 sm:gap-4 min-w-0 w-full sm:w-auto">
@@ -263,15 +288,27 @@ const ColaboradoresList: React.FC = () => {
                       <span className="font-semibold text-gray-900 text-base sm:text-lg truncate max-w-[10rem] sm:max-w-xs block">
                         {colab.name}
                       </span>
-                      <span
-                        className={`mt-1 sm:mt-0 sm:ml-2 px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${statusStyles[status]}`}
-                      >
-                        {status}
-                      </span>
+                      {status !== 'Pendente' && (
+                        <span
+                          className={`mt-1 sm:mt-0 sm:ml-2 px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${statusStyles[status]}`}
+                        >
+                          {status === 'Finalizado' ? 'Concluído' : status}
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-gray-500 truncate max-w-[8rem] sm:max-w-xs">
                       {colab.role || "Departamento"}
                     </div>
+                  </div>
+                </div>
+                <div className="ml-auto flex items-center">
+                  <div className="text-xs text-gray-500 whitespace-nowrap">
+                    <span className="font-semibold text-gray-900">
+                      {mentorScore !== null && mentorScore !== undefined
+                        ? mentorScore.toFixed(1)
+                        : "-"}
+                    </span>
+                    <span className="ml-1">Nota mentor</span>
                   </div>
                 </div>
               </button>

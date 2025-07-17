@@ -25,22 +25,31 @@ const Metricas: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Novo: trigger para forçar reload das métricas
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+
+  // Função local para forçar reload
+  const reloadMetricas = () => setReloadTrigger((v) => v + 1);
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/ciclos/dashboard/manager`, {
+        // Busca diferente para mentor
+        let url = `${API_URL}/ciclos/dashboard/manager`;
+        if (user && user.roles && user.roles.some((r: any) => r.role === 'MENTOR')) {
+          url = `${API_URL}/ciclos/dashboard/mentor`;
+        }
+        const res = await fetch(url, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           }
         });
-        
         if (!res.ok) {
           throw new Error(`Erro ao buscar estatísticas: ${res.status}`);
         }
-        
         const data = await res.json();
         setStats(data);
       } catch (err: any) {
@@ -61,9 +70,8 @@ const Metricas: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchStats();
-  }, []);
+  }, [user, reloadTrigger]);
 
   const metrics = stats ? [
     {

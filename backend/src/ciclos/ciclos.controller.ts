@@ -110,6 +110,12 @@ export class CiclosController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('dashboard/mentor')
+  getMentorDashboardStats(@Request() req) {
+    return this.ciclosService.getMentorDashboardStats(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('brutal-facts')
   getBrutalFactsData() {
     return this.ciclosService.getBrutalFactsData();
