@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { API_URL } from '../../services/api';
+import AIIcon from '../../assets/committee/AI-icon.png';
 
 interface BrutalFactsSummaryData {
   insights: string;
@@ -37,31 +38,52 @@ const BrutalFactsSummary: React.FC = () => {
     fetchInsights();
   }, []);
 
+  // Função utilitária para limpar caracteres especiais repetidos
+  function cleanSpecialChars(text: string) {
+    if (!text) return text;
+    // Remove repetições de *, #, -, _ e espaços extras
+    return text
+      .replace(/([*#\-_])\1{1,}/g, '$1') // Reduz sequências como *** ou ### para * ou #
+      .replace(/\n{3,}/g, '\n\n') // No máximo duas quebras de linha seguidas
+      .replace(/\s{3,}/g, '  '); // No máximo dois espaços seguidos
+  }
+
   if (loading) {
     return (
       <div className="w-full max-w-5xl bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex items-center mb-2">
-          <span className="font-semibold text-gray-700">Resumo</span>
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 border-l-4 border-l-[#08605F] pl-6 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <img src={AIIcon} alt="IA Icon" className="w-4 h-4" />
+            <span className="text-sm font-semibold text-gray-700">Resumo</span>
+          </div>
+          <div className="text-sm text-gray-700 whitespace-pre-wrap">
+            Carregando insights...
+          </div>
         </div>
-        <div className="text-gray-600 text-sm">Carregando insights...</div>
       </div>
     );
   }
 
   return (
     <div className="w-full max-w-5xl bg-white rounded-lg shadow p-6 mb-6">
-      <div className="flex items-center mb-2">
-        <span className="font-semibold text-gray-700">Resumo do ciclo {data?.cycleName || ''}</span>
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 border-l-4 border-l-[#08605F] pl-6 mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <img src={AIIcon} alt="IA Icon" className="w-4 h-4" />
+          <span className="text-sm font-semibold text-gray-700">Resumo</span>
+        </div>
+        <div className="text-sm text-gray-700 whitespace-pre-wrap">
+          {data?.insights ? cleanSpecialChars(data.insights) : 'Resumo não disponível.'}
+        </div>
       </div>
-      <div className="text-gray-600 text-sm mb-2">
-        <strong>Insight da IA:</strong> {data?.insights}
+      <div className="mb-2">
+        <span className="text-xs text-gray-500 font-semibold">Ciclo: {data?.cycleName || '-'}</span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs text-gray-500">
-        <div><strong>Média Autoavaliação:</strong> {data?.averageAuto || '-'}</div>
-        <div><strong>Média Gestor:</strong> {data?.averageManager || '-'}</div>
-        <div><strong>Média 360:</strong> {data?.averagePeer || '-'}</div>
-        <div><strong>Média Final:</strong> {data?.averageFinal || '-'}</div>
-        <div><strong>Total avaliados:</strong> {data?.totalEvaluated || '-'}</div>
+        <div><span className="font-semibold text-gray-600">Média Autoavaliação:</span> {data?.averageAuto || '-'}</div>
+        <div><span className="font-semibold text-gray-600">Média Gestor:</span> {data?.averageManager || '-'}</div>
+        <div><span className="font-semibold text-gray-600">Média 360:</span> {data?.averagePeer || '-'}</div>
+        <div><span className="font-semibold text-gray-600">Média Final:</span> {data?.averageFinal || '-'}</div>
+        <div><span className="font-semibold text-gray-600">Total avaliados:</span> {data?.totalEvaluated || '-'}</div>
       </div>
     </div>
   );
