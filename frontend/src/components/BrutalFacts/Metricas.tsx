@@ -97,16 +97,16 @@ const Metricas: React.FC = () => {
     subtitle: string;
     extra?: React.ReactNode;
   }> = ({ title, value, icon, subtitle, extra }) => (
-    <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center min-w-[220px]">
+    <div className="bg-white rounded-lg shadow p-4 sm:p-6 flex flex-col items-center min-w-0 w-full">
       <div className="flex items-center justify-center mb-2">{icon}</div>
-      <span className="text-gray-500 text-sm mb-1">{title}</span>
-      <span className="text-3xl font-bold text-gray-900 flex items-center gap-2">{value} {extra}</span>
-      <span className="text-xs text-gray-400 mt-1 text-center">{subtitle}</span>
+      <span className="text-gray-500 text-xs sm:text-sm mb-1 text-center">{title}</span>
+      <span className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">{value} {extra}</span>
+      <span className="text-xs text-gray-400 mt-1 text-center leading-tight">{subtitle}</span>
     </div>
   );
 
   return (
-    <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+    <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
       {metrics.map((metric, index) => (
         <MetricCard key={index} {...metric} />
       ))}

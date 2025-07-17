@@ -65,8 +65,8 @@ const BrutalFactsSummary: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-5xl bg-white rounded-lg shadow p-6 mb-6">
-      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 border-l-4 border-l-[#08605F] pl-6 mb-4">
+    <div className="w-full bg-white rounded-lg shadow p-4 sm:p-6">
+      <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 border-l-4 border-l-[#08605F] pl-4 sm:pl-6 mb-4">
         <div className="flex items-center gap-2 mb-2">
           <img src={AIIcon} alt="IA Icon" className="w-4 h-4" />
           <span className="text-sm font-semibold text-gray-700">Resumo</span>
@@ -78,12 +78,12 @@ const BrutalFactsSummary: React.FC = () => {
       <div className="mb-2">
         <span className="text-xs text-gray-500 font-semibold">Ciclo: {data?.cycleName || '-'}</span>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs text-gray-500">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs text-gray-500">
         <div><span className="font-semibold text-gray-600">Média Autoavaliação:</span> {data?.averageAuto || '-'}</div>
         <div><span className="font-semibold text-gray-600">Média Gestor:</span> {data?.averageManager || '-'}</div>
         <div><span className="font-semibold text-gray-600">Média 360:</span> {data?.averagePeer || '-'}</div>
         <div><span className="font-semibold text-gray-600">Média Final:</span> {data?.averageFinal || '-'}</div>
-        <div><span className="font-semibold text-gray-600">Total avaliados:</span> {data?.totalEvaluated || '-'}</div>
+        <div className="sm:col-span-2 lg:col-span-1"><span className="font-semibold text-gray-600">Total avaliados:</span> {data?.totalEvaluated || '-'}</div>
       </div>
     </div>
   );

@@ -32,30 +32,32 @@ const BrutalFacts: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center gap-8">
-      <h1 className="text-3xl font-bold mb-4">Brutal Facts</h1>
-      {loading || hasClosedCycle === null ? (
-        <div className="w-full max-w-4xl mb-2">
-          <div className="bg-gray-100 border border-gray-200 text-gray-600 rounded-lg p-4 text-center text-sm font-medium">
-            Carregando informações do ciclo...
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center">Brutal Facts</h1>
+        {loading || hasClosedCycle === null ? (
+          <div className="w-full mb-4">
+            <div className="bg-gray-100 border border-gray-200 text-gray-600 rounded-lg p-3 sm:p-4 text-center text-sm font-medium">
+              Carregando informações do ciclo...
+            </div>
           </div>
-        </div>
-      ) : !hasClosedCycle ? (
-        <div className="w-full max-w-4xl mb-2">
-          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg p-4 text-center text-base font-semibold">
-            Os dados de Brutal Facts só aparecerão quando houver pelo menos um
-            ciclo finalizado. Se o ciclo atual estiver em andamento, aguarde o
-            término para visualizar os dados.
+        ) : !hasClosedCycle ? (
+          <div className="w-full mb-4">
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg p-3 sm:p-4 text-center text-sm sm:text-base font-semibold">
+              Os dados de Brutal Facts só aparecerão quando houver pelo menos um
+              ciclo finalizado. Se o ciclo atual estiver em andamento, aguarde o
+              término para visualizar os dados.
+            </div>
           </div>
-        </div>
-      ) : (
-        <>
-          <Metricas />
-          <BrutalFactsSummary />
-          <BrutalFactsChart />
-          <BrutalFactsEqualizationList />
-        </>
-      )}
+        ) : (
+          <div className="space-y-4 sm:space-y-6">
+            <Metricas />
+            <BrutalFactsSummary />
+            <BrutalFactsChart />
+            <BrutalFactsEqualizationList />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
