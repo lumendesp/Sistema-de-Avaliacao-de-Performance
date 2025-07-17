@@ -171,7 +171,7 @@ function Committee(){
                 </div>
             ) : (
             <>
-            <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-2 sm:gap-4 m-2 sm:m-5">
+            <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 max-w-screen-xl mx-auto px-4">
                 <InfoCard 
                     name={cycle ? cycle.name : 'Prazo'} 
                     description={cycle && remainingDays !== null ?
