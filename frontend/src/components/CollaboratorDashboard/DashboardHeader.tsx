@@ -13,13 +13,6 @@ const DashboardHeader = ({ name }: Props) => {
       <h3 className="text-lg text-gray-800">
         <span className="font-semibold">Olá,</span> {name}
       </h3>
-      <button
-        onClick={() => navigate('/perfil')}
-        className="focus:outline-none group"
-        title="Ver perfil"
-      >
-        <UserBadge name={name} />
-      </button>
     </div>
   );
 };

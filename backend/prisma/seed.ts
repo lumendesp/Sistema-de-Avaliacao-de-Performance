@@ -130,23 +130,161 @@ async function main() {
     },
   });
 
-  await prisma.managerCollaborator.create({ data: { managerId: user2.id, collaboratorId: user1.id } });
+  const user3 = await prisma.user.create({
+    data: {
+      name: 'Lívia',
+      username: 'livia.b',
+      email: 'livia@example.com',
+      password: passwordHash,
+      active: true,
+      positionId: position1.id,
+      unitId: unit1.id,
+      trackId: track1.id,
+      roles: {
+        create: [
+          { role: 'COLLABORATOR' }
+        ],
+      },
+    },
+  });
 
-  // Ciclo
-  // await prisma.evaluationCycle.create({
-  //   data: {
-  //     name: '2025.1',
-  //     startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-  //     endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  //     status: 'IN_PROGRESS_COLLABORATOR',
-  //   },
-  // });
+  const user4 = await prisma.user.create({
+    data: {
+      name: 'Marcos Gabriel',
+      username: 'mgma',
+      email: 'marcos@example.com',
+      password: passwordHash,
+      active: true,
+      positionId: position2.id,
+      unitId: unit1.id,
+      trackId: track2.id,
+      roles: {
+        create: [
+          { role: 'COLLABORATOR' },
+          { role: 'MANAGER' },
+          { role: 'MENTOR' },
+        ],
+      },
+    },
+  });
+
+  const user5 = await prisma.user.create({
+    data: {
+      name: 'Guilherme Santos',
+      username: 'guilherme.s',
+      email: 'guilherme@example.com',
+      password: passwordHash,
+      active: true,
+      positionId: position2.id,
+      unitId: unit1.id,
+      trackId: track2.id,
+      roles: {
+        create: [
+          { role: 'COLLABORATOR' },
+          { role: 'MENTOR' },
+          { role: 'MANAGER' },
+        ],
+      },
+    },
+  });
+
+  const user6 = await prisma.user.create({
+    data: {
+      name: 'Diogo Henrique',
+      username: 'diogo.h',
+      email: 'diogo@example.com',
+      password: passwordHash,
+      active: true,
+      positionId: position2.id,
+      unitId: unit1.id,
+      trackId: track3.id,
+      roles: {
+        create: [
+          { role: 'COLLABORATOR' },
+          { role: 'COMMITTEE' },
+        ],
+      },
+    },
+  });
+
+  const user7 = await prisma.user.create({
+    data: {
+      name: 'Maria Luísa',
+      username: 'mlmsp',
+      email: 'maria@example.com',
+      password: passwordHash,
+      active: true,
+      positionId: position1.id,
+      unitId: unit1.id,
+      trackId: track1.id,
+      mentorId: 5,
+      roles: {
+        create: [
+          { role: 'COLLABORATOR' },
+          { role: 'HR' },
+        ],
+      },
+    },
+  });
+
+  const user8 = await prisma.user.create({
+    data: {
+      name: 'Rafael',
+      username: 'rafael.c',
+      email: 'rafael@example.com',
+      password: passwordHash,
+      active: true,
+      positionId: position2.id,
+      unitId: unit1.id,
+      trackId: track1.id,
+      mentorId: 4,
+      roles: {
+        create: [
+          { role: 'COLLABORATOR' },
+          { role: 'HR' },
+        ],
+      },
+    },
+  }); 
+
+  const user9 = await prisma.user.create({
+    data: {
+      name: 'Admin',
+      username: 'admin',
+      email: 'admin@example.com',
+      password: passwordAdmin,
+      active: true,
+      positionId: position2.id,
+      unitId: unit1.id,
+      trackId: track3.id,
+      roles: {
+        create: [
+          { role: 'COLLABORATOR' },
+          { role: 'MANAGER' },
+          { role: 'ADMIN' },
+          { role: 'COMMITTEE' },
+          { role: 'HR' },
+          { role: 'MENTOR' }
+        ],
+      },
+    },
+  });
+
+
+  //Gerentes
+
+  await prisma.managerCollaborator.create({ data: { managerId: user2.id, collaboratorId: user1.id } });
+  await prisma.managerCollaborator.create({ data: { managerId: user4.id, collaboratorId: user3.id } });
+  await prisma.managerCollaborator.create({ data: { managerId: user4.id, collaboratorId: user7.id } });
+  await prisma.managerCollaborator.create({ data: { managerId: user5.id, collaboratorId: user6.id } });
+  await prisma.managerCollaborator.create({ data: { managerId: user5.id, collaboratorId: user8.id } });
+
+
 
   // Projetos
   const projects = [
-    { name: 'Project Apollo', description: 'Sistema de automação para produção' },
-    { name: 'Project Orion', description: 'Gerenciamento de equipes' },
-    { name: 'Project Vega', description: 'Análise de dados para marketing' },
+    { name: 'Project RocketCorp Backend', description: 'Backend do sistema' },
+    { name: 'Project RocketCorp Frontend', description: 'Frontend do sistema' },
   ];
 
   for (const proj of projects) {
