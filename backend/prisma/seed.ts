@@ -133,14 +133,14 @@ async function main() {
   await prisma.managerCollaborator.create({ data: { managerId: user2.id, collaboratorId: user1.id } });
 
   // Ciclo
-  await prisma.evaluationCycle.create({
-    data: {
-      name: '2025.1',
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      status: 'IN_PROGRESS_COLLABORATOR',
-    },
-  });
+  // await prisma.evaluationCycle.create({
+  //   data: {
+  //     name: '2025.1',
+  //     startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+  //     endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  //     status: 'IN_PROGRESS_COLLABORATOR',
+  //   },
+  // });
 
   // Projetos
   const projects = [
