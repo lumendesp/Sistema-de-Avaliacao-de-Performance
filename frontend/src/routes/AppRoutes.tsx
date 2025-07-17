@@ -58,7 +58,6 @@ import RHImport from "../pages/RH/RHImport/RHImport.tsx";
 
 import BrutalFacts from "../pages/manager/BrutalFacts";
 
-
 const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
@@ -168,7 +167,7 @@ const AppRoutes = () => (
         <Route path="collaborators" element={<MentorStatus />} />
         <Route path="avaliacao/:id" element={<MentorEvaluationLayout />}>
           <Route index element={<MentorEvaluationPage />} />
-          <Route path="" element={<div>Selecione uma aba</div>} />
+          <Route path="historico" element={<EvolutionCollaborator />} />
           <Route path="360" element={<PeerEvaluationMentor />} />
           <Route
             path="autoavaliacao"
