@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ProfileCard from "../../components/UserPofile/ProfileCard";
 import { getUserById } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
@@ -17,6 +17,7 @@ interface ProfileData {
 const Profile: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const location = useLocation();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,9 +53,24 @@ const Profile: React.FC = () => {
       "COMMITTEE",
       "HR",
     ];
-    const previousPath =
-      window.history.state?.usr?.pathname || document.referrer || "";
-    // Se veio do login/logout, sempre colaborador
+
+    // 1. Prioriza role passada via navigation state (mais confiável)
+    const fromRole = location.state?.fromRole;
+    if (fromRole && (isAdmin ? allRoles.includes(fromRole) : roleNames.includes(fromRole))) {
+      sessionStorage.setItem("lastProfileAccount", fromRole);
+      return fromRole;
+    }
+
+    // 2. Se não veio via state, tenta sessionStorage
+    if (
+      lastAccount &&
+      (isAdmin ? allRoles.includes(lastAccount) : roleNames.includes(lastAccount as Role))
+    ) {
+      return lastAccount;
+    }
+
+    // 3. Se não, tenta heurística pelo path anterior (menos confiável)
+    const previousPath = window.history.state?.usr?.pathname || document.referrer || "";
     if (
       !previousPath ||
       previousPath.endsWith("/login") ||
@@ -63,27 +79,26 @@ const Profile: React.FC = () => {
       sessionStorage.removeItem("lastProfileAccount");
       return "COLLABORATOR";
     }
-    if (
-      lastAccount &&
-      (isAdmin
-        ? allRoles.includes(lastAccount)
-        : roleNames.includes(lastAccount as Role))
-    ) {
-      return lastAccount;
-    }
 
     if (isAdmin && roleNames.includes("COLLABORATOR")) {
       return "COLLABORATOR";
     }
     if (previousPath.includes("manager"))
       return (
-        profile.roles.find((a) => a.role.toLowerCase().includes("gestor"))
-          ?.role || roleNames[0]
+        profile.roles.find((a) => a.role.toLowerCase().includes("gestor"))?.role ||
+        profile.roles.find((a) => a.role.toLowerCase().includes("manager"))?.role ||
+        roleNames[0]
       );
     if (previousPath.includes("collaborator"))
       return (
-        profile.roles.find((a) => a.role.toLowerCase().includes("colaborador"))
-          ?.role || roleNames[0]
+        profile.roles.find((a) => a.role.toLowerCase().includes("colaborador"))?.role ||
+        profile.roles.find((a) => a.role.toLowerCase().includes("collaborator"))?.role ||
+        roleNames[0]
+      );
+    if (previousPath.includes("mentor"))
+      return (
+        profile.roles.find((a) => a.role.toLowerCase().includes("mentor"))?.role ||
+        roleNames[0]
       );
     if (previousPath.includes("rh"))
       return (
@@ -92,8 +107,8 @@ const Profile: React.FC = () => {
       );
     if (previousPath.includes("committee"))
       return (
-        profile.roles.find((a) => a.role.toLowerCase().includes("committee"))
-          ?.role || roleNames[0]
+        profile.roles.find((a) => a.role.toLowerCase().includes("committee"))?.role ||
+        roleNames[0]
       );
     return roleNames[0];
   }
