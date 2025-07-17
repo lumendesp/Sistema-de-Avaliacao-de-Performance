@@ -8,7 +8,7 @@ import RHLayout from "../layouts/RHLayout";
 import EvaluationLayout from "../layouts/EvaluationLayout";
 import ComparisonLayout from "../layouts/ComparisonLayout"; // novo
 import MentorLayout from "../layouts/MentorLayout";
-import AdminLayout from '../layouts/AdminLayout';
+import AdminLayout from "../layouts/AdminLayout";
 
 import Dashboard from "../pages/collaborator/Dashboard";
 import SelfEvaluation from "../pages/collaborator/evaluation/SelfEvaluation";
@@ -180,7 +180,7 @@ const AppRoutes = () => (
         <Route path="collaborators" element={<MentorStatus />} />
         <Route path="avaliacao/:id" element={<MentorEvaluationLayout />}>
           <Route index element={<MentorEvaluationPage />} />
-          <Route path="" element={<div>Selecione uma aba</div>} />
+          <Route path="historico" element={<EvolutionCollaborator />} />
           <Route path="360" element={<PeerEvaluationMentor />} />
           <Route
             path="autoavaliacao"
@@ -233,7 +233,7 @@ const AppRoutes = () => (
         {/* <Route path="climate-surveys" element={<RHSurveys />} /> */}
       </Route>
       <Route path="/perfil" element={<Profile />} />
-      
+
       <Route
         path="/admin"
         element={
