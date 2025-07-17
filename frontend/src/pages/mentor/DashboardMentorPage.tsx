@@ -4,7 +4,7 @@ import PlanoFuturo from "../../components/dashboard/PlanoFuturo";
 import Metricas from "../../components/dashboard/Metricas";
 import EvaluationStatusButton from '../../components/EvaluationStatusButton/EvaluationStatusButton';
 import { useAuth } from '../../context/AuthContext';
-import { fetchActiveEvaluationCycle } from '../../services/api';
+import { fetchMostRecentEvaluationCycle } from '../../services/api';
 
 const DashboardMentorPage: React.FC = () => {
   const { user } = useAuth();
@@ -14,7 +14,7 @@ const DashboardMentorPage: React.FC = () => {
   useEffect(() => {
     const fetchCycle = async () => {
       try {
-        const ciclo = await fetchActiveEvaluationCycle('COLLABORATOR');
+        const ciclo = await fetchMostRecentEvaluationCycle();
         setCycle(ciclo);
         if (ciclo && ciclo.endDate) {
           const endDate = new Date(ciclo.endDate);
@@ -57,7 +57,7 @@ const DashboardMentorPage: React.FC = () => {
             status={mapCycleStatusToUIStatus(cycle.status)}
             ciclo={cycle.name}
             diasRestantes={diasRestantes}
-            context="manager"
+            context="mentor"
             originalStatus={cycle.status}
           />
         ) : (
@@ -65,7 +65,7 @@ const DashboardMentorPage: React.FC = () => {
             status="emBreve"
             ciclo=""
             diasRestantes={undefined}
-            context="manager"
+            context="mentor"
             originalStatus={undefined}
           />
         )}
