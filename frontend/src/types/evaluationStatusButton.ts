@@ -5,4 +5,6 @@ export interface EvaluationStatusButtonProps
   status: EvaluationStatus;
   ciclo: string;
   diasRestantes?: number;
+  context?: 'collaborator' | 'manager' | 'mentor'; // novo prop
+  originalStatus?: string; // status real do ciclo
 }

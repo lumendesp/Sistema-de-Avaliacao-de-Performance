@@ -1,0 +1,24 @@
+-- CreateTable
+CREATE TABLE "PDI" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "userId" INTEGER NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "PDI_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "PDIAction" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "pdiId" INTEGER NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "category" TEXT NOT NULL,
+    "priority" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "dueDate" DATETIME NOT NULL,
+    "progress" INTEGER NOT NULL,
+    CONSTRAINT "PDIAction_pdiId_fkey" FOREIGN KEY ("pdiId") REFERENCES "PDI" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);

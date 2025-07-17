@@ -1,4 +1,5 @@
 export interface SubmitEvaluationButtonProps {
   isComplete: boolean;
-  onClick?: () => void;
+  onClick: () => void;
+  label: string;
 }

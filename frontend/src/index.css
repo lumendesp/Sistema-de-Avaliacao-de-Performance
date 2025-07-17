@@ -7,3 +7,39 @@ body {
   margin: 0;
   padding: 0;
 }
+
+.styled-scrollbar::-webkit-scrollbar {
+  @apply w-[4px] h-[4px];
+}
+
+.styled-scrollbar::-webkit-scrollbar-track {
+  @apply rounded-[10px] my-[2px];
+
+  background: rgba(241, 241, 241, 0.468);
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-[#bfbfbf] rounded-[10px];
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-[#6d6d6d];
+}
+
+.loader {
+  border: 3px solid #085F60;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

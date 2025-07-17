@@ -4,7 +4,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from "jspdf";
 import downloadIcon from '../../../assets/committee/pdf-download.png';
 import GenAITextBox from "./GenAITextBox";
-import * as XLSX from 'xlsx';
+import { exportEvaluationToExcel, exportEvaluationToCSV, createSampleEvaluationData, transformBackendDataToExport } from '../../../services/export.service';
 
 interface CriterionProps {
     name: string;
@@ -12,6 +12,8 @@ interface CriterionProps {
 }
 
 const Criterion = ({ name, score }: CriterionProps) => {
+
+
     const getColorClass = (score: number) => {
         if (score >= 4) return 'text-[#419958]';
         if (score >= 3) return 'text-[#F5AA30]';
@@ -24,18 +26,25 @@ const Criterion = ({ name, score }: CriterionProps) => {
         return 'bg-red-600';
     };
 
+    const adjustScoreBar = (score:number) => {
+        if(score > 5){
+            score = 5
+        }
+        return (score / 5) * 100;
+    }
+
     return (
         <div className="flex flex-col items-center gap-2 w-full sm:w-1/3">
             <div className="flex items-center gap-2">
                 <span className="text-xs sm:text-sm font-medium text-gray-700">{name}</span>
                 <span className={`text-xs sm:text-sm font-bold ${getColorClass(score)}`}>
-                    {score.toFixed(1)}
+                    {Math.round(score * 10) / 10}
                 </span>
             </div>
             <div className="w-full h-2 bg-gray-200 rounded-full">
                 <div 
                     className={`h-full rounded-full ${getBarColorClass(score)}`}
-                    style={{ width: `${(score / 5) * 100}%` }}
+                    style={{ width: `${adjustScoreBar(Math.round(score * 10) / 10)}%` }}
                 />
             </div>
         </div>
@@ -43,10 +52,12 @@ const Criterion = ({ name, score }: CriterionProps) => {
 };
 
 interface EvaluationSummaryProps {
+    userId: number;
     name: string;
     role: string;
     autoAvaliacao: number;
     avaliacao360: number;
+    notaMentor: number;
     notaGestor: number;
     notaFinal?: number;
     onEdit?: () => void;
@@ -57,17 +68,21 @@ interface EvaluationSummaryProps {
     currentScore?: number;
     currentJustification?: string;
     isEditing?: boolean;
-    id?: string;
     justificativaAutoAvaliacao?: string;
+    justificativaMentor?: string;
     justificativaGestor?: string;
     justificativa360?: string;
+    backendData?: any;
+    cycleId: number;
 }
 
 function EvaluationSummary({ 
+    userId,
     name,
     role,
     autoAvaliacao, 
     avaliacao360, 
+    notaMentor,
     notaGestor, 
     notaFinal,
     onEdit,
@@ -77,15 +92,18 @@ function EvaluationSummary({
     currentScore = 0,
     currentJustification = '',
     isEditing = false,
-    id,
     justificativaAutoAvaliacao = '',
+    justificativaMentor = '',
     justificativaGestor = '',
-    justificativa360 = ''
+    justificativa360 = '',
+    backendData,
+    cycleId
 }: EvaluationSummaryProps) {
     
     const hasAllGrades =
         typeof autoAvaliacao === 'number' &&
         typeof avaliacao360 === 'number' &&
+        typeof notaMentor === 'number' &&
         typeof notaGestor === 'number' &&
         typeof notaFinal === 'number';
       
@@ -135,26 +153,32 @@ function EvaluationSummary({
                 <div style="text-align: center; width: 23%;">
                     <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Autoavaliação</h3>
                     <div style="font-size: 24px; font-weight: bold; color: ${autoAvaliacao >= 4 ? '#16a34a' : autoAvaliacao >= 3 ? '#ca8a04' : '#dc2626'}">
-                        ${autoAvaliacao.toFixed(1)}
+                        ${Math.round(autoAvaliacao * 10) / 10}
                     </div>
                 </div>
                 <div style="text-align: center; width: 23%;">
                     <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Nota Gestor</h3>
                     <div style="font-size: 24px; font-weight: bold; color: ${notaGestor >= 4 ? '#16a34a' : notaGestor >= 3 ? '#ca8a04' : '#dc2626'}">
-                        ${notaGestor.toFixed(1)}
+                        ${Math.round(notaGestor * 10) / 10}
+                    </div>
+                </div>
+                <div style="text-align: center; width: 23%;">
+                    <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Nota Gestor</h3>
+                    <div style="font-size: 24px; font-weight: bold; color: ${notaMentor >= 4 ? '#16a34a' : notaMentor >= 3 ? '#ca8a04' : '#dc2626'}">
+                        ${Math.round(notaMentor * 10) / 10}
                     </div>
                 </div>
                 <div style="text-align: center; width: 23%;">
                     <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Avaliação 360</h3>
                     <div style="font-size: 24px; font-weight: bold; color: ${avaliacao360 >= 4 ? '#16a34a' : avaliacao360 >= 3 ? '#ca8a04' : '#dc2626'}">
-                        ${avaliacao360.toFixed(1)}
+                        ${Math.round(avaliacao360 * 10) / 10}
                     </div>
                 </div>
                 ${typeof notaFinal === 'number' ? `
                     <div style="text-align: center; width: 23%;">
                         <h3 style="font-size: 14px; color: #666; margin-bottom: 8px;">Nota Final</h3>
                         <div style="font-size: 24px; font-weight: bold; color: ${notaFinal >= 4 ? '#16a34a' : notaFinal >= 3 ? '#ca8a04' : '#dc2626'}">
-                            ${notaFinal.toFixed(1)}
+                            ${Math.round(notaFinal * 10) / 10}
                         </div>
                     </div>
                 ` : ''}
@@ -163,26 +187,32 @@ function EvaluationSummary({
             <div style="margin-top: 40px;">
                 <h3 style="font-size: 16px; color: #08605F; margin-bottom: 16px;">Justificativas das Avaliações</h3>
                 <div style="margin-bottom: 20px;">
-                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Autoavaliação (${autoAvaliacao.toFixed(1)})</h4>
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Autoavaliação (${Math.round(autoAvaliacao * 10) / 10})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
-                        ${justificativaAutoAvaliacao || 'Justificativa não disponível'}
+                        ${backendData?.justificativaAutoAvaliacao || justificativaAutoAvaliacao || 'Justificativa não disponível'}
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
-                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Gestor (${notaGestor.toFixed(1)})</h4>
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Mentor (${Math.round(notaMentor * 10) / 10})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
-                        ${justificativaGestor || 'Justificativa não disponível'}
+                        ${backendData?.justificativaMentor || justificativaMentor || 'Justificativa não disponível'}
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
-                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação 360° (${avaliacao360.toFixed(1)})</h4>
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação do Gestor (${Math.round(notaGestor * 10) / 10})</h4>
                     <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
-                        ${justificativa360 || 'Justificativa não disponível'}
+                        ${backendData?.justificativaGestor || justificativaGestor || 'Justificativa não disponível'}
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação 360° (${Math.round(avaliacao360 * 10) / 10})</h4>
+                    <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
+                        ${backendData?.justificativa360 || justificativa360 || 'Justificativa não disponível'}
                     </div>
                 </div>
                 ${typeof notaFinal === 'number' ? `
                     <div style="margin-bottom: 20px;">
-                        <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação Final do Comitê (${notaFinal.toFixed(1)})</h4>
+                        <h4 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px;">Avaliação Final do Comitê (${Math.round(notaFinal * 10) / 10})</h4>
                         <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; background-color: #f9fafb; font-size: 13px; line-height: 1.4;">
                             ${currentJustification || 'Justificativa não disponível'}
                         </div>
@@ -222,55 +252,15 @@ function EvaluationSummary({
 
     // CSV/Excel download logic
     const handleDownloadSpreadsheet = (type: 'csv' | 'xlsx') => {
-        const data = [
-            {
-                'ID': id || '',
-                'Nome': name,
-                'Cargo': role,
-                'Autoavaliação': autoAvaliacao,
-                'Justificativa Autoavaliação': justificativaAutoAvaliacao || 'Não disponível',
-                'Avaliação 360°': avaliacao360,
-                'Justificativa 360°': justificativa360 || 'Não disponível',
-                'Nota do Gestor': notaGestor,
-                'Justificativa do Gestor': justificativaGestor || 'Não disponível',
-                'Nota Final': notaFinal ?? '',
-                'Justificativa Final': currentJustification || 'Não disponível'
-            }
-        ];
-
-        const filename = generateFilename(type);
-
+        // Use real backend data if available, otherwise use sample data
+        const evaluationData = backendData 
+            ? transformBackendDataToExport(backendData)
+            : createSampleEvaluationData(name, `${name.toLowerCase().replace(/\s+/g, '.')}@empresa.com`);
+        
         if (type === 'csv') {
-            const csvRows = [
-                Object.keys(data[0]).join(','),
-                ...data.map(row => Object.values(row).map(value => 
-                    typeof value === 'string' && value.includes(',') ? `"${value}"` : value
-                ).join(','))
-            ];
-            const csvContent = csvRows.join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-            URL.revokeObjectURL(url);
+            exportEvaluationToCSV(evaluationData);
         } else {
-            const wb = XLSX.utils.book_new();
-            
-            // Create sheets
-            const profileSheet = XLSX.utils.json_to_sheet(data);
-            const selfAssessmentSheet = XLSX.utils.json_to_sheet(data);
-            const assessment360Sheet = XLSX.utils.json_to_sheet(data);
-            const referenceSheet = XLSX.utils.json_to_sheet(data);
-
-            // Append sheets with specified names
-            XLSX.utils.book_append_sheet(wb, profileSheet, 'Perfil');
-            XLSX.utils.book_append_sheet(wb, selfAssessmentSheet, 'Autoavaliação');
-            XLSX.utils.book_append_sheet(wb, assessment360Sheet, 'Avaliação 360');
-            XLSX.utils.book_append_sheet(wb, referenceSheet, 'Pesquisa de Referência');
-            
-            XLSX.writeFile(wb, filename);
+            exportEvaluationToExcel(evaluationData);
         }
         
         // Close modals
@@ -284,23 +274,23 @@ function EvaluationSummary({
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             {/* Download Modal */}
             {showDownloadModal && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 w-full max-w-sm flex flex-col items-center">
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 p-2 sm:p-4">
+                    <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 w-full max-w-xs sm:max-w-sm flex flex-col items-center">
                         {!showSpreadsheetOptions ? (
                             <>
-                                <div className="flex flex-col w-full space-y-3">
-                                    <h2 className="text-lg font-semibold mb-4 text-center">Escolha o formato de download</h2>
+                                <div className="flex flex-col w-full space-y-2 sm:space-y-3">
+                                    <h2 className="text-base sm:text-lg font-semibold mb-2 sm:mb-4 text-center">Escolha o formato de download</h2>
                                     <button
-                                        className="px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
+                                        className="px-4 sm:px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
                                         onClick={() => setShowSpreadsheetOptions(true)}
                                     >
                                         Planilha
                                     </button>
                                     <button
-                                        className="mb-3 px-6 py-2 bg-gray-250 text-gray-800 rounded hover:bg-gray-300 w-full"
+                                        className="mb-2 sm:mb-3 px-4 sm:px-6 py-2 bg-gray-250 text-gray-800 rounded hover:bg-gray-300 w-full"
                                         onClick={() => {
                                             handleDownloadPdf();
                                         }}
@@ -308,7 +298,7 @@ function EvaluationSummary({
                                         PDF
                                     </button>
                                     <button
-                                        className="mt-4 text-sm text-gray-500 hover:underline"
+                                        className="mt-2 sm:mt-4 text-xs sm:text-sm text-gray-500 hover:underline"
                                         onClick={handleCloseModals}
                                     >
                                         Cancelar
@@ -317,22 +307,22 @@ function EvaluationSummary({
                             </>
                         ) : (
                             <>
-                                <div className="flex flex-col w-full space-y-3">
-                                    <h2 className="text-lg font-semibold mb-4 text-center">Escolha o formato da planilha</h2>
+                                <div className="flex flex-col w-full space-y-2 sm:space-y-3">
+                                    <h2 className="text-base sm:text-lg font-semibold mb-2 sm:mb-4 text-center">Escolha o formato da planilha</h2>
                                     <button
-                                        className="mb-3 px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
-                                        onClick={() => handleDownloadSpreadsheet('csv')}
-                                    >
-                                        CSV
-                                    </button>
-                                    <button
-                                        className="px-6 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 w-full"
+                                        className="px-4 sm:px-6 py-2 bg-[#08605F] text-white rounded hover:bg-[#064a49] w-full"
                                         onClick={() => handleDownloadSpreadsheet('xlsx')}
                                     >
                                         Excel
                                     </button>
                                     <button
-                                        className="mt-4 text-sm text-gray-500 hover:underline"
+                                        className="mb-2 sm:mb-3 px-4 sm:px-6 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 w-full"
+                                        onClick={() => handleDownloadSpreadsheet('csv')}
+                                    >
+                                        CSV
+                                    </button>
+                                    <button
+                                        className="mt-2 sm:mt-4 text-xs sm:text-sm text-gray-500 hover:underline"
                                         onClick={() => setShowSpreadsheetOptions(false)}
                                     >
                                         Voltar
@@ -346,24 +336,27 @@ function EvaluationSummary({
             )}
 
             {/* Content for PDF */}
-            <div ref={printRef} className="space-y-6">
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div ref={printRef} className="space-y-4 sm:space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4">
                     <Criterion name="Autoavaliação" score={autoAvaliacao} />
-                    <Criterion name="Nota Gestor" score={notaGestor} />
                     <Criterion name="Avaliação 360" score={avaliacao360} />
+                    <Criterion name="Nota Gestor" score={notaGestor} />
+                    <Criterion name="Nota Mentor" score={notaMentor} />
                     {typeof notaFinal === 'number' && (
                         <Criterion name="Nota Final" score={notaFinal} />
                     )}
                 </div>
 
-                <GenAITextBox/>
+                <div className="w-full">
+                    <GenAITextBox userId={userId} cycleId={cycleId}/>
+                </div>
 
             </div>
 
             {(!hasAllGrades || isEditing) ? (
                 <>
                     <div>
-                        <h3 className="text-sm font-semibold mb-2">Dê uma avaliação de 0 à 5</h3>
+                        <h3 className="text-xs sm:text-sm font-semibold mb-1 sm:mb-2">Dê uma avaliação de 0 à 5</h3>
                         <CommitteeStarRating 
                             score={currentScore} 
                             onChange={onStarRating || (() => {})} 
@@ -371,7 +364,7 @@ function EvaluationSummary({
                     </div>
                     
                     <div>
-                        <h3 className="text-sm font-semibold mb-2">Justifique sua nota</h3>
+                        <h3 className="text-xs sm:text-sm font-semibold mb-1 sm:mb-2">Justifique sua nota</h3>
                         <textarea 
                             className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#08605F]"
                             rows={4}
@@ -381,7 +374,7 @@ function EvaluationSummary({
                         />
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4">
                         <button
                             className="px-4 py-2 bg-[#08605F] text-white rounded-md hover:bg-[#064a49] transition-colors"
                             onClick={onConcluir}
@@ -398,12 +391,14 @@ function EvaluationSummary({
                     >
                         <img src={downloadIcon} alt="Download PDF" className="w-5 h-5" />
                     </button>
-                    <button 
-                        onClick={onEdit}
-                        className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-[#08605F] hover:text-white transition-colors"
-                    >
-                        Editar Avaliação
-                    </button>
+                    {typeof onEdit === 'function' && (
+                        <button 
+                            onClick={onEdit}
+                            className="px-4 py-2 text-[#08605F] border border-[#08605F] rounded-md hover:bg-[#08605F] hover:text-white transition-colors"
+                        >
+                            Editar Avaliação
+                        </button>
+                    )}
                 </div>
             )}
         </div>

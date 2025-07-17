@@ -83,7 +83,7 @@ function InfoCard({
     };
 
     return (
-        <div className={`w-full lg:w-[400px] h-auto min-h-[120px] ${backgroundColors[bgColor]} rounded-xl shadow-md p-4 flex flex-col sm:flex-row justify-between gap-4`}>        
+        <div className={`w-full h-full min-h-[120px] ${backgroundColors[bgColor]} rounded-xl shadow-md p-4 flex flex-col sm:flex-row justify-between gap-4`}>     
             <div className="flex-1">
                 <div className="ml-0 sm:ml-3">
                     <h2 className={`text-base sm:text-lg font-semibold ${textColors[textColor]} truncate`}>{name}</h2>

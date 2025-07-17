@@ -8,18 +8,19 @@ interface RHMetricsCardProps {
     icon: React.ElementType; // Para usar ícones do Heroicons
     iconBgColor: string;
     iconColor: string;
+    backgroundColor?: string;
 }
 
-const RHMetricsCard: React.FC<RHMetricsCardProps> = ({ title, description, value, unit, icon: Icon, iconBgColor, iconColor }) => {
+const RHMetricsCard: React.FC<RHMetricsCardProps> = ({ title, description, value, unit, icon: Icon, iconBgColor, iconColor, backgroundColor = 'bg-white' }) => {
     return (
-        <div className="bg-white rounded-xl shadow-md p-6 flex items-center justify-between">
+        <div className={`rounded-xl shadow-md p-6 flex items-center justify-between ${backgroundColor}`}>
             <div>
                 <h2 className="text-lg font-semibold text-gray-700">{title}</h2>
-                <p className="text-sm text-gray-500 mt-1">{description}</p>
+                <p className="text-sm font-semibold text-gray-500 mt-1">{description}</p>
             </div>
             <div className="flex items-center gap-x-3 ml-4">
                 <div className={`p-3 rounded-full ${iconBgColor}`}>
-                    <Icon className={`h-7 w-7 ${iconColor}`} />
+                    <Icon className={`h-12 w-12 ${iconColor}`} />
                 </div>
                 <div className="flex items-baseline text-right">
                     <span className="text-4xl font-bold text-gray-800">{value}</span>

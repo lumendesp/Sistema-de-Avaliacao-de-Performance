@@ -1,45 +1,90 @@
-import React, { useState } from 'react';
-import { mockCollaborators } from '../../../data/rh_data';
+import React, { useState, useEffect } from 'react';
+import { getRhCollaborators } from '../../../services/api';
+import { type RhCollaborator } from '../../../types/rh';
 import RHCollaboratorInfoCard from '../../../components/RH/RHCollaboratorInfoCard/RHCollaboratorInfoCard';
-import RHCollaboratorSearchBar from '../../../components/RH/RHCollaboratorSearchBar/RHCollaboratorSearchBar';
-import { FunnelIcon } from '@heroicons/react/24/outline';
+/* import RHCollaboratorSearchBar from '../../../components/RH/RHCollaboratorSearchBar/RHCollaboratorSearchBar'; */
+import { IoIosSearch } from "react-icons/io";
+
+function useDebounce(value: string, delay: number) {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+    return debouncedValue;
+}
 
 const RHCollaboratorsPage: React.FC = () => {
 
+    const [collaborators, setCollaborators] = useState<RhCollaborator[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearchTerm = useDebounce(searchTerm, 250);
 
-    const filteredCollaborators = mockCollaborators.filter(collaborator =>
-        collaborator.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!initialLoading) {
+                setIsSearching(true);
+            }
+
+            try {
+                const data = await getRhCollaborators(undefined, debouncedSearchTerm);
+                setCollaborators(data);
+            } catch (err) {
+                setError('Falha ao carregar a lista de colaboradores.');
+                console.error(err);
+            } finally {
+                setInitialLoading(false);
+                setIsSearching(false);
+            }
+        };
+
+        fetchData();
+    }, [debouncedSearchTerm]);
+
+    if (initialLoading) {
+        return <div className="p-8 text-center text-gray-500">Carregando colaboradores...</div>;
+    }
+
+    if (error) {
+        return <div className="p-8 text-center text-red-500">{error}</div>;
+    }
 
     return (
         <>
             <h1 className="text-3xl font-bold text-gray-800 mb-6">Colaboradores</h1>
 
-            {/* 3. A toolbar com a busca e o filtro, como no Figma */}
             <div className="flex items-center justify-between mb-6">
-                <div className="w-full max-w-sm">
-                    <RHCollaboratorSearchBar
-                        searchTerm={searchTerm}
-                        onSearchChange={setSearchTerm}
+                <div className="w-full relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <IoIosSearch className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Buscar por nome..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
-                <button className="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-700 font-semibold hover:bg-gray-50">
-                    <FunnelIcon className="h-5 w-5" />
-                    <span>Filtrar</span>
-                </button>
             </div>
 
-
-            {/* 4. A lista é renderizada com base nos resultados filtrados */}
-            <div className="flex flex-col gap-4">
-                {filteredCollaborators.length > 0 ? (
-                    filteredCollaborators.map(collaborator => (
+            <div className={`flex flex-col gap-4 transition-opacity duration-300 ${isSearching ? 'opacity-50' : 'opacity-100'}`}>
+                {collaborators.length > 0 ? (
+                    collaborators.map(collaborator => (
                         <RHCollaboratorInfoCard key={collaborator.id} collaborator={collaborator} />
                     ))
                 ) : (
                     <div className="text-center py-10 bg-white rounded-lg shadow-sm">
-                        <p className="text-gray-600">Nenhum colaborador encontrado para sua busca.</p>
+                        <p className="text-gray-600">
+                            {searchTerm ? `Nenhum colaborador encontrado para "${searchTerm}".` : "Nenhum colaborador encontrado."}
+                        </p>
                     </div>
                 )}
             </div>

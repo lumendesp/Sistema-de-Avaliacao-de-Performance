@@ -1,21 +1,54 @@
-export interface ComparisonCriterion {
-  title: string;
-}
-
 export interface EvaluationComparisonItemProps {
   index: number;
   title: string;
-
   selfScore: number;
   finalScore: number;
-
-  setSelfScore: (value: number) => void;
-
   justification: string;
-  setJustification: (value: string) => void;
+  readOnly?: boolean;
 }
 
-export interface EvaluationComparisonFormProps {
+export interface EvaluationComparisonItemData {
   title: string;
-  criteria: ComparisonCriterion[];
+  selfScore: number;
+  finalScore: number;
+  justification: string;
+}
+
+export interface SubmittedSelfEvaluationItem {
+  id: number;
+  criterionId: number;
+  score: number;
+  justification: string;
+  scoreDescription: string;
+  group: {
+    id: number;
+    name: string;
+  } | null;
+}
+export interface EvaluationComparisonItemProps {
+  index: number;
+  title: string;
+  selfScore: number;
+  finalScore: number;
+  justification: string;
+}
+
+export interface EvaluationComparisonItemData {
+  criterionId: number;
+  title: string;
+  selfScore: number;
+  finalScore: number;
+  justification: string;
+}
+
+export interface SubmittedSelfEvaluationItem {
+  id: number;
+  criterionId: number;
+  score: number;
+  justification: string;
+  scoreDescription: string;
+  group: {
+    id: number;
+    name: string;
+  } | null;
 }

@@ -9,12 +9,14 @@ interface CriteriaSectionProps {
     index: number,
     updated: Partial<EvaluationCriterion>
   ) => void;
+  readOnly?: boolean;
 }
 
 export default function CriteriaSection({
   title,
   criteria,
   onCriterionChange,
+  readOnly = false,
 }: CriteriaSectionProps) {
   // Calcula quantos critérios estão preenchidos
   const filledCount = criteria.filter(
@@ -32,6 +34,7 @@ export default function CriteriaSection({
           criteria.length
         ).toFixed(1)
       : "-";
+
   const managerRatings = criteria.filter(
     (c) => c.managerRating && c.managerRating > 0
   );
@@ -44,31 +47,38 @@ export default function CriteriaSection({
       : "-";
 
   return (
-    <section className="bg-white rounded-md p-8 shadow-md w-full max-w-7xl mx-auto min-h-[80vh]">
-      <div className="flex items-center justify-between mb-6 w-full">
-        <h2 className="text-lg font-bold text-[#08605F] whitespace-nowrap mr-4">
+    <section className="bg-white rounded-xl px-6 py-9 w-full overflow-x-hidden">
+      <div className="flex flex-col w-full max-w-full">
+        <h2 className="text-base sm:text-lg font-bold text-[#08605F] mr-0 sm:mr-4 w-full truncate max-w-full">
           {title}
         </h2>
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="bg-gray-100 text-[#08605F] font-bold text-base rounded px-4 py-1 flex items-center">
-            {selfAvg}
-          </span>
-          <span className="bg-[#08605F] text-white font-bold text-base rounded px-4 py-1 flex items-center">
-            {managerAvg}
-          </span>
-          <span className="bg-teal-100 text-[#17939A] font-medium text-base rounded px-4 py-1">
-            {filledCount}/{criteria.length} preenchidos
-          </span>
+        <div className="flex w-full max-w-full">
+          <div className="flex items-center w-full justify-center sm:justify-end max-w-full overflow-x-hidden">
+            <div className="flex flex-row gap-1 min-w-0 flex-shrink-0 flex-nowrap w-auto">
+              <span className="bg-gray-100 text-[#08605F] font-bold text-base rounded px-3 py-1 flex items-center min-w-[3.5rem] max-w-[4.5rem] whitespace-nowrap">
+                {selfAvg}
+              </span>
+              <span className="bg-[#08605F] text-white font-bold text-base rounded px-3 py-1 flex items-center min-w-[3.5rem] max-w-[4.5rem] whitespace-nowrap">
+                {managerAvg}
+              </span>
+              <span className="bg-teal-100 text-[#17939A] font-medium text-base rounded px-3 py-1 min-w-[7rem] max-w-full whitespace-nowrap">
+                {filledCount}/{criteria.length} preenchidos
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-      {criteria.map((criterion, idx) => (
-        <EvaluationCard
-          key={criterion.id}
-          criterion={criterion}
-          index={idx}
-          onChange={(updated) => onCriterionChange(idx, updated)}
-        />
-      ))}
+      <div className="w-full">
+        {criteria.map((criterion, idx) => (
+          <EvaluationCard
+            key={criterion.id}
+            criterion={criterion}
+            index={idx}
+            onChange={(updated) => onCriterionChange(idx, updated)}
+            readOnly={readOnly}
+          />
+        ))}
+      </div>
     </section>
   );
 }
