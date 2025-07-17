@@ -3,6 +3,7 @@ export type EvaluationStatus = 'finalizado' | 'pendente' | 'em_andamento';
 export interface AssessmentScores {
     autoAvaliacao?: number;
     avaliacao360?: number;
+    notaMentor?: number;
     notaGestor?: number;
     notaFinal?: number;
 }

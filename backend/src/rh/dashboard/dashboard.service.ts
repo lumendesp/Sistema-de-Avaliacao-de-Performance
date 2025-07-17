@@ -12,6 +12,7 @@ export class RHDashboardService {
         userCounts: {
             selfEvaluations: number;
             peerEvaluationsReceived: number;
+            mentorToCollaboratorEvaluationsReceived: number;
             managerEvaluationsReceived: number;
             finalScores: number;
         },
@@ -21,6 +22,7 @@ export class RHDashboardService {
         const isComplete =
             userCounts.selfEvaluations > 0 &&
             userCounts.peerEvaluationsReceived > 0 &&
+            userCounts.mentorToCollaboratorEvaluationsReceived > 0 &&
             userCounts.managerEvaluationsReceived > 0 &&
             userCounts.finalScores > 0;
 
@@ -82,6 +84,7 @@ export class RHDashboardService {
                     select: {
                         selfEvaluations: { where: { cycleId: activeCycle.id } },
                         peerEvaluationsReceived: { where: { cycleId: activeCycle.id } },
+                        mentorToCollaboratorEvaluationsReceived: { where: { cycleId: activeCycle.id } },
                         managerEvaluationsReceived: { where: { cycleId: activeCycle.id } },
                         finalScores: { where: { cycleId: activeCycle.id } },
                     },
@@ -193,6 +196,7 @@ export class RHDashboardService {
                 selfEvaluations: { where: { cycleId: activeCycle.id }, include: { items: { select: { score: true } } } },
                 peerEvaluationsReceived: { where: { cycleId: activeCycle.id }, select: { score: true } },
                 managerEvaluationsReceived: { where: { cycleId: activeCycle.id }, include: { items: { select: { score: true } } } },
+                mentorToCollaboratorEvaluationsReceived: { where: { cycleId: activeCycle.id }, select: { score: true } },
             },
         });
 
@@ -204,6 +208,7 @@ export class RHDashboardService {
             const status = this.determineStatus({
                 selfEvaluations: user.selfEvaluations.length,
                 peerEvaluationsReceived: user.peerEvaluationsReceived.length,
+                mentorToCollaboratorEvaluationsReceived: user.mentorToCollaboratorEvaluationsReceived.length,
                 managerEvaluationsReceived: user.managerEvaluationsReceived.length,
                 finalScores: user.finalScores.length,
             }, activeCycle.status);
@@ -224,6 +229,11 @@ export class RHDashboardService {
                 ? peerScores.reduce((acc, score) => acc + score, 0) / peerScores.length
                 : undefined;
 
+            const mentorScores = user.mentorToCollaboratorEvaluationsReceived.map(m => m.score);
+            const mentorScore = mentorScores.length > 0
+                ? mentorScores.reduce((acc, score) => acc + score, 0) / mentorScores.length
+                : undefined;
+
             const finalScore = user.finalScores[0]?.finalScore;
 
             return {
@@ -235,6 +245,7 @@ export class RHDashboardService {
                 status: status,
                 autoAvaliacao: this.formatAverage(selfScore),
                 avaliacao360: peerScore,
+                notaMentor: this.formatAverage(mentorScore),
                 notaGestor: managerScore,
                 notaFinal: finalScore ?? undefined,
             };

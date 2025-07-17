@@ -28,6 +28,9 @@ export class RhCollaboratorDto {
     avaliacao360?: number;
 
     @ApiProperty({ required: false })
+    notaMentor?: number;
+
+    @ApiProperty({ required: false })
     notaGestor?: number;
 
     @ApiProperty({ required: false, nullable: true })

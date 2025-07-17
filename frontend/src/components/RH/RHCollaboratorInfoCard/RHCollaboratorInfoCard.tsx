@@ -22,6 +22,7 @@ const RHCollaboratorInfoCard: React.FC<RHCollaboratorInfoCardProps> = ({ collabo
     const scoreItems = [
         { label: 'Autoavaliação', value: scores.autoAvaliacao },
         { label: 'Avaliação 360', value: scores.avaliacao360 },
+        { label: 'Nota Mentor', value: scores.notaMentor },
         { label: 'Nota Gestor', value: scores.notaGestor },
         { label: 'Nota Final', value: scores.notaFinal },
     ];
