@@ -46,8 +46,12 @@ const statusStyles: Record<string, string> = {
 const ColaboradoresList: React.FC = () => {
   const { user } = useAuth();
   const [colaboradores, setColaboradores] = useState<CollaboratorStatus[]>([]);
-  const [evaluations, setEvaluations] = useState<Record<number, ManagerEvaluation | null>>({});
-  const [selfEvaluations, setSelfEvaluations] = useState<Record<number, SelfEvaluation | null>>({});
+  const [evaluations, setEvaluations] = useState<
+    Record<number, ManagerEvaluation | null>
+  >({});
+  const [selfEvaluations, setSelfEvaluations] = useState<
+    Record<number, SelfEvaluation | null>
+  >({});
   const [mentorEvaluations, setMentorEvaluations] = useState<
     Record<number, any>
   >({});
@@ -72,7 +76,7 @@ const ColaboradoresList: React.FC = () => {
     }
   }, [user]);
 
-  // Buscar avaliações dos colaboradores
+  // Buscar avaliações dos colaboradores e do mentor
   useEffect(() => {
     if (colaboradores.length === 0) return;
     const ids = colaboradores.map((c) => c.id);
@@ -107,18 +111,24 @@ const ColaboradoresList: React.FC = () => {
               return { id, selfEval: latest };
             })
             .catch(() => ({ id, selfEval: null })),
+          fetchMentorToCollaboratorEvaluationsByCollaborator(id)
+            .then((mentorEvals) => ({ id, mentorEvals }))
+            .catch(() => ({ id, mentorEvals: null })),
         ])
       )
     ).then((results) => {
       const evalMap: Record<number, ManagerEvaluation | null> = {};
       const selfEvalMap: Record<number, SelfEvaluation | null> = {};
-      results.forEach((pairArr) => {
-        const [{ id, evaluation }, { selfEval }] = pairArr;
+      const mentorEvalMap: Record<number, any> = {};
+      results.forEach((tripleArr) => {
+        const [{ id, evaluation }, { selfEval }, { mentorEvals }] = tripleArr;
         evalMap[id] = evaluation;
         selfEvalMap[id] = selfEval;
+        mentorEvalMap[id] = mentorEvals;
       });
       setEvaluations(evalMap);
       setSelfEvaluations(selfEvalMap);
+      setMentorEvaluations(mentorEvalMap);
     });
   }, [colaboradores]);
 
@@ -153,17 +163,19 @@ const ColaboradoresList: React.FC = () => {
     }
     // Manager score (mantém lógica antiga)
     const evaluation = evaluations[collaboratorId];
-    const allCriteria = (evaluation?.groups || []).flatMap(
-      (g) => g.items || []
-    );
-    const withScore = allCriteria.filter(
-      (c) => c.score !== null && c.score !== undefined
-    );
     let managerScore: number | null = null;
-    if (withScore.length > 0) {
-      managerScore =
-        withScore.reduce((sum, c) => sum + (c.score || 0), 0) /
-        withScore.length;
+    if (evaluation && evaluation.groups && evaluation.groups.length > 0) {
+      const allCriteria = (evaluation.groups || []).flatMap(
+        (g) => g.items || []
+      );
+      const withScore = allCriteria.filter(
+        (c) => c.score !== null && c.score !== undefined
+      );
+      if (withScore.length > 0) {
+        managerScore =
+          withScore.reduce((sum, c) => sum + (c.score || 0), 0) /
+          withScore.length;
+      }
     }
     return {
       status: mentorStatus as "Finalizado" | "Em andamento" | "Pendente",
@@ -230,17 +242,17 @@ const ColaboradoresList: React.FC = () => {
               Nenhum mentorado associado
             </h3>
             <p className="text-gray-500 text-sm">
-              Você ainda não possui mentorados associados ao seu perfil de mentor.
+              Você ainda não possui mentorados associados ao seu perfil de
+              mentor.
             </p>
             <p className="text-gray-400 text-xs mt-1">
               Entre em contato com o RH para associar mentorados ao seu time.
             </p>
           </div>
-        ) :
+        ) : (
           colaboradores.map((colab, idx) => {
-            const { status, selfScore, managerScore } = getStatusAndScore(
-              colab.id
-            );
+            const { status, selfScore, managerScore, mentorScore } =
+              getStatusAndScore(colab.id);
             return (
               <button
                 key={colab.id || idx}
@@ -274,9 +286,37 @@ const ColaboradoresList: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                {/* Notas mentor, gestor e autoavaliação - só mostra se houver nota */}
+                <div className="flex flex-row sm:flex-col gap-3 sm:gap-1 mt-2 sm:mt-0 items-end sm:items-end justify-between sm:justify-end w-full sm:w-auto">
+                  {mentorScore !== null && mentorScore !== undefined && (
+                    <div className="text-xs text-gray-500 whitespace-nowrap">
+                      <span className="font-semibold text-gray-900">
+                        {mentorScore.toFixed(1)}
+                      </span>
+                      <span className="ml-1">Nota mentor</span>
+                    </div>
+                  )}
+                  {managerScore !== null && managerScore !== undefined && (
+                    <div className="text-xs text-gray-500 whitespace-nowrap">
+                      <span className="font-semibold text-gray-900">
+                        {managerScore.toFixed(1)}
+                      </span>
+                      <span className="ml-1">Nota gestor</span>
+                    </div>
+                  )}
+                  {selfScore !== null && selfScore !== undefined && (
+                    <div className="text-xs text-gray-500 whitespace-nowrap">
+                      <span className="font-semibold text-gray-900">
+                        {selfScore.toFixed(1)}
+                      </span>
+                      <span className="ml-1">Autoavaliação</span>
+                    </div>
+                  )}
+                </div>
               </button>
             );
-          })}
+          })
+        )}
       </div>
     </div>
   );
