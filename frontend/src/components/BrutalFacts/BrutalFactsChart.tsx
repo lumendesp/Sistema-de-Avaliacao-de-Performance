@@ -134,9 +134,9 @@ const BrutalFactsChart: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl bg-white rounded-lg shadow p-6 mb-6">
+    <div className="w-full bg-white rounded-lg shadow p-4 sm:p-6">
       <span className="font-semibold text-gray-700">Desempenho</span>
-      <div className="mt-4 h-64">
+      <div className="mt-4 h-48 sm:h-64">
         <Bar data={chartData} options={options} />
       </div>
     </div>

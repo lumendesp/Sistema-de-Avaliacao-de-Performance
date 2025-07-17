@@ -401,7 +401,7 @@ const OKR: React.FC<OKRProps> = ({
       <div className="space-y-6">
         {loading ? (
           <div>Carregando OKRs...</div>
-        ) : okrs.length === 0 ? (
+        ) : okrs.length ===0 && !showAddForm ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <PlusIcon className="w-8 h-8 text-gray-400" />
@@ -413,12 +413,6 @@ const OKR: React.FC<OKRProps> = ({
               Comece criando seu primeiro OKR para definir objetivos claros e
               mensuráveis.
             </p>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="bg-[#08605F] hover:bg-[#064a49] text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Criar primeiro OKR
-            </button>
           </div>
         ) : (
           okrs.map((okr) => (
