@@ -35,6 +35,7 @@ export interface RhCollaborator {
     unit: string;
     autoAvaliacao?: number;
     avaliacao360?: number;
+    notaMentor?: number;
     notaGestor?: number;
     notaFinal?: number;
 }

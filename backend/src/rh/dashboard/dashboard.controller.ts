@@ -26,13 +26,13 @@ export class RHDashboardController {
     }
 
     @Get('collaborators')
-    // @UseGuards(...) e @Roles(...) viriam aqui
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Obtém a lista de colaboradores para a página de RH' })
     @ApiResponse({ status: 200, description: 'Lista retornada com sucesso.', type: [RhCollaboratorDto] })
-    @ApiQuery({ name: 'cycleId', required: false, type: Number })
-    async getCollaborators(@Query('cycleId') cycleId?: string) {
+    @ApiQuery({ name: 'cycleId', required: false, type: Number, description: 'ID do ciclo para filtrar os dados.' })
+    @ApiQuery({ name: 'search', required: false, type: String, description: 'Termo de busca para filtrar colaboradores por nome.' })
+    async getCollaborators(@Query('cycleId') cycleId?: string, @Query('search') search?: string) {
         const cycleIdNumber = cycleId ? parseInt(cycleId, 10) : undefined;
-        return this.dashboardService.getCollaboratorsList(cycleIdNumber);
+        return this.dashboardService.getCollaboratorsList(cycleIdNumber, search);
     }
 }
